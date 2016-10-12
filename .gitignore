@@ -1,0 +1,17 @@
+# npm
+node_modules/
+npm-debug.log
+
+# emacs temp files
+.\#*
+
+# webstorm
+.idea/workspace.xml
+
+# elm
+elm-stuff
+
+# tests
+coverage
+test/**/tests/elm-package.json
+test/**/elm-test*/**/elm-package.json

@@ -1,0 +1,10 @@
+{
+  "env": {
+    "mocha": true,
+    "shelljs": true
+  },
+  "rules": {
+    "max-nested-callbacks": ["error", 10],
+    "no-unused-expressions": "off"
+  }
+}
