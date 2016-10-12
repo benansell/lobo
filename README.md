@@ -194,3 +194,28 @@ tests
 * showSkipped - report skipped tests and the reasons after the summary.
 This option is ignored when the quiet option is present
 
+## Troubleshooting
+
+### The argument to function `findTests` is causing a mismatch
+If you are seeing an error similar to the following:
+```
+The argument to function `findTests` is causing a mismatch.
+
+15|                   ElmTestExtra.findTests Tests.all
+                                             ^^^^^^^^^
+Function `findTests` is expecting the argument to be:
+
+    ElmTest.Runner.Test
+
+But it is:
+
+    Test.Internal.Test
+
+Detected errors in 1 module.                  
+```
+Check that you have replaced all instances of `import Test` with 
+`import ElmTest.Extra` 
+
+## Contributions
+Contributions and suggestions welcome! In the first instance please raise 
+an issue to against this project before starting work on a pull request.
