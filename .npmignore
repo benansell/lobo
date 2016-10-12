@@ -1,0 +1,13 @@
+# emacs temp files
+.\#*
+
+# webstorm
+.idea
+
+# elm
+elm-stuff
+
+# tests
+coverage
+test/**/tests/elm-package.json
+test/**/elm-test*/**/elm-package.json
