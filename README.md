@@ -21,6 +21,42 @@ installed:
 ```
 npm install lobo --save
 ```
+It is recommended to install lobo locally, as it's install location will
+be added to the source directories in the tests elm-package.json file.
+
+Once it is installed you can either run lobo via an npm script or using a
+third party package like npm-run.
+
+### npm script
+Add a script command to your package.json file with the options you wish
+to use:
+```json
+"scripts": {
+    "lobo": "lobo --watch"
+}
+```
+You should then be able to run lobo with the following command:
+```
+npm run script lobo 
+```
+
+### npm-run
+[npm-run](https://www.npmjs.com/package/npm-run) gives you access to locally installed node_module/.bin files. 
+```
+npm install -g npm-run 
+```
+After globally installing npm-run you can run lobo using:
+```
+npm-run lobo --watch
+```
+Note: There is a "-" between npm and run!
+
+### manual
+If you don't want to use an npm script or a 3rd party package like npm-run 
+you can always run lobo from the node_modules/.bin path:
+```
+node_modules/.bin/lobo --watch
+```
 
 ## Tests.elm
 So that lobo can find all your tests it assumes that you have a 
