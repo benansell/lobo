@@ -149,9 +149,10 @@ function configure() {
     .option('--compiler <value>', 'path to compiler')
     .option('--debug', 'disables auto-cleanup of temp files')
     .option('--framework <value>', 'name of the testing framework to use', 'elm-test-extra')
-    .option('--interrupt <value>', 'default the answer to any questions', /^(y[es])|(n[o])$/i, 'yes')
-    .option('--quiet', 'only outputs build info, test summary and errors')
+    .option('--noUpdate', 'prevents lobo updating the test elm-package.json')
     .option('--noWarn', 'hides elm make build warnings')
+    .option('--prompt <value>', 'default the answer to any questions', /^(y[es])|(n[o])$/i, 'yes')
+    .option('--quiet', 'only outputs build info, test summary and errors')
     .option('--reporter <value>', 'name of the reporter to use', 'default-reporter')
     .option('--testDirectory <value>', 'directory containing the tests to run', 'tests')
     .option('--verbose', 'outputs more detailed logging')
@@ -181,10 +182,11 @@ function configure() {
   // configure shelljs to throw errors when any command errors
   shelljs.config.fatal = true;
 
-  if (program.interrupt) {
-    config.prompt = program.interrupt.toLowerCase()[0] === 'y';
+  if (program.prompt) {
+    config.prompt = program.prompt.toLowerCase()[0] === 'y';
   }
 
+  config.noUpdate = program.noUpdate === true;
   config.noWarn = program.noWarn === true;
   config.reportProgress = true;
 

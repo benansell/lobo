@@ -162,13 +162,17 @@ use elm-test use the following:
 ```
 lobo --framework=elm-test
 ```
-
-### --noPrompt
-Prevents lobo and elm tools asking your permission, and always answers
- "yes"
+### --noUpdate
+Prevents lobo from trying to update the elm-package.json file in tests 
+directory. The default is to try and sync the elm-package.json files 
+in the base and test directories.
 
 ### --noWarn
 Hides elm make build warnings. The default is to show warning messages
+
+### --prompt
+Prevents lobo and elm tools asking your permission, and always answers
+ "yes"
 
 ### --quiet
 Minimise the output to build and test summary information and errors
