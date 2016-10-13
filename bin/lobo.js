@@ -106,7 +106,7 @@ function watch(config) {
     ready = true;
     launch(config);
   }).on('all', function(event, path) {
-    // console.log('event: ' + event + ', path: ' + path);
+    logger.trace('watch - event: ' + event + ', path: ' + path);
 
     if (ready === false) {
       return;
@@ -156,6 +156,7 @@ function configure() {
     .option('--reporter <value>', 'name of the reporter to use', 'default-reporter')
     .option('--testDirectory <value>', 'directory containing the tests to run', 'tests')
     .option('--verbose', 'outputs more detailed logging')
+    .option('--veryVerbose', 'outputs very detailed logging')
     .option('--watch', 'watch for file changes and automatically rerun any effected tests');
 
   // parse args with allow unknown to find & load plugins with additional options
@@ -194,7 +195,7 @@ function configure() {
     config.compiler = path.normalize(program.compiler);
   }
 
-  logger.debug('config', config);
+  logger.trace('config', config);
 
   return config;
 }

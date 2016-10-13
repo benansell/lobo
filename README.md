@@ -169,6 +169,9 @@ Increases the verbosity of lobo logging messages. Please use this when
 reporting an issue with lobo to get details about what lobo was trying
 and failed todo.
 
+### --veryVerbose
+Increases the verbosity of lobo logging to be very detailed.
+
 ### --watch
 Put lobo in a infinite loop that watches for changes and automatically
 reruns the build and tests when the source code has changed.
