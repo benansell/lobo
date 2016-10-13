@@ -1,10 +1,10 @@
 {
   "name": "lobo",
-  "version": "0.0.2",
-  "description": "",
+  "version": "0.0.3",
+  "description": "Elm test runner",
   "keywords": [
-    "cli",
     "elm",
+    "lobo",
     "test"
   ],
   "bin": {

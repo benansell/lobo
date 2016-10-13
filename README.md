@@ -18,53 +18,28 @@ installed:
 * [elm](http://elm-lang.org/install) - v17.1 or greater
 
 ## Install
+It is recommended to install lobo locally for your application and 
+lobo-cli globally:
 ```
 npm install lobo --save
-```
-It is recommended to install lobo locally, as it's install location will
-be added to the source directories in the tests elm-package.json file.
-
-Once it is installed you can either run lobo via an npm script or using a
-third party package like npm-run.
-
-### npm script
-Add a script command to your package.json file with the options you wish
-to use:
-```json
-"scripts": {
-    "lobo": "lobo --watch"
-}
-```
-You should then be able to run lobo with the following command:
-```
-npm run lobo 
+npm install -g lobo-cli
 ```
 
-### npm-run
-[npm-run](https://www.npmjs.com/package/npm-run) gives you access to locally installed node_module/.bin files. 
+Once they are installed you can run lobo via the following command:
 ```
-npm install -g npm-run 
-```
-After globally installing npm-run you can run lobo using:
-```
-npm-run lobo --watch
-```
-Note: There is a "-" between npm and run!
-
-### manual
-If you don't want to use an npm script or a 3rd party package like npm-run 
-you can always run lobo from the node_modules/.bin path:
-```
-node_modules/.bin/lobo --watch
+lobo --help 
 ```
 
 ## Updating
-After updating lobo please manually delete your test elm-stuff directory 
-before running lobo.
+After updating lobo, you may find that elm does not properly find the 
+lobo elm code. To fix this delete your test elm-stuff directory.
 
 ## Tests.elm
 So that lobo can find all your tests it assumes that you have a 
 Tests.elm file that references all the tests that should be run.
+
+lobo does not require an elm file containing a main function - this is 
+provided for you in the lobo npm package.
 
 ### elm-test
 If you are using the elm-test framework your Tests.elm file should look
