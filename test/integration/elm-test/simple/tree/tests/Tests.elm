@@ -1,6 +1,7 @@
 module Tests exposing (all)
 
 import Expect exposing (pass)
+import ConcatChildTest exposing (all)
 import FirstChildTest exposing (all)
 import FuzzyChildTest exposing (all)
 import SecondChildTest exposing (all)
@@ -10,6 +11,7 @@ all : Test
 all =
     describe "Tests"
         [ passingTest
+        , ConcatChildTest.all
         , FirstChildTest.all
         , SecondChildTest.all
         , FuzzyChildTest.all
