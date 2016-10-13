@@ -297,7 +297,7 @@ function handleUncaughtException(error) {
 
   if (error instanceof ReferenceError) {
     if (error.stack && error.stack.match(new RegExp(config.testFile))) {
-      if (/_ElmTest.*Plugin$findTests is not defined/.test(error)) {
+      if (/ElmTest.*Plugin\$findTests is not defined/.test(error)) {
         logger.error('Error running the tests. This is usually caused by an npm upgrade to lobo: ');
         logger.info('');
         logger.error(errorString);

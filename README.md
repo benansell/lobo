@@ -235,10 +235,10 @@ Detected errors in 1 module.
 Check that you have replaced all instances of `import Test` with 
 `import ElmTest.Extra` 
 
-### ReferenceError: _user$my-app_ElmTestExtraPlugin$findTests is not defined
+### ReferenceError: _user$.....Plugin$findTests is not defined
 If you are seeing an error similar to the following:
 ```
-ReferenceError: _user$my-app_ElmTestExtraPlugin$findTests is not defined
+ReferenceError: _user$.....Plugin$findTests is not defined
 ```
 Try deleting the test elm-stuff directory and re-running lobo
 
