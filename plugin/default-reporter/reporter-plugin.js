@@ -276,7 +276,6 @@ function processResults(results, summary, labels) {
     switch (r.resultType) {
       case 'FAILED':
         summary.failedCount += 1;
-        console.log(labels);
         summary.failures.push({labels: _.clone(labels), result: r});
         break;
       case 'IGNORED':
