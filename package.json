@@ -1,6 +1,6 @@
 {
   "name": "lobo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "keywords": [
     "cli",
@@ -22,7 +22,7 @@
   "author": "bja <code@benansell.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com:benansell/lobo.git"
+    "url": "https://github.com/benansell/lobo.git"
   },
   "license": "BSD-3-Clause",
   "dependencies": {

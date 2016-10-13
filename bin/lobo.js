@@ -295,13 +295,21 @@ function handleUncaughtException(error) {
 
   if (error instanceof ReferenceError) {
     if (error.stack && error.stack.match(new RegExp(config.testFile))) {
-      logger.error('Error running the tests. This is usually caused by an elm package using objects that ' +
-        'are found in the browser but not in a node process');
-      logger.info('');
-      logger.error(errorString);
-      logger.info('');
-      logger.error('Please raise an issue against lobo to request adding support for the elm-package that ' +
-        'is referencing the above browser object');
+      if (/_ElmTest.*Plugin$findTests is not defined/.test(error)) {
+        logger.error('Error running the tests. This is usually caused by an npm upgrade to lobo: ');
+        logger.info('');
+        logger.error(errorString);
+        logger.info('');
+        logger.error('Please delete tests/elm-stuff and try again');
+      } else {
+        logger.error('Error running the tests. This is usually caused by an elm package using objects that ' +
+          'are found in the browser but not in a node process');
+        logger.info('');
+        logger.error(errorString);
+        logger.info('');
+        logger.error('Please raise an issue against lobo to request adding support for the elm-package that ' +
+          'is referencing the above browser object');
+      }
     } else {
       logger.error('Unhandled exception', errorString);
     }

@@ -37,7 +37,7 @@ to use:
 ```
 You should then be able to run lobo with the following command:
 ```
-npm run script lobo 
+npm run lobo 
 ```
 
 ### npm-run
@@ -57,6 +57,10 @@ you can always run lobo from the node_modules/.bin path:
 ```
 node_modules/.bin/lobo --watch
 ```
+
+## Updating
+After updating lobo please manually delete your test elm-stuff directory 
+before running lobo.
 
 ## Tests.elm
 So that lobo can find all your tests it assumes that you have a 
@@ -251,6 +255,13 @@ Detected errors in 1 module.
 ```
 Check that you have replaced all instances of `import Test` with 
 `import ElmTest.Extra` 
+
+### ReferenceError: _user$my-app_ElmTestExtraPlugin$findTests is not defined
+If you are seeing an error similar to the following:
+```
+ReferenceError: _user$my-app_ElmTestExtraPlugin$findTests is not defined
+```
+Try deleting the test elm-stuff directory and re-running lobo
 
 ## Contributions
 Contributions and suggestions welcome! In the first instance please raise 
