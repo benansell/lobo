@@ -25,7 +25,7 @@ function contextPop(context) {
 
 function run(context, framework, args) {
   var baseDir = _.repeat('../', context.length);
-  var command = 'node ' + baseDir + 'bin/lobo.js --interrupt=no --verbose --noWarn';
+  var command = 'node ' + baseDir + 'bin/lobo.js --prompt=no --verbose --noWarn';
 
   if (framework) {
     command += ' --framework=' + framework;
