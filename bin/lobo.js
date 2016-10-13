@@ -100,7 +100,7 @@ function watch(config) {
   }
 
   chokidar.watch(paths, {
-    ignored: /(.*\/\..*)|(.*\/elm-stuff$.*)/,
+    ignored: /(.*\/\..*)|(.*\/elm-stuff\/.*)/,
     persistent: true
   }).on('ready', function() {
     ready = true;
