@@ -193,6 +193,8 @@ describe('elm-test-simple', function() {
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(5, 2, 0);
+      expect(result.stdout).to.matches(/SecondChildTest\n.+Tests/);
+      expect(result.stdout).to.matches(/FailingGrandChildTest\n.+SecondChildTest\n.+Tests/);
       expect(result.code).to.equal(1);
     });
   });

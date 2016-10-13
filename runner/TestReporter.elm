@@ -177,7 +177,26 @@ toTestReportNode reports =
                 []
 
             Just node ->
-                [ node.report ]
+                toTestReportNodeList node
+
+
+toTestReportNodeList : DetachedNode -> List TestReportNode
+toTestReportNodeList node =
+    case node.report of
+        Failed _ ->
+            [ node.report ]
+
+        Ignored _ ->
+            [ node.report ]
+
+        Passed _ ->
+            [ node.report ]
+
+        Skipped _ ->
+            [ node.report ]
+
+        Suite suiteNode ->
+            suiteNode.reports
 
 
 attachNode : List DetachedNode -> Maybe DetachedNode
@@ -196,17 +215,23 @@ attachNode nodes =
                     [] ->
                         case next.id.parents of
                             [] ->
+                                -- done when run out of parents
                                 Just next
 
                             x :: xs ->
-                                { id = { current = x, parents = xs }, report = fromDetachedNode next }
+                                -- create new parent with next as a child and repeat
+                                { id = { current = x, parents = xs }, report = fromDetachedNode x next }
                                     :: others
                                     |> attachNode
 
-                    x :: _ ->
-                        { id = x.id, report = attachChild next.report x.report }
+                    [ x ] ->
+                        -- add next to it's parent and repeat
+                        { x | report = attachChild next.report x.report }
                             :: others
                             |> attachNode
+
+                    x :: xs ->
+                        Debug.crash "Impossible to have more than 1 parent node"
 
 
 byTestIds : List TestIdentifier -> DetachedNode -> Bool
@@ -284,11 +309,11 @@ toDetachedNode testReport =
             }
 
 
-fromDetachedNode : DetachedNode -> TestReportNode
-fromDetachedNode node =
+fromDetachedNode : TestIdentifier -> DetachedNode -> TestReportNode
+fromDetachedNode parentId node =
     Suite
-        { id = node.id.current.uniqueId
-        , label = node.id.current.label
+        { id = parentId.uniqueId
+        , label = parentId.label
         , reports = []
         , startTime = Nothing
         , endTime = Nothing

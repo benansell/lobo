@@ -10,6 +10,7 @@ var failedStyle = chalk.red;
 var skippedStyle = chalk.yellow;
 var ignoredStyle = program.failOnFocus ? failedStyle : skippedStyle;
 var headerStyle = chalk.bold;
+var labelStyle = chalk.dim;
 var initArgs;
 
 function runArgs(args) {
@@ -112,11 +113,7 @@ function logSkipped(summary) {
 
   _.forEach(summary.skipped, function(item) {
     paddedLog(index + ') ' + chalk.yellow(item.result.label));
-    item.labels.pop();
-
-    if (item.labels.length > 0) {
-      paddedLog(chalk.dim('  in ' + item.labels.join(' → ')));
-    }
+    logLabels(item.labels);
 
     paddedLog('');
     console.log(formatMessage('  ' + item.result.reason, padding));
@@ -131,11 +128,7 @@ function logFailures(summary) {
 
   _.forEach(summary.failures, function(item) {
     paddedLog(index + ') ' + chalk.red(item.result.label));
-    item.labels.pop();
-
-    if (item.labels.length > 0) {
-      paddedLog(chalk.dim('  in ' + item.labels.join(' → ')));
-    }
+    logLabels(item.labels);
 
     _.forEach(item.result.resultMessages, function(resultMessage) {
       if (resultMessage.given && resultMessage.given.length > 0) {
@@ -151,6 +144,20 @@ function logFailures(summary) {
     });
     index++;
   });
+}
+
+function logLabels(labels) {
+  if (labels.length === 0) {
+    return;
+  }
+
+  var labelPad = '   ';
+
+  for (var i = labels.length - 1; i >= 0; i--) {
+    var label = labels[i];
+    paddedLog(labelStyle(labelPad + '└ ' + label));
+    labelPad += ' ';
+  }
 }
 
 function formatFailure(message) {
@@ -269,6 +276,7 @@ function processResults(results, summary, labels) {
     switch (r.resultType) {
       case 'FAILED':
         summary.failedCount += 1;
+        console.log(labels);
         summary.failures.push({labels: _.clone(labels), result: r});
         break;
       case 'IGNORED':
@@ -282,8 +290,9 @@ function processResults(results, summary, labels) {
         summary.skipped.push({labels: _.clone(labels), result: r});
         break;
       default:
-        labels.push(r.label);
-        processResults(r.results, summary, labels);
+        var newLabels = _.clone(labels);
+        newLabels.push(r.label);
+        processResults(r.results, summary, newLabels);
     }
   });
 }
