@@ -9,13 +9,8 @@ describe('elm-test-extra-simple', function() {
   var testContext;
 
   before(function() {
-    util.cd(process.env.PWD);
-
-    testContext = [];
-    runner.contextPush(testContext, 'test');
-    runner.contextPush(testContext, 'integration');
-    runner.contextPush(testContext, 'elm-test-extra');
-    runner.contextPush(testContext, 'simple');
+    testContext = util.initializeTestContext(__dirname);
+    util.cd(__dirname);
   });
 
   describe('pass', function() {

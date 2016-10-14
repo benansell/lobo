@@ -1,5 +1,6 @@
 'use strict';
 
+var path = require('path');
 var shelljs = require('shelljs');
 
 function cd(path) {
@@ -44,9 +45,24 @@ function clean() {
   rmDir('elm-stuff');
 }
 
+function initializeTestContext(dirname) {
+  var dir = dirname;
+  var testContext = [];
+
+  while (/test/.test(dir)) {
+    testContext.push(path.basename(dir));
+    dir = path.dirname(dir);
+  }
+
+  testContext.reverse();
+
+  return testContext;
+}
+
 module.exports = {
   cd: cd,
   clean: clean,
   exec: exec,
-  execRaw: execRaw
+  execRaw: execRaw,
+  initializeTestContext: initializeTestContext
 };

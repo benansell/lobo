@@ -9,12 +9,8 @@ describe('elm-lang', function() {
   var testContext;
 
   before(function() {
-    util.cd(process.env.PWD);
-
-    testContext = [];
-    runner.contextPush(testContext, 'test');
-    runner.contextPush(testContext, 'integration');
-    runner.contextPush(testContext, 'elm-lang');
+    testContext = util.initializeTestContext(__dirname);
+    util.cd(__dirname);
   });
 
   describe('import-check', function() {
