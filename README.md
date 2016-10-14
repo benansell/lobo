@@ -1,4 +1,4 @@
-# lobo
+# lobo [![Build status](https://ci.appveyor.com/api/projects/status/qc6uaygx48hqn1sh/branch/master?svg=true)](https://ci.appveyor.com/project/benansell/lobo/branch/master) [![Build Status](https://travis-ci.org/benansell/lobo.svg?branch=master)](https://travis-ci.org/benansell/lobo)
 
 A node package for building and running elm tests
 
