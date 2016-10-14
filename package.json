@@ -53,7 +53,7 @@
   "scripts": {
     "clean": "rimraf node_modules",
     "test-lint": "eslint bin/ lib/ plugin/ test/ --ignore-pattern '**/elm-stuff/**'",
-    "test-unit": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot 'test/unit/**/*.test.js'",
+    "test-unit": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot test/unit/**/*.test.js",
     "test-integration": "mocha test/integration/**/*.test.js test/integration/**/**/*.test.js -t 100000",
     "pretest": "npm run test-lint --silent",
     "test": "npm run test-unit --silent && npm run test-integration --silent"
