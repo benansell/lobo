@@ -17,6 +17,7 @@ install:
   - npm install
 
 test_script:
+  - cd %APPVEYOR_BUILD_FOLDER%
   - npm test
 
 build: off
