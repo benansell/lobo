@@ -87,6 +87,11 @@ function done(config) {
 
 function watch(config) {
   var paths = ['./elm-package.json'];
+
+  // paths.push(__dirname);
+  // paths.push(path.normalize(__dirname + '/../lib'));
+  // paths.push(path.normalize(__dirname + '/../plugin/default-reporter'));
+
   var testElmPackage = builder.readElmPackageJson(path.join(program.testDirectory, 'elm-package.json'));
 
   if (testElmPackage && testElmPackage['source-directories']) {

@@ -2,6 +2,8 @@
 <project version="4">
   <component name="JavaScriptLibraryMappings">
     <file url="file://$PROJECT_DIR$" libraries="{lobo/node_modules}" />
+    <file url="file://$PROJECT_DIR$/test/unit" libraries="{mocha-DefinitelyTyped, rewire-DefinitelyTyped}" />
+    <file url="PROJECT" libraries="{mocha-DefinitelyTyped, rewire-DefinitelyTyped}" />
     <includedPredefinedLibrary name="Node.js Core" />
     <excludedPredefinedLibrary name="HTML" />
   </component>

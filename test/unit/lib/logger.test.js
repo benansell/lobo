@@ -7,7 +7,7 @@ var sinonChai = require('sinon-chai');
 var expect = chai.expect;
 chai.use(sinonChai);
 
-describe('logger', function() {
+describe('lib logger', function() {
   describe('trace', function() {
     var logger = rewire('./../../../lib/logger');
     var trace;

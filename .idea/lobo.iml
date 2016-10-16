@@ -11,5 +11,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="rewire-DefinitelyTyped" level="project" />
+    <orderEntry type="library" name="mocha-DefinitelyTyped" level="project" />
   </component>
 </module>

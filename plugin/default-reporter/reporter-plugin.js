@@ -1,8 +1,9 @@
 'use strict';
 
-var _ = require('lodash');
-var chalk = require('chalk');
+const _ = require('lodash');
+const chalk = require('chalk');
 var program = require('commander');
+var compare = require('./compare');
 var util = require('../../lib/util');
 
 var passedStyle = chalk.green;
@@ -138,7 +139,9 @@ function logFailures(summary) {
       }
 
       paddedLog('');
-      var message = formatFailure(resultMessage.message);
+      // default to a width of 80 when process is not running in a terminal
+      var maxLength = process.stdout.columns ? process.stdout.columns - padding.length : 80;
+      var message = formatFailure(resultMessage.message, maxLength);
       console.log(formatMessage(message, padding));
       paddedLog('');
     });
@@ -160,7 +163,7 @@ function logLabels(labels) {
   }
 }
 
-function formatFailure(message) {
+function formatFailure(message, maxLength) {
   if (message.indexOf('│') === -1) {
     return message.replace(message, '\n  ' + chalk.yellow(message) + '\n');
   }
@@ -182,50 +185,52 @@ function formatFailure(message) {
   }
 
   if (lines[2].indexOf('│ ' + chalk.yellow('Expect.equal')) !== -1) {
-    lines = formatExpectEqualFailure(lines);
+    lines = formatExpectEqualFailure(lines, maxLength);
   }
 
   return lines.join('\n');
 }
 
-function formatExpectEqualFailure(lines) {
-  if (lines[0].startsWith('┌ "') && lines[4].startsWith('└ "')) {
-    return formatExpectEqualStringFailure(lines);
-  }
+function formatExpectEqualFailure(unprocessedLines, maxLength) {
+  var lines = _.clone(unprocessedLines);
+  lines.push('   ');
+
+  // remove "┌ " and "└ "
+  var left = lines[0].substring(2);
+  var right = lines[4].substring(2);
+  var value = compare.diff(left, right);
+  lines[1] = '│ ' + value.left;
+  lines[5] = '  ' + value.right;
+
+  lines[0] = chunkLine(lines[0], lines[1], maxLength, '┌ ', '│ ');
+  lines[1] = '';
+
+  lines[4] = chunkLine(lines[4], lines[5], maxLength, '└ ', '  ');
+  lines[5] = '';
+
+  lines = _.flattenDepth(lines, 1);
 
   return lines;
 }
 
-function formatExpectEqualStringFailure(lines) {
-  // don't add hint on long lines
-  if (lines[0].length > 80 || lines[4].length > 80) {
-    return lines;
+function chunkLine(rawContentLine, rawDiffLine, length, firstPrefix, prefix) {
+  var contentLine = rawContentLine.substring(firstPrefix.length - 1);
+  var diffLine = rawDiffLine.substring(firstPrefix.length - 1);
+  var size = Math.ceil(contentLine.length / length);
+  var chunks = new Array(size * 2);
+  var offset;
+  var sectionLength = length - prefix.length - 1;
+
+  chunks[0] = firstPrefix + contentLine.substring(1, sectionLength + 1);
+  chunks[1] = prefix + chalk.red(diffLine.substring(1, sectionLength + 1));
+
+  for (var i = 1; i < size; i++) {
+    offset = (i * sectionLength) + 1;
+    chunks[i * 2] = prefix + contentLine.substring(offset, offset + sectionLength);
+    chunks[i * 2 + 1] = prefix + chalk.red(diffLine.substring(offset, offset + sectionLength));
   }
 
-  if (lines[0].length > lines[4].length) {
-    lines[1] = formatExpectDiffLength(lines[4], lines[0], lines[1] + ' ');
-  } else {
-    lines.push(formatExpectDiffLength(lines[0], lines[4], '  '));
-  }
-
-  return lines;
-}
-
-function formatExpectDiffLength(short, long, existing) {
-  var limit = short.length - 1;
-  var suffix = '';
-
-  for (var i = 2; i < long.length - 1; i++) {
-    var char = long[i];
-
-    if (i < limit) {
-      suffix += short[i] === char ? ' ' : '^';
-    } else {
-      suffix += '^';
-    }
-  }
-
-  return existing + chalk.red(suffix);
+  return chunks;
 }
 
 function formatMessage(rawMessage, padding) {

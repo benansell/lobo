@@ -50,7 +50,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(0, 15, 0);
+      reporterExpect(result).summaryCounts(0, 24, 0);
       expect(result.code).to.equal(1);
     });
 
@@ -79,7 +79,7 @@ describe('elm-test-extra-simple', function() {
       var failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
       expect(failureMessage).to.match(/\n\s{4}┌ "foobar"\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\n/g);
+      expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\s\n/g);
       expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
       expect(failureMessage).to.match(/\n\s{4}│\n/g);
       expect(failureMessage).to.match(/\n\s{4}└ "fao"/g);
@@ -89,7 +89,7 @@ describe('elm-test-extra-simple', function() {
       expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
       expect(failureMessage).to.match(/\n\s{4}│\n/g);
       expect(failureMessage).to.match(/\n\s{4}└ " "/g);
-      expect(failureMessage).to.match(/\n\s{8}\^\n/g);
+      expect(failureMessage).to.match(/\n\s{11}\n/g);
     });
   });
 

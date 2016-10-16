@@ -6,7 +6,7 @@ var sinonChai = require('sinon-chai');
 var expect = chai.expect;
 chai.use(sinonChai);
 
-describe('util', function() {
+describe('lib util', function() {
   var util = require('./../../../lib/util');
 
   describe('checkNodeVersion', function() {

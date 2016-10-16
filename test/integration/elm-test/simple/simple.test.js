@@ -79,7 +79,7 @@ describe('elm-test-simple', function() {
       var failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
       expect(failureMessage).to.match(/\n\s{4}┌ "foobar"\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\n/g);
+      expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\s\n/g);
       expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
       expect(failureMessage).to.match(/\n\s{4}│\n/g);
       expect(failureMessage).to.match(/\n\s{4}└ "fao"/g);
@@ -89,7 +89,7 @@ describe('elm-test-simple', function() {
       expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
       expect(failureMessage).to.match(/\n\s{4}│\n/g);
       expect(failureMessage).to.match(/\n\s{4}└ " "/g);
-      expect(failureMessage).to.match(/\n\s{8}\^\n/g);
+      expect(failureMessage).to.match(/\n\s{11}\n/g);
     });
   });
 
