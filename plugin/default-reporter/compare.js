@@ -36,8 +36,8 @@ function diff(left, right) {
     var rightLength = right ? right.length : 0;
 
     return {
-      left: _.pad('', leftLength, unknown),
-      right: _.pad('', rightLength, unknown)
+      left: _.repeat(unknown, leftLength),
+      right: _.repeat(unknown, rightLength)
     };
   }
 }
@@ -80,7 +80,7 @@ function diffUnion(left, right) {
 
     // check for union where args are of different types
     if ((token.test(l) || token.test(r)) && l[0] !== r[0]) {
-      value = {left: _.pad('', l.length), right: _.pad('', r.length, '^')};
+      value = {left: _.repeat(' ', l.length), right: _.repeat('^', r.length)};
     } else {
       value = diff(l, r);
     }
@@ -166,7 +166,7 @@ function diffRecord(left, right) {
       leftItem.hint = value.left + leftItem.hint;
       rightItem.hint = value.right + rightItem.hint;
     } else {
-      leftItem.hint = _.pad('', leftItem.key.length + leftItem.value.length + leftItem.hint.length + 3, '^');
+      leftItem.hint = _.repeat('^', leftItem.key.length + leftItem.value.length + leftItem.hint.length + 3);
       leftItem.key = null;
       leftItem.value = null;
     }
@@ -206,7 +206,7 @@ function deconstructRecord(str) {
   for (var i = 0; i < values.length; i++) {
     var parts = parse(values[i], '=');
     var value = parts[1].trim();
-    var hint = _.pad('', parts[1].length - value.length);
+    var hint = _.repeat(' ', parts[1].length - value.length);
     record.push({key: parts[0], value: value, hint: hint});
   }
 
@@ -247,7 +247,7 @@ function constructRecord(parts) {
     var p = parts[i];
 
     if (p.key) {
-      record += _.pad('', p.key.length + 2, ' ') + p.hint;
+      record += _.repeat(' ', p.key.length + 2) + p.hint;
     } else {
       record = record.substring(0, record.length - 1) + p.hint;
     }

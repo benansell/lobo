@@ -8,7 +8,8 @@ var util = require('../../lib/util');
 
 var passedStyle = chalk.green;
 var failedStyle = chalk.red;
-var skippedStyle = chalk.yellow;
+var givenStyle = chalk.yellow;
+var skippedStyle = chalk.yellow.dim;
 var ignoredStyle = program.failOnFocus ? failedStyle : skippedStyle;
 var headerStyle = chalk.bold;
 var labelStyle = chalk.dim;
@@ -51,12 +52,8 @@ function finish(results) {
   paddedLog('');
   logSummary(summary);
   paddedLog('');
-  logFailures(summary);
+  logNonPassed(summary);
   paddedLog('');
-
-  if (program.showSkipped) {
-    logSkipped(summary);
-  }
 
   if (!program.failOnFocus) {
     return summary.failedCount === 0;
@@ -108,59 +105,108 @@ function logSummaryHeader(summary) {
   }
 }
 
-function logSkipped(summary) {
-  var padding = '    ';
-  var index = 1;
+function sortItemsByLabel(item) {
+  if (item.length === 0) {
+    return item;
+  }
 
-  _.forEach(summary.skipped, function(item) {
-    paddedLog(index + ') ' + chalk.yellow(item.result.label));
-    logLabels(item.labels);
+  var failureSortKey = function(x) {
+    return x.labels.join(' ') + ' ' + x.result.label;
+  };
 
-    paddedLog('');
-    console.log(formatMessage('  ' + item.result.reason, padding));
-    paddedLog('');
-    index++;
+  var maxItem = _.maxBy(item, function(x) {
+    return failureSortKey(x).length;
   });
+
+  var max = failureSortKey(maxItem).length;
+
+  return _.sortBy(item, [function(x) {
+    return _.padStart(failureSortKey(x), max, ' ');
+  }]).reverse();
 }
 
-function logFailures(summary) {
+function logNonPassed(summary) {
+  var itemList = _.clone(summary.failures);
+
+  if (program.showSkipped) {
+    itemList = itemList.concat(summary.skipped);
+  }
+
+  var sortedItemList = sortItemsByLabel(itemList);
   var padding = '    ';
+  var context = [];
   var index = 1;
 
-  _.forEach(summary.failures, function(item) {
-    paddedLog(index + ') ' + chalk.red(item.result.label));
-    logLabels(item.labels);
+  while (sortedItemList.length > 0) {
+    var item = sortedItemList.pop();
+    var isSkipped = item.result.resultType === 'SKIPPED';
+    var style = isSkipped ? skippedStyle : failedStyle;
+    context = logLabels(item.labels, item.result.label, index, context, style);
 
-    _.forEach(item.result.resultMessages, function(resultMessage) {
-      if (resultMessage.given && resultMessage.given.length > 0) {
-        paddedLog('');
-        paddedLog('  • ' + chalk.yellow('Given'));
-        console.log(formatMessage('  ' + resultMessage.given, padding));
-      }
-
-      paddedLog('');
-      // default to a width of 80 when process is not running in a terminal
-      var maxLength = process.stdout.columns ? process.stdout.columns - padding.length : 80;
-      var message = formatFailure(resultMessage.message, maxLength);
-      console.log(formatMessage(message, padding));
-      paddedLog('');
-    });
+    if (isSkipped) {
+      logSkippedMessage(item, padding);
+    } else {
+      logFailureMessage(item, padding);
+    }
     index++;
-  });
+  }
 }
 
-function logLabels(labels) {
+function logLabels(labels, itemLabel, index, context, itemStyle) {
   if (labels.length === 0) {
     return;
   }
 
-  var labelPad = '   ';
+  var labelPad = '';
+  var i;
 
-  for (var i = labels.length - 1; i >= 0; i--) {
-    var label = labels[i];
-    paddedLog(labelStyle(labelPad + '└ ' + label));
-    labelPad += ' ';
+  for (i = 0; i < labels.length; i++) {
+    if (context[i] !== labels[i]) {
+      context = context.slice(0, i);
+      break;
+    }
   }
+
+  for (var j = 0; j < labels.length; j++) {
+    if (context[j] === labels[j]) {
+      labelPad += ' ';
+      continue;
+    }
+
+    var label = labels[j];
+    paddedLog(labelStyle(labelPad + label));
+    labelPad += ' ';
+    context.push(label);
+  }
+
+  paddedLog('    ' + index + ') ' + itemStyle(itemLabel));
+
+  return context;
+}
+
+function logFailureMessage(item, padding) {
+  var maxLength = process.stdout.columns ? process.stdout.columns - padding.length : 80;
+
+  _.forEach(item.result.resultMessages, function(resultMessage) {
+    if (resultMessage.given && resultMessage.given.length > 0) {
+      paddedLog('');
+      paddedLog('  • ' + givenStyle('Given'));
+      console.log(formatMessage('  ' + resultMessage.given, padding));
+    }
+
+    paddedLog('');
+    // default to a width of 80 when process is not running in a terminal
+
+    var message = formatFailure(resultMessage.message, maxLength);
+    console.log(formatMessage(message, padding));
+    paddedLog('');
+  });
+}
+
+function logSkippedMessage(item, padding) {
+  paddedLog('');
+  paddedLog(formatMessage(item.result.reason, padding));
+  paddedLog('');
 }
 
 function formatFailure(message, maxLength) {

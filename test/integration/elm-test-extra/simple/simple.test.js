@@ -188,6 +188,8 @@ describe('elm-test-extra-simple', function() {
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(5, 2, 0);
+      expect(result.stdout).to.matches(/Tests(.|\n)+SecondChildTest\n.+failingTest - Child/);
+      expect(result.stdout).to.matches(/Tests(.|\n)+FailingGrandChildTest\n.+failingTest - GrandChild/);
       expect(result.code).to.equal(1);
     });
   });
