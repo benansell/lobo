@@ -18,8 +18,7 @@
 ***
 
 ## Features
-* Support for [elm-test](http://package.elm-lang.org/packages/elm-community/elm-test/latest) and [lobo-elm-test-extra](http://package.elm-lang.![difference highlight](https://raw.github.com/benansell/lobo/failure_diff/docs/images/default-reporter-diff-example.png)
-org/packages/benansell/lobo-elm-test-extra/latest) 
+* Support for [elm-test](http://package.elm-lang.org/packages/elm-community/elm-test/latest) and [lobo-elm-test-extra](http://package.elm-lang.org/packages/benansell/lobo-elm-test-extra/latest) 
 test frameworks
 * Default console reporter that displays a summary of the test run
 * Watch mode that builds and runs the tests when the source code is 
