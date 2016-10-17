@@ -1,15 +1,33 @@
-# lobo [![Build status](https://ci.appveyor.com/api/projects/status/qc6uaygx48hqn1sh/branch/master?svg=true)](https://ci.appveyor.com/project/benansell/lobo/branch/master) [![Build Status](https://travis-ci.org/benansell/lobo.svg?branch=master)](https://travis-ci.org/benansell/lobo)
+<p align="center">
+    <img height="200px" src="https://raw.github.com/benansell/lobo/master/docs/images/lobo-header-and-logo.png" alt="Lobo">
+    <p align="center">elm unit test runner</p>
+</p>
+<p align="center">
+    <a href="https://ci.appveyor.com/project/benansell/lobo/branch/master">
+        <img src="https://ci.appveyor.com/api/projects/status/qc6uaygx48hqn1sh/branch/master?svg=true" alt="Build Status - appveyor">
+    </a>
+    <a href="https://travis-ci.org/benansell/lobo">
+        <img src="https://travis-ci.org/benansell/lobo.svg?branch=master" alt="Build Status - travis">
+    </a>
+</p>
+***
 
-A node package for building and running elm tests
+<p align="center">
+    <img height="750px" src="https://raw.github.com/benansell/lobo/master/docs/images/example-output.png">
+</p>
+***
 
 ## Features
-* Support for [elm-test](http://package.elm-lang.org/packages/elm-community/elm-test/latest) and [lobo-elm-test-extra](http://package.elm-lang.org/packages/benansell/lobo-elm-test-extra/latest) 
+* Support for [elm-test](http://package.elm-lang.org/packages/elm-community/elm-test/latest) and [lobo-elm-test-extra](http://package.elm-lang.![difference highlight](https://raw.github.com/benansell/lobo/failure_diff/docs/images/default-reporter-diff-example.png)
+org/packages/benansell/lobo-elm-test-extra/latest) 
 test frameworks
 * Default console reporter that displays a summary of the test run
 * Watch mode that builds and runs the tests when the source code is 
 updated 
 * Checks elm-package.json in base directory and test directory for 
 missing source directories and packages
+* Friendly error output
+
 
 ## Prerequisites
 The installation guide assumes that you already have the following 
@@ -208,7 +226,12 @@ The following reporters are supported:
 
 ### Default Reporter
 The default reporter displays a summary of the test run followed by
-details of any failures
+details of any failures. When the failure is from an Expect.equal
+assertion it adds a visual hint for the source of the difference:
+
+<p align="center">
+    <img height="125px" src="https://raw.github.com/benansell/lobo/master/docs/images/default-reporter-diff-example.png" alt="difference highlight">
+</p>
  
 The following options are supported by the default reporter:
 * failOnFocus - exit with non zero exit code when there are any focused 
