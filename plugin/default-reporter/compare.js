@@ -66,7 +66,7 @@ function diffValueWithToken(left, right, token) {
 function diffUnion(left, right) {
   var leftUnion = parse(left, ' ');
   var rightUnion = parse(right, ' ');
-  var token = /[{\[("]/;
+  var token = /[{[("]/;
   var i = 0;
   var j = 0;
   var acc = {left: '', right: ''};
