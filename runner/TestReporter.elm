@@ -1,8 +1,8 @@
 module TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 
 import Json.Encode exposing (Value, encode, float, list, null, object, string)
-import Time exposing (Time)
 import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip))
+import Time exposing (Time)
 
 
 -- RESULT TYPE
