@@ -1,6 +1,6 @@
 {
   "name": "lobo",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Elm test runner",
   "keywords": [
     "elm",
