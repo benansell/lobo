@@ -1,13 +1,14 @@
 module ElmTestExtraPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
 
-import TestPlugin as Plugin
-import Json.Decode exposing (Decoder, Value, (:=), decodeValue, int, object2, maybe)
-import Expect as Expect exposing (getFailure)
-import Time exposing (Time)
-import Test.Runner as ElmRunner exposing (Runner(Runnable, Labeled, Batch), fromTest)
-import Random.Pcg exposing (initialSeed)
 import ElmTest.Runner as Extra exposing (Test(Test, Labeled, Batch, Skipped, Focus))
+import Expect as Expect exposing (getFailure)
 import Expect exposing (Expectation)
+import Json.Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
+import Random.Pcg exposing (initialSeed)
+import Test.Runner as ElmRunner exposing (Runner(Runnable, Labeled, Batch), fromTest)
+import TestPlugin as Plugin
+import Time exposing (Time)
+import Tuple
 
 
 type alias TestArgs =
@@ -40,9 +41,9 @@ toArgs args =
 
 decodeArgs : Decoder TestArgs
 decodeArgs =
-    object2 TestArgs
-        (maybe ("seed" := int))
-        (maybe ("runCount" := int))
+    map2 TestArgs
+        (maybe (field "seed" int))
+        (maybe (field "runCount" int))
 
 
 
@@ -68,7 +69,7 @@ findTests test args time =
             }
     in
         findTestItem runner rootTestId False Nothing ( 1, [] )
-            |> snd
+            |> Tuple.second
 
 
 findTestItem : Runner -> Plugin.TestId -> Bool -> Maybe String -> ( Int, List TestItem ) -> ( Int, List TestItem )
@@ -168,7 +169,7 @@ fromTest runs seed test =
         Extra.Batch subTests ->
             subTests
                 |> List.foldl (distributeSeeds runs) ( seed, [] )
-                |> snd
+                |> Tuple.second
                 |> Batch
 
         Extra.Skipped reason subTest ->
@@ -205,18 +206,21 @@ distributeSeeds runs test ( startingSeed, runners ) =
                     List.map (Labeled label) nextRunners
             in
                 ( nextSeed, runners ++ finalRunners )
+
         Extra.Batch tests ->
             let
                 ( nextSeed, nextRunners ) =
                     List.foldl (distributeSeeds runs) ( startingSeed, [] ) tests
             in
                 ( nextSeed, [ Batch (runners ++ nextRunners) ] )
+
         Extra.Skipped reason subTest ->
             let
                 ( nextSeed, nextRunners ) =
                     distributeSeeds runs subTest ( startingSeed, [] )
             in
                 ( nextSeed, runners ++ List.map (\t -> Skipped reason t) nextRunners )
+
         Extra.Focus subTest ->
             let
                 ( nextSeed, nextRunners ) =

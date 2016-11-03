@@ -1,11 +1,12 @@
 module UnitTest exposing (main)
 
-import TestRunner as Runner
 import ElmTestPlugin as ElmTest
 import Json.Decode exposing (Value)
+import TestRunner as Runner
 import Tests exposing (all)
 
-main : Program Value
+
+main : Program Value (Runner.Model ElmTest.TestArgs ElmTest.TestRunner) Runner.Msg
 main =
     Runner.run plugin
 

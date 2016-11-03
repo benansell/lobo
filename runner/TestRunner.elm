@@ -1,19 +1,18 @@
-port module TestRunner exposing (Plugin, run)
+port module TestRunner exposing (Model, Msg, Plugin, run)
 
 import Html exposing (text)
-import Html.App as App
-import Json.Decode as Decode exposing (Decoder, Value, (:=), bool, decodeValue, object1)
-import Time exposing (Time)
+import Json.Decode as Decode exposing (Decoder, Value, bool, decodeValue, field, map)
+import Platform
 import Task exposing (perform)
-import TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Pass, Fail, Ignore, Skip))
+import TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
+import Time exposing (Time)
 
 
-run : Plugin a b -> Program Value
+run : Plugin a b -> Program Value (Model a b) Msg
 run plugin =
-    App.programWithFlags
+    Platform.programWithFlags
         { init = init plugin
-        , view = \_ -> Html.text "Please run with node.js on the command line"
         , update = update
         , subscriptions = subscriptions
         }
@@ -120,16 +119,16 @@ update msg model =
                 testReport =
                     toTestReport testResult time
 
-                model =
+                newModel =
                     { model | reports = testReport :: model.reports }
 
                 next =
                     StartTest |> updateTime
             in
                 if model.runArgs.reportProgress then
-                    ( model, Cmd.batch [ progress (toProgressMessage testReport), next ] )
+                    ( newModel, Cmd.batch [ progress (toProgressMessage testReport), next ] )
                 else
-                    ( model, next )
+                    ( newModel, next )
 
         Finished ->
             let
@@ -144,7 +143,7 @@ update msg model =
 
 updateTime : (Time -> Msg) -> Cmd Msg
 updateTime next =
-    Task.perform (\_ -> Debug.crash "Failed to return time from Time.now") next Time.now
+    Task.perform next Time.now
 
 
 timeThenUpdate : Model args testItem -> (Time -> Msg) -> ( Model args testItem, Cmd Msg )
@@ -253,5 +252,5 @@ toRunArgs value =
 
 runArgsDecoder : Decode.Decoder RunArgs
 runArgsDecoder =
-    Decode.object1 RunArgs
-        ("reportProgress" := Decode.bool)
+    Decode.map RunArgs
+        (field "reportProgress" Decode.bool)

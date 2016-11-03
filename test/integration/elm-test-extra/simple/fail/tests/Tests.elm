@@ -1,8 +1,8 @@
 module Tests exposing (all)
 
+import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 import Expect exposing (atLeast, atMost, equal, fail, false, greaterThan, notEqual, true)
 import Fuzz exposing (string)
-import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 
 
 all : Test

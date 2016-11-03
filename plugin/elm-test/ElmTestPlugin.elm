@@ -1,12 +1,13 @@
 module ElmTestPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
 
-import TestPlugin as Plugin
-import Json.Decode exposing (Decoder, Value, (:=), decodeValue, int, object2, maybe)
 import Expect as Expect exposing (getFailure)
+import Json.Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
+import Random.Pcg exposing (initialSeed)
 import Test as ElmTest exposing (Test)
 import Test.Runner as Runner exposing (Runnable, fromTest, run)
+import TestPlugin as Plugin
 import Time exposing (Time)
-import Random.Pcg exposing (initialSeed)
+import Tuple
 
 
 type alias TestArgs =
@@ -39,9 +40,9 @@ toArgs args =
 
 decodeArgs : Decoder TestArgs
 decodeArgs =
-    object2 TestArgs
-        (maybe ("seed" := int))
-        (maybe ("runCount" := int))
+    map2 TestArgs
+        (maybe (field "seed" int))
+        (maybe (field "runCount" int))
 
 
 
@@ -67,7 +68,7 @@ findTests test args time =
             }
     in
         findTestItem runner rootTestId False Nothing ( 1, [] )
-            |> snd
+            |> Tuple.second
 
 
 findTestItem : Runner.Runner -> Plugin.TestId -> Bool -> Maybe String -> ( Int, List TestItem ) -> ( Int, List TestItem )
