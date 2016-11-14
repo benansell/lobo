@@ -1,6 +1,5 @@
 port module TestRunner exposing (Model, Msg, Plugin, run)
 
-import Html exposing (text)
 import Json.Decode as Decode exposing (Decoder, Value, bool, decodeValue, field, map)
 import Platform
 import Task exposing (perform)

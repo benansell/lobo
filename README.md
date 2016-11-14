@@ -10,12 +10,12 @@
         <img src="https://travis-ci.org/benansell/lobo.svg?branch=master" alt="Build Status - travis">
     </a>
 </p>
-***
+
 
 <p align="center">
     <img height="750px" src="https://raw.github.com/benansell/lobo/master/docs/images/example-output.png">
 </p>
-***
+
 
 ## Features
 * Support for [elm-test](http://package.elm-lang.org/packages/elm-community/elm-test/latest) and [lobo-elm-test-extra](http://package.elm-lang.org/packages/benansell/lobo-elm-test-extra/latest) 
