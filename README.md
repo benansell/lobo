@@ -32,7 +32,7 @@ missing source directories and packages
 The installation guide assumes that you already have the following 
 installed:
 * [npm](https://docs.npmjs.com/)
-* [elm](http://elm-lang.org/install) - v17.1 or greater
+* [elm](http://elm-lang.org/install) - v18.0 or greater
 
 ## Install
 It is recommended to install lobo locally for your application and 
