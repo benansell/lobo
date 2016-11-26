@@ -7,6 +7,7 @@ import FuzzyChildTest exposing (all)
 import SecondChildTest exposing (all)
 import Test exposing (Test, describe, test)
 
+
 all : Test
 all =
     describe "Tests"
@@ -16,6 +17,7 @@ all =
         , SecondChildTest.all
         , FuzzyChildTest.all
         ]
+
 
 passingTest : Test
 passingTest =

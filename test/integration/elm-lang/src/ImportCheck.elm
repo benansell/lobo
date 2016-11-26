@@ -1,6 +1,7 @@
 module ImportCheck exposing (..)
 
 -- Test native polyfills exist for all elm-lang libs
+
 import AnimationFrame
 import Dom
 import Geolocation
@@ -17,4 +18,5 @@ import Window
 
 
 truthy : Bool
-truthy = True
+truthy =
+    True

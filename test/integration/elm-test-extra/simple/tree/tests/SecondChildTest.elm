@@ -5,6 +5,7 @@ import FailingGrandChildTest exposing (all)
 import PassingGrandChildTest exposing (all)
 import ElmTest.Extra exposing (Test, describe, test)
 
+
 all : Test
 all =
     describe "SecondChildTest"
@@ -12,6 +13,7 @@ all =
         , failingTest
         , PassingGrandChildTest.all
         ]
+
 
 failingTest : Test
 failingTest =

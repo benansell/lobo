@@ -5,12 +5,14 @@ import FailingGrandChildTest exposing (all)
 import PassingGrandChildTest exposing (all)
 import Test exposing (Test, concat, test)
 
+
 all : Test
 all =
     concat
         [ failingTest
         , passingTest
         ]
+
 
 failingTest : Test
 failingTest =

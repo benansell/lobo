@@ -11,6 +11,6 @@ all =
         [ fuzz (list int) "SortedListLength" <|
             \xs ->
                 List.sort xs
-                |> List.length
-                |> Expect.equal (List.length xs)
+                    |> List.length
+                    |> Expect.equal (List.length xs)
         ]

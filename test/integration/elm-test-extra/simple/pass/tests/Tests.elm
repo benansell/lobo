@@ -7,5 +7,5 @@ import ElmTest.Extra exposing (Test, test)
 all : Test
 all =
     test "passingTest" <|
-            \() ->
-                Expect.pass
+        \() ->
+            Expect.pass
