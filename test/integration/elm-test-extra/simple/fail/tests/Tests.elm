@@ -1,8 +1,10 @@
 module Tests exposing (all)
 
+import Dict
 import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 import Expect exposing (atLeast, atMost, equal, fail, false, greaterThan, notEqual, true)
 import Fuzz exposing (string)
+import Set
 
 
 all : Test
@@ -19,6 +21,7 @@ all =
         , testExpectEqualFloatNaN
         , testExpectEqualFloatInfinite
         , testExpectEqualList
+        , testExpectEqualTuple
         , testExpectEqualRecord
         , testExpectEqualTypeUnion
         , testExpectEqualUnionDifferentRecords
@@ -29,9 +32,13 @@ all =
         , testExpectGreaterThan
         , testExpectAtLeast
         , testExpectAtMost
+        , testExpectEqualLists
+        , testExpectEqualDicts
+        , testExpectEqualSets
         , testFuzz
         , testFuzzWith
         , testFuzz2
+        , testMultiLine
         ]
 
 
@@ -114,6 +121,13 @@ testExpectEqualList =
             Expect.equal [ 1, 2, 3 ] [ 1, 3, 2 ]
 
 
+testExpectEqualTuple : Test
+testExpectEqualTuple =
+    test "Expect.equal Tuple test" <|
+        \() ->
+            Expect.equal ( 1, "foo" ) ( 1, "bar" )
+
+
 testExpectEqualRecord : Test
 testExpectEqualRecord =
     test "Expect.equal record test mixed order" <|
@@ -193,6 +207,27 @@ testExpectAtMost =
             Expect.atMost 3 12
 
 
+testExpectEqualLists : Test
+testExpectEqualLists =
+    test "Expect.equalLists test" <|
+        \() ->
+            Expect.equalLists [ 1, 2, 3 ] [ 1, 5, 3, 4 ]
+
+
+testExpectEqualDicts : Test
+testExpectEqualDicts =
+    test "Expect.equalDicts test" <|
+        \() ->
+            Expect.equalDicts (Dict.fromList [ ( 1, "one" ), ( 2, "two" ), ( 3, "three" ) ]) (Dict.fromList [ ( 1, "one" ), ( 5, "five" ), ( 3, "three" ), ( 4, "four" ) ])
+
+
+testExpectEqualSets : Test
+testExpectEqualSets =
+    test "Expect.equalSets test" <|
+        \() ->
+            Expect.equalSets (Set.fromList [ 1, 2, 3 ]) (Set.fromList [ 1, 5, 3, 4 ])
+
+
 testFuzz : Test
 testFuzz =
     fuzz string "fuzz test" <|
@@ -214,3 +249,30 @@ testFuzz2 =
     fuzz2 string string "fuzz2 test" <|
         \left right ->
             Expect.equal left right
+
+
+type alias Todo =
+    { outstanding : List TodoItem
+    , archived : List TodoItem
+    , active : Maybe Bool
+    }
+
+
+type alias TodoItem =
+    { id : Int
+    , name : String
+    , description : String
+    , status : TodoItemStatus
+    }
+
+
+type TodoItemStatus
+    = NotStarted
+    | Done
+
+
+testMultiLine : Test
+testMultiLine =
+    test "multiline record test" <|
+        \() ->
+            Expect.equal ({ outstanding = [ { id = 1, name = "foo", description = "read a book", status = NotStarted }, { id = 2, name = "bar", description = "sleep", status = NotStarted } ], archived = [ { id = 3, name = "baz", description = "watch tv", status = NotStarted } ], active = Nothing }) ({ outstanding = [ { id = 1, name = "foo", description = "read a book", status = Done }, { id = 4, name = "baz", description = "sleep!", status = Done } ], archived = [], active = Just True })

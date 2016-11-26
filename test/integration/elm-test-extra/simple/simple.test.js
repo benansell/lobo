@@ -50,7 +50,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(0, 24, 0);
+      reporterExpect(result).summaryCounts(0, 29, 0);
       expect(result.code).to.equal(1);
     });
 

@@ -216,6 +216,14 @@ function formatFailure(message, maxLength) {
 
   var lines = message.split('\n');
 
+  // remove diff lines
+  var diffRegex = /diff.*:.+(-|\+).+(-|\+)/;
+
+  if (lines.length === 7 && diffRegex.test(lines[1]) && diffRegex.test(lines[5])) {
+    lines.splice(5, 1);
+    lines.splice(1, 1);
+  }
+
   if (lines.length !== 5) {
     return message;
   }

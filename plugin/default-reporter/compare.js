@@ -53,8 +53,7 @@ function diffValueWithToken(left, right, token) {
     value = diff(l, r);
   }
 
-  var spacerOnTokenDiff = token === '"' ? ' ' : '^';
-  var spacer = left === l && right === r ? ' ' : spacerOnTokenDiff;
+  var spacer = ' ';
   var leftSpacer = left === l ? '' : spacer;
   var rightSpacer = right === r ? '' : spacer;
   value.left = leftSpacer + value.left + leftSpacer;
