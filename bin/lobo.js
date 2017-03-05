@@ -154,6 +154,7 @@ function configure() {
     .option('--compiler <value>', 'path to compiler')
     .option('--debug', 'disables auto-cleanup of temp files')
     .option('--framework <value>', 'name of the testing framework to use', 'elm-test-extra')
+    .option('--noInstall', 'prevents lobo from running elm-package install')
     .option('--noUpdate', 'prevents lobo updating the test elm-package.json')
     .option('--noWarn', 'hides elm make build warnings')
     .option('--prompt <value>', 'default the answer to any questions', /^(y[es])|(n[o])$/i, 'yes')
@@ -192,6 +193,7 @@ function configure() {
     config.prompt = program.prompt.toLowerCase()[0] === 'y';
   }
 
+  config.noInstall = program.noInstall === true;
   config.noUpdate = program.noUpdate === true;
   config.noWarn = program.noWarn === true;
   config.reportProgress = true;

@@ -154,6 +154,10 @@ use elm-test use the following:
 ```
 lobo --framework=elm-test
 ```
+### --noInstall
+Prevents lobo from trying to run elm-package when running the tests.
+This can be useful when using lobo without an internet connection.
+
 ### --noUpdate
 Prevents lobo from trying to update the elm-package.json file in tests 
 directory. The default is to try and sync the elm-package.json files 
