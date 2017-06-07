@@ -3,7 +3,7 @@ port module TestRunner exposing (Model, Msg, Plugin, run)
 import Json.Decode as Decode exposing (Decoder, Value, bool, decodeValue, field, map)
 import Platform
 import Task exposing (perform)
-import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Pass, Fail, Ignore, Skip))
+import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Pass, Fail, Ignore, Skip), TestRunType(Normal, Focusing, Skipping))
 import TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 import Time exposing (Time)
 
@@ -156,32 +156,33 @@ queueTests plugin args time =
         tests =
             plugin.findTests args.pluginArgs time
 
-        focusTests =
-            List.partition .focus tests
+        partitionedTests =
+            List.partition (\t -> t.runType == Focusing) tests
     in
-        case focusTests of
+        case partitionedTests of
             ( x :: xs, ys ) ->
                 ( x :: xs, List.map (ignoreTest time) ys )
 
             ( [], ys ) ->
-                let
-                    skipped =
-                        List.filterMap (skipTest time) ys
-
-                    tests =
-                        List.filterMap (nonSkipTest time) ys
-                in
-                    ( tests, skipped )
+                List.foldl (\t -> testItemToQueuedTest time t) ( [], [] ) ys
 
 
-hasSkipReason : TestItem a -> Bool
-hasSkipReason testItem =
-    case testItem.skipReason of
-        Nothing ->
-            False
+testItemToQueuedTest : Time -> TestItem b -> ( List (TestItem b), List TestReport ) -> ( List (TestItem b), List TestReport )
+testItemToQueuedTest time testItem ( queue, reports ) =
+    case testItem.runType of
+        Normal ->
+            ( testItem :: queue, reports )
 
-        Just _ ->
-            True
+        Focusing ->
+            ( testItem :: queue, reports )
+
+        Skipping maybeReason ->
+            case maybeReason of
+                Nothing ->
+                    ( testItem :: queue, reports )
+
+                Just reason ->
+                    ( queue, (skipTest time testItem.id reason) :: reports )
 
 
 ignoreTest : Time -> TestItem a -> TestReport
@@ -195,32 +196,13 @@ ignoreTest time testItem =
         toTestReport result time
 
 
-nonSkipTest : Time -> TestItem a -> Maybe (TestItem a)
-nonSkipTest time testItem =
-    case testItem.skipReason of
-        Nothing ->
-            Just testItem
-
-        Just _ ->
-            Nothing
-
-
-skipTest : Time -> TestItem a -> Maybe TestReport
-skipTest time testItem =
-    case testItem.skipReason of
-        Nothing ->
-            Nothing
-
-        Just reason ->
-            let
-                result =
-                    Skip
-                        { id = testItem.id
-                        , reason = reason
-                        }
-            in
-                toTestReport result time
-                    |> Just
+skipTest : Time -> TestId -> String -> TestReport
+skipTest time testId reason =
+    let
+        result =
+            Skip { id = testId, reason = reason }
+    in
+        toTestReport result time
 
 
 

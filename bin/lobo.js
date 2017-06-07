@@ -87,11 +87,6 @@ function done(config) {
 
 function watch(config) {
   var paths = ['./elm-package.json'];
-
-  // paths.push(__dirname);
-  // paths.push(path.normalize(__dirname + '/../lib'));
-  // paths.push(path.normalize(__dirname + '/../plugin/default-reporter'));
-
   var testElmPackage = builder.readElmPackageJson(path.join(program.testDirectory, 'elm-package.json'));
 
   if (testElmPackage && testElmPackage['source-directories']) {
@@ -150,7 +145,7 @@ function configure() {
   });
 
   program
-    .version('0.0.1')
+    .version('0.2.0')
     .option('--compiler <value>', 'path to compiler')
     .option('--debug', 'disables auto-cleanup of temp files')
     .option('--framework <value>', 'name of the testing framework to use', 'elm-test-extra')
@@ -259,6 +254,15 @@ function validateConfiguration() {
     logger.info('You can override the default location ("./tests") by running:');
     logger.info('lobo --testDirectory [directory containing Tests.elm]');
     exit = true;
+  }
+
+  if(program.framework === 'elm-test') {
+    if(program.showSkipped) {
+      logger.error('');
+      logger.error('Invalid configuration combination');
+      logger.error('--showSkipped is only available with the default test framework (elm-test-extra)');
+      exit = true;
+    }
   }
 
   if (exit === true) {

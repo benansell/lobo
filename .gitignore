@@ -11,6 +11,9 @@ npm-debug.log
 # elm
 elm-stuff
 
+# elm-test-extra
+plugin/elm-test-extra/ElmTest/
+
 # tests
 coverage
 test/**/tests/elm-package.json

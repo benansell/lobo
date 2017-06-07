@@ -2,31 +2,31 @@ module Tests exposing (all)
 
 import Expect exposing (pass)
 import Fuzz exposing (int, list)
-import ElmTest.Extra exposing (Test, describe, focus, fuzz, skip, test)
+import ElmTest.Extra exposing (Test, describe, only, fuzz, skip, test)
 
 
 all : Test
 all =
-    describe "focusTestSuite"
-        [ focusTest
-        , focusSuiteContainingSkipped
+    describe "onlyTestSuite"
+        [ onlyTest
+        , onlySuiteContainingSkipped
         , passingTest
-        , focusFuzzTest
+        , onlyFuzzTest
         ]
 
 
-focusTest : Test
-focusTest =
-    focus <|
-        test "focusTest" <|
+onlyTest : Test
+onlyTest =
+    only <|
+        test "onlyTest" <|
             \() ->
                 Expect.pass
 
 
-focusSuiteContainingSkipped : Test
-focusSuiteContainingSkipped =
-    focus <|
-        describe "focusSuite"
+onlySuiteContainingSkipped : Test
+onlySuiteContainingSkipped =
+    only <|
+        describe "onlySuite"
             [ normalTest
             , skippedTest
             ]
@@ -54,12 +54,12 @@ passingTest =
             Expect.fail "Never runs"
 
 
-focusFuzzTest : Test
-focusFuzzTest =
-    focus <|
-        fuzz (list int) "focusFuzzTest" <|
+onlyFuzzTest : Test
+onlyFuzzTest =
+    only <|
+        fuzz (list int) "onlyFuzzTest" <|
             \xs ->
                 List.sort xs
                     |> List.length
                     |> Expect.equal (List.length xs)
-                    |> Debug.log "focusFuzzTest"
+                    |> Debug.log "onlyFuzzTest"

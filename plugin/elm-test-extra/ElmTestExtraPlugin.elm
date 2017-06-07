@@ -1,11 +1,9 @@
 module ElmTestExtraPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
 
-import ElmTest.Runner as Extra exposing (Test(Test, Labeled, Batch, Skipped, Focus))
-import Expect as Expect exposing (getFailure)
-import Expect exposing (Expectation)
+import ElmTest.Runner as Extra exposing (Test(Test, Labeled, Batch, Only, Skipped, Todo))
 import Json.Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
 import Random.Pcg exposing (initialSeed)
-import Test.Runner as ElmRunner exposing (Runner(Runnable, Labeled, Batch), fromTest)
+import Test.Runner as ElmTestRunner exposing (Runner, SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailure)
 import TestPlugin as Plugin
 import Time exposing (Time)
 import Tuple
@@ -17,8 +15,9 @@ type alias TestArgs =
     }
 
 
-type alias TestRunner =
-    ElmRunner.Runnable
+type TestRunner
+    = ValidRunner ElmTestRunner.Runner
+    | InvalidRunner String
 
 
 type alias TestItem =
@@ -68,15 +67,15 @@ findTests test args time =
             , parents = []
             }
     in
-        findTestItem runner rootTestId False Nothing ( 1, [] )
+        findTestItem runner rootTestId Plugin.Normal ( 1, [] )
             |> Tuple.second
 
 
-findTestItem : Runner -> Plugin.TestId -> Bool -> Maybe String -> ( Int, List TestItem ) -> ( Int, List TestItem )
-findTestItem runner testId focus skipReason ( next, queue ) =
+findTestItem : ExtraRunner -> Plugin.TestId -> Plugin.TestRunType -> ( Int, List TestItem ) -> ( Int, List TestItem )
+findTestItem runner testId runType ( next, queue ) =
     case runner of
         Runnable runnable ->
-            ( next, { id = testId, test = runnable, focus = focus, skipReason = skipReason } :: queue )
+            ( next, { id = testId, test = runnable, runType = runType } :: queue )
 
         Labeled label runner ->
             let
@@ -85,21 +84,24 @@ findTestItem runner testId focus skipReason ( next, queue ) =
                     , parents = testId.current :: testId.parents
                     }
             in
-                findTestItem runner newTestId focus skipReason ( next + 1, queue )
+                findTestItem runner newTestId runType ( next + 1, queue )
 
         Batch runners ->
-            List.foldl (\r nq -> findTestItem r testId focus skipReason nq) ( next, queue ) runners
+            List.foldl (\r nq -> findTestItem r testId runType nq) ( next, queue ) runners
 
         Skipped reason runner ->
-            findTestItem runner testId False (Just reason) ( next, queue )
+            findTestItem runner testId (Plugin.Skipping (Just reason)) ( next, queue )
 
-        Focus runner ->
-            case skipReason of
-                Nothing ->
-                    findTestItem runner testId True skipReason ( next, queue )
+        Only runner ->
+            case runType of
+                Plugin.Normal ->
+                    findTestItem runner testId Plugin.Focusing ( next, queue )
 
-                Just reason ->
-                    findTestItem runner testId False skipReason ( next, queue )
+                Plugin.Focusing ->
+                    findTestItem runner testId runType ( next, queue )
+
+                Plugin.Skipping _ ->
+                    findTestItem runner testId runType ( next, queue )
 
 
 
@@ -108,20 +110,34 @@ findTestItem runner testId focus skipReason ( next, queue ) =
 
 runTest : TestItem -> Time -> Plugin.TestResult
 runTest testItem time =
+    case testItem.test of
+        ValidRunner runner ->
+            runValidTest testItem.id runner time
+
+        InvalidRunner reason ->
+            Plugin.Skip
+                { id = testItem.id
+                , reason = reason
+                }
+
+
+runValidTest : Plugin.TestId -> ElmTestRunner.Runner -> Time -> Plugin.TestResult
+runValidTest testId runner time =
     let
         messages =
-            ElmRunner.run testItem.test
-                |> List.map Expect.getFailure
+            runner.run ()
+                |> List.map ElmTestRunner.getFailure
                 |> List.filterMap identity
     in
         if List.isEmpty messages then
             Plugin.Pass
-                { id = testItem.id
+                { id = testId
                 , startTime = time
+                , runType = Plugin.Normal
                 }
         else
             Plugin.Fail
-                { id = testItem.id
+                { id = testId
                 , startTime = time
                 , messages = messages
                 }
@@ -131,34 +147,50 @@ runTest testItem time =
 -- ELM TEST
 
 
-type Runner
-    = Runnable ElmRunner.Runnable
-    | Labeled String Runner
-    | Batch (List Runner)
-    | Skipped String Runner
-    | Focus Runner
+type ExtraRunner
+    = Runnable TestRunner
+    | Labeled String ExtraRunner
+    | Batch (List ExtraRunner)
+    | Skipped String ExtraRunner
+    | Only ExtraRunner
 
 
-toRunner : ElmRunner.Runner -> Runner
+toRunner : ElmTestRunner.SeededRunners -> ExtraRunner
 toRunner runner =
-    case runner of
-        ElmRunner.Runnable runnable ->
-            Runnable runnable
+    let
+        processRunners =
+            (\rs -> Batch <| List.map toExtraRunner rs)
+    in
+        case runner of
+            ElmTestRunner.Plain runners ->
+                processRunners runners
 
-        ElmRunner.Labeled label runner ->
-            toRunner runner
-                |> Labeled label
+            ElmTestRunner.Only runners ->
+                processRunners runners
 
-        ElmRunner.Batch subRunners ->
-            List.map toRunner subRunners
-                |> Batch
+            ElmTestRunner.Skipping runners ->
+                processRunners runners
+
+            ElmTestRunner.Invalid reason ->
+                Runnable (InvalidRunner reason)
 
 
-fromTest : Int -> Random.Pcg.Seed -> Extra.Test -> Runner
+toExtraRunner : ElmTestRunner.Runner -> ExtraRunner
+toExtraRunner runner =
+    let
+        label =
+            String.concat runner.labels
+    in
+        ValidRunner runner
+            |> Runnable
+            |> Labeled label
+
+
+fromTest : Int -> Random.Pcg.Seed -> Extra.Test -> ExtraRunner
 fromTest runs seed test =
     case test of
         Extra.Test test ->
-            ElmRunner.fromTest runs seed test
+            ElmTestRunner.fromTest runs seed test
                 |> toRunner
 
         Extra.Labeled label subTest ->
@@ -177,13 +209,16 @@ fromTest runs seed test =
                 |> fromTest runs seed
                 |> Skipped reason
 
-        Extra.Focus subTest ->
+        Extra.Only subTest ->
             subTest
                 |> fromTest runs seed
-                |> Focus
+                |> Only
+
+        Extra.Todo reason ->
+            Runnable (InvalidRunner reason)
 
 
-distributeSeeds : Int -> Extra.Test -> ( Random.Pcg.Seed, List Runner ) -> ( Random.Pcg.Seed, List Runner )
+distributeSeeds : Int -> Extra.Test -> ( Random.Pcg.Seed, List ExtraRunner ) -> ( Random.Pcg.Seed, List ExtraRunner )
 distributeSeeds runs test ( startingSeed, runners ) =
     case test of
         Extra.Test subTest ->
@@ -192,7 +227,7 @@ distributeSeeds runs test ( startingSeed, runners ) =
                     Random.Pcg.step Random.Pcg.independentSeed startingSeed
 
                 runner =
-                    ElmRunner.fromTest runs seed subTest
+                    ElmTestRunner.fromTest runs seed subTest
                         |> toRunner
             in
                 ( nextSeed, runners ++ [ runner ] )
@@ -221,9 +256,12 @@ distributeSeeds runs test ( startingSeed, runners ) =
             in
                 ( nextSeed, runners ++ List.map (\t -> Skipped reason t) nextRunners )
 
-        Extra.Focus subTest ->
+        Extra.Only subTest ->
             let
                 ( nextSeed, nextRunners ) =
                     distributeSeeds runs subTest ( startingSeed, [] )
             in
-                ( nextSeed, runners ++ List.map (\t -> Focus t) nextRunners )
+                ( nextSeed, runners ++ List.map (\t -> Only t) nextRunners )
+
+        Extra.Todo reason ->
+            ( startingSeed, runners ++ [ Runnable (InvalidRunner reason) ] )

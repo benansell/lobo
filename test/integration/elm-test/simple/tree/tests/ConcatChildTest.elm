@@ -1,8 +1,6 @@
 module ConcatChildTest exposing (all)
 
 import Expect exposing (pass)
-import FailingGrandChildTest exposing (all)
-import PassingGrandChildTest exposing (all)
 import Test exposing (Test, concat, test)
 
 

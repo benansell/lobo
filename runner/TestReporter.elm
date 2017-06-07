@@ -1,7 +1,7 @@
 module TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 
 import Json.Encode exposing (Value, encode, float, list, null, object, string)
-import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip))
+import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRunType(Normal, Focusing, Skipping))
 import Time exposing (Time)
 
 
@@ -13,6 +13,7 @@ type alias ResultType =
     , failed : String
     , skipped : String
     , ignored : String
+    , todo : String
     }
 
 
@@ -22,6 +23,7 @@ resultType =
     , ignored = "IGNORED"
     , passed = "PASSED"
     , skipped = "SKIPPED"
+    , todo = "TODO"
     }
 
 
@@ -34,6 +36,7 @@ type TestReport
     | TestIgnore IgnoreReport
     | TestPass PassReport
     | TestSkip SkipReport
+    | TestTodo TodoReport
 
 
 type alias FailReport =
@@ -53,12 +56,19 @@ type alias PassReport =
     { id : TestId
     , startTime : Time
     , endTime : Time
+    , runType : Maybe String
     }
 
 
 type alias SkipReport =
     { id : TestId
     , reason : String
+    }
+
+
+type alias TodoReport =
+    { id : TestId
+    , messages : List FailureMessage
     }
 
 
@@ -83,6 +93,7 @@ toTestReport testResult endTime =
                 { id = result.id
                 , startTime = result.startTime
                 , endTime = endTime
+                , runType = toRunType result.runType
                 }
 
         Skip result ->
@@ -90,6 +101,25 @@ toTestReport testResult endTime =
                 { id = result.id
                 , reason = result.reason
                 }
+
+        Todo result ->
+            TestTodo
+                { id = result.id
+                , messages = result.messages
+                }
+
+
+toRunType : TestRunType -> Maybe String
+toRunType runType =
+    case runType of
+        Normal ->
+            Nothing
+
+        Focusing ->
+            Just "INCOMPLETE-FOCUS"
+
+        Skipping _ ->
+            Just "INCOMPLETE-SKIP"
 
 
 toProgressMessage : TestReport -> String
@@ -107,6 +137,9 @@ toProgressMessage testReport =
         TestSkip _ ->
             resultType.skipped
 
+        TestTodo _ ->
+            resultType.todo
+
 
 
 -- TEST REPORT NODE
@@ -118,6 +151,7 @@ type TestReportNode
     | Passed PassedLeaf
     | Skipped SkippedLeaf
     | Suite SuiteNode
+    | Todoed TodoLeaf
 
 
 type alias FailedLeaf =
@@ -140,6 +174,7 @@ type alias PassedLeaf =
     , label : String
     , startTime : Time
     , endTime : Time
+    , runType : Maybe String
     }
 
 
@@ -156,6 +191,13 @@ type alias SuiteNode =
     , reports : List TestReportNode
     , startTime : Maybe Time
     , endTime : Maybe Time
+    }
+
+
+type alias TodoLeaf =
+    { id : Int
+    , label : String
+    , messages : List FailureMessage
     }
 
 
@@ -197,6 +239,9 @@ toTestReportNodeList node =
 
         Suite suiteNode ->
             suiteNode.reports
+
+        Todoed _ ->
+            [ node.report ]
 
 
 attachNode : List DetachedNode -> Maybe DetachedNode
@@ -295,6 +340,7 @@ toDetachedNode testReport =
                     , label = report.id.current.label
                     , startTime = report.startTime
                     , endTime = report.endTime
+                    , runType = report.runType
                     }
             }
 
@@ -305,6 +351,16 @@ toDetachedNode testReport =
                     { id = report.id.current.uniqueId
                     , label = report.id.current.label
                     , reason = report.reason
+                    }
+            }
+
+        TestTodo report ->
+            { id = report.id
+            , report =
+                Todoed
+                    { id = report.id.current.uniqueId
+                    , label = report.id.current.label
+                    , messages = report.messages
                     }
             }
 
@@ -335,6 +391,20 @@ attachChild child parent =
 
         Skipped _ ->
             Debug.crash "Impossible to attach a child to a skipped test"
+
+        Todoed node ->
+            let
+                todoNode =
+                    { node | label = List.map (\x -> x.message) node.messages |> String.concat }
+            in
+                Suite
+                    { id = node.id
+                    , label = node.label
+                    , reports = Todoed todoNode :: []
+                    , startTime = Nothing
+                    , endTime = Nothing
+                    }
+                    |> attachChild child
 
         Suite node ->
             let
@@ -388,6 +458,9 @@ extractStartTime result =
         Suite report ->
             report.startTime
 
+        Todoed report ->
+            Nothing
+
 
 extractEndTime : TestReportNode -> Maybe Time
 extractEndTime result =
@@ -406,6 +479,9 @@ extractEndTime result =
 
         Suite report ->
             report.endTime
+
+        Todoed report ->
+            Nothing
 
 
 
@@ -442,6 +518,9 @@ encodeTestReportNode reportTree =
         Suite report ->
             encodeSuiteNode report
 
+        Todoed report ->
+            encodeTodoLeaf report
+
 
 encodeFailedLeaf : FailedLeaf -> Value
 encodeFailedLeaf leaf =
@@ -451,14 +530,6 @@ encodeFailedLeaf leaf =
         , ( "resultMessages", list (List.map encodeFailureMessage leaf.messages) )
         , ( "startTime", float leaf.startTime )
         , ( "endTime", float leaf.endTime )
-        ]
-
-
-encodeFailureMessage : FailureMessage -> Value
-encodeFailureMessage failureMessage =
-    object
-        [ ( "given", string failureMessage.given )
-        , ( "message", string failureMessage.message )
         ]
 
 
@@ -472,12 +543,20 @@ encodeIgnoredLeaf leaf =
 
 encodePassedLeaf : PassedLeaf -> Value
 encodePassedLeaf leaf =
-    object
-        [ ( "label", string leaf.label )
-        , ( "resultType", string resultType.passed )
-        , ( "startTime", float leaf.startTime )
-        , ( "endTime", float leaf.endTime )
-        ]
+    let
+        info =
+            [ ( "label", string leaf.label )
+            , ( "resultType", string resultType.passed )
+            , ( "startTime", float leaf.startTime )
+            , ( "endTime", float leaf.endTime )
+            ]
+    in
+        case leaf.runType of
+            Nothing ->
+                object info
+
+            Just rt ->
+                object <| ( "runType", string rt ) :: info
 
 
 encodeSkippedLeaf : SkippedLeaf -> Value
@@ -497,6 +576,36 @@ encodeSuiteNode report =
         , ( "startTime", encodeMaybeTime report.startTime )
         , ( "endTime", encodeMaybeTime report.endTime )
         ]
+
+
+encodeTodoLeaf : TodoLeaf -> Value
+encodeTodoLeaf leaf =
+    object
+        [ ( "label", string leaf.label )
+        , ( "resultType", string resultType.todo )
+        ]
+
+
+encodeFailureMessage : FailureMessage -> Value
+encodeFailureMessage failureMessage =
+    let
+        messages =
+            [ ( "message", string failureMessage.message ) ]
+    in
+        case failureMessage.given of
+            Nothing ->
+                object messages
+
+            Just givenMessage ->
+                ( "given", encodeMaybeString failureMessage.given )
+                    :: messages
+                    |> object
+
+
+encodeMaybeString : Maybe String -> Value
+encodeMaybeString value =
+    Maybe.map string value
+        |> Maybe.withDefault null
 
 
 encodeMaybeTime : Maybe Float -> Value

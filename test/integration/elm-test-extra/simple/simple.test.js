@@ -29,7 +29,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(1, 0, 0);
+      reporterExpect(result).summaryCounts(1, 0, null, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -50,7 +50,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(0, 29, 0);
+      reporterExpect(result).summaryCounts(0, 32, null, 0);
       expect(result.code).to.equal(1);
     });
 
@@ -109,7 +109,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(4, 0, 0);
+      reporterExpect(result).summaryCounts(4, 0, null, 0);
       expect(result.code).to.equal(0);
     });
 
@@ -122,7 +122,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(4, 0, 0);
+      reporterExpect(result).summaryCounts(4, 0, null, 0);
       reporterExpect(result).summaryArgument('runCount', expectedRunCount);
 
       expect(result.stdout.match(/fuzzingTest-Executed/g).length).to.equal(expectedRunCount);
@@ -144,7 +144,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(4, 0, 0);
+      reporterExpect(result).summaryCounts(4, 0, null, 0);
       reporterExpect(result).summaryArgument('seed', initialSeed);
       expect(result.code).to.equal(0);
     });
@@ -166,7 +166,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(1, 0, 0);
+      reporterExpect(result).summaryCounts(1, 0, null, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -187,16 +187,16 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(5, 2, 0);
+      reporterExpect(result).summaryCounts(5, 2, null, 0);
       expect(result.stdout).to.matches(/Tests(.|\n)+SecondChildTest\n.+failingTest - Child/);
       expect(result.stdout).to.matches(/Tests(.|\n)+FailingGrandChildTest\n.+failingTest - GrandChild/);
       expect(result.code).to.equal(1);
     });
   });
 
-  describe('focus', function() {
+  describe('only', function() {
     beforeEach(function() {
-      runner.contextPush(testContext, 'focus');
+      runner.contextPush(testContext, 'only');
       runner.clean();
     });
 
@@ -211,7 +211,7 @@ describe('elm-test-extra-simple', function() {
       // assert
       reporterExpect(result).summaryFocused();
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(3, 0, 0, 2);
+      reporterExpect(result).summaryCounts(3, 0, null, 0, 2);
       expect(result.code).to.equal(0);
     });
   });
@@ -232,7 +232,7 @@ describe('elm-test-extra-simple', function() {
 
       // assert
       reporterExpect(result).summaryInconclusive();
-      reporterExpect(result).summaryCounts(1, 0, 4);
+      reporterExpect(result).summaryCounts(1, 0, null, 4);
       expect(result.code).to.equal(0);
     });
   });

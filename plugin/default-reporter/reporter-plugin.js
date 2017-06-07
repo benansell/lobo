@@ -9,10 +9,12 @@ var util = require('../../lib/util');
 var passedStyle = chalk.green;
 var failedStyle = chalk.red;
 var givenStyle = chalk.yellow;
-var skippedStyle = chalk.yellow.dim;
-var ignoredStyle = program.failOnFocus ? failedStyle : skippedStyle;
+var inconclusiveStyle = chalk.yellow.dim;
 var headerStyle = chalk.bold;
 var labelStyle = chalk.dim;
+var onlyStyle = undefined;
+var skipStyle = undefined;
+var todoStyle = undefined;
 var initArgs;
 
 function runArgs(args) {
@@ -20,7 +22,11 @@ function runArgs(args) {
 }
 
 function init(testCount) {
-  // ignore
+  // ignore testCount
+
+  onlyStyle = program.failOnOnly ? failedStyle : inconclusiveStyle;
+  skipStyle = program.failOnSkip ? failedStyle : inconclusiveStyle;
+  todoStyle = program.failOnTodo ? failedStyle : inconclusiveStyle;
 }
 
 function update(result) {
@@ -33,7 +39,9 @@ function update(result) {
   } else if (result === 'FAILED') {
     process.stdout.write(chalk.red('!'));
   } else if (result === 'SKIPPED') {
-    process.stdout.write(chalk.yellow('?'));
+    process.stdout.write(skipStyle('?'));
+  } else if (result === 'TODO') {
+    process.stdout.write(todoStyle('-'));
   } else {
     process.stdout.write(' ');
   }
@@ -42,38 +50,62 @@ function update(result) {
 function finish(results) {
   var summary = summarizeResults(results);
 
+  var failState = {
+    only: toFailState(program.failOnOnly, summary.onlyCount > 0 || summary.runType === 'INCOMPLETE-FOCUS'),
+    skip: toFailState(program.failOnSkip, summary.skippedCount > 0 || summary.runType === 'INCOMPLETE-SKIP'),
+    todo: toFailState(program.failOnTodo, summary.todoCount > 0)
+  };
+
   if (program.quiet) {
     paddedLog('');
-    logSummaryHeader(summary);
+    logSummaryHeader(summary, failState);
     paddedLog('');
     return;
   }
 
   paddedLog('');
-  logSummary(summary);
+  logSummary(summary, failState);
   paddedLog('');
   logNonPassed(summary);
   paddedLog('');
 
-  if (!program.failOnFocus) {
-    return summary.failedCount === 0;
+  if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
+    return false;
   }
 
-  return summary.failedCount + summary.ignoredCount === 0;
+  return summary.failedCount === 0;
 }
 
-function logSummary(summary) {
+function toFailState(flag, exists) {
+  var state = {
+    isFailOn: flag === true,
+    exists: exists,
+    isFailure: flag && exists
+  };
+
+  return state;
+}
+
+function logSummary(summary, failState) {
   console.log('');
   console.log('==================================== Summary ===================================');
 
-  logSummaryHeader(summary);
+  logSummaryHeader(summary, failState);
 
   paddedLog(passedStyle('Passed:   ' + summary.passedCount));
   paddedLog(failedStyle('Failed:   ' + summary.failedCount));
-  paddedLog(skippedStyle('Skipped:  ' + summary.skippedCount));
 
-  if (summary.ignoredCount > 0) {
-    paddedLog(ignoredStyle('Ignored:  ' + summary.ignoredCount));
+  if(summary.todoCount > 0) {
+    paddedLog(todoStyle('Todo:  ' + summary.todoCount));
+  }
+
+  if(program.framework !== 'elm-test') {
+    // full run details not available when using elm-test
+    paddedLog(skipStyle('Skipped:  ' + summary.skippedCount));
+
+    if (summary.onlyCount > 0) {
+      paddedLog(onlyStyle('Ignored:  ' + summary.onlyCount));
+    }
   }
 
   if (summary.startDateTime && summary.endDateTime) {
@@ -91,17 +123,23 @@ function logSummary(summary) {
   console.log('================================================================================');
 }
 
-function logSummaryHeader(summary) {
-  var focused = summary.ignoredCount > 0 ? 'FOCUSED ' : '';
+function logSummaryHeader(summary, failState) {
+  var prefix;
+
+  if(summary.runType) {
+    prefix = 'PARTIAL ';
+  } else {
+    prefix = summary.onlyCount > 0 ? 'FOCUSED ' : '';
+  }
 
   if (summary.failedCount > 0) {
-    paddedLog(headerStyle(failedStyle(focused + 'TEST RUN FAILED')));
-  } else if (summary.skippedCount > 0) {
-    paddedLog(headerStyle(skippedStyle(focused + 'TEST RUN INCONCLUSIVE')));
-  } else if (program.failOnFocus) {
-    paddedLog(headerStyle(failedStyle(focused + 'TEST RUN FAILED')));
+    paddedLog(headerStyle(failedStyle(prefix + 'TEST RUN FAILED')));
+  } else if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
+    paddedLog(headerStyle(failedStyle(prefix + 'TEST RUN FAILED')));
+  } else if (failState.skip.exists || failState.todo.exists) {
+    paddedLog(headerStyle(inconclusiveStyle(prefix + 'TEST RUN INCONCLUSIVE')));
   } else {
-    paddedLog(headerStyle(passedStyle(focused + 'TEST RUN PASSED')));
+    paddedLog(headerStyle(passedStyle(prefix + 'TEST RUN PASSED')));
   }
 }
 
@@ -132,6 +170,10 @@ function logNonPassed(summary) {
     itemList = itemList.concat(summary.skipped);
   }
 
+  if (program.showTodo) {
+    itemList = itemList.concat(summary.todo);
+  }
+
   var sortedItemList = sortItemsByLabel(itemList);
   var padding = '    ';
   var context = [];
@@ -139,12 +181,21 @@ function logNonPassed(summary) {
 
   while (sortedItemList.length > 0) {
     var item = sortedItemList.pop();
-    var isSkipped = item.result.resultType === 'SKIPPED';
-    var style = isSkipped ? skippedStyle : failedStyle;
+    var isNotRun = false;
+    var style = failedStyle;
+
+    if(item.result.resultType === 'SKIPPED') {
+      isNotRun = true;
+      style = skipStyle;
+    } else if(item.result.resultType === 'TODO') {
+      isNotRun = true;
+      style = todoStyle;
+    }
+
     context = logLabels(item.labels, item.result.label, index, context, style);
 
-    if (isSkipped) {
-      logSkippedMessage(item, padding);
+    if (isNotRun) {
+      logNotRunMessage(item, padding);
     } else {
       logFailureMessage(item, padding);
     }
@@ -203,7 +254,7 @@ function logFailureMessage(item, padding) {
   });
 }
 
-function logSkippedMessage(item, padding) {
+function logNotRunMessage(item, padding) {
   paddedLog('');
   paddedLog(formatMessage(item.result.reason, padding));
   paddedLog('');
@@ -217,11 +268,10 @@ function formatFailure(message, maxLength) {
   var lines = message.split('\n');
 
   // remove diff lines
-  var diffRegex = /diff.*:.+(-|\+).+(-|\+)/;
+  var diffRegex = /Expect.equal(Dicts|Lists|Sets)/;
 
-  if (lines.length === 7 && diffRegex.test(lines[1]) && diffRegex.test(lines[5])) {
-    lines.splice(5, 1);
-    lines.splice(1, 1);
+  if (lines.length > 5 && diffRegex.test(lines[2])) {
+    lines.splice(5, lines.length - 5);
   }
 
   if (lines.length !== 5) {
@@ -238,7 +288,9 @@ function formatFailure(message, maxLength) {
     lines[2] = lines[2].replace(expectMessage, chalk.yellow(expectMessage));
   }
 
-  if (lines[2].indexOf('│ ' + chalk.yellow('Expect.equal')) !== -1) {
+  var expectEqualRegex = /Expect.equal(Dicts|Lists|Sets)*/;
+
+  if (expectEqualRegex.test(lines[2])) {
     lines = formatExpectEqualFailure(lines, maxLength);
   }
 
@@ -300,9 +352,12 @@ function summarizeResults(results) {
     passedCount: 0,
     failedCount: 0,
     skippedCount: 0,
-    ignoredCount: 0,
+    onlyCount: 0,
+    todoCount: 0,
+    runType: undefined,
     failures: [],
-    skipped: []
+    skipped: [],
+    todo: []
   };
 
   var minResult = _.minBy(results, function(r) {
@@ -332,13 +387,17 @@ function processResults(results, summary, labels) {
   }
 
   _.forEach(results, function(r) {
+    if(r.runType) {
+      summary.runType = r.runType;
+    }
+
     switch (r.resultType) {
       case 'FAILED':
         summary.failedCount += 1;
         summary.failures.push({labels: _.clone(labels), result: r});
         break;
       case 'IGNORED':
-        summary.ignoredCount += 1;
+        summary.onlyCount += 1;
         break;
       case 'PASSED':
         summary.passedCount += 1;
@@ -346,6 +405,10 @@ function processResults(results, summary, labels) {
       case 'SKIPPED':
         summary.skippedCount += 1;
         summary.skipped.push({labels: _.clone(labels), result: r});
+        break;
+      case 'TODO':
+        summary.todoCount += 1;
+        summary.todo.push({labels: _.clone(labels), result: r});
         break;
       default:
         var newLabels = _.clone(labels);

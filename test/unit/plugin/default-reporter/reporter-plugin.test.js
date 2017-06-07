@@ -30,6 +30,8 @@ describe('plugin default-reporter reporter-plugin', function() {
       output = '';
       original = process.stdout.write;
       process.stdout.write = write;
+
+      reporter.init(0);
     });
 
     afterEach(function() {
@@ -57,7 +59,7 @@ describe('plugin default-reporter reporter-plugin', function() {
       reporter.update('SKIPPED');
 
       // assert
-      expect(output).to.equal(chalk.yellow('?'));
+      expect(output).to.equal(chalk.yellow.dim('?'));
     });
 
     it('should report " " when a test has unknown result', function() {

@@ -94,7 +94,8 @@ all =
 
 The following elm-test functions are not available in elm-test-extra:
 * concat -> instead use `describe`
-* filter -> instead use `skip`
+
+Note: the use of skip in lobo requires a reason to be specified
 
 ## Typical Workflow
 Assuming your application follows the recommended directory structure 
@@ -209,7 +210,7 @@ The following test frameworks are supported:
 
 ### elm-test-extra
 elm-test-extra is the default framework, it is similar to elm-test with
-additions for focusing and skipping tests.
+additions for running test.
 
 The following options are supported elm-test-extra:
 * runCount - run count for fuzz tests; defaults to 100 
@@ -237,9 +238,16 @@ assertion it adds a visual hint for the source of the difference:
 </p>
  
 The following options are supported by the default reporter:
-* failOnFocus - exit with non zero exit code when there are any focused 
+* failOnOnly - exit with non zero exit code when there are any only
 tests
-* showSkipped - report skipped tests and the reasons after the summary.
+* failOnSkip - exit with non zero exit code when there are any skip
+tests
+* failOnTodo - exit with non zero exit code when there are any todo
+tests
+* showSkip - report skipped tests and the reasons after the summary.
+This option is only available with elm-test-extra and is ignored when
+the quiet option is present
+* showTodo - report skipped tests and the reasons after the summary.
 This option is ignored when the quiet option is present
 
 ## Troubleshooting
