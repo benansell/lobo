@@ -18,6 +18,7 @@ type alias TestArgs =
 type TestRunner
     = ValidRunner ElmTestRunner.Runner
     | InvalidRunner String
+    | TodoRunner String
 
 
 type alias TestItem =
@@ -103,6 +104,15 @@ findTestItem runner testId runType ( next, queue ) =
                 Plugin.Skipping _ ->
                     findTestItem runner testId runType ( next, queue )
 
+        Todo reason ->
+            let
+                newTestId =
+                    { current = { uniqueId = next, label = reason }
+                    , parents = testId.current :: testId.parents
+                    }
+            in
+                ( next + 1, { id = newTestId, test = TodoRunner reason, runType = runType } :: queue )
+
 
 
 -- RUN
@@ -118,6 +128,12 @@ runTest testItem time =
             Plugin.Skip
                 { id = testItem.id
                 , reason = reason
+                }
+
+        TodoRunner reason ->
+            Plugin.Todo
+                { id = testItem.id
+                , messages = [ { given = Nothing, message = reason } ]
                 }
 
 
@@ -153,6 +169,7 @@ type ExtraRunner
     | Batch (List ExtraRunner)
     | Skipped String ExtraRunner
     | Only ExtraRunner
+    | Todo String
 
 
 toRunner : ElmTestRunner.SeededRunners -> ExtraRunner
@@ -215,7 +232,8 @@ fromTest runs seed test =
                 |> Only
 
         Extra.Todo reason ->
-            Runnable (InvalidRunner reason)
+            TodoRunner reason
+                |> Runnable
 
 
 distributeSeeds : Int -> Extra.Test -> ( Random.Pcg.Seed, List ExtraRunner ) -> ( Random.Pcg.Seed, List ExtraRunner )
@@ -264,4 +282,4 @@ distributeSeeds runs test ( startingSeed, runners ) =
                 ( nextSeed, runners ++ List.map (\t -> Only t) nextRunners )
 
         Extra.Todo reason ->
-            ( startingSeed, runners ++ [ Runnable (InvalidRunner reason) ] )
+            ( startingSeed, runners ++ [ Todo reason ] )

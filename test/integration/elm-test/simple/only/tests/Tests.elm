@@ -2,7 +2,7 @@ module Tests exposing (all)
 
 import Expect exposing (pass)
 import Fuzz exposing (int, list)
-import Test exposing (Test, describe, fuzz, only, skip, test)
+import Test exposing (Test, describe, fuzz, only, skip, test, todo)
 
 
 all : Test
@@ -12,6 +12,7 @@ all =
         , onlySuiteContainingSkipped
         , passingTest
         , onlyFuzzTest
+        , todoTest
         ]
 
 
@@ -63,3 +64,8 @@ onlyFuzzTest =
                     |> List.length
                     |> Expect.equal (List.length xs)
                     |> Debug.log "onlyFuzzTest"
+
+
+todoTest : Test
+todoTest =
+    todo "todoTest"

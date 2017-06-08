@@ -101,7 +101,10 @@ function logSummary(summary, failState) {
 
   if(program.framework !== 'elm-test') {
     // full run details not available when using elm-test
-    paddedLog(skipStyle('Skipped:  ' + summary.skippedCount));
+
+    if(summary.skippedCount > 0) {
+      paddedLog(skipStyle('Skipped:  ' + summary.skippedCount));
+    }
 
     if (summary.onlyCount > 0) {
       paddedLog(onlyStyle('Ignored:  ' + summary.onlyCount));

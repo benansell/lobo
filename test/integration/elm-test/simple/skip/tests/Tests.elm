@@ -2,7 +2,7 @@ module Tests exposing (all)
 
 import Expect exposing (pass)
 import Fuzz exposing (int, list)
-import Test exposing (Test, describe, fuzz, only, skip, test)
+import Test exposing (Test, describe, fuzz, only, skip, test, todo)
 
 
 all : Test
@@ -12,6 +12,7 @@ all =
         , skippedSuiteContainingFocus
         , passingTest
         , skipFuzzTest
+        , skipTodoTest
         ]
 
 
@@ -60,3 +61,8 @@ skipFuzzTest =
         fuzz (list int) "focusFuzzTest" <|
             \xs ->
                 Expect.fail "Never runs"
+
+
+skipTodoTest : Test
+skipTodoTest =
+    skip <| todo "todoTest"
