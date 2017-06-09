@@ -59,7 +59,7 @@ describe('plugin default-reporter reporter-plugin', function() {
       reporter.update('SKIPPED');
 
       // assert
-      expect(output).to.equal(chalk.yellow.dim('?'));
+      expect(output).to.equal(chalk.yellow('?'));
     });
 
     it('should report " " when a test has unknown result', function() {
