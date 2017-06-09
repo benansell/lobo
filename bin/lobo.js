@@ -257,10 +257,10 @@ function validateConfiguration() {
   }
 
   if(program.framework === 'elm-test') {
-    if(program.showSkipped) {
+    if(program.showSkip) {
       logger.error('');
       logger.error('Invalid configuration combination');
-      logger.error('--showSkipped is only available with the default test framework (elm-test-extra)');
+      logger.error('--showSkip is only available with the default test framework (elm-test-extra)');
       exit = true;
     }
   }

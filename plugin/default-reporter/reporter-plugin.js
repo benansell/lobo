@@ -9,7 +9,7 @@ var util = require('../../lib/util');
 var passedStyle = chalk.green;
 var failedStyle = chalk.red;
 var givenStyle = chalk.yellow;
-var inconclusiveStyle = chalk.yellow.dim;
+var inconclusiveStyle = chalk.yellow;
 var headerStyle = chalk.bold;
 var labelStyle = chalk.dim;
 var onlyStyle = undefined;
@@ -169,7 +169,7 @@ function sortItemsByLabel(item) {
 function logNonPassed(summary) {
   var itemList = _.clone(summary.failures);
 
-  if (program.showSkipped) {
+  if (program.showSkip) {
     itemList = itemList.concat(summary.skipped);
   }
 
