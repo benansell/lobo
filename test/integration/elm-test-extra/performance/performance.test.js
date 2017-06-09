@@ -29,7 +29,7 @@ describe('elm-test-extra-performance', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(1000, 0, 0);
+      reporterExpect(result).summaryCounts(1000, 0);
       expect(result.code).to.equal(0);
     });
   });

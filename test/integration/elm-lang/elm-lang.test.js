@@ -24,7 +24,7 @@ describe('elm-lang', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(1, 0, 0);
+      reporterExpect(result).summaryCounts(1, 0);
       expect(result.code).to.equal(0);
     });
   });

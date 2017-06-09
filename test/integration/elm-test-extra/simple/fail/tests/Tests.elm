@@ -13,6 +13,7 @@ all =
         [ testExpectFail
         , testExpectTrue
         , testExpectFalse
+        , testExpectErr
         , testExpectEqualStringShort
         , testExpectEqualStringLong
         , testExpectEqualFloat
@@ -28,6 +29,8 @@ all =
         , testExpectEqualUnionDifferentRecordsNoCommonField
         , testExpectEqualUnionDifferentRecordsCommonField
         , testExpectNotEqual
+        , testExpectAllEmptyList
+        , testExpectAllFirstFails
         , testExpectLessThan
         , testExpectGreaterThan
         , testExpectAtLeast
@@ -64,6 +67,13 @@ testExpectFalse =
             True
                 |> Expect.false "Expected false"
 
+testExpectErr : Test
+testExpectErr =
+    test "Expect.err test" <|
+        \() ->
+            String.toInt "123"
+                |> Expect.err
+
 
 testExpectEqualStringShort : Test
 testExpectEqualStringShort =
@@ -74,7 +84,7 @@ testExpectEqualStringShort =
 
 testExpectEqualStringLong : Test
 testExpectEqualStringLong =
-    test "Expect.equal string test" <|
+    test "Expect.equal string long test" <|
         \() ->
             Expect.equal "Plan steps for world domination with tail in the air dream about hunting birds or lounge in doorway so chew foot. Chase red laser dot. Hola te quiero kick up litter or sit on human thinking longingly about tuna brine howl on top of tall thing. When in doubt, wash eat and than sleep on your face, claws in your leg stare at ceiling light yet cats making all the muffins" "Plan steps for world domination with tail in the air dream about hunting mouse or lounge in doorway so chew foot. Watch red laser dot. Hola te quiero kick up litter or sit on human thinking longingly about tuna brine howl on top of tall thing. When in doubt, wash eat and than sleep on your face, claws in your leg stare at ceiling light yet cats making all the muffins"
 
@@ -88,28 +98,28 @@ testExpectEqualFloat =
 
 testExpectEqualFloatNegative : Test
 testExpectEqualFloatNegative =
-    test "Expect.equal float test" <|
+    test "Expect.equal float test - negative and positive" <|
         \() ->
             Expect.equal -123.456 132.466
 
 
 testExpectEqualFloatExponent : Test
 testExpectEqualFloatExponent =
-    test "Expect.equal float test" <|
+    test "Expect.equal float test - exponential" <|
         \() ->
             Expect.equal 1.234e122 123
 
 
 testExpectEqualFloatNaN : Test
 testExpectEqualFloatNaN =
-    test "Expect.equal float test" <|
+    test "Expect.equal float test - NaN" <|
         \() ->
             Expect.equal 123 (sqrt -1)
 
 
 testExpectEqualFloatInfinite : Test
 testExpectEqualFloatInfinite =
-    test "Expect.equal float test" <|
+    test "Expect.equal float test - infinite" <|
         \() ->
             Expect.equal 123 (1 / 0)
 
@@ -178,6 +188,18 @@ testExpectNotEqual =
         \() ->
             Expect.notEqual "foobar" "foobar"
 
+
+testExpectAllEmptyList : Test
+testExpectAllEmptyList =
+     test "Expect.all empty test" <|
+        \() ->
+            Expect.all [] (List.length [])
+
+testExpectAllFirstFails : Test
+testExpectAllFirstFails =
+     test "Expect.all first fails test" <|
+        \() ->
+            Expect.all [Expect.equal 123, Expect.equal 456] (456)
 
 testExpectLessThan : Test
 testExpectLessThan =

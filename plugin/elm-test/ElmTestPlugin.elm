@@ -1,13 +1,12 @@
 module ElmTestPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
 
-import Expect as Expect exposing (getFailure)
+import Dict
 import Json.Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
 import Random.Pcg exposing (initialSeed)
 import Test as ElmTest exposing (Test)
-import Test.Runner as Runner exposing (Runnable, fromTest, run)
+import Test.Runner as ElmTestRunner exposing (SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailure, isTodo)
 import TestPlugin as Plugin
 import Time exposing (Time)
-import Tuple
 
 
 type alias TestArgs =
@@ -16,8 +15,9 @@ type alias TestArgs =
     }
 
 
-type alias TestRunner =
-    Runner.Runnable
+type TestRunner
+    = ValidRunner ElmTestRunner.Runner
+    | InvalidRunner String
 
 
 type alias TestItem =
@@ -49,6 +49,13 @@ decodeArgs =
 -- QUEUE
 
 
+type alias TestIdentifierContext =
+    { next : Int
+    , lookup : Dict.Dict (List String) Plugin.TestIdentifier
+    , testId : Plugin.TestId
+    }
+
+
 findTests : ElmTest.Test -> TestArgs -> Time -> List TestItem
 findTests test args time =
     let
@@ -59,35 +66,98 @@ findTests test args time =
             Maybe.withDefault (round time) args.initialSeed
                 |> Random.Pcg.initialSeed
 
-        runner =
-            Runner.fromTest runCount seed test
+        runners =
+            ElmTestRunner.fromTest runCount seed test
 
         rootTestId =
             { current = { uniqueId = 0, label = "root" }
             , parents = []
             }
+
+        context =
+            { next = 1, lookup = Dict.empty, testId = rootTestId }
     in
-        findTestItem runner rootTestId False Nothing ( 1, [] )
-            |> Tuple.second
+        toTestItems context runners
 
 
-findTestItem : Runner.Runner -> Plugin.TestId -> Bool -> Maybe String -> ( Int, List TestItem ) -> ( Int, List TestItem )
-findTestItem runner testId focus skipReason ( next, queue ) =
-    case runner of
-        Runner.Runnable runnable ->
-            ( next, { id = testId, test = runnable, focus = focus, skipReason = skipReason } :: queue )
+toTestItems : TestIdentifierContext -> ElmTestRunner.SeededRunners -> List TestItem
+toTestItems context seededRunners =
+    let
+        initial =
+            ( context, [] )
+    in
+        case seededRunners of
+            Plain runners ->
+                List.foldl (\r acc -> toValidTestItem r Plugin.Normal acc) initial runners |> Tuple.second
 
-        Runner.Labeled label runner ->
+            Only runners ->
+                List.foldl (\r acc -> toValidTestItem r Plugin.Focusing acc) initial runners |> Tuple.second
+
+            Skipping runners ->
+                List.foldl (\r acc -> toValidTestItem r (Plugin.Skipping Nothing) acc) initial runners |> Tuple.second
+
+            Invalid reason ->
+                toInvalidTestItem reason initial |> Tuple.second
+
+
+toValidTestItem : ElmTestRunner.Runner -> Plugin.TestRunType -> ( TestIdentifierContext, List TestItem ) -> ( TestIdentifierContext, List TestItem )
+toValidTestItem runner runType ( context, tests ) =
+    let
+        ( newContext, newTestId ) =
+            toTestId runner.labels context
+    in
+        ( newContext, { id = newTestId, test = ValidRunner runner, runType = runType } :: tests )
+
+
+toInvalidTestItem : String -> ( TestIdentifierContext, List TestItem ) -> ( TestIdentifierContext, List TestItem )
+toInvalidTestItem reason ( context, tests ) =
+    let
+        ( newContext, newTestId ) =
+            toTestId [] context
+    in
+        ( newContext
+        , { id = newTestId, test = InvalidRunner reason, runType = Plugin.Normal } :: tests
+        )
+
+
+toTestId : List String -> TestIdentifierContext -> ( TestIdentifierContext, Plugin.TestId )
+toTestId labels context =
+    let
+        ( newContext, _, id ) =
+            List.foldr (\l ( c, ls, id ) -> buildTestId l ls id c) ( context, [], context.testId ) labels
+    in
+        ( newContext, id )
+
+
+buildTestId : String -> List String -> Plugin.TestId -> TestIdentifierContext -> ( TestIdentifierContext, List String, Plugin.TestId )
+buildTestId label labels testId context =
+    let
+        ( newContext, id ) =
+            buildTestIdentifier label labels context
+    in
+        ( newContext
+        , label :: labels
+        , { current = id, parents = testId.current :: testId.parents }
+        )
+
+
+buildTestIdentifier : String -> List String -> TestIdentifierContext -> ( TestIdentifierContext, Plugin.TestIdentifier )
+buildTestIdentifier label labels context =
+    case Dict.get (label :: labels) context.lookup of
+        Just identifier ->
+            ( context, identifier )
+
+        Nothing ->
             let
-                newTestId =
-                    { current = { uniqueId = next, label = label }
-                    , parents = testId.current :: testId.parents
-                    }
+                identifier =
+                    { uniqueId = context.next, label = label }
             in
-                findTestItem runner newTestId focus skipReason ( next + 1, queue )
-
-        Runner.Batch runners ->
-            List.foldl (\r nq -> findTestItem r testId focus skipReason nq) ( next, queue ) runners
+                ( { next = context.next + 1
+                  , lookup = Dict.insert (label :: labels) identifier context.lookup
+                  , testId = context.testId
+                  }
+                , identifier
+                )
 
 
 
@@ -96,20 +166,49 @@ findTestItem runner testId focus skipReason ( next, queue ) =
 
 runTest : TestItem -> Time -> Plugin.TestResult
 runTest testItem time =
+    case testItem.test of
+        ValidRunner runner ->
+            runValidTest testItem.id testItem.runType runner time
+
+        InvalidRunner reason ->
+            Plugin.Skip
+                { id = testItem.id
+                , reason = reason
+                }
+
+
+runValidTest : Plugin.TestId -> Plugin.TestRunType -> ElmTestRunner.Runner -> Time -> Plugin.TestResult
+runValidTest testId runType runner time =
     let
-        messages =
-            Runner.run testItem.test
-                |> List.map Expect.getFailure
+        partitionedTests =
+            runner.run ()
+                |> List.partition (\e -> ElmTestRunner.isTodo e)
+
+        todoMessages =
+            Tuple.first partitionedTests
+                |> List.map ElmTestRunner.getFailure
+                |> List.filterMap identity
+
+        failedMessages =
+            Tuple.second partitionedTests
+                |> List.map ElmTestRunner.getFailure
                 |> List.filterMap identity
     in
-        if List.isEmpty messages then
-            Plugin.Pass
-                { id = testItem.id
-                , startTime = time
-                }
+        if List.isEmpty (Tuple.first partitionedTests) then
+            if List.isEmpty failedMessages then
+                Plugin.Pass
+                    { id = testId
+                    , startTime = time
+                    , runType = runType
+                    }
+            else
+                Plugin.Fail
+                    { id = testId
+                    , startTime = time
+                    , messages = failedMessages
+                    }
         else
-            Plugin.Fail
-                { id = testItem.id
-                , startTime = time
-                , messages = messages
+            Plugin.Todo
+                { id = testId
+                , messages = todoMessages
                 }

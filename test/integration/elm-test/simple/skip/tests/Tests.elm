@@ -2,7 +2,7 @@ module Tests exposing (all)
 
 import Expect exposing (pass)
 import Fuzz exposing (int, list)
-import ElmTest.Extra exposing (Test, describe, fuzz, only, skip, test, todo)
+import Test exposing (Test, describe, fuzz, only, skip, test, todo)
 
 
 all : Test
@@ -18,7 +18,7 @@ all =
 
 skippedTest : Test
 skippedTest =
-    skip "ignore test" <|
+    skip <|
         test "skippedTest" <|
             \() ->
                 Expect.fail "Never runs"
@@ -26,10 +26,10 @@ skippedTest =
 
 skippedSuiteContainingFocus : Test
 skippedSuiteContainingFocus =
-    skip "ignore suite" <|
+    skip <|
         describe "skippedSuite"
             [ normalTest
-            , onlyTest
+            , focusTest
             ]
 
 
@@ -40,10 +40,10 @@ normalTest =
             Expect.fail "Never runs"
 
 
-onlyTest : Test
-onlyTest =
+focusTest : Test
+focusTest =
     only <|
-        test "onlyTest" <|
+        test "focusTest" <|
             \() ->
                 Expect.fail "Never runs"
 
@@ -57,7 +57,7 @@ passingTest =
 
 skipFuzzTest : Test
 skipFuzzTest =
-    skip "ignore test" <|
+    skip <|
         fuzz (list int) "focusFuzzTest" <|
             \xs ->
                 Expect.fail "Never runs"
@@ -65,4 +65,4 @@ skipFuzzTest =
 
 skipTodoTest : Test
 skipTodoTest =
-    skip "skip todo test" <| todo "todoTest"
+    skip <| todo "todoTest"

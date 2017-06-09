@@ -30,6 +30,8 @@ describe('plugin default-reporter reporter-plugin', function() {
       output = '';
       original = process.stdout.write;
       process.stdout.write = write;
+
+      reporter.init(0);
     });
 
     afterEach(function() {

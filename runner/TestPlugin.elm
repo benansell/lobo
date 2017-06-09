@@ -1,4 +1,4 @@
-module TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip))
+module TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRunType(Normal, Focusing, Skipping))
 
 import Time exposing (Time)
 
@@ -9,7 +9,7 @@ type alias Args a =
 
 
 type alias FailureMessage =
-    { given : String
+    { given : Maybe String
     , message : String
     }
 
@@ -26,11 +26,16 @@ type alias TestIdentifier =
     }
 
 
+type TestRunType
+    = Normal
+    | Focusing
+    | Skipping (Maybe String)
+
+
 type alias TestItem a =
     { id : TestId
     , test : a
-    , focus : Bool
-    , skipReason : Maybe String
+    , runType : TestRunType
     }
 
 
@@ -39,6 +44,7 @@ type TestResult
     | Ignore IgnoreResult
     | Pass PassResult
     | Skip SkipResult
+    | Todo TodoResult
 
 
 type alias FailResult =
@@ -55,6 +61,7 @@ type alias IgnoreResult =
 
 type alias PassResult =
     { id : TestId
+    , runType : TestRunType
     , startTime : Time
     }
 
@@ -62,4 +69,10 @@ type alias PassResult =
 type alias SkipResult =
     { id : TestId
     , reason : String
+    }
+
+
+type alias TodoResult =
+    { id : TestId
+    , messages : List FailureMessage
     }

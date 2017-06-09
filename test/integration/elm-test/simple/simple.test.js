@@ -29,7 +29,7 @@ describe('elm-test-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(1, 0, 0);
+      reporterExpect(result).summaryCounts(1, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -50,7 +50,7 @@ describe('elm-test-simple', function() {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(0, 29, 0);
+      reporterExpect(result).summaryCounts(0, 31);
       expect(result.code).to.equal(1);
     });
 
@@ -109,7 +109,7 @@ describe('elm-test-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(4, 0, 0);
+      reporterExpect(result).summaryCounts(4, 0);
       expect(result.code).to.equal(0);
     });
 
@@ -122,7 +122,7 @@ describe('elm-test-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(4, 0, 0);
+      reporterExpect(result).summaryCounts(4, 0);
       reporterExpect(result).summaryArgument('runCount', expectedRunCount);
 
       expect(result.stdout.match(/fuzzingTest-Executed/g).length).to.equal(expectedRunCount);
@@ -144,7 +144,7 @@ describe('elm-test-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(4, 0, 0);
+      reporterExpect(result).summaryCounts(4, 0);
       reporterExpect(result).summaryArgument('seed', initialSeed);
       expect(result.code).to.equal(0);
     });
@@ -166,7 +166,7 @@ describe('elm-test-simple', function() {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(1, 0, 0);
+      reporterExpect(result).summaryCounts(1, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -187,11 +187,76 @@ describe('elm-test-simple', function() {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(6, 3, 0);
+      reporterExpect(result).summaryCounts(6, 3);
       expect(result.stdout).to.matches(/Tests\n.+failingTest - Concat/);
       expect(result.stdout).to.matches(/Tests(.|\n)+SecondChildTest\n.+failingTest - Child/);
       expect(result.stdout).to.matches(/Tests(.|\n)+FailingGrandChildTest\n.+failingTest - GrandChild/);
       expect(result.code).to.equal(1);
+    });
+  });
+
+  describe('only', function() {
+    beforeEach(function() {
+      runner.contextPush(testContext, 'only');
+      runner.clean();
+    });
+
+    afterEach(function() {
+      runner.contextPop(testContext);
+    });
+
+    it('should report only passed', function() {
+      // act
+      var result = runner.run(testContext, 'elm-test', '--runCount=5');
+
+      // assert
+      reporterExpect(result).summaryPartial();
+      reporterExpect(result).summaryPassed();
+      reporterExpect(result).summaryCounts(3, 0);
+      expect(result.code).to.equal(0);
+    });
+  });
+
+  describe('skip', function() {
+    beforeEach(function() {
+      runner.contextPush(testContext, 'skip');
+      runner.clean();
+    });
+
+    afterEach(function() {
+      runner.contextPop(testContext);
+    });
+
+    it('should report inconclusive', function() {
+      // act
+      var result = runner.run(testContext, 'elm-test');
+
+      // assert
+      reporterExpect(result).summaryPartial();
+      reporterExpect(result).summaryInconclusive();
+      reporterExpect(result).summaryCounts(1, 0);
+      expect(result.code).to.equal(0);
+    });
+  });
+
+  describe('todo', function() {
+    beforeEach(function() {
+      runner.contextPush(testContext, 'todo');
+      runner.clean();
+    });
+
+    afterEach(function() {
+      runner.contextPop(testContext);
+    });
+
+    it('should report inconclusive', function() {
+      // act
+      var result = runner.run(testContext, 'elm-test');
+
+      // assert
+      reporterExpect(result).summaryInconclusive();
+      reporterExpect(result).summaryCounts(1, 0, 1);
+      expect(result.code).to.equal(0);
     });
   });
 });
