@@ -13,6 +13,7 @@ var shelljs = require('shelljs');
 var tmp = require('tmp');
 
 var builder = require('../lib/builder');
+var packageJson = require('../package.json');
 var runner = require('../lib/runner');
 var util = require('../lib/util');
 
@@ -145,7 +146,7 @@ function configure() {
   });
 
   program
-    .version('0.2.0')
+    .version(packageJson.version)
     .option('--compiler <value>', 'path to compiler')
     .option('--debug', 'disables auto-cleanup of temp files')
     .option('--framework <value>', 'name of the testing framework to use', 'elm-test-extra')
