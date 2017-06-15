@@ -51,8 +51,8 @@ function finish(results) {
   var summary = summarizeResults(results);
 
   var failState = {
-    only: toFailState(program.failOnOnly, summary.onlyCount > 0 || summary.runType === 'INCOMPLETE-FOCUS'),
-    skip: toFailState(program.failOnSkip, summary.skippedCount > 0 || summary.runType === 'INCOMPLETE-SKIP'),
+    only: toFailState(program.failOnOnly, summary.onlyCount > 0 || summary.runType === 'FOCUS'),
+    skip: toFailState(program.failOnSkip, summary.skippedCount > 0 || summary.runType === 'SKIP'),
     todo: toFailState(program.failOnTodo, summary.todoCount > 0)
   };
 
@@ -129,7 +129,7 @@ function logSummary(summary, failState) {
 function logSummaryHeader(summary, failState) {
   var prefix;
 
-  if(summary.runType) {
+  if(summary.runType !== 'NORMAL') {
     prefix = 'PARTIAL ';
   } else {
     prefix = summary.onlyCount > 0 ? 'FOCUSED ' : '';
@@ -350,36 +350,29 @@ function formatMessage(rawMessage, padding) {
   return padding + rawMessage.replace(/(\n)+/g, '\n' + padding);
 }
 
-function summarizeResults(results) {
+function summarizeResults(runResult) {
   var summary = {
+    config: runResult.config,
     passedCount: 0,
     failedCount: 0,
     skippedCount: 0,
     onlyCount: 0,
     todoCount: 0,
-    runType: undefined,
+    runType: runResult.runType,
     failures: [],
     skipped: [],
     todo: []
   };
 
-  var minResult = _.minBy(results, function(r) {
-    return r.startTime;
-  });
-
-  if (minResult) {
-    summary.startDateTime = new Date(minResult.startTime);
+  if (runResult.startTime) {
+    summary.startDateTime = new Date(runResult.startTime);
   }
 
-  var maxResult = _.maxBy(results, function(r) {
-    return r.endTime;
-  });
-
-  if (maxResult) {
-    summary.endDateTime = new Date(maxResult.endTime);
+  if (runResult.endTime) {
+    summary.endDateTime = new Date(runResult.endTime);
   }
 
-  processResults(results, summary, []);
+  processResults(runResult.results, summary, []);
 
   return summary;
 }
@@ -390,10 +383,6 @@ function processResults(results, summary, labels) {
   }
 
   _.forEach(results, function(r) {
-    if(r.runType) {
-      summary.runType = r.runType;
-    }
-
     switch (r.resultType) {
       case 'FAILED':
         summary.failedCount += 1;

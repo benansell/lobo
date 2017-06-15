@@ -1,7 +1,8 @@
-module ElmTestPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
+module ElmTestPlugin exposing (TestArgs, TestRunner, findTests, runTest, toArgs)
 
 import Dict
-import Json.Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
+import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
+import Json.Encode as Encode exposing (Value, int, object, string)
 import Random.Pcg exposing (initialSeed)
 import Test as ElmTest exposing (Test)
 import Test.Runner as ElmTestRunner exposing (SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailure, isTodo)
@@ -24,11 +25,15 @@ type alias TestItem =
     Plugin.TestItem TestRunner
 
 
+type alias TestRun =
+    Plugin.TestRun TestRunner
+
+
 
 -- INIT
 
 
-toArgs : Value -> TestArgs
+toArgs : Decode.Value -> TestArgs
 toArgs args =
     case (decodeValue decodeArgs args) of
         Ok value ->
@@ -38,11 +43,11 @@ toArgs args =
             Debug.crash "Invalid args"
 
 
-decodeArgs : Decoder TestArgs
+decodeArgs : Decode.Decoder TestArgs
 decodeArgs =
-    map2 TestArgs
-        (maybe (field "seed" int))
-        (maybe (field "runCount" int))
+    Decode.map2 TestArgs
+        (Decode.maybe (Decode.field "seed" Decode.int))
+        (Decode.maybe (Decode.field "runCount" Decode.int))
 
 
 
@@ -56,15 +61,20 @@ type alias TestIdentifierContext =
     }
 
 
-findTests : ElmTest.Test -> TestArgs -> Time -> List TestItem
+findTests : ElmTest.Test -> TestArgs -> Time -> TestRun
 findTests test args time =
     let
         runCount =
             Maybe.withDefault 100 args.runCount
 
-        seed =
+        initialSeed =
             Maybe.withDefault (round time) args.initialSeed
-                |> Random.Pcg.initialSeed
+
+        seed =
+            Random.Pcg.initialSeed initialSeed
+
+        config =
+            encodeConfig runCount initialSeed
 
         runners =
             ElmTestRunner.fromTest runCount seed test
@@ -77,7 +87,7 @@ findTests test args time =
         context =
             { next = 1, lookup = Dict.empty, testId = rootTestId }
     in
-        toTestItems context runners
+        { config = config, tests = toTestItems context runners }
 
 
 toTestItems : TestIdentifierContext -> ElmTestRunner.SeededRunners -> List TestItem
@@ -198,12 +208,13 @@ runValidTest testId runType runner time =
             if List.isEmpty failedMessages then
                 Plugin.Pass
                     { id = testId
-                    , startTime = time
                     , runType = runType
+                    , startTime = time
                     }
             else
                 Plugin.Fail
                     { id = testId
+                    , runType = runType
                     , startTime = time
                     , messages = failedMessages
                     }
@@ -212,3 +223,16 @@ runValidTest testId runType runner time =
                 { id = testId
                 , messages = todoMessages
                 }
+
+
+
+-- REPORT
+
+
+encodeConfig : Int -> Int -> Encode.Value
+encodeConfig runCount initialSeed =
+    Encode.object
+        [ ( "framework", Encode.string "elm-test" )
+        , ( "initialSeed", Encode.int initialSeed )
+        , ( "runCount", Encode.int runCount )
+        ]

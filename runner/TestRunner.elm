@@ -1,14 +1,15 @@
 port module TestRunner exposing (Model, Msg, Plugin, run)
 
 import Json.Decode as Decode exposing (Decoder, Value, bool, decodeValue, field, map)
+import Json.Encode as Encode exposing (Value, null)
 import Platform
 import Task exposing (perform)
-import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Pass, Fail, Ignore, Skip), TestRunType(Normal, Focusing, Skipping))
+import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Pass, Fail, Ignore, Skip), TestRun, TestRunType(Focusing, Normal, Skipping))
 import TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 import Time exposing (Time)
 
 
-run : Plugin a b -> Program Value (Model a b) Msg
+run : Plugin a b -> Program Decode.Value (Model a b) Msg
 run plugin =
     Platform.programWithFlags
         { init = init plugin
@@ -24,6 +25,7 @@ run plugin =
 type alias Model a b =
     { args : Args a
     , runArgs : RunArgs
+    , runConfig : Encode.Value
     , plugin : Plugin a b
     , queue : List (TestItem b)
     , reports : List TestReport
@@ -36,16 +38,23 @@ type alias RunArgs =
 
 
 type alias Plugin a b =
-    { findTests : a -> Time -> List (TestItem b)
+    { findTests : a -> Time -> TestRun b
     , runTest : TestItem b -> Time -> TestResult
-    , toArgs : Value -> a
+    , toArgs : Decode.Value -> a
     }
 
 
-init : Plugin a b -> Value -> ( Model a b, Cmd Msg )
+type alias RunQueue b =
+    { queue : List (TestItem b)
+    , reports : List TestReport
+    }
+
+
+init : Plugin a b -> Decode.Value -> ( Model a b, Cmd Msg )
 init plugin rawArgs =
     ( { args = { pluginArgs = plugin.toArgs rawArgs }
       , runArgs = { reportProgress = False }
+      , runConfig = Encode.null
       , plugin = plugin
       , queue = []
       , reports = []
@@ -73,7 +82,7 @@ port begin : Int -> Cmd msg
 port progress : String -> Cmd msg
 
 
-port end : Value -> Cmd msg
+port end : Decode.Value -> Cmd msg
 
 
 update : Msg -> Model a b -> ( Model a b, Cmd Msg )
@@ -85,7 +94,7 @@ update msg model =
 
         QueueTest time ->
             let
-                ( queue, reports ) =
+                ( config, runQueue ) =
                     queueTests model.plugin model.args time
 
                 next =
@@ -93,9 +102,9 @@ update msg model =
                         |> updateTime
 
                 testCount =
-                    List.length queue + List.length reports
+                    List.length runQueue.queue + List.length runQueue.reports
             in
-                ( { model | queue = queue, reports = reports }
+                ( { model | runConfig = config, queue = runQueue.queue, reports = runQueue.reports }
                 , Cmd.batch [ begin testCount, next ]
                 )
 
@@ -132,7 +141,7 @@ update msg model =
         Finished ->
             let
                 result =
-                    encodeReports model.reports
+                    encodeReports model.runConfig model.reports
             in
                 ( model, end result )
 
@@ -150,48 +159,55 @@ timeThenUpdate model next =
     ( model, updateTime next )
 
 
-queueTests : Plugin a b -> Args a -> Time -> ( List (TestItem b), List TestReport )
+queueTests : Plugin a b -> Args a -> Time -> ( Encode.Value, RunQueue b )
 queueTests plugin args time =
     let
-        tests =
+        testRun =
             plugin.findTests args.pluginArgs time
 
+        runQueue =
+            dequeReports time testRun.tests
+    in
+        ( testRun.config, runQueue )
+
+
+dequeReports : Time -> List (TestItem b) -> RunQueue b
+dequeReports time tests =
+    let
         partitionedTests =
             List.partition (\t -> t.runType == Focusing) tests
     in
         case partitionedTests of
             ( x :: xs, ys ) ->
-                ( x :: xs, List.map (ignoreTest time) ys )
+                { queue = x :: xs, reports = List.map (ignoreTest time) ys }
 
             ( [], ys ) ->
-                List.foldl (\t -> testItemToQueuedTest time t) ( [], [] ) ys
+                List.foldl (\t -> testItemToQueuedTest time t) { queue = [], reports = [] } ys
 
 
-testItemToQueuedTest : Time -> TestItem b -> ( List (TestItem b), List TestReport ) -> ( List (TestItem b), List TestReport )
-testItemToQueuedTest time testItem ( queue, reports ) =
+testItemToQueuedTest : Time -> TestItem b -> RunQueue b -> RunQueue b
+testItemToQueuedTest time testItem runQueue =
     case testItem.runType of
         Normal ->
-            ( testItem :: queue, reports )
+            { runQueue | queue = testItem :: runQueue.queue }
 
         Focusing ->
-            ( testItem :: queue, reports )
+            { runQueue | queue = testItem :: runQueue.queue }
 
         Skipping maybeReason ->
             case maybeReason of
                 Nothing ->
-                    ( testItem :: queue, reports )
+                    { runQueue | queue = testItem :: runQueue.queue }
 
                 Just reason ->
-                    ( queue, (skipTest time testItem.id reason) :: reports )
+                    { runQueue | reports = (skipTest time testItem.id reason) :: runQueue.reports }
 
 
 ignoreTest : Time -> TestItem a -> TestReport
 ignoreTest time testItem =
     let
         result =
-            Ignore
-                { id = testItem.id
-                }
+            Ignore { id = testItem.id }
     in
         toTestReport result time
 
