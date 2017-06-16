@@ -124,24 +124,31 @@ toRunType runType =
             "SKIP"
 
 
-toProgressMessage : TestReport -> String
+toProgressMessage : TestReport -> Value
 toProgressMessage testReport =
     case testReport of
-        TestFail _ ->
-            resultType.failed
+        TestFail report ->
+            encodeProgressMessage resultType.failed report.id
 
-        TestIgnore _ ->
-            resultType.ignored
+        TestIgnore report ->
+            encodeProgressMessage resultType.ignored report.id
 
-        TestPass _ ->
-            resultType.passed
+        TestPass report ->
+            encodeProgressMessage resultType.passed report.id
 
-        TestSkip _ ->
-            resultType.skipped
+        TestSkip report ->
+            encodeProgressMessage resultType.skipped report.id
 
-        TestTodo _ ->
-            resultType.todo
+        TestTodo report ->
+            encodeProgressMessage resultType.todo report.id
 
+
+encodeProgressMessage : String -> TestId -> Value
+encodeProgressMessage message id =
+    object
+    [ ( "label", string id.current.label )
+    , ( "outcome", string message )
+    ]
 
 
 -- TEST REPORT NODE

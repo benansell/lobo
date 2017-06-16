@@ -79,7 +79,7 @@ type Msg
 port begin : Int -> Cmd msg
 
 
-port progress : String -> Cmd msg
+port progress : Decode.Value -> Cmd msg
 
 
 port end : Decode.Value -> Cmd msg

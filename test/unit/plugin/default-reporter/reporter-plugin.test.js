@@ -40,7 +40,7 @@ describe('plugin default-reporter reporter-plugin', function() {
 
     it('should report "." when a test has "PASSED"', function() {
       // act
-      reporter.update('PASSED');
+      reporter.update({outcome: 'PASSED'});
 
       // assert
       expect(output).to.equal('.');
@@ -48,7 +48,7 @@ describe('plugin default-reporter reporter-plugin', function() {
 
     it('should report "!" when a test has "FAILED"', function() {
       // act
-      reporter.update('FAILED');
+      reporter.update({outcome: 'FAILED'});
 
       // assert
       expect(output).to.equal(chalk.red('!'));
@@ -56,7 +56,7 @@ describe('plugin default-reporter reporter-plugin', function() {
 
     it('should report "?" when a test has "SKIPPED"', function() {
       // act
-      reporter.update('SKIPPED');
+      reporter.update({outcome: 'SKIPPED'});
 
       // assert
       expect(output).to.equal(chalk.yellow('?'));
@@ -64,21 +64,18 @@ describe('plugin default-reporter reporter-plugin', function() {
 
     it('should report " " when a test has unknown result', function() {
       // act
-      reporter.update('foo bar');
+      reporter.update(undefined);
 
       // assert
       expect(output).to.equal(' ');
     });
 
-    it('should report nothing when program.quiet is true', function() {
-      // arrange
-      reporter.__set__({program: {quiet: true}});
-
+    it('should report " " when a test has unknown result outcome', function() {
       // act
-      reporter.update('PASSED');
+      reporter.update({outcome: 'foo bar'});
 
       // assert
-      expect(output).to.equal('');
+      expect(output).to.equal(' ');
     });
   });
 });
