@@ -23,7 +23,18 @@ function finish(results) {
 }
 
 function logSummary(summary) {
-  var output = {
+  var output = toCommonOutput(summary);
+  console.log(JSON.stringify(output));
+}
+
+function logFull(summary) {
+  var output = toCommonOutput(summary);
+  output.runResults = summary.runResults;
+  console.log(JSON.stringify(output));
+}
+
+function toCommonOutput(summary) {
+  return {
     config: summary.config,
     success: summary.success,
     outcome: summary.outcome,
@@ -37,12 +48,6 @@ function logSummary(summary) {
     todoCount: summary.todoCount,
     runType: summary.runType
   };
-
-  console.log(JSON.stringify(output));
-}
-
-function logFull(summary) {
-  console.log(JSON.stringify(summary));
 }
 
 module.exports = {

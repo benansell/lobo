@@ -144,10 +144,10 @@ toProgressMessage testReport =
 
 
 encodeProgressMessage : String -> TestId -> Value
-encodeProgressMessage message id =
+encodeProgressMessage resultType id =
     object
     [ ( "label", string id.current.label )
-    , ( "outcome", string message )
+    , ( "resultType", string resultType )
     ]
 
 
@@ -631,7 +631,7 @@ encodeRootNode config node =
     object
         [ ( "runType", string <| toRunType node.runType )
         , ( "config", config )
-        , ( "results", encodeTestReportNodeList node.reports )
+        , ( "runResults", encodeTestReportNodeList node.reports )
         , ( "startTime", encodeMaybeTime node.startTime )
         , ( "endTime", encodeMaybeTime node.endTime )
         ]
