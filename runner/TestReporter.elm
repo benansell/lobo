@@ -1,7 +1,7 @@
 module TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 
 import Json.Encode exposing (Value, encode, float, list, null, object, string)
-import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRunType(Normal, Focusing, Skipping))
+import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRunType(Focusing, Normal, Skipping))
 import Time exposing (Time)
 
 
@@ -41,6 +41,7 @@ type TestReport
 
 type alias FailReport =
     { id : TestId
+    , runType : TestRunType
     , messages : List FailureMessage
     , startTime : Time
     , endTime : Time
@@ -54,9 +55,9 @@ type alias IgnoreReport =
 
 type alias PassReport =
     { id : TestId
+    , runType : TestRunType
     , startTime : Time
     , endTime : Time
-    , runType : Maybe String
     }
 
 
@@ -78,6 +79,7 @@ toTestReport testResult endTime =
         Fail result ->
             TestFail
                 { id = result.id
+                , runType = result.runType
                 , startTime = result.startTime
                 , endTime = endTime
                 , messages = result.messages
@@ -91,9 +93,9 @@ toTestReport testResult endTime =
         Pass result ->
             TestPass
                 { id = result.id
+                , runType = result.runType
                 , startTime = result.startTime
                 , endTime = endTime
-                , runType = toRunType result.runType
                 }
 
         Skip result ->
@@ -109,37 +111,44 @@ toTestReport testResult endTime =
                 }
 
 
-toRunType : TestRunType -> Maybe String
+toRunType : TestRunType -> String
 toRunType runType =
     case runType of
         Normal ->
-            Nothing
+            "NORMAL"
 
         Focusing ->
-            Just "INCOMPLETE-FOCUS"
+            "FOCUS"
 
         Skipping _ ->
-            Just "INCOMPLETE-SKIP"
+            "SKIP"
 
 
-toProgressMessage : TestReport -> String
+toProgressMessage : TestReport -> Value
 toProgressMessage testReport =
     case testReport of
-        TestFail _ ->
-            resultType.failed
+        TestFail report ->
+            encodeProgressMessage resultType.failed report.id
 
-        TestIgnore _ ->
-            resultType.ignored
+        TestIgnore report ->
+            encodeProgressMessage resultType.ignored report.id
 
-        TestPass _ ->
-            resultType.passed
+        TestPass report ->
+            encodeProgressMessage resultType.passed report.id
 
-        TestSkip _ ->
-            resultType.skipped
+        TestSkip report ->
+            encodeProgressMessage resultType.skipped report.id
 
-        TestTodo _ ->
-            resultType.todo
+        TestTodo report ->
+            encodeProgressMessage resultType.todo report.id
 
+
+encodeProgressMessage : String -> TestId -> Value
+encodeProgressMessage resultType id =
+    object
+    [ ( "label", string id.current.label )
+    , ( "resultType", string resultType )
+    ]
 
 
 -- TEST REPORT NODE
@@ -157,6 +166,7 @@ type TestReportNode
 type alias FailedLeaf =
     { id : Int
     , label : String
+    , runType : TestRunType
     , messages : List FailureMessage
     , startTime : Time
     , endTime : Time
@@ -171,10 +181,10 @@ type alias IgnoredLeaf =
 
 type alias PassedLeaf =
     { id : Int
+    , runType : TestRunType
     , label : String
     , startTime : Time
     , endTime : Time
-    , runType : Maybe String
     }
 
 
@@ -187,6 +197,7 @@ type alias SkippedLeaf =
 
 type alias SuiteNode =
     { id : Int
+    , runType : TestRunType
     , label : String
     , reports : List TestReportNode
     , startTime : Maybe Time
@@ -207,7 +218,7 @@ type alias DetachedNode =
     }
 
 
-toTestReportNode : List TestReport -> List TestReportNode
+toTestReportNode : List TestReport -> SuiteNode
 toTestReportNode reports =
     let
         detachedNode =
@@ -216,32 +227,32 @@ toTestReportNode reports =
     in
         case detachedNode of
             Nothing ->
-                []
+                Debug.crash "Impossible not to have any detached nodes"
 
             Just node ->
-                toTestReportNodeList node
+                toSuiteNode node
 
 
-toTestReportNodeList : DetachedNode -> List TestReportNode
-toTestReportNodeList node =
+toSuiteNode : DetachedNode -> SuiteNode
+toSuiteNode node =
     case node.report of
         Failed _ ->
-            [ node.report ]
+            Debug.crash "Impossible to have failed node as root"
 
         Ignored _ ->
-            [ node.report ]
+            Debug.crash "Impossible to have ignored node as root"
 
         Passed _ ->
-            [ node.report ]
+            Debug.crash "Impossible to have passed node as root"
 
         Skipped _ ->
-            [ node.report ]
+            Debug.crash "Impossible to have skipped node as root"
 
         Suite suiteNode ->
-            suiteNode.reports
+            suiteNode
 
         Todoed _ ->
-            [ node.report ]
+            Debug.crash "Impossible to have todo node as root"
 
 
 attachNode : List DetachedNode -> Maybe DetachedNode
@@ -317,6 +328,7 @@ toDetachedNode testReport =
                 Failed
                     { id = report.id.current.uniqueId
                     , label = report.id.current.label
+                    , runType = report.runType
                     , startTime = report.startTime
                     , endTime = report.endTime
                     , messages = report.messages
@@ -338,9 +350,9 @@ toDetachedNode testReport =
                 Passed
                     { id = report.id.current.uniqueId
                     , label = report.id.current.label
+                    , runType = report.runType
                     , startTime = report.startTime
                     , endTime = report.endTime
-                    , runType = report.runType
                     }
             }
 
@@ -369,6 +381,7 @@ fromDetachedNode : TestIdentifier -> DetachedNode -> TestReportNode
 fromDetachedNode parentId node =
     Suite
         { id = parentId.uniqueId
+        , runType = Normal
         , label = parentId.label
         , reports = []
         , startTime = Nothing
@@ -399,6 +412,7 @@ attachChild child parent =
             in
                 Suite
                     { id = node.id
+                    , runType = Normal
                     , label = node.label
                     , reports = Todoed todoNode :: []
                     , startTime = Nothing
@@ -408,6 +422,10 @@ attachChild child parent =
 
         Suite node ->
             let
+                runType =
+                    extractRunType child
+                        |> improveRunType node.runType
+
                 startTime =
                     extractStartTime child
                         |> improveTime (<) node.startTime
@@ -419,9 +437,57 @@ attachChild child parent =
                 Suite
                     { node
                         | reports = child :: node.reports
+                        , runType = runType
                         , startTime = startTime
                         , endTime = endTime
                     }
+
+
+improveRunType : TestRunType -> TestRunType -> TestRunType
+improveRunType x y =
+    case ( x, y ) of
+        ( Normal, Normal ) ->
+            Normal
+
+        ( Normal, _ ) ->
+            y
+
+        ( _, Normal ) ->
+            x
+
+        ( Focusing, Focusing ) ->
+            x
+
+        ( Skipping _, Skipping _ ) ->
+            x
+
+        ( Focusing, Skipping _ ) ->
+            Debug.crash "Impossible to have different TestRunTypes: Focusing & Skipping"
+
+        ( Skipping _, Focusing ) ->
+            Debug.crash "Impossible to have different TestRunTypes: Skipping & Focusing"
+
+
+extractRunType : TestReportNode -> TestRunType
+extractRunType result =
+    case result of
+        Failed report ->
+            report.runType
+
+        Ignored report ->
+            Normal
+
+        Passed report ->
+            report.runType
+
+        Skipped report ->
+            Normal
+
+        Suite report ->
+            report.runType
+
+        Todoed report ->
+            Normal
 
 
 improveTime : (Time -> Time -> Bool) -> Maybe Time -> Maybe Time -> Maybe Time
@@ -488,10 +554,10 @@ extractEndTime result =
 -- ENCODE
 
 
-encodeReports : List TestReport -> Value
-encodeReports reports =
+encodeReports : Value -> List TestReport -> Value
+encodeReports config reports =
     toTestReportNode reports
-        |> encodeTestReportNodeList
+        |> encodeRootNode config
 
 
 encodeTestReportNodeList : List TestReportNode -> Value
@@ -543,20 +609,12 @@ encodeIgnoredLeaf leaf =
 
 encodePassedLeaf : PassedLeaf -> Value
 encodePassedLeaf leaf =
-    let
-        info =
-            [ ( "label", string leaf.label )
-            , ( "resultType", string resultType.passed )
-            , ( "startTime", float leaf.startTime )
-            , ( "endTime", float leaf.endTime )
-            ]
-    in
-        case leaf.runType of
-            Nothing ->
-                object info
-
-            Just rt ->
-                object <| ( "runType", string rt ) :: info
+    object
+        [ ( "label", string leaf.label )
+        , ( "resultType", string resultType.passed )
+        , ( "startTime", float leaf.startTime )
+        , ( "endTime", float leaf.endTime )
+        ]
 
 
 encodeSkippedLeaf : SkippedLeaf -> Value
@@ -568,13 +626,24 @@ encodeSkippedLeaf leaf =
         ]
 
 
-encodeSuiteNode : SuiteNode -> Value
-encodeSuiteNode report =
+encodeRootNode : Value -> SuiteNode -> Value
+encodeRootNode config node =
     object
-        [ ( "label", string report.label )
-        , ( "results", encodeTestReportNodeList report.reports )
-        , ( "startTime", encodeMaybeTime report.startTime )
-        , ( "endTime", encodeMaybeTime report.endTime )
+        [ ( "runType", string <| toRunType node.runType )
+        , ( "config", config )
+        , ( "runResults", encodeTestReportNodeList node.reports )
+        , ( "startTime", encodeMaybeTime node.startTime )
+        , ( "endTime", encodeMaybeTime node.endTime )
+        ]
+
+
+encodeSuiteNode : SuiteNode -> Value
+encodeSuiteNode node =
+    object
+        [ ( "label", string node.label )
+        , ( "results", encodeTestReportNodeList node.reports )
+        , ( "startTime", encodeMaybeTime node.startTime )
+        , ( "endTime", encodeMaybeTime node.endTime )
         ]
 
 

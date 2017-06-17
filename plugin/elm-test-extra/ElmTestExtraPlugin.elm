@@ -1,7 +1,8 @@
 module ElmTestExtraPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
 
 import ElmTest.Runner as Extra exposing (Test(Test, Labeled, Batch, Only, Skipped, Todo))
-import Json.Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
+import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
+import Json.Encode as Encode exposing (Value, int, object, string)
 import Random.Pcg exposing (initialSeed)
 import Test.Runner as ElmTestRunner exposing (Runner, SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailure)
 import TestPlugin as Plugin
@@ -25,11 +26,21 @@ type alias TestItem =
     Plugin.TestItem TestRunner
 
 
+type alias TestRun =
+    Plugin.TestRun TestRunner
+
+
+type alias TestQueue =
+    { nextUniqueId : Int
+    , tests : List TestItem
+    }
+
+
 
 -- INIT
 
 
-toArgs : Value -> TestArgs
+toArgs : Decode.Value -> TestArgs
 toArgs args =
     case (decodeValue decodeArgs args) of
         Ok value ->
@@ -39,26 +50,31 @@ toArgs args =
             Debug.crash "Invalid args"
 
 
-decodeArgs : Decoder TestArgs
+decodeArgs : Decode.Decoder TestArgs
 decodeArgs =
-    map2 TestArgs
-        (maybe (field "seed" int))
-        (maybe (field "runCount" int))
+    Decode.map2 TestArgs
+        (Decode.maybe (Decode.field "seed" Decode.int))
+        (Decode.maybe (Decode.field "runCount" Decode.int))
 
 
 
 -- QUEUE
 
 
-findTests : Extra.Test -> TestArgs -> Time -> List TestItem
+findTests : Extra.Test -> TestArgs -> Time -> TestRun
 findTests test args time =
     let
         runCount =
             Maybe.withDefault 100 args.runCount
 
-        seed =
+        initialSeed =
             Maybe.withDefault (round time) args.initialSeed
-                |> Random.Pcg.initialSeed
+
+        seed =
+            Random.Pcg.initialSeed initialSeed
+
+        config =
+            encodeConfig runCount initialSeed
 
         runner =
             fromTest runCount seed test
@@ -67,51 +83,56 @@ findTests test args time =
             { current = { uniqueId = 0, label = "root" }
             , parents = []
             }
+
+        testQueue =
+            findTestItem runner rootTestId Plugin.Normal { nextUniqueId = 1, tests = [] }
     in
-        findTestItem runner rootTestId Plugin.Normal ( 1, [] )
-            |> Tuple.second
+        { config = config, tests = testQueue.tests }
 
 
-findTestItem : ExtraRunner -> Plugin.TestId -> Plugin.TestRunType -> ( Int, List TestItem ) -> ( Int, List TestItem )
-findTestItem runner testId runType ( next, queue ) =
+findTestItem : ExtraRunner -> Plugin.TestId -> Plugin.TestRunType -> TestQueue -> TestQueue
+findTestItem runner testId runType testQueue =
     case runner of
         Runnable runnable ->
-            ( next, { id = testId, test = runnable, runType = runType } :: queue )
+            { testQueue | tests = { id = testId, test = runnable, runType = runType } :: testQueue.tests }
 
         Labeled label runner ->
             let
                 newTestId =
-                    { current = { uniqueId = next, label = label }
+                    { current = { uniqueId = testQueue.nextUniqueId, label = label }
                     , parents = testId.current :: testId.parents
                     }
+
+                newTestQueue =
+                    { testQueue | nextUniqueId = testQueue.nextUniqueId + 1 }
             in
-                findTestItem runner newTestId runType ( next + 1, queue )
+                findTestItem runner newTestId runType newTestQueue
 
         Batch runners ->
-            List.foldl (\r nq -> findTestItem r testId runType nq) ( next, queue ) runners
+            List.foldl (\r nq -> findTestItem r testId runType nq) testQueue runners
 
         Skipped reason runner ->
-            findTestItem runner testId (Plugin.Skipping (Just reason)) ( next, queue )
+            findTestItem runner testId (Plugin.Skipping (Just reason)) testQueue
 
         Only runner ->
             case runType of
                 Plugin.Normal ->
-                    findTestItem runner testId Plugin.Focusing ( next, queue )
+                    findTestItem runner testId Plugin.Focusing testQueue
 
                 Plugin.Focusing ->
-                    findTestItem runner testId runType ( next, queue )
+                    findTestItem runner testId runType testQueue
 
                 Plugin.Skipping _ ->
-                    findTestItem runner testId runType ( next, queue )
+                    findTestItem runner testId runType testQueue
 
         Todo reason ->
             let
                 newTestId =
-                    { current = { uniqueId = next, label = reason }
+                    { current = { uniqueId = testQueue.nextUniqueId, label = reason }
                     , parents = testId.current :: testId.parents
                     }
             in
-                ( next + 1, { id = newTestId, test = TodoRunner reason, runType = runType } :: queue )
+                { nextUniqueId = testQueue.nextUniqueId + 1, tests = { id = newTestId, test = TodoRunner reason, runType = runType } :: testQueue.tests }
 
 
 
@@ -154,6 +175,7 @@ runValidTest testId runner time =
         else
             Plugin.Fail
                 { id = testId
+                , runType = Plugin.Normal
                 , startTime = time
                 , messages = messages
                 }
@@ -283,3 +305,16 @@ distributeSeeds runs test ( startingSeed, runners ) =
 
         Extra.Todo reason ->
             ( startingSeed, runners ++ [ Todo reason ] )
+
+
+
+-- REPORT
+
+
+encodeConfig : Int -> Int -> Encode.Value
+encodeConfig runCount initialSeed =
+    Encode.object
+        [ ( "framework", Encode.string "elm-test-extra" )
+        , ( "initialSeed", Encode.int initialSeed )
+        , ( "runCount", Encode.int runCount )
+        ]

@@ -149,6 +149,15 @@ The path to elm-package and elm-make
 Disables auto-cleanup of temporary files. This can be useful when
 debugging issues when combined with the verbose option
 
+### --failOnOnly
+Exit with non zero exit code when there are any only tests
+
+### --failOnSkip
+Exit with non zero exit code when there are any skip tests
+
+### --failOnTodo
+Exit with non zero exit code when there are any todo tests
+
 ### --framework
 Specifies the test framework to use. The default is elm-test-extra. To
 use elm-test use the following:
@@ -227,6 +236,7 @@ The following options are supported elm-test-extra:
 ## Reporters
 The following reporters are supported:
 * default reporter
+* JSON reporter
 
 ### Default Reporter
 The default reporter displays a summary of the test run followed by
@@ -238,17 +248,16 @@ assertion it adds a visual hint for the source of the difference:
 </p>
  
 The following options are supported by the default reporter:
-* failOnOnly - exit with non zero exit code when there are any only
-tests
-* failOnSkip - exit with non zero exit code when there are any skip
-tests
-* failOnTodo - exit with non zero exit code when there are any todo
-tests
 * showSkip - report skipped tests and the reasons after the summary.
 This option is only available with elm-test-extra and is ignored when
 the quiet option is present
 * showTodo - report skipped tests and the reasons after the summary.
 This option is ignored when the quiet option is present
+
+### JSON Reporter
+The JSON reporter outputs the progress and run details as JSON. This
+reporter is generally only useful when integrating lobo with other
+tools.
 
 ## Troubleshooting
 

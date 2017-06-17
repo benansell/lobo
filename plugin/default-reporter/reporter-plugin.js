@@ -30,17 +30,15 @@ function init(testCount) {
 }
 
 function update(result) {
-  if (program.quiet) {
-    return;
-  }
-
-  if (result === 'PASSED') {
+  if(!result) {
+    process.stdout.write(' ');
+  } else if (result.outcome === 'PASSED') {
     process.stdout.write('.');
-  } else if (result === 'FAILED') {
+  } else if (result.outcome === 'FAILED') {
     process.stdout.write(chalk.red('!'));
-  } else if (result === 'SKIPPED') {
+  } else if (result.outcome === 'SKIPPED') {
     process.stdout.write(skipStyle('?'));
-  } else if (result === 'TODO') {
+  } else if (result.outcome === 'TODO') {
     process.stdout.write(todoStyle('-'));
   } else {
     process.stdout.write(' ');
@@ -48,13 +46,8 @@ function update(result) {
 }
 
 function finish(results) {
-  var summary = summarizeResults(results);
-
-  var failState = {
-    only: toFailState(program.failOnOnly, summary.onlyCount > 0 || summary.runType === 'INCOMPLETE-FOCUS'),
-    skip: toFailState(program.failOnSkip, summary.skippedCount > 0 || summary.runType === 'INCOMPLETE-SKIP'),
-    todo: toFailState(program.failOnTodo, summary.todoCount > 0)
-  };
+  var summary = results.summary;
+  var failState = results.failState;
 
   if (program.quiet) {
     paddedLog('');
@@ -68,22 +61,6 @@ function finish(results) {
   paddedLog('');
   logNonPassed(summary);
   paddedLog('');
-
-  if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
-    return false;
-  }
-
-  return summary.failedCount === 0;
-}
-
-function toFailState(flag, exists) {
-  var state = {
-    isFailOn: flag === true,
-    exists: exists,
-    isFailure: flag && exists
-  };
-
-  return state;
 }
 
 function logSummary(summary, failState) {
@@ -111,9 +88,8 @@ function logSummary(summary, failState) {
     }
   }
 
-  if (summary.startDateTime && summary.endDateTime) {
-    var duration = new Date(summary.endDateTime - summary.startDateTime);
-    paddedLog('Duration: ' + duration.getMilliseconds() + 'ms');
+  if (summary.durationMilliseconds) {
+    paddedLog('Duration: ' + summary.durationMilliseconds + 'ms');
   }
 
   paddedLog('');
@@ -127,23 +103,17 @@ function logSummary(summary, failState) {
 }
 
 function logSummaryHeader(summary, failState) {
-  var prefix;
-
-  if(summary.runType) {
-    prefix = 'PARTIAL ';
-  } else {
-    prefix = summary.onlyCount > 0 ? 'FOCUSED ' : '';
-  }
+  var outcomeStyle = passedStyle;
 
   if (summary.failedCount > 0) {
-    paddedLog(headerStyle(failedStyle(prefix + 'TEST RUN FAILED')));
+    outcomeStyle = failedStyle;
   } else if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
-    paddedLog(headerStyle(failedStyle(prefix + 'TEST RUN FAILED')));
+    outcomeStyle = failedStyle;
   } else if (failState.skip.exists || failState.todo.exists) {
-    paddedLog(headerStyle(inconclusiveStyle(prefix + 'TEST RUN INCONCLUSIVE')));
-  } else {
-    paddedLog(headerStyle(passedStyle(prefix + 'TEST RUN PASSED')));
+    outcomeStyle = inconclusiveStyle;
   }
+
+  paddedLog(headerStyle(outcomeStyle(summary.outcome)));
 }
 
 function sortItemsByLabel(item) {
@@ -348,77 +318,6 @@ function formatMessage(rawMessage, padding) {
   }
 
   return padding + rawMessage.replace(/(\n)+/g, '\n' + padding);
-}
-
-function summarizeResults(results) {
-  var summary = {
-    passedCount: 0,
-    failedCount: 0,
-    skippedCount: 0,
-    onlyCount: 0,
-    todoCount: 0,
-    runType: undefined,
-    failures: [],
-    skipped: [],
-    todo: []
-  };
-
-  var minResult = _.minBy(results, function(r) {
-    return r.startTime;
-  });
-
-  if (minResult) {
-    summary.startDateTime = new Date(minResult.startTime);
-  }
-
-  var maxResult = _.maxBy(results, function(r) {
-    return r.endTime;
-  });
-
-  if (maxResult) {
-    summary.endDateTime = new Date(maxResult.endTime);
-  }
-
-  processResults(results, summary, []);
-
-  return summary;
-}
-
-function processResults(results, summary, labels) {
-  if (!results) {
-    return;
-  }
-
-  _.forEach(results, function(r) {
-    if(r.runType) {
-      summary.runType = r.runType;
-    }
-
-    switch (r.resultType) {
-      case 'FAILED':
-        summary.failedCount += 1;
-        summary.failures.push({labels: _.clone(labels), result: r});
-        break;
-      case 'IGNORED':
-        summary.onlyCount += 1;
-        break;
-      case 'PASSED':
-        summary.passedCount += 1;
-        break;
-      case 'SKIPPED':
-        summary.skippedCount += 1;
-        summary.skipped.push({labels: _.clone(labels), result: r});
-        break;
-      case 'TODO':
-        summary.todoCount += 1;
-        summary.todo.push({labels: _.clone(labels), result: r});
-        break;
-      default:
-        var newLabels = _.clone(labels);
-        newLabels.push(r.label);
-        processResults(r.results, summary, newLabels);
-    }
-  });
 }
 
 function paddedLog(message) {

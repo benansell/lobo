@@ -1,5 +1,6 @@
-module TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRunType(Normal, Focusing, Skipping))
+module TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRun, TestRunType(Focusing, Normal, Skipping))
 
+import Json.Encode as Encode exposing (Value)
 import Time exposing (Time)
 
 
@@ -26,9 +27,15 @@ type alias TestIdentifier =
     }
 
 
+type alias TestRun a =
+    { config : Encode.Value
+    , tests : List (TestItem a)
+    }
+
+
 type TestRunType
-    = Normal
-    | Focusing
+    = Focusing
+    | Normal
     | Skipping (Maybe String)
 
 
@@ -49,6 +56,7 @@ type TestResult
 
 type alias FailResult =
     { id : TestId
+    , runType : TestRunType
     , startTime : Time
     , messages : List FailureMessage
     }
