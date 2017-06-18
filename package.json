@@ -44,6 +44,7 @@
     "eslint-plugin-standard": "^3.0.1",
     "istanbul": "^0.4.5",
     "mocha": "^3.4.2",
+    "mocha-junit-reporter": "^1.13.0",
     "mocha-lcov-reporter": "^1.2.0",
     "rewire": "^2.5.2",
     "rimraf": "^2.5.4",
@@ -51,11 +52,13 @@
     "sinon-chai": "^2.10.0"
   },
   "scripts": {
-    "clean": "rimraf node_modules",
+    "clean": "rimraf node_modules test-result",
     "test-lint": "eslint bin/ lib/ plugin/ test/ --ignore-pattern '**/elm-stuff/**'",
-    "test-unit": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot test/unit/**/**/*.test.js test/unit/**/**/**/*.test.js",
+    "test-unit": "istanbul --include-all-sources cover --dir ./test-result/unit/coverage node_modules/mocha/bin/_mocha -- --reporter dot test/unit/**/**/*.test.js test/unit/**/**/**/*.test.js",
+    "test-unit-ci": "istanbul --include-all-sources cover --dir ./test-result/unit/coverage node_modules/mocha/bin/_mocha -- --reporter mocha-junit-reporter --reporter-options mochaFile=./test-result/unit/unit-tests.xml test/unit/**/**/*.test.js test/unit/**/**/**/*.test.js",
     "test-integration": "mocha test/integration/**/*.test.js test/integration/**/**/*.test.js -t 100000",
     "pretest": "npm run test-lint --silent",
-    "test": "npm run test-unit --silent && npm run test-integration --silent"
+    "test": "npm run test-unit --silent && npm run test-integration --silent",
+    "test-ci": "npm run test-unit-ci --silent && npm run test-integration --silent"
   }
 }
