@@ -15,6 +15,6 @@ elm-stuff
 plugin/elm-test-extra/ElmTest/
 
 # tests
-coverage
 test/**/tests/elm-package.json
 test/**/elm-test*/**/elm-package.json
+test-result
