@@ -40,7 +40,7 @@ describe('plugin default-reporter reporter-plugin', function() {
 
     it('should report "." when a test has "PASSED"', function() {
       // act
-      reporter.update({outcome: 'PASSED'});
+      reporter.update({resultType: 'PASSED'});
 
       // assert
       expect(output).to.equal('.');
@@ -48,7 +48,7 @@ describe('plugin default-reporter reporter-plugin', function() {
 
     it('should report "!" when a test has "FAILED"', function() {
       // act
-      reporter.update({outcome: 'FAILED'});
+      reporter.update({resultType: 'FAILED'});
 
       // assert
       expect(output).to.equal(chalk.red('!'));
@@ -56,13 +56,13 @@ describe('plugin default-reporter reporter-plugin', function() {
 
     it('should report "?" when a test has "SKIPPED"', function() {
       // act
-      reporter.update({outcome: 'SKIPPED'});
+      reporter.update({resultType: 'SKIPPED'});
 
       // assert
       expect(output).to.equal(chalk.yellow('?'));
     });
 
-    it('should report " " when a test has unknown result', function() {
+    it('should report " " when a test has unknown resultType', function() {
       // act
       reporter.update(undefined);
 
@@ -70,9 +70,9 @@ describe('plugin default-reporter reporter-plugin', function() {
       expect(output).to.equal(' ');
     });
 
-    it('should report " " when a test has unknown result outcome', function() {
+    it('should report " " when a test has unknown resultType', function() {
       // act
-      reporter.update({outcome: 'foo bar'});
+      reporter.update({resultType: 'foo bar'});
 
       // assert
       expect(output).to.equal(' ');

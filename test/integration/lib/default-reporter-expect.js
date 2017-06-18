@@ -9,16 +9,20 @@ function summaryArgument(result, argName, argValue) {
 
 function summaryCounts(result, pass, fail, todo, skip, ignore) {
   expect(result.stdout).to.match(new RegExp('Passed:\\s+' + pass + '\n'));
+  expect(result.stdout).to.match(new RegExp('([^.]*.){' + pass + '}'));
   expect(result.stdout).to.match(new RegExp('Failed:\\s+' + fail + '\n'));
+  expect(result.stdout).to.match(new RegExp('([^!]*!){' + fail + '}'));
 
   if(todo || todo === 0) {
     expect(result.stdout).to.match(new RegExp('Todo:\\s+' + todo + '\n'));
+    expect(result.stdout).to.match(new RegExp('([^-]*-){' + todo + '}'));
   } else {
     expect(result.stdout).not.to.match(new RegExp('Todo:\\s+'));
   }
 
   if(skip || skip === 0) {
     expect(result.stdout).to.match(new RegExp('Skipped:\\s+' + skip + '\n'));
+    expect(result.stdout).to.match(new RegExp('([^?]*?){' + skip + '}'));
   } else {
     expect(result.stdout).not.to.match(new RegExp('Skipped:\\s+'));
   }

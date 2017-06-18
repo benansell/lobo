@@ -32,13 +32,13 @@ function init(testCount) {
 function update(result) {
   if(!result) {
     process.stdout.write(' ');
-  } else if (result.outcome === 'PASSED') {
+  } else if (result.resultType === 'PASSED') {
     process.stdout.write('.');
-  } else if (result.outcome === 'FAILED') {
+  } else if (result.resultType === 'FAILED') {
     process.stdout.write(chalk.red('!'));
-  } else if (result.outcome === 'SKIPPED') {
+  } else if (result.resultType === 'SKIPPED') {
     process.stdout.write(skipStyle('?'));
-  } else if (result.outcome === 'TODO') {
+  } else if (result.resultType === 'TODO') {
     process.stdout.write(todoStyle('-'));
   } else {
     process.stdout.write(' ');

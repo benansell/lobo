@@ -16,6 +16,7 @@ describe('lib', function() {
 
       beforeEach(function() {
         mockReporterPlugin = sinon.spy();
+        mockReporterPlugin.update = sinon.spy();
         reporter.configure(mockReporterPlugin);
       });
 
@@ -24,10 +25,21 @@ describe('lib', function() {
         reporter.__set__({program: {quiet: true}});
 
         // act
-        reporter.update({outcome: 'PASSED'});
+        reporter.update({resultType: 'PASSED'});
 
         // assert
-        expect(mockReporterPlugin).not.to.have.been.called;
+        expect(mockReporterPlugin.update).not.to.have.been.called;
+      });
+
+      it('should call reporter.update when program.quiet is false', function() {
+        // arrange
+        reporter.__set__({program: {quiet: false}});
+
+        // act
+        reporter.update({resultType: 'PASSED'});
+
+        // assert
+        expect(mockReporterPlugin.update).to.have.been.called;
       });
     });
   });
