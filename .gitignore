@@ -2,6 +2,12 @@
 node_modules/
 npm-debug.log
 
+# typescript
+*.js
+*.js.map
+!/bin/lobo.js
+!/wallaby.js
+
 # emacs temp files
 .\#*
 

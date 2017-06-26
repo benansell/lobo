@@ -4,8 +4,11 @@
       <w>chai</w>
       <w>chokidar</w>
       <w>dest</w>
+      <w>levenshtein</w>
+      <w>lobo</w>
       <w>shelljs</w>
       <w>sinon</w>
+      <w>tslint</w>
     </words>
   </dictionary>
 </component>

@@ -1,16 +1,20 @@
-module.exports = function() {
+module.exports = function(w) {
   return {
     files: [
-      'lib/**/*.js',
-      'plugin/**/*.js'
+      "lib/**/*.ts",
+      "plugin/**/*.ts"
     ],
 
     tests: [
-      'test/unit/**/*.test.js'
+      "test/unit/**/*.test.ts"
     ],
 
     env: {
-      type: 'node'
+      type: "node"
+    },
+
+    compilers: {
+      "**/*.ts": w.compilers.typeScript({typescript: require("typescript")})
     }
   };
 };
