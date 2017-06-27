@@ -76,6 +76,7 @@
     "test-integration": "mocha test/integration/**/*.test.js test/integration/**/**/*.test.js -t 100000",
     "pretest": "npm run build --silent && npm run test-lint --silent",
     "test": "npm run test-unit --silent && npm run test-integration --silent",
+    "pretest-ci": "npm run build --silent && npm run test-lint --silent",
     "test-ci": "npm run test-unit-ci --silent && npm run test-integration --silent"
   }
 }
