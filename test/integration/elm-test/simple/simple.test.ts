@@ -1,31 +1,37 @@
-'use strict';
+"use strict";
 
-var expect = require('chai').expect;
-var runner = require('../../lib/test-runner');
-var reporterExpect = require('../../lib/default-reporter-expect');
-var util = require('../../lib/util');
+import * as chai from "chai";
+import {TestRunner} from "../../lib/test-runner";
+import reporterExpect from "../../lib/default-reporter-expect";
+import {Util} from "../../lib/util";
 
-describe('elm-test-simple', function() {
-  var testContext;
+let expect = chai.expect;
 
-  before(function() {
+describe("elm-test-simple", () => {
+  let runner: TestRunner;
+  let testContext: string[];
+  let util: Util;
+
+  before(() => {
+    runner = new TestRunner();
+    util = new Util();
     testContext = util.initializeTestContext(__dirname);
     util.cd(__dirname);
   });
 
-  describe('pass', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'pass');
+  describe("pass", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "pass");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report success', function() {
+    it("should report success", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -34,19 +40,19 @@ describe('elm-test-simple', function() {
     });
   });
 
-  describe('fail', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'fail');
+  describe("fail", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "fail");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report failure', function() {
+    it("should report failure", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -54,29 +60,29 @@ describe('elm-test-simple', function() {
       expect(result.code).to.equal(1);
     });
 
-    it('should update message to use ┌ └  instead of ╷ ╵', function() {
+    it("should update message to use ┌ └  instead of ╷ ╵", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
-      var startIndex = result.stdout
-        .indexOf('================================================================================');
-      var failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      let startIndex = result.stdout
+        .indexOf("================================================================================");
+      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
-      expect(failureMessage).not.to.have.string('╷');
-      expect(failureMessage).not.to.have.string('╵');
-      expect(failureMessage).to.have.string('┌');
-      expect(failureMessage).to.have.string('└');
+      expect(failureMessage).not.to.have.string("╷");
+      expect(failureMessage).not.to.have.string("╵");
+      expect(failureMessage).to.have.string("┌");
+      expect(failureMessage).to.have.string("└");
     });
 
-    it('should update string equals to show diff hint', function() {
+    it("should update string equals to show diff hint", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
-      var startIndex = result.stdout
-        .indexOf('================================================================================');
-      var failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      let startIndex = result.stdout
+        .indexOf("================================================================================");
+      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
       expect(failureMessage).to.match(/\n\s{4}┌ "foobar"\n/g);
       expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\s\n/g);
@@ -93,19 +99,19 @@ describe('elm-test-simple', function() {
     });
   });
 
-  describe('fuzz', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'fuzz');
+  describe("fuzz", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "fuzz");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report success', function() {
+    it("should report success", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -113,17 +119,17 @@ describe('elm-test-simple', function() {
       expect(result.code).to.equal(0);
     });
 
-    it('should use supplied run count', function() {
+    it("should use supplied run count", () => {
       // arrange
-      var expectedRunCount = 11;
+      let expectedRunCount = 11;
 
       // act
-      var result = runner.run(testContext, 'elm-test', '--runCount=' + expectedRunCount);
+      let result = runner.run(testContext, "elm-test", "--runCount=" + expectedRunCount);
 
       // assert
       reporterExpect(result).summaryPassed();
       reporterExpect(result).summaryCounts(4, 0);
-      reporterExpect(result).summaryArgument('runCount', expectedRunCount);
+      reporterExpect(result).summaryArgument("runCount", <{}>expectedRunCount);
 
       expect(result.stdout.match(/fuzzingTest-Executed/g).length).to.equal(expectedRunCount);
       expect(result.stdout.match(/listLengthTest-Executed/g).length).to.equal(expectedRunCount);
@@ -135,34 +141,34 @@ describe('elm-test-simple', function() {
       expect(result.code).to.equal(0);
     });
 
-    it('should use supplied initial seed', function() {
+    it("should use supplied initial seed", () => {
       // arrange
-      var initialSeed = 101;
+      let initialSeed = 101;
 
       // act
-      var result = runner.run(testContext, 'elm-test', '--seed=' + initialSeed);
+      let result = runner.run(testContext, "elm-test", "--seed=" + initialSeed);
 
       // assert
       reporterExpect(result).summaryPassed();
       reporterExpect(result).summaryCounts(4, 0);
-      reporterExpect(result).summaryArgument('seed', initialSeed);
+      reporterExpect(result).summaryArgument("seed", <{}>initialSeed);
       expect(result.code).to.equal(0);
     });
   });
 
-  describe('nested', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'nested');
+  describe("nested", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "nested");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report success', function() {
+    it("should report success", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -171,19 +177,19 @@ describe('elm-test-simple', function() {
     });
   });
 
-  describe('tree', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'tree');
+  describe("tree", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "tree");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report failure', function() {
+    it("should report failure", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -195,19 +201,19 @@ describe('elm-test-simple', function() {
     });
   });
 
-  describe('only', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'only');
+  describe("only", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "only");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report only passed', function() {
+    it("should report only passed", () => {
       // act
-      var result = runner.run(testContext, 'elm-test', '--runCount=5');
+      let result = runner.run(testContext, "elm-test", "--runCount=5");
 
       // assert
       reporterExpect(result).summaryPartial();
@@ -217,19 +223,19 @@ describe('elm-test-simple', function() {
     });
   });
 
-  describe('skip', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'skip');
+  describe("skip", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "skip");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report inconclusive', function() {
+    it("should report inconclusive", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryPartial();
@@ -239,19 +245,19 @@ describe('elm-test-simple', function() {
     });
   });
 
-  describe('todo', function() {
-    beforeEach(function() {
-      runner.contextPush(testContext, 'todo');
+  describe("todo", () => {
+    beforeEach(() => {
+      runner.contextPush(testContext, "todo");
       runner.clean();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       runner.contextPop(testContext);
     });
 
-    it('should report inconclusive', function() {
+    it("should report inconclusive", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryInconclusive();

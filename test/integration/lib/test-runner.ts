@@ -1,46 +1,42 @@
-'use strict';
+import * as _ from "lodash";
+import {ExecOutputReturnValue} from "shelljs";
+import {Util} from "./util";
 
-var _ = require('lodash');
-var util = require('./util');
+export class TestRunner {
+  private util: Util = new Util();
 
-function clean() {
-  if (process.env.disableClean) {
-    return;
+  public clean(): void {
+    if (process.env.disableClean) {
+      return;
+    }
+
+    this.util.cd("tests");
+    this.util.clean();
+    this.util.cd("..");
   }
 
-  util.cd('tests');
-  util.clean();
-  util.cd('..');
-}
-
-function contextPush(context, name) {
-  context.push(name);
-  util.cd(name);
-}
-
-function contextPop(context) {
-  context.pop();
-  util.cd('..');
-}
-
-function run(context, framework, args) {
-  var baseDir = _.repeat('../', context.length);
-  var command = 'node ' + baseDir + 'bin/lobo.js --prompt=no --verbose';
-
-  if (framework) {
-    command += ' --framework=' + framework;
+  public contextPush(context: string[], name: string): void {
+    context.push(name);
+    this.util.cd(name);
   }
 
-  if (args) {
-    command += ' ' + args;
+  public contextPop(context: string[]): void {
+    context.pop();
+    this.util.cd("..");
   }
 
-  return util.execRaw(command);
-}
+  public run(context: string[], framework: string, args?: string): ExecOutputReturnValue {
+    let baseDir = _.repeat("../", context.length);
+    let command = "node " + baseDir + "bin/lobo.js --prompt=no --verbose";
 
-module.exports = {
-  clean: clean,
-  contextPush: contextPush,
-  contextPop: contextPop,
-  run: run
-};
+    if (framework) {
+      command += " --framework=" + framework;
+    }
+
+    if (args) {
+      command += " " + args;
+    }
+
+    return <ExecOutputReturnValue> this.util.execRaw(command);
+  }
+}

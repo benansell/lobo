@@ -1,53 +1,61 @@
-'use strict';
+"use strict";
 
-var rewire = require('rewire');
-var chai = require('chai');
-var expect = chai.expect;
+import * as chai from "chai";
+import rewire = require("rewire");
+import {PluginTestFramework} from "../../../../lib/plugin";
 
-describe('plugin elm-test', function() {
-  var plugin = rewire('./../../../../plugin/elm-test/test-plugin');
+let expect = chai.expect;
 
-  describe('initArgs', function() {
-    it('should use the supplied seed value when it exists', function() {
+describe("plugin elm-test", () => {
+  let RewiredPlugin = rewire("./../../../../plugin/elm-test/test-plugin");
+  let plugin: PluginTestFramework;
+
+  beforeEach(() => {
+    let rewiredImp = RewiredPlugin.__get__("ElmTestPlugin");
+    plugin = new rewiredImp();
+  });
+
+  describe("initArgs", () => {
+    it("should use the supplied seed value when it exists", () => {
       // arrange
-      plugin.__set__({program: {seed: 123}});
+      RewiredPlugin.__set__({program: {seed: 123}});
 
       // act
-      var actual = plugin.initArgs();
+      let actual = plugin.initArgs();
 
       // assert
       expect(actual.seed).to.equal(123);
     });
 
-    it('should use the supplied runCount value when it exists', function() {
+    it("should use the supplied runCount value when it exists", () => {
       // arrange
-      plugin.__set__({program: {runCount: 123}});
+      RewiredPlugin.__set__({program: {runCount: 123}});
 
       // act
-      var actual = plugin.initArgs();
+      let actual = plugin.initArgs();
 
       // assert
       expect(actual.runCount).to.equal(123);
     });
 
-    it('should generate a seed value no value is supplied', function() {
+    it("should generate a seed value no value is supplied", () => {
       // arrange
-      plugin.__set__({program: {seed: undefined}});
+      RewiredPlugin.__set__({program: {seed: undefined}});
 
       // act
-      var actual = plugin.initArgs();
+      let actual = plugin.initArgs();
 
       // assert
       expect(actual.seed).not.to.be.undefined;
     });
 
-    it('should generate a different seed value each time when no value is supplied', function() {
+    it("should generate a different seed value each time when no value is supplied", () => {
       // arrange
-      plugin.__set__({program: {seed: undefined}});
+      RewiredPlugin.__set__({program: {seed: undefined}});
 
       // act
-      var first = plugin.initArgs();
-      var second = plugin.initArgs();
+      let first = plugin.initArgs();
+      let second = plugin.initArgs();
 
       // assert
       expect(first.seed).not.to.equal(second.seed);

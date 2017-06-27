@@ -1,304 +1,271 @@
-'use strict';
+"use strict";
 
-var rewire = require('rewire');
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
+import * as chai from "chai";
+import rewire = require("rewire");
+import * as sinon from "sinon";
+import * as sinonChai from "sinon-chai";
+import {createLogger, Logger, LoggerImp, LogLevel} from "../../../lib/logger";
+
+let expect = chai.expect;
 chai.use(sinonChai);
 
-describe('lib logger', function() {
-  describe('trace', function() {
-    var logger = rewire('./../../../lib/logger');
-    var trace;
+describe("lib logger", () => {
+  let RewiredLogger = rewire("./../../../lib/logger");
+  let logger: LoggerImp;
 
-    beforeEach(function() {
-      trace = logger.__get__('trace');
-    });
+  beforeEach(() => {
+    let rewiredImp = RewiredLogger.__get__("LoggerImp");
+    logger = new rewiredImp();
+  });
 
-    it('should call log with the level "trace"', function() {
-      // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
-
+  describe("createLogger", () => {
+    it("should return logger", () => {
       // act
-      trace('foo', 'bar');
+      let actual: Logger = createLogger();
 
       // assert
-      expect(mockLog.calledWith('trace', sinon.match.any, sinon.match.any)).to.be.true;
-    });
-
-    it('should call log with the supplied args', function() {
-      // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
-
-      // act
-      trace('foo', 'bar');
-
-      // assert
-      expect(mockLog.calledWith(sinon.match.any, 'foo', 'bar')).to.be.true;
+      expect(actual).to.exist;
     });
   });
 
-  describe('debug', function() {
-    var logger = rewire('./../../../lib/logger');
-    var debug;
-
-    beforeEach(function() {
-      debug = logger.__get__('debug');
-    });
-
-    it('should call log with the level "debug"', function() {
+  describe("trace", () => {
+    it("should call log with the level 'trace'", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      debug('foo', 'bar');
+      logger.trace("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith('debug', sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Trace, sinon.match.any, sinon.match.any)).to.be.true;
     });
 
-    it('should call log with the supplied args', function() {
+    it("should call log with the supplied args", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      debug('foo', 'bar');
+      logger.trace("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, 'foo', 'bar')).to.be.true;
+      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
-  describe('info', function() {
-    var logger = rewire('./../../../lib/logger');
-    var info;
-
-    beforeEach(function() {
-      info = logger.__get__('info');
-    });
-
-    it('should call log with the level "info"', function() {
+  describe("debug", () => {
+    it("should call log with the level 'debug'", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      info('foo', 'bar');
+      logger.debug("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith('info', sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Debug, sinon.match.any, sinon.match.any)).to.be.true;
     });
 
-    it('should call log with the supplied args', function() {
+    it("should call log with the supplied args", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      info('foo', 'bar');
+      logger.debug("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, 'foo', 'bar')).to.be.true;
+      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
-  describe('warn', function() {
-    var logger = rewire('./../../../lib/logger');
-    var warn;
-
-    beforeEach(function() {
-      warn = logger.__get__('warn');
-    });
-
-    it('should call log with the level "warn"', function() {
+  describe("info", () => {
+    it("should call log with the level 'info'", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      warn('foo', 'bar');
+      logger.info("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith('warn', sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Info, sinon.match.any, sinon.match.any)).to.be.true;
     });
 
-    it('should call log with the supplied args', function() {
+    it("should call log with the supplied args", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      warn('foo', 'bar');
+      logger.info("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, 'foo', 'bar')).to.be.true;
+      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
-  describe('error', function() {
-    var logger = rewire('./../../../lib/logger');
-    var error;
-
-    beforeEach(function() {
-      error = logger.__get__('error');
-    });
-
-    it('should call log with the level "error"', function() {
+  describe("warn", () => {
+    it("should call log with the level 'warn'", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      error('foo', 'bar');
+      logger.warn("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith('error', sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Warn, sinon.match.any, sinon.match.any)).to.be.true;
     });
 
-    it('should call log with the supplied args', function() {
+    it("should call log with the supplied args", () => {
       // arrange
-      var mockLog = sinon.spy();
-      logger.__set__('log', mockLog);
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
       // act
-      error('foo', 'bar');
+      logger.warn("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, 'foo', 'bar')).to.be.true;
+      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
-  describe('log', function() {
-    var logger = rewire('./../../../lib/logger');
-    var log;
+  describe("error", () => {
+    it("should call log with the level 'error'", () => {
+      // arrange
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
 
-    beforeEach(function() {
-      log = logger.__get__('log');
+      // act
+      logger.error("foo", "bar");
+
+      // assert
+      expect(mockLog.calledWith(LogLevel.Error, sinon.match.any, sinon.match.any)).to.be.true;
     });
 
-    it('should do nothing when showLogMessage is false', function() {
+    it("should call log with the supplied args", () => {
       // arrange
-      var mockShowMassage = sinon.stub();
+      let mockLog = sinon.spy();
+      logger.log = mockLog;
+
+      // act
+      logger.error("foo", "bar");
+
+      // assert
+      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
+    });
+  });
+
+  describe("log", () => {
+    it("should do nothing when showLogMessage is false", () => {
+      // arrange
+      let mockShowMassage = sinon.stub();
       mockShowMassage.returns(false);
-      logger.__set__('showLogMessage', mockShowMassage);
+      logger.showLogMessage = mockShowMassage;
 
-      var mockLevelToLogger = sinon.spy();
-      logger.__set__('levelToLogger', mockLevelToLogger);
+      let mockLevelToLogger = sinon.spy();
+      logger.levelToLogger = mockLevelToLogger;
 
       // act
-      log('trace', 'foo', 'bar');
+      logger.log(LogLevel.Trace, "foo", "bar");
 
       // assert
       expect(mockLevelToLogger).not.to.have.been.called;
     });
 
-    it('should log the message with the level style when there is no data', function() {
+    it("should log the message with the level style when there is no data", () => {
       // arrange
-      var mockShowMassage = sinon.stub();
+      let mockShowMassage = sinon.stub();
       mockShowMassage.returns(true);
-      logger.__set__('showLogMessage', mockShowMassage);
+      logger.showLogMessage = mockShowMassage;
 
-      var mockLevelToLogger = sinon.stub();
-      logger.__set__('levelToLogger', mockLevelToLogger);
-      var mockLogger = sinon.spy();
+      let mockLevelToLogger = sinon.stub();
+      logger.levelToLogger = mockLevelToLogger;
+      let mockLogger = sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      var mockLevelToStyle = sinon.stub();
-      mockLevelToStyle.returns(function() {
-        return 'baz';
+      let mockLevelToStyle = sinon.stub();
+      mockLevelToStyle.returns(() => {
+        return "baz";
       });
-      logger.__set__('levelToStyle', mockLevelToStyle);
+      logger.levelToStyle = mockLevelToStyle;
 
       // act
-      log('trace', 'foo');
+      logger.log(LogLevel.Trace, "foo");
 
       // assert
-      expect(mockLogger).to.have.been.calledWith('baz');
+      expect(mockLogger).to.have.been.calledWith("baz");
     });
 
-    it('should log the stringified data with the level style when there is data', function() {
+    it("should log the stringified data with the level style when there is data", () => {
       // arrange
-      var mockShowMassage = sinon.stub();
+      let mockShowMassage = sinon.stub();
       mockShowMassage.returns(true);
-      logger.__set__('showLogMessage', mockShowMassage);
+      logger.showLogMessage = mockShowMassage;
 
-      var mockLevelToLogger = sinon.stub();
-      logger.__set__('levelToLogger', mockLevelToLogger);
-      var mockLogger = sinon.spy();
+      let mockLevelToLogger = sinon.stub();
+      logger.levelToLogger = mockLevelToLogger;
+      let mockLogger = sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      var mockLevelToStyle = sinon.stub();
-      mockLevelToStyle.returns(function(value) {
-        return value;
-      });
-      logger.__set__('levelToStyle', mockLevelToStyle);
+      let mockLevelToStyle = sinon.stub();
+      mockLevelToStyle.returns((value: {}) => value);
+      logger.levelToStyle = mockLevelToStyle;
 
       // act
-      log('trace', 'foo', {id: 123});
+      logger.log(LogLevel.Trace, "foo", {id: 123});
 
       // assert
-      expect(mockLogger).to.have.been.calledWith('foo: ', '{"id":123}');
+      expect(mockLogger).to.have.been.calledWith("foo: ", "{\"id\":123}");
     });
 
-    it('should log instances of error with the level style when there is data', function() {
+    it("should log instances of error with the level style when there is data", () => {
       // arrange
-      var mockShowMassage = sinon.stub();
+      let mockShowMassage = sinon.stub();
       mockShowMassage.returns(true);
-      logger.__set__('showLogMessage', mockShowMassage);
+      logger.showLogMessage = mockShowMassage;
 
-      var mockLevelToLogger = sinon.stub();
-      logger.__set__('levelToLogger', mockLevelToLogger);
-      var mockLogger = sinon.spy();
+      let mockLevelToLogger = sinon.stub();
+      logger.levelToLogger = mockLevelToLogger;
+      let mockLogger = sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      var mockLevelToStyle = sinon.stub();
-      mockLevelToStyle.returns(function(value) {
-        return value;
-      });
-      logger.__set__('levelToStyle', mockLevelToStyle);
-      var error = new Error('foo');
+      let mockLevelToStyle = sinon.stub();
+      mockLevelToStyle.returns((value: {}) => value);
+      logger.levelToStyle = mockLevelToStyle;
+      let error = new Error("foo");
 
       // act
-      log('trace', 'foo', error);
+      logger.log(LogLevel.Trace, "foo", error);
 
       // assert
-      expect(mockLogger).to.have.been.calledWith('foo: ', error);
+      expect(mockLogger).to.have.been.calledWith("foo: ", error.toString());
     });
   });
 
-  describe('showLogMessage', function() {
-    var logger = rewire('./../../../lib/logger');
-    var showLogMessage;
-
-    beforeEach(function() {
-      showLogMessage = logger.__get__('showLogMessage');
+  describe("showLogMessage", () => {
+    it("should throw an error when the log level is unknown", () => {
+      expect(() => {
+        logger.showLogMessage(<LogLevel>-1);
+      }).to.throw("Unknown log level: -1");
     });
 
-    it('should throw an error when the log level is unknown', function() {
-      expect(function() {
-        showLogMessage('foo');
-      }).to.throw('Unknown log level: foo');
-    });
+    describe("veryVerbose", () => {
+      let tests = [{level: LogLevel.Trace, expected: true},
+        {level: LogLevel.Debug, expected: true},
+        {level: LogLevel.Info, expected: true},
+        {level: LogLevel.Warn, expected: true},
+        {level: LogLevel.Error, expected: true}];
 
-    describe('veryVerbose', function() {
-      var tests = [{level: 'trace', expected: true},
-        {level: 'debug', expected: true},
-        {level: 'info', expected: true},
-        {level: 'warn', expected: true},
-        {level: 'error', expected: true}];
-
-      tests.forEach(function(test) {
-        it('should be true when level is "' + test.level + '"', function() {
+      tests.forEach(test => {
+        it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          logger.__set__({program: {veryVerbose: true}});
+          RewiredLogger.__set__({program: {veryVerbose: true}});
 
           // act
-          var actual = showLogMessage(test.level);
+          let actual = logger.showLogMessage(test.level);
 
           // assert
           expect(actual).to.equal(test.expected);
@@ -306,20 +273,20 @@ describe('lib logger', function() {
       });
     });
 
-    describe('verbose', function() {
-      var tests = [{level: 'trace', expected: false},
-        {level: 'debug', expected: true},
-        {level: 'info', expected: true},
-        {level: 'warn', expected: true},
-        {level: 'error', expected: true}];
+    describe("verbose", () => {
+      let tests = [{level: LogLevel.Trace, expected: false},
+        {level: LogLevel.Debug, expected: true},
+        {level: LogLevel.Info, expected: true},
+        {level: LogLevel.Warn, expected: true},
+        {level: LogLevel.Error, expected: true}];
 
-      tests.forEach(function(test) {
-        it('should be true when level is "' + test.level + '"', function() {
+      tests.forEach(test => {
+        it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          logger.__set__({program: {verbose: true}});
+          RewiredLogger.__set__({program: {verbose: true}});
 
           // act
-          var actual = showLogMessage(test.level);
+          let actual = logger.showLogMessage(test.level);
 
           // assert
           expect(actual).to.equal(test.expected);
@@ -327,20 +294,20 @@ describe('lib logger', function() {
       });
     });
 
-    describe('normal', function() {
-      var tests = [{level: 'trace', expected: false},
-        {level: 'debug', expected: false},
-        {level: 'info', expected: true},
-        {level: 'warn', expected: true},
-        {level: 'error', expected: true}];
+    describe("normal", () => {
+      let tests = [{level: LogLevel.Trace, expected: false},
+        {level: LogLevel.Debug, expected: false},
+        {level: LogLevel.Info, expected: true},
+        {level: LogLevel.Warn, expected: true},
+        {level: LogLevel.Error, expected: true}];
 
-      tests.forEach(function(test) {
-        it('should be true when level is "' + test.level + '"', function() {
+      tests.forEach(test => {
+        it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          logger.__set__({program: {normal: true}});
+          RewiredLogger.__set__({program: {normal: true}});
 
           // act
-          var actual = showLogMessage(test.level);
+          let actual = logger.showLogMessage(test.level);
 
           // assert
           expect(actual).to.equal(test.expected);
@@ -348,20 +315,20 @@ describe('lib logger', function() {
       });
     });
 
-    describe('quiet', function() {
-      var tests = [{level: 'trace', expected: false},
-        {level: 'debug', expected: false},
-        {level: 'info', expected: false},
-        {level: 'warn', expected: false},
-        {level: 'error', expected: true}];
+    describe("quiet", () => {
+      let tests = [{level: LogLevel.Trace, expected: false},
+        {level: LogLevel.Debug, expected: false},
+        {level: LogLevel.Info, expected: false},
+        {level: LogLevel.Warn, expected: false},
+        {level: LogLevel.Error, expected: true}];
 
-      tests.forEach(function(test) {
-        it('should be true when level is "' + test.level + '"', function() {
+      tests.forEach(test => {
+        it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          logger.__set__({program: {quiet: true}});
+          RewiredLogger.__set__({program: {quiet: true}});
 
           // act
-          var actual = showLogMessage(test.level);
+          let actual = logger.showLogMessage(test.level);
 
           // assert
           expect(actual).to.equal(test.expected);
@@ -370,30 +337,23 @@ describe('lib logger', function() {
     });
   });
 
-  describe('levelToLogger', function() {
-    var logger = rewire('./../../../lib/logger');
-    var levelToLogger;
-
-    beforeEach(function() {
-      levelToLogger = logger.__get__('levelToLogger');
+  describe("levelToLogger", () => {
+    it("should throw an error when the log level is unknown", () => {
+      expect(() => {
+        logger.levelToLogger(<LogLevel> -1);
+      }).to.throw("Unknown log level: -1");
     });
 
-    it('should throw an error when the log level is unknown', function() {
-      expect(function() {
-        levelToLogger('foo');
-      }).to.throw('Unknown log level: foo');
-    });
+    let tests = [{level: LogLevel.Trace, expected: console.log},
+      {level: LogLevel.Debug, expected: console.log},
+      {level: LogLevel.Info, expected: console.info},
+      {level: LogLevel.Warn, expected: console.warn},
+      {level: LogLevel.Error, expected: console.error}];
 
-    var tests = [{level: 'trace', expected: console.log},
-      {level: 'debug', expected: console.log},
-      {level: 'info', expected: console.info},
-      {level: 'warn', expected: console.warn},
-      {level: 'error', expected: console.error}];
-
-    tests.forEach(function(test) {
-      it('should be true when level is "' + test.level + '"', function() {
+    tests.forEach(test => {
+      it("should be true when level is '" + test.level + "'", () => {
         // act
-        var actual = levelToLogger(test.level);
+        let actual = logger.levelToLogger(test.level);
 
         // assert
         expect(actual).to.equal(test.expected);
@@ -401,33 +361,28 @@ describe('lib logger', function() {
     });
   });
 
-  describe('levelToStyle', function() {
-    var logger = rewire('./../../../lib/logger');
-    var levelToStyle;
+  describe("levelToStyle", () => {
 
-    beforeEach(function() {
-      levelToStyle = logger.__get__('levelToStyle');
+    it("should throw an error when the log level is unknown", () => {
+      expect(() => {
+        logger.levelToStyle(<LogLevel> -1);
+      }).to.throw("Unknown log level: -1");
     });
 
-    it('should throw an error when the log level is unknown', function() {
-      expect(function() {
-        levelToStyle('foo');
-      }).to.throw('Unknown log level: foo');
-    });
+    let tests = [{level: LogLevel.Trace, expected: "dim"},
+      {level: LogLevel.Debug, expected: "gray"},
+      {level: LogLevel.Info, expected: "reset"},
+      {level: LogLevel.Warn, expected: "yellow"},
+      {level: LogLevel.Error, expected: "red"}];
 
-    var tests = [{level: 'trace', expected: 'dim'},
-      {level: 'debug', expected: 'gray'},
-      {level: 'info', expected: 'reset'},
-      {level: 'warn', expected: 'yellow'},
-      {level: 'error', expected: 'red'}];
-
-    tests.forEach(function(test) {
-      it('should be true when level is "' + test.level + '"', function() {
+    tests.forEach(test => {
+      it("should be true when level is '" + test.level + "'", () => {
         // act
-        var actual = levelToStyle(test.level);
+        let actual = logger.levelToStyle(test.level);
 
         // assert
-        expect(actual._styles[0]).to.equal(test.expected);
+        let style = (<{ _styles: string[] }><{}>actual)._styles[0];
+        expect(style).to.equal(test.expected);
       });
     });
   });

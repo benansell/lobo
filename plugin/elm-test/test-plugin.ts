@@ -1,18 +1,20 @@
-'use strict';
+import * as program from "commander";
+import {PluginTestFramework, RunArgs} from "../../lib/plugin";
 
-var program = require('commander');
+class ElmTestPlugin implements PluginTestFramework {
 
-function generateInitialSeed() {
-  return Math.floor(Math.random() * 0xFFFFFFFF);
+  private static generateInitialSeed(): number {
+    return Math.floor(Math.random() * 0xFFFFFFFF);
+  }
+
+  public initArgs(): RunArgs {
+    return {
+      runCount: program.runCount ? parseInt(program.runCount, 10) : 100,
+      seed: program.seed ? program.seed : ElmTestPlugin.generateInitialSeed()
+    };
+  }
 }
 
-function initArgs() {
-  return {
-    seed: program.seed ? program.seed : generateInitialSeed(),
-    runCount: program.runCount ? parseInt(program.runCount, 10) : 100
-  };
+export function createPlugin(): ElmTestPlugin {
+  return new ElmTestPlugin();
 }
-
-module.exports = {
-  initArgs: initArgs
-};

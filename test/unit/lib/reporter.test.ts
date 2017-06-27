@@ -1,42 +1,61 @@
-'use strict';
+"use strict";
 
-var rewire = require('rewire');
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
+import * as chai from "chai";
+import rewire = require("rewire");
+import * as sinon from "sinon";
+import * as sinonChai from "sinon-chai";
+import {createReporter, Reporter, ReporterImp} from "../../../lib/reporter";
+import {PluginReporter, ProgressReport} from "../../../lib/plugin";
+
+let expect = chai.expect;
 chai.use(sinonChai);
 
-describe('lib', function() {
-  describe('reporter', function() {
-    var reporter = rewire('./../../../lib/reporter');
+describe("lib", () => {
+  describe("reporter", () => {
+    let RewiredReporter = rewire("./../../../lib/reporter");
+    let reporter: ReporterImp;
 
-    describe('update', function() {
-      var mockReporterPlugin;
+    beforeEach(() => {
+      let rewiredImp = RewiredReporter.__get__("ReporterImp");
+      reporter = new rewiredImp();
+    });
 
-      beforeEach(function() {
-        mockReporterPlugin = sinon.spy();
+    describe("createReporter", () => {
+      it("should return reporter", () => {
+        // act
+        let actual: Reporter = createReporter();
+
+        // assert
+        expect(actual).to.exist;
+      });
+    });
+
+    describe("update", () => {
+      let mockReporterPlugin: PluginReporter;
+
+      beforeEach(() => {
+        mockReporterPlugin = <any> sinon.spy();
         mockReporterPlugin.update = sinon.spy();
         reporter.configure(mockReporterPlugin);
       });
 
-      it('should report nothing when program.quiet is true', function() {
+      it("should report nothing when program.quiet is true", () => {
         // arrange
-        reporter.__set__({program: {quiet: true}});
+        RewiredReporter.__set__({program: {quiet: true}});
 
         // act
-        reporter.update({resultType: 'PASSED'});
+        reporter.update(<ProgressReport> {resultType: "PASSED"});
 
         // assert
         expect(mockReporterPlugin.update).not.to.have.been.called;
       });
 
-      it('should call reporter.update when program.quiet is false', function() {
+      it("should call reporter.update when program.quiet is false", () => {
         // arrange
-        reporter.__set__({program: {quiet: false}});
+        RewiredReporter.__set__({program: {quiet: false}});
 
         // act
-        reporter.update({resultType: 'PASSED'});
+        reporter.update(<ProgressReport> {resultType: "PASSED"});
 
         // assert
         expect(mockReporterPlugin.update).to.have.been.called;

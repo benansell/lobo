@@ -1,26 +1,33 @@
-'use strict';
+"use strict";
 
-var expect = require('chai').expect;
-var runner = require('../lib/test-runner');
-var reporterExpect = require('../lib/default-reporter-expect');
-var util = require('../lib/util');
+import * as chai from "chai";
 
-describe('elm-lang', function() {
-  var testContext;
+import {TestRunner} from "../lib/test-runner";
+import reporterExpect from "../lib/default-reporter-expect";
+import {Util} from "../lib/util";
 
-  before(function() {
+let expect = chai.expect;
+
+describe("elm-lang", () => {
+  let runner: TestRunner;
+  let testContext: string[];
+  let util: Util;
+
+  before(() => {
+    runner = new TestRunner();
+    util = new Util();
     testContext = util.initializeTestContext(__dirname);
     util.cd(__dirname);
   });
 
-  describe('import-check', function() {
-    beforeEach(function() {
+  describe("import-check", () => {
+    beforeEach(() => {
       runner.clean();
     });
 
-    it('should build and report success test run', function() {
+    it("should build and report success test run", () => {
       // act
-      var result = runner.run(testContext, 'elm-test');
+      let result = runner.run(testContext, "elm-test");
 
       // assert
       reporterExpect(result).summaryPassed();

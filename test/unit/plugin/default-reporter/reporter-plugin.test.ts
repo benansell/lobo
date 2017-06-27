@@ -1,81 +1,93 @@
-'use strict';
+"use strict";
 
-var rewire = require('rewire');
-var chai = require('chai');
-var chalk = require('chalk');
-var expect = chai.expect;
+import * as chai from "chai";
+import * as chalk from "chalk";
+import rewire = require("rewire");
 
-describe('plugin default-reporter reporter-plugin', function() {
-  var reporter = rewire('./../../../../plugin/default-reporter/reporter-plugin');
+import * as sinonChai from "sinon-chai";
+import {DefaultReporterImp} from "../../../../plugin/default-reporter/reporter-plugin";
+import {ProgressReport, ResultType} from "../../../../lib/plugin";
 
-  describe('runArgs', function() {
-    it('should set initArgs to the supplied value', function() {
-      // act
-      reporter.runArgs('foo');
+let expect = chai.expect;
+chai.use(sinonChai);
 
-      // assert
-      expect(reporter.__get__('initArgs')).to.equal('foo');
-    });
+describe("plugin default-reporter reporter-plugin", () => {
+  let RewiredPlugin = rewire("./../../../../plugin/default-reporter/reporter-plugin");
+  let reporter: DefaultReporterImp;
+
+  beforeEach(() => {
+    let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+    reporter = new rewiredImp();
   });
 
-  describe('update', function() {
-    var original;
-    var output;
+  describe("update", () => {
+    let original;
+    let output;
 
-    function write(str) {
+    function write(str): boolean {
       output += str;
+      
+      return true;
     }
 
-    beforeEach(function() {
-      output = '';
+    beforeEach(() => {
+      output = "";
       original = process.stdout.write;
       process.stdout.write = write;
 
-      reporter.init(0);
+      reporter.init();
     });
 
-    afterEach(function() {
+    afterEach(() => {
       process.stdout.write = original;
     });
 
-    it('should report "." when a test has "PASSED"', function() {
+    it("should report '.' when a test has 'PASSED'", () => {
       // act
-      reporter.update({resultType: 'PASSED'});
+      reporter.update(<ProgressReport>{resultType: "PASSED"});
 
       // assert
-      expect(output).to.equal('.');
+      expect(output).to.equal(".");
     });
 
-    it('should report "!" when a test has "FAILED"', function() {
+    it("should report '!' when a test has 'FAILED'", () => {
       // act
-      reporter.update({resultType: 'FAILED'});
+      reporter.update(<ProgressReport>{resultType: "FAILED"});
 
       // assert
-      expect(output).to.equal(chalk.red('!'));
+      expect(output).to.equal(chalk.red("!"));
     });
 
-    it('should report "?" when a test has "SKIPPED"', function() {
+    it("should report '?' when a test has 'SKIPPED'", () => {
       // act
-      reporter.update({resultType: 'SKIPPED'});
+      reporter.update(<ProgressReport>{resultType: "SKIPPED"});
 
       // assert
-      expect(output).to.equal(chalk.yellow('?'));
+      expect(output).to.equal(chalk.yellow("?"));
     });
 
-    it('should report " " when a test has unknown resultType', function() {
+    it("should report '-' when a test has 'SKIPPED'", () => {
+      // act
+      reporter.update(<ProgressReport>{resultType: "TODO"});
+
+      // assert
+      expect(output).to.equal(chalk.yellow("-"));
+    });
+
+    it("should report ' ' when reportProgress is undefined", () => {
       // act
       reporter.update(undefined);
 
       // assert
-      expect(output).to.equal(' ');
+      expect(output).to.equal(" ");
     });
 
-    it('should report " " when a test has unknown resultType', function() {
+    it("should report ' ' when a test has unknown resultType", () => {
       // act
-      reporter.update({resultType: 'foo bar'});
+      reporter.update(<ProgressReport>{resultType: <ResultType>"foo bar"});
 
       // assert
-      expect(output).to.equal(' ');
+      expect(output).to.equal(" ");
     });
   });
 });

@@ -1,11 +1,14 @@
-'use strict';
+import {PluginConfig, PluginOption} from "../../lib/plugin";
 
-module.exports = function() {
-  return {
-    name: 'default-reporter',
-    options: [
-      {flags: '--showSkip', description: 'report skipped tests after the summary'},
-      {flags: '--showTodo', description: 'report todo tests after the summary'}
-    ]
-  };
-};
+class DefaultReporterConfig implements PluginConfig {
+  public name: string = "default-reporter";
+
+  public options: PluginOption[] = [
+    {flags: "--showSkip", description: "report skipped tests after the summary"},
+    {flags: "--showTodo", description: "report todo tests after the summary"}
+  ];
+}
+
+let config = new DefaultReporterConfig();
+
+export {config as PluginConfig};

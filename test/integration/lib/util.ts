@@ -1,68 +1,79 @@
-'use strict';
+"use strict";
 
-var path = require('path');
-var shelljs = require('shelljs');
+import * as child from "child_process";
+import * as path from "path";
+import * as shelljs from "shelljs";
+import {ExecOutputReturnValue} from "shelljs";
 
-function cd(path) {
-  if (shelljs.cd(path).code !== 0) {
-    throw new Error('cd failed for ' + path + '. Current directory: ' + shelljs.pwd());
-  }
-}
+export class Util {
 
-function exec(command) {
-  if (shelljs.exec(command).code !== 0) {
-    throw new Error('exec failed for ' + command);
-  }
-}
+  public cd(absoluteOrRelativePath: string): void {
+    if (absoluteOrRelativePath === "") {
+      return;
+    }
 
-function execRaw(command) {
-  var showExecution = process.env.noisyTestRun === 'true';
-  return shelljs.exec(command, {silent: !showExecution});
-}
+    let expectedPath = path.resolve(absoluteOrRelativePath);
+    shelljs.cd(absoluteOrRelativePath);
+    let actualPath = shelljs.pwd();
 
-function rmFile(file) {
-  if (!shelljs.test('-e', file)) {
-    return;
+    if (actualPath.toString() !== expectedPath) {
+      console.log(actualPath);
+      console.log("[" + absoluteOrRelativePath + "]");
+      throw new Error("cd failed for " + absoluteOrRelativePath + ". Current directory: " + actualPath);
+    }
   }
 
-  if (shelljs.rm(file).code !== 0) {
-    throw new Error('rm failed for ' + file);
-  }
-}
-
-function rmDir(path) {
-  if (!shelljs.test('-e', path)) {
-    return;
+  public exec(command: string): void {
+    if (shelljs.exec(command).code !== 0) {
+      throw new Error("exec failed for " + command);
+    }
   }
 
-  if (shelljs.rm('-r', path).code !== 0) {
-    throw new Error('rm -r failed for ' + path);
-  }
-}
-
-function clean() {
-  rmFile('elm-package.json');
-  rmDir('elm-stuff');
-}
-
-function initializeTestContext(dirname) {
-  var dir = dirname;
-  var testContext = [];
-
-  while (/test/.test(dir)) {
-    testContext.push(path.basename(dir));
-    dir = path.dirname(dir);
+  public execRaw(command: string): ExecOutputReturnValue | child.ChildProcess {
+    let showExecution = process.env.noisyTestRun === "true";
+    return shelljs.exec(command, {silent: !showExecution});
   }
 
-  testContext.reverse();
+  public clean(): void {
+    this.rmFile("elm-package.json");
+    this.rmDir("elm-stuff");
+  }
 
-  return testContext;
+  public initializeTestContext(dirName: string): string[] {
+    let dir = dirName;
+    let testContext = [];
+
+    while (/test/.test(dir)) {
+      testContext.push(path.basename(dir));
+      dir = path.dirname(dir);
+    }
+
+    testContext.reverse();
+
+    return testContext;
+  }
+
+  private rmFile(file: string): void {
+    if (!shelljs.test("-e", file)) {
+      return;
+    }
+
+    shelljs.rm(file);
+
+    if (shelljs.test("-e", file)) {
+      throw new Error("rm failed for " + file);
+    }
+  }
+
+  private rmDir(path: string): void {
+    if (!shelljs.test("-e", path)) {
+      return;
+    }
+
+    shelljs.rm("-r", path);
+
+    if (shelljs.test("-e", path)) {
+      throw new Error("rm -r failed for " + path);
+    }
+  }
 }
-
-module.exports = {
-  cd: cd,
-  clean: clean,
-  exec: exec,
-  execRaw: execRaw,
-  initializeTestContext: initializeTestContext
-};

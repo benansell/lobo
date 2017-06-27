@@ -1,8 +1,11 @@
-'use strict';
+import {PluginConfig, PluginOption} from "../../lib/plugin";
 
-module.exports = function() {
-  return {
-    name: 'json-reporter',
-    options: []
-  };
-};
+class JsonReporterConfig implements PluginConfig {
+  public name: string = "json-reporter";
+
+  public options: PluginOption[] = [];
+}
+
+let config = new JsonReporterConfig();
+
+export {config as PluginConfig};

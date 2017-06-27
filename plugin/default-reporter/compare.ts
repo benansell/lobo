@@ -1,366 +1,386 @@
-'use strict';
+import * as chalk from "chalk";
+import * as _ from "lodash";
+import {createLogger, Logger} from "../../lib/logger";
 
-const _ = require('lodash');
-const chalk = require('chalk');
-var logger = require('./../../lib/logger').create();
+export interface Difference {
+  readonly left: string;
+  readonly right: string;
+}
 
-function diff(left, right) {
-  var curly = /^\{.*}/;
-  var quote = /^".*"/;
-  var round = /^\(.*\)/;
-  var square = /^\[.*]/;
-  var union = /\s+/;
+interface Item {
+  hint: string;
+  key: string;
+  value: string;
+}
 
-  try {
-    if (curly.test(left) || curly.test(right)) {
-      return diffRecord(left, right);
-    } else if (quote.test(left) || quote.test(right)) {
-      return diffValueWithToken(left, right, '"');
-    } else if (round.test(left) || round.test(right)) {
-      return diffValueWithToken(left, right, '(');
-    } else if (square.test(left) || square.test(right)) {
-      return diffList(left, right);
-    } else if (union.test(left) || union.test(right)) {
-      return diffUnion(left, right);
+interface NumberDetail {
+  decimal: string;
+  fraction: string;
+  whole: string;
+}
+
+export interface Compare {
+  diff(left: string, right: string): Difference;
+}
+
+export class CompareImp {
+
+  private logger: Logger;
+
+  public constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  public diff(left: string, right: string): Difference {
+    let curly = /^\{.*}/;
+    let quote = /^".*"/;
+    let round = /^\(.*\)/;
+    let square = /^\[.*]/;
+    let union = /\s+/;
+
+    try {
+      if (curly.test(left) || curly.test(right)) {
+        return this.diffRecord(left, right);
+      } else if (quote.test(left) || quote.test(right)) {
+        return this.diffValueWithToken(left, right, "\"");
+      } else if (round.test(left) || round.test(right)) {
+        return this.diffValueWithToken(left, right, "(");
+      } else if (square.test(left) || square.test(right)) {
+        return this.diffList(left, right);
+      } else if (union.test(left) || union.test(right)) {
+        return this.diffUnion(left, right);
+      }
+
+      return this.diffValue(left, right);
+    } catch (err) {
+      let unknown = chalk.yellow("?");
+      this.logger.error("Error during diff ( see \"" + unknown + "\" below)");
+      this.logger.error("Please re-run with verbose option and report the issue");
+      this.logger.debug("Error during diff - Left", left);
+      this.logger.debug("Error during diff - Right", right);
+      this.logger.debug("Error during diff - Error", err);
+      let leftLength = left ? left.length : 0;
+      let rightLength = right ? right.length : 0;
+
+      return {
+        left: _.repeat(unknown, leftLength),
+        right: _.repeat(unknown, rightLength)
+      };
     }
-
-    return diffValue(left, right);
-  } catch (err) {
-    var unknown = chalk.yellow('?');
-    logger.error('Error during diff ( see \'' + unknown + '\' below)');
-    logger.error('Please re-run with verbose option and report the issue');
-    logger.debug('Error during diff - Left', left);
-    logger.debug('Error during diff - Right', right);
-    logger.debug('Error during diff - Error', err);
-    var leftLength = left ? left.length : 0;
-    var rightLength = right ? right.length : 0;
-
-    return {
-      left: _.repeat(unknown, leftLength),
-      right: _.repeat(unknown, rightLength)
-    };
-  }
-}
-
-function diffValueWithToken(left, right, token) {
-  var l = left.indexOf(token) === -1 ? left : left.substring(1, left.length - 1);
-  var r = right.indexOf(token) === -1 ? right : right.substring(1, right.length - 1);
-  var value;
-
-  if (token === '"') {
-    value = diffValue(l, r);
-  } else {
-    value = diff(l, r);
   }
 
-  var spacer = ' ';
-  var leftSpacer = left === l ? '' : spacer;
-  var rightSpacer = right === r ? '' : spacer;
-  value.left = leftSpacer + value.left + leftSpacer;
-  value.right = rightSpacer + value.right + rightSpacer;
+  public diffValueWithToken(left: string, right: string, token: string): Difference {
+    let l = left.indexOf(token) === -1 ? left : left.substring(1, left.length - 1);
+    let r = right.indexOf(token) === -1 ? right : right.substring(1, right.length - 1);
+    let tempValue;
 
-  return value;
-}
-
-function diffUnion(left, right) {
-  var leftUnion = parse(left, ' ');
-  var rightUnion = parse(right, ' ');
-  var token = /[{[("]/;
-  var i = 0;
-  var j = 0;
-  var acc = {left: '', right: ''};
-  var leftMax = leftUnion.length - 1;
-  var rightMax = rightUnion.length - 1;
-
-  while (i <= leftMax || j <= rightMax) {
-    var l = i > leftMax ? '' : leftUnion[i];
-    var r = j > rightMax ? '' : rightUnion[j];
-    var value;
-
-    // check for union where args are of different types
-    if ((token.test(l) || token.test(r)) && l[0] !== r[0]) {
-      value = {left: _.repeat(' ', l.length), right: _.repeat('^', r.length)};
+    if (token === "\"") {
+      tempValue = this.diffValue(l, r);
     } else {
-      value = diff(l, r);
+      tempValue = this.diff(l, r);
     }
 
-    var isLastItem = i > leftMax && j === rightMax || j > rightMax && j === leftMax;
-    var itemsExistInBothLists = l !== '' && r !== '';
-    var spacer = isLastItem || itemsExistInBothLists ? ' ' : '^';
-    var leftSpacer = i === leftMax || value.left === '' ? '' : spacer;
-    var rightSpacer = j === rightMax || value.right === '' ? '' : spacer;
-    acc.left += value.left + leftSpacer;
-    acc.right += value.right + rightSpacer;
-    i++;
-    j++;
+    let spacer = " ";
+    let leftSpacer = left === l ? "" : spacer;
+    let rightSpacer = right === r ? "" : spacer;
+
+    let value = {left: leftSpacer + tempValue.left + leftSpacer, right: rightSpacer + tempValue.right + rightSpacer };
+
+    return value;
   }
 
-  return acc;
-}
+  public diffUnion(left: string, right: string): Difference {
+    let leftUnion = this.parse(left, " ");
+    let rightUnion = this.parse(right, " ");
+    let token = /[{[("]/;
+    let i = 0;
+    let j = 0;
+    let acc = {left: "", right: ""};
+    let leftMax = leftUnion.length - 1;
+    let rightMax = rightUnion.length - 1;
 
-function diffList(left, right) {
-  var leftList = deconstructList(left);
-  var rightList = deconstructList(right);
-  var i = 0;
-  var j = 0;
-  var acc = {left: ' ', right: ' '};
-  var leftMax = leftList.length - 1;
-  var rightMax = rightList.length - 1;
+    while (i <= leftMax || j <= rightMax) {
+      let l = i > leftMax ? "" : leftUnion[i];
+      let r = j > rightMax ? "" : rightUnion[j];
+      let value;
 
-  while (i <= leftMax || j <= rightMax) {
-    var l = i > leftMax ? '' : leftList[i];
-    var r = j > rightMax ? '' : rightList[j];
-
-    var value = diff(l, r);
-    var isLastItem = i > leftMax && j === rightMax || j > rightMax && j === leftMax;
-    var itemsExistInBothLists = l !== '' && r !== '';
-    var spacer = isLastItem || itemsExistInBothLists ? ' ' : '^';
-    var leftSpacer = value.left === '' ? '' : spacer;
-    var rightSpacer = value.right === '' ? '' : spacer;
-    acc.left += value.left + leftSpacer;
-    acc.right += value.right + rightSpacer;
-    i++;
-    j++;
-  }
-
-  // correct empty list length;
-  if (acc.left.length === 1) {
-    acc.left += ' ';
-  }
-
-  if (acc.right.length === 1) {
-    acc.right += ' ';
-  }
-
-  return acc;
-}
-
-function deconstructList(str) {
-  if (str === '[]') {
-    return [];
-  }
-
-  var inner = removeToken(str, '[', ']');
-
-  return parse(inner, ',');
-}
-
-function diffRecord(left, right) {
-  var leftRecord = deconstructRecord(left);
-  var rightRecord = deconstructRecord(right);
-
-  var makeKeyCompareFor = function(item) {
-    return function(x) {
-      return x.key === item.key;
-    };
-  };
-
-  // check for differences
-  for (var j = 0; j < leftRecord.length; j++) {
-    var leftItem = leftRecord[j];
-    var rightItem = _.find(rightRecord, makeKeyCompareFor(leftItem));
-
-    if (rightItem) {
-      var value = diff(leftItem.value, rightItem.value);
-      leftItem.hint = value.left + leftItem.hint;
-      rightItem.hint = value.right + rightItem.hint;
-    } else {
-      leftItem.hint = _.repeat('^', leftItem.key.length + leftItem.value.length + leftItem.hint.length + 3);
-      leftItem.key = null;
-      leftItem.value = null;
-    }
-  }
-
-  // check for keys in right not in left
-  for (var k = 0; k < rightRecord.length; k++) {
-    var item = rightRecord[k];
-    var l = _.find(leftRecord, makeKeyCompareFor(item));
-
-    if (!l) {
-      if (rightRecord.length === 1) {
-        item.hint = _.repeat('^', item.key.length + item.value.length + item.hint.length + 3);
-        item.key = null;
-        item.value = null;
+      // check for union where args are of different types
+      if ((token.test(l) || token.test(r)) && l[0] !== r[0]) {
+        value = {left: _.repeat(" ", l.length), right: _.repeat("^", r.length)};
       } else {
-        var suffix = k === rightRecord.length - 1 ? ' ' : '^';
-        item.hint = '  ' + _.repeat('^', item.key.length + item.value.length + item.hint.length - 1) + suffix + ' ';
-        item.key = null;
-        item.value = null;
+        value = this.diff(l, r);
       }
-    }
-  }
 
-  return {left: constructRecord(leftRecord), right: constructRecord(rightRecord)};
-}
-
-function deconstructRecord(str) {
-  if (str === '') {
-    return [];
-  }
-
-  var inner = removeToken(str, '{', '}');
-  var values = parse(inner, ',');
-  var record = [];
-
-  for (var i = 0; i < values.length; i++) {
-    var parts = parse(values[i], '=');
-    var value = parts[1].trim();
-    var hint = _.repeat(' ', parts[1].length - value.length);
-    record.push({key: parts[0], value: value, hint: hint});
-  }
-
-  return record;
-}
-
-function parse(str, token) {
-  var values = [];
-  var lastIndex = -1;
-  var count = 0;
-
-  for (var i = 0; i < str.length; i++) {
-    var c = str[i];
-
-    if (c === '{' || c === '[' || c === '(') {
-      count++;
-    } else if (c === '}' || c === ']' || c === ')') {
-      count--;
-    } else if (count === 0 && c === token) {
-      values.push(str.substring(lastIndex + 1, i));
-      lastIndex = i;
-    }
-  }
-
-  values.push(str.substring(lastIndex + 1));
-
-  return values;
-}
-
-function constructRecord(parts) {
-  if (parts.length === 0) {
-    return '';
-  }
-
-  var record = ' ';
-
-  for (var i = 0; i < parts.length; i++) {
-    var p = parts[i];
-
-    if (p.key) {
-      record += _.repeat(' ', p.key.length + 2) + p.hint;
-    } else {
-      record = record.substring(0, record.length - 1) + p.hint;
-    }
-  }
-
-  return record;
-}
-
-function removeToken(str, start, end) {
-  var from = str.indexOf(start);
-  var to = str.lastIndexOf(end);
-
-  return str.substring(from + 1, to);
-}
-
-function diffValue(left, right) {
-  var isNumeric = /-?\d+(?:.\d+)?(?:e[+|-]\d+)?/;
-  var matchLeft = isNumeric.exec(left);
-  var matchRight = isNumeric.exec(right);
-
-  if (matchLeft && matchLeft[0].length === left.length && matchRight && matchRight[0].length === right.length) {
-    return diffNumericValue(left, right);
-  }
-
-  return diffNonNumericValue(left, right);
-}
-
-function diffNumericValue(left, right) {
-  var l = splitNumber(left);
-  var r = splitNumber(right);
-
-  var whole = diffNonNumericValue(reverse(l.whole), reverse(r.whole));
-  var fraction = diffNonNumericValue(l.fraction, r.fraction);
-
-  var result = {
-    left: reverse(whole.left) + l.decimal + fraction.left,
-    right: reverse(whole.right) + r.decimal + fraction.right
-  };
-
-  return result;
-}
-
-function reverse(s) {
-  return s.split('').reverse().join('');
-}
-
-function splitNumber(str) {
-  var result = {whole: '', fraction: '', decimal: ''};
-
-  var parts = str.split(/\./);
-  result.whole = parts[0];
-
-  if (parts.length > 1) {
-    result.decimal = ' ';
-    result.fraction = parts[1];
-  }
-
-  return result;
-}
-
-function diffNonNumericValue(left, right) {
-  var i = 0;
-  var j = 0;
-  var result = {left: '', right: ''};
-  var ioffset = -1;
-  var joffset = -1;
-
-  if (left.length < right.length) {
-    var matchRight = right.match(new RegExp(left));
-    ioffset = matchRight ? matchRight.index : -1;
-  } else if (left.length > right.length) {
-    var matchLeft = left.match(new RegExp(right));
-    joffset = matchLeft ? matchLeft.index : -1;
-  }
-
-  while (i < left.length || j < right.length) {
-    var l = i < ioffset || i >= left.length ? null : left[i];
-    var r = i < joffset || j >= right.length ? null : right[j];
-
-    if (l === r) {
-      result.left += ' ';
-      result.right += ' ';
-    } else if (left.length === right.length) {
-      result.left += ' ';
-      result.right += '^';
-    } else if (left.length <= right.length) {
-      result.right += '^';
-
-      if (l && i > ioffset) {
-        result.left += ' ';
-      }
-    } else {
-      result.left += '^';
-
-      if (r && j > joffset) {
-        result.right += ' ';
-      }
-    }
-
-    var previousI = i;
-
-    if (j >= ioffset) {
+      let isLastItem = i > leftMax && j === rightMax || j > rightMax && j === leftMax;
+      let itemsExistInBothLists = l !== "" && r !== "";
+      let spacer = isLastItem || itemsExistInBothLists ? " " : "^";
+      let leftSpacer = i === leftMax || value.left === "" ? "" : spacer;
+      let rightSpacer = j === rightMax || value.right === "" ? "" : spacer;
+      acc.left += value.left + leftSpacer;
+      acc.right += value.right + rightSpacer;
       i++;
-    }
-
-    if (previousI >= joffset) {
       j++;
     }
+
+    return acc;
   }
 
-  return result;
+  public diffList(left: string, right: string): Difference {
+    let leftList = this.deconstructList(left);
+    let rightList = this.deconstructList(right);
+    let i = 0;
+    let j = 0;
+    let acc = {left: " ", right: " "};
+    let leftMax = leftList.length - 1;
+    let rightMax = rightList.length - 1;
+
+    while (i <= leftMax || j <= rightMax) {
+      let l = i > leftMax ? "" : leftList[i];
+      let r = j > rightMax ? "" : rightList[j];
+
+      let value = this.diff(l, r);
+      let isLastItem = i > leftMax && j === rightMax || j > rightMax && j === leftMax;
+      let itemsExistInBothLists = l !== "" && r !== "";
+      let spacer = isLastItem || itemsExistInBothLists ? " " : "^";
+      let leftSpacer = value.left === "" ? "" : spacer;
+      let rightSpacer = value.right === "" ? "" : spacer;
+      acc.left += value.left + leftSpacer;
+      acc.right += value.right + rightSpacer;
+      i++;
+      j++;
+    }
+
+    // correct empty list length;
+    if (acc.left.length === 1) {
+      acc.left += " ";
+    }
+
+    if (acc.right.length === 1) {
+      acc.right += " ";
+    }
+
+    return acc;
+  }
+
+  public deconstructList(str: string): string[] {
+    if (str === "[]") {
+      return [];
+    }
+
+    let inner = this.removeToken(str, "[", "]");
+
+    return this.parse(inner, ",");
+  }
+
+  public diffRecord(left: string, right: string): Difference {
+    let leftRecord = this.deconstructRecord(left);
+    let rightRecord = this.deconstructRecord(right);
+
+    let makeKeyCompareFor = (item: Item) => (x: Item) => x.key === item.key;
+
+    // check for differences
+    for (let j = 0; j < leftRecord.length; j++) {
+      let leftItem = leftRecord[j];
+      let rightItem = _.find(rightRecord, makeKeyCompareFor(leftItem));
+
+      if (rightItem) {
+        let value = this.diff(leftItem.value, rightItem.value);
+        leftItem.hint = value.left + leftItem.hint;
+        rightItem.hint = value.right + rightItem.hint;
+      } else {
+        leftItem.hint = _.repeat("^", leftItem.key.length + leftItem.value.length + leftItem.hint.length + 3);
+        leftItem.key = "";
+      }
+    }
+
+    // check for keys in right not in left
+    for (let k = 0; k < rightRecord.length; k++) {
+      let item = rightRecord[k];
+      let l = _.find(leftRecord, makeKeyCompareFor(item));
+
+      if (!l) {
+        if (rightRecord.length === 1) {
+          item.hint = _.repeat("^", item.key.length + item.value.length + item.hint.length + 3);
+          item.key = "";
+        } else {
+          let suffix = k === rightRecord.length - 1 ? " " : "^";
+          item.hint = "  " + _.repeat("^", item.key.length + item.value.length + item.hint.length - 1) + suffix + " ";
+          item.key = "";
+        }
+      }
+    }
+
+    return {left: this.constructRecord(leftRecord), right: this.constructRecord(rightRecord)};
+  }
+
+  public deconstructRecord(str: string): Item[] {
+    if (str === "") {
+      return [];
+    }
+
+    let inner = this.removeToken(str, "{", "}");
+    let values = this.parse(inner, ",");
+    let record = [];
+
+    for (let i = 0; i < values.length; i++) {
+      let parts = this.parse(values[i], "=");
+      let value = parts[1].trim();
+      let hint = _.repeat(" ", parts[1].length - value.length);
+      record.push({key: parts[0], value: value, hint: hint});
+    }
+
+    return record;
+  }
+
+  public parse(str: string, token: string): string[] {
+    let values = [];
+    let lastIndex = -1;
+    let count = 0;
+
+    for (let i = 0; i < str.length; i++) {
+      let c = str[i];
+
+      if (c === "{" || c === "[" || c === "(") {
+        count++;
+      } else if (c === "}" || c === "]" || c === ")") {
+        count--;
+      } else if (count === 0 && c === token) {
+        values.push(str.substring(lastIndex + 1, i));
+        lastIndex = i;
+      }
+    }
+
+    values.push(str.substring(lastIndex + 1));
+
+    return values;
+  }
+
+  public constructRecord(parts: Item[]): string {
+    if (parts.length === 0) {
+      return "";
+    }
+
+    let record = " ";
+
+    for (let i = 0; i < parts.length; i++) {
+      let p = parts[i];
+
+      if (p.key) {
+        record += _.repeat(" ", p.key.length + 2) + p.hint;
+      } else {
+        record = record.substring(0, record.length - 1) + p.hint;
+      }
+    }
+
+    return record;
+  }
+
+  public removeToken(str: string, start: string, end: string): string {
+    let from = str.indexOf(start);
+    let to = str.lastIndexOf(end);
+
+    return str.substring(from + 1, to);
+  }
+
+  public diffValue(left: string, right: string): Difference {
+    let isNumeric = /-?\d+(?:.\d+)?(?:e[+|-]\d+)?/;
+    let matchLeft = isNumeric.exec(left);
+    let matchRight = isNumeric.exec(right);
+
+    if (matchLeft && matchLeft[0].length === left.length && matchRight && matchRight[0].length === right.length) {
+      return this.diffNumericValue(left, right);
+    }
+
+    return this.diffNonNumericValue(left, right);
+  }
+
+  public diffNumericValue(left: string, right: string): Difference {
+    let l = this.splitNumber(left);
+    let r = this.splitNumber(right);
+
+    let whole = this.diffNonNumericValue(this.reverse(l.whole), this.reverse(r.whole));
+    let fraction = this.diffNonNumericValue(l.fraction, r.fraction);
+
+    let result = {
+      left: this.reverse(whole.left) + l.decimal + fraction.left,
+      right: this.reverse(whole.right) + r.decimal + fraction.right
+    };
+
+    return result;
+  }
+
+  public reverse(s: string): string {
+    return s.split("").reverse().join("");
+  }
+
+  public splitNumber(str: string): NumberDetail {
+    let result = {whole: "", fraction: "", decimal: ""};
+
+    let parts = str.split(/\./);
+    result.whole = parts[0];
+
+    if (parts.length > 1) {
+      result.decimal = " ";
+      result.fraction = parts[1];
+    }
+
+    return result;
+  }
+
+  public diffNonNumericValue(left: string, right: string): Difference {
+    let i = 0;
+    let j = 0;
+    let result = {left: "", right: ""};
+    let ioffset = -1;
+    let joffset = -1;
+
+    if (left.length < right.length) {
+      let matchRight = right.match(new RegExp(left));
+      ioffset = matchRight && matchRight.index ? matchRight.index : -1;
+    } else if (left.length > right.length) {
+      let matchLeft = left.match(new RegExp(right));
+      joffset = matchLeft && matchLeft.index ? matchLeft.index : -1;
+    }
+
+    while (i < left.length || j < right.length) {
+      let l = i < ioffset || i >= left.length ? null : left[i];
+      let r = i < joffset || j >= right.length ? null : right[j];
+
+      if (l === r) {
+        result.left += " ";
+        result.right += " ";
+      } else if (left.length === right.length) {
+        result.left += " ";
+        result.right += "^";
+      } else if (left.length <= right.length) {
+        result.right += "^";
+
+        if (l && i > ioffset) {
+          result.left += " ";
+        }
+      } else {
+        result.left += "^";
+
+        if (r && j > joffset) {
+          result.right += " ";
+        }
+      }
+
+      let previousI = i;
+
+      if (j >= ioffset) {
+        i++;
+      }
+
+      if (previousI >= joffset) {
+        j++;
+      }
+    }
+
+    return result;
+  }
 }
 
-module.exports = {
-  diff: diff,
-  diffValue: diffValue
-};
+export function createCompare(): Compare {
+  return new CompareImp(createLogger());
+}
