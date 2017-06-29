@@ -1,6 +1,6 @@
 import {PluginConfig, PluginOption} from "../../lib/plugin";
 
-class DefaultReporterConfig implements PluginConfig {
+export class DefaultReporterConfig implements PluginConfig {
   public name: string = "default-reporter";
 
   public options: PluginOption[] = [

@@ -3,23 +3,23 @@
 import * as chai from "chai";
 import rewire = require("rewire");
 import {PluginTestFramework} from "../../../../lib/plugin";
-import {createPlugin, ElmTestPlugin} from "../../../../plugin/elm-test/test-plugin";
+import {createPlugin, ElmTestExtraPlugin} from "../../../../plugin/elm-test-extra/test-plugin";
 
 let expect = chai.expect;
 
-describe("plugin elm-test test-plugin", () => {
-  let RewiredPlugin = rewire("./../../../../plugin/elm-test/test-plugin");
+describe("plugin elm-test-extra test-plugin", () => {
+  let RewiredPlugin = rewire("./../../../../plugin/elm-test-extra/test-plugin");
   let plugin: PluginTestFramework;
 
   beforeEach(() => {
-    let rewiredImp = RewiredPlugin.__get__("ElmTestPlugin");
+    let rewiredImp = RewiredPlugin.__get__("ElmTestExtraPlugin");
     plugin = new rewiredImp();
   });
 
   describe("createPlugin", () => {
     it("should return elm test plugin", () => {
       // act
-      let actual: ElmTestPlugin = createPlugin();
+      let actual: ElmTestExtraPlugin = createPlugin();
 
       // assert
       expect(actual).to.exist;

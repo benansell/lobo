@@ -1,6 +1,6 @@
 import {Dependencies, PluginTestFrameworkConfig, PluginOption} from "../../lib/plugin";
 
-class ElmTestConfig implements PluginTestFrameworkConfig {
+export class ElmTestConfig implements PluginTestFrameworkConfig {
   public name: string = "elm-test";
 
   public sourceDirectories: string[] = ["runner", "plugin/elm-test"];

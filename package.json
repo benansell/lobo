@@ -39,6 +39,7 @@
   "devDependencies": {
     "@types/bluebird": "^3.5.5",
     "@types/chai": "^4.0.1",
+    "@types/chai-things": "0.0.32",
     "@types/chalk": "^0.4.31",
     "@types/chokidar": "^1.7.0",
     "@types/commander": "^2.9.1",
@@ -53,6 +54,7 @@
     "@types/sinon-chai": "^2.7.28",
     "@types/tmp": "0.0.33",
     "chai": "^3.5.0",
+    "chai-things": "^0.2.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.4.2",
     "mocha-junit-reporter": "^1.13.0",

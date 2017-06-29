@@ -26,7 +26,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     function write(str): boolean {
       output += str;
-      
+
       return true;
     }
 

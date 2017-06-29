@@ -1,6 +1,6 @@
 import {Dependencies, PluginTestFrameworkConfig, PluginOption} from "../../lib/plugin";
 
-class ElmTestExtraConfig implements PluginTestFrameworkConfig {
+export class ElmTestExtraConfig implements PluginTestFrameworkConfig {
   public name: string = "elm-test-extra";
 
   public sourceDirectories: string[] = ["runner", "plugin/elm-test-extra"];

@@ -1,7 +1,7 @@
 import * as program from "commander";
 import {PluginTestFramework, RunArgs} from "../../lib/plugin";
 
-class ElmTestExtraPlugin implements PluginTestFramework {
+export class ElmTestExtraPlugin implements PluginTestFramework {
 
   private static generateInitialSeed(): number {
     return Math.floor(Math.random() * 0xFFFFFFFF);
