@@ -1,18 +1,13 @@
 import * as program from "commander";
 import {PluginReporter, ProgressReport, TestRun, TestRunSummary} from "../../lib/plugin";
 
-class JsonReporter implements PluginReporter {
+interface Logger {
+  log(message: string): void;
+}
 
-  public static logSummary(summary: TestRunSummary): void {
-    let output = JsonReporter.toCommonOutput(summary);
-    console.log(JSON.stringify(output));
-  }
+export class JsonReporter implements PluginReporter {
 
-  public static logFull(summary: TestRunSummary): void {
-    let output: object = JsonReporter.toCommonOutput(summary);
-    (<{ runResults: object }>output).runResults = summary.runResults;
-    console.log(JSON.stringify(output));
-  }
+  private logger: Logger;
 
   public static toCommonOutput(summary: TestRunSummary): Object {
     return {
@@ -31,6 +26,21 @@ class JsonReporter implements PluginReporter {
     };
   }
 
+  constructor(logger: Logger) {
+    this.logger = logger;
+  }
+
+  public logSummary(summary: TestRunSummary): void {
+    let output = JsonReporter.toCommonOutput(summary);
+    this.logger.log(JSON.stringify(output));
+  }
+
+  public logFull(summary: TestRunSummary): void {
+    let output: object = JsonReporter.toCommonOutput(summary);
+    (<{ runResults: object }>output).runResults = summary.runResults;
+    this.logger.log(JSON.stringify(output));
+  }
+
   public runArgs(): void {
     // ignore args
   }
@@ -40,18 +50,18 @@ class JsonReporter implements PluginReporter {
   }
 
   public  update(result: ProgressReport): void {
-    console.log(JSON.stringify(result));
+    this.logger.log(JSON.stringify(result));
   }
 
   public finish(results: TestRun): void {
     if (program.quiet) {
-      JsonReporter.logSummary(results.summary);
+      this.logSummary(results.summary);
     } else {
-      JsonReporter.logFull(results.summary);
+      this.logFull(results.summary);
     }
   }
 }
 
 export function createPlugin(): PluginReporter {
-  return new JsonReporter();
+  return new JsonReporter(console);
 }
