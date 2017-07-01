@@ -12,12 +12,16 @@ import {
 } from "../../lib/plugin";
 import {createUtil, Util} from "../../lib/util";
 
-
 type LeafItem = TestRunLeaf<TestReportFailedLeaf> | TestRunLeaf<TestReportSkippedLeaf> | TestRunLeaf<TestReportTodoLeaf>;
+
+interface Logger {
+  log(message: string): void;
+}
 
 export class DefaultReporterImp implements PluginReporter {
 
   private compare: Compare;
+  private logger: Logger;
   private util: Util;
   private passedStyle: chalk.ChalkChain = chalk.green;
   private failedStyle: chalk.ChalkChain = chalk.red;
@@ -30,8 +34,9 @@ export class DefaultReporterImp implements PluginReporter {
   private todoStyle: chalk.ChalkChain;
   private initArgs: RunArgs;
 
-  public constructor(compare: Compare, util: Util) {
+  public constructor(compare: Compare, logger: Logger, util: Util) {
     this.compare = compare;
+    this.logger = logger;
     this.util = util;
   }
 
@@ -81,8 +86,8 @@ export class DefaultReporterImp implements PluginReporter {
   }
 
   public logSummary(summary: TestRunSummary, failState: TestRunFailState): void {
-    console.log("");
-    console.log("==================================== Summary ===================================");
+    this.logger.log("");
+    this.logger.log("==================================== Summary ===================================");
 
     this.logSummaryHeader(summary, failState);
 
@@ -90,7 +95,7 @@ export class DefaultReporterImp implements PluginReporter {
     this.paddedLog(this.failedStyle("Failed:   " + summary.failedCount));
 
     if (summary.todoCount > 0) {
-      this.paddedLog(this.todoStyle("Todo:  " + summary.todoCount));
+      this.paddedLog(this.todoStyle("Todo:     " + summary.todoCount));
     }
 
     if (program.framework !== "elm-test") {
@@ -114,13 +119,15 @@ export class DefaultReporterImp implements PluginReporter {
 
     _.forOwn(this.initArgs, (value: object, key: string) => this.paddedLog(this.util.padRight(key + ": ", 12) + value));
 
-    console.log("================================================================================");
+    this.logger.log("================================================================================");
   }
 
   public logSummaryHeader(summary: TestRunSummary, failState: TestRunFailState): void {
     let outcomeStyle = this.passedStyle;
 
     if (summary.failedCount > 0) {
+      outcomeStyle = this.failedStyle;
+    } else if (!failState.only || !failState.skip || !failState.todo) {
       outcomeStyle = this.failedStyle;
     } else if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
       outcomeStyle = this.failedStyle;
@@ -231,13 +238,13 @@ export class DefaultReporterImp implements PluginReporter {
       if (resultMessage.given && resultMessage.given.length > 0) {
         this.paddedLog("");
         this.paddedLog("  • " + givenStyle);
-        console.log(this.formatMessage("  " + resultMessage.given, padding));
+        this.logger.log(this.formatMessage("  " + resultMessage.given, padding));
       }
 
       this.paddedLog("");
 
       let message = this.formatFailure(resultMessage.message, maxLength);
-      console.log(this.formatMessage(message, padding));
+      this.logger.log(this.formatMessage(message, padding));
       this.paddedLog("");
     });
   }
@@ -335,14 +342,14 @@ export class DefaultReporterImp implements PluginReporter {
 
   public paddedLog(message: string): void {
     if (!message) {
-      console.log("");
+      this.logger.log("");
       return;
     }
 
-    console.log("  " + message);
+    this.logger.log("  " + message);
   }
 }
 
 export function createPlugin(): PluginReporter {
-  return new DefaultReporterImp(createCompare(), createUtil());
+  return new DefaultReporterImp(createCompare(), console, createUtil());
 }
