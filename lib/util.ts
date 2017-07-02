@@ -64,52 +64,22 @@ export class UtilImp implements Util {
   }
 
   public getPlugin<T>(type: string, pluginName: string, fileSpec: string): T {
-    try {
-      // tslint:disable:no-require-imports
-      let Plugin = require(path.join("..", "plugin", pluginName, fileSpec));
-      // tslint:enable:no-require-imports
+    let value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, true);
+    let plugin: T = value.createPlugin();
+    this.logger.debug(pluginName + " plugin loaded");
+    (<{config: PluginConfig}><{}> plugin).config = this.getPluginConfig(type, pluginName, fileSpec);
+    this.logger.trace("plugin", plugin);
 
-      let plugin = Plugin.createPlugin();
-      this.logger.debug(pluginName + " plugin loaded");
-      plugin.config = this.getPluginConfig(type, pluginName, fileSpec);
-      this.logger.trace("plugin", plugin);
-
-      return <T> plugin;
-    } catch (err) {
-      if (err && err instanceof SyntaxError) {
-        this.logger.error("Unable to load " + pluginName + " due to a syntax error in " + pluginName + "/" + fileSpec + ".js");
-      } else {
-        this.logger.error(pluginName + " " + type + " not found");
-        let plugins = this.availablePlugins(fileSpec);
-        this.logger.error("Did you mean \"" + this.closestMatch(pluginName, plugins) + "\" ?");
-      }
-
-      process.exit(1);
-      return <T> {};
-    }
+    return plugin;
   }
 
   public getPluginConfig(type: string, pluginName: string, fileSpec: string): PluginConfig {
-    try {
-      // tslint:disable:no-require-imports
-      let config = require(path.join("..", "plugin", pluginName, "plugin-config")).PluginConfig;
-      // tslint:enable:no-require-imports
-
+      let value = this.load<{PluginConfig: PluginConfig}>(type, pluginName, fileSpec, true);
+      let config = value.PluginConfig;
       this.logger.debug(pluginName + " plugin configured");
       this.logger.trace("plugin configuration", config);
-      return config;
-    } catch (err) {
-      if (err && err instanceof SyntaxError) {
-        this.logger.error("Unable to load " + pluginName + " due to a syntax error in " + pluginName + "/plugin-config.js");
-      } else {
-        this.logger.error(pluginName + " " + type + " configuration not found");
-        let plugins = this.availablePlugins(fileSpec);
-        this.logger.error("Did you mean \"" + this.closestMatch(pluginName, plugins) + "\" ?");
-      }
 
-      process.exit(1);
-      return <PluginConfig> {};
-    }
+      return config;
   }
 
   public isInteger(value: number): boolean {
@@ -124,11 +94,33 @@ export class UtilImp implements Util {
     return (value.length < length) ? this.padRight(value + spacer, length, spacer) : value;
   }
 
-  public wait(delayInMilliseconds: number): void {
-    let endTime = delayInMilliseconds + new Date().getTime();
+  public load<T>(type: string, pluginName: string, fileSpec: string, isConfiguration: boolean): T {
+    try {
+      let filePath: string;
 
-    while (new Date().getTime() < endTime) {
-      // wait
+      if (isConfiguration) {
+        filePath = path.join("..", "plugin", pluginName, "plugin-config");
+      } else {
+        filePath = path.join("..", "plugin", pluginName, fileSpec);
+      }
+
+      // tslint:disable:no-require-imports
+      let value = require(filePath);
+      // tslint:enable:no-require-imports
+
+      return value;
+    } catch (err) {
+      if (err && err instanceof SyntaxError) {
+        this.logger.error("Unable to load " + pluginName + " due to a syntax error in " + pluginName + "/" + fileSpec + ".js");
+      } else {
+        let typeName = isConfiguration ? type + " configuration" : type;
+        this.logger.error(pluginName + " " + typeName + " not found");
+        let plugins = this.availablePlugins(fileSpec);
+        this.logger.error("Did you mean \"" + this.closestMatch(pluginName, plugins) + "\" ?");
+      }
+
+      process.exit(1);
+      return <T> {};
     }
   }
 }
