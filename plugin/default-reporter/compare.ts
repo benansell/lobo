@@ -53,7 +53,7 @@ export class CompareImp {
 
       return this.diffValue(left, right);
     } catch (err) {
-      let unknown = chalk.yellow("?");
+      let unknown = "?";
       this.logger.error("Error during diff ( see \"" + unknown + "\" below)");
       this.logger.error("Please re-run with verbose option and report the issue");
       this.logger.debug("Error during diff - Left", left);
@@ -63,8 +63,8 @@ export class CompareImp {
       let rightLength = right ? right.length : 0;
 
       return {
-        left: _.repeat(unknown, leftLength),
-        right: _.repeat(unknown, rightLength)
+        left: chalk.yellow(_.repeat(unknown, leftLength)),
+        right: chalk.yellow(_.repeat(unknown, rightLength))
       };
     }
   }
@@ -72,19 +72,19 @@ export class CompareImp {
   public diffValueWithToken(left: string, right: string, token: string): Difference {
     let l = left.indexOf(token) === -1 ? left : left.substring(1, left.length - 1);
     let r = right.indexOf(token) === -1 ? right : right.substring(1, right.length - 1);
-    let tempValue;
+    let valueWithoutToken;
 
     if (token === "\"") {
-      tempValue = this.diffValue(l, r);
+      valueWithoutToken = this.diffValue(l, r);
     } else {
-      tempValue = this.diff(l, r);
+      valueWithoutToken = this.diff(l, r);
     }
 
-    let spacer = " ";
+    let spacer = valueWithoutToken.left === valueWithoutToken.right ? "^" : " ";
     let leftSpacer = left === l ? "" : spacer;
     let rightSpacer = right === r ? "" : spacer;
 
-    let value = {left: leftSpacer + tempValue.left + leftSpacer, right: rightSpacer + tempValue.right + rightSpacer };
+    let value = {left: leftSpacer + valueWithoutToken.left + leftSpacer, right: rightSpacer + valueWithoutToken.right + rightSpacer };
 
     return value;
   }
@@ -343,7 +343,7 @@ export class CompareImp {
     }
 
     while (i < left.length || j < right.length) {
-      let l = i < ioffset || i >= left.length ? null : left[i];
+      let l = j < ioffset || i >= left.length ? null : left[i];
       let r = i < joffset || j >= right.length ? null : right[j];
 
       if (l === r) {

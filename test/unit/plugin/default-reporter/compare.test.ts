@@ -13,6 +13,8 @@ describe("plugin default-reporter compare", () => {
 
   beforeEach(() => {
     mockLogger = <any> sinon.mock();
+    mockLogger.error = sinon.spy();
+    mockLogger.debug = sinon.spy();
     compare = new CompareImp(mockLogger);
   });
 
@@ -35,6 +37,25 @@ describe("plugin default-reporter compare", () => {
       expect(actual.left).to.equal("   ");
       expect(actual.right).to.equal("   ^^^");
     });
+
+    it("should add hint to quotes when on left value when left is string representation of right numeric value", () => {
+      // act
+      let actual = compare.diff("\"123\"", "123");
+
+      // assert
+      expect(actual.left).to.equal("^   ^");
+      expect(actual.right).to.equal("   ");
+    });
+
+    it("should add hint to quotes when on right value when right is string representation of left numeric value", () => {
+      // act
+      let actual = compare.diff("123", "\"123\"");
+
+      // assert
+      expect(actual.left).to.equal("   ");
+      expect(actual.right).to.equal("^   ^");
+    });
+
 
     it("should not add hint to position of quotes in string value", () => {
       // act
@@ -106,6 +127,24 @@ describe("plugin default-reporter compare", () => {
       // assert
       expect(actual.left).to.equal("   ");
       expect(actual.right).to.equal("^^^ ^^^^^^^^");
+    });
+
+    it("should add hint to differences when both union with brackets", () => {
+      // act
+      let actual = compare.diff("Foo (Just 1)", "Foo (Just 2)");
+
+      // assert
+      expect(actual.left).to.equal("            ");
+      expect(actual.right).to.equal("          ^ ");
+    });
+
+    it("should add hint to differences when both union of different lengths with brackets", () => {
+      // act
+      let actual = compare.diff("Foo", "Foo (Bar 1) Baz");
+
+      // assert
+      expect(actual.left).to.equal("   ");
+      expect(actual.right).to.equal("    ^^^^^^^^^^^");
     });
 
     it("should add hint to differences when union with brackets", () => {
@@ -260,9 +299,41 @@ describe("plugin default-reporter compare", () => {
       expect(actual.left).to.equal("           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ");
       expect(actual.right).to.equal("              ");
     });
+
+    it("should catch diff error and return '' for left when it is undefined", () => {
+      // act
+      let actual = compare.diff(undefined, "foo");
+
+      // assert
+      expect(actual.left).to.equal("");
+    });
+
+    it("should catch diff error and return '' for right when it is undefined", () => {
+      // act
+      let actual = compare.diff("foo", undefined);
+
+      // assert
+      expect(actual.right).to.equal("");
+    });
+
+    it("should catch diff error and return '?' repeated for length of left", () => {
+      // act
+      let actual = compare.diff("foo", undefined);
+
+      // assert
+      expect(actual.left).to.match(/\?{3}/);
+    });
+
+    it("should catch diff error and return '?' repeated for length of right", () => {
+      // act
+      let actual = compare.diff(undefined, "foo");
+
+      // assert
+      expect(actual.right).to.match(/\?{3}/);
+    });
   });
 
-  describe("compare.diffValue", () => {
+  describe("diffValue", () => {
     it("should not add a left or right hint when the inputs are equal", () => {
       // act
       let actual = compare.diffValue("foo", "foo");
@@ -310,14 +381,14 @@ describe("plugin default-reporter compare", () => {
         expect(actual.right).to.equal("   ");
       });
 
-    it("should add a left hint when the inputs are different and left is longer does not contain right",
+    it("should add a right hint when the inputs are different and right is longer contains left",
       () => {
         // act
-        let actual = compare.diffValue("foobar", "baz");
+        let actual = compare.diffValue("bar", "foobar");
 
         // assert
-        expect(actual.left).to.equal("^^^^^^");
-        expect(actual.right).to.equal("   ");
+        expect(actual.left).to.equal("   ");
+        expect(actual.right).to.equal("^^^   ");
       });
 
     it("should add a left hint when the inputs are different and right is longer does not contain left",
