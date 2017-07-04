@@ -7,7 +7,7 @@ import rewire = require("rewire");
 
 import * as sinonChai from "sinon-chai";
 import {createPlugin, DefaultReporterImp} from "../../../../plugin/default-reporter/reporter-plugin";
-import {PluginReporter, ProgressReport, ResultType, RunArgs, TestRunFailState, TestRunSummary} from "../../../../lib/plugin";
+import {PluginReporter, ProgressReport, ResultType, RunArgs, TestRun, TestRunFailState, TestRunSummary} from "../../../../lib/plugin";
 import {Compare} from "../../../../plugin/default-reporter/compare";
 import {Util} from "../../../../lib/util";
 import {ChalkChain} from "chalk";
@@ -221,6 +221,214 @@ describe("plugin default-reporter reporter-plugin", () => {
 
       // assert
       expect(output).to.equal(" ");
+    });
+  });
+
+  describe("finish", () => {
+    it("should only log the summary header info when quiet is true", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {quiet: true}});
+      reporter.logSummaryHeader = sinon.spy();
+      reporter.logSummary = sinon.spy();
+      reporter.logNonPassed = sinon.spy();
+      let summary = <TestRunSummary> { passedCount: 123 };
+
+      // act
+      reporter.finish(<TestRun>{summary: summary});
+
+      // assert
+      expect(reporter.logSummary).not.to.have.been.called;
+      expect(reporter.logNonPassed).not.to.have.been.called;
+      expect(reporter.logSummaryHeader).to.have.been.calledWith(summary, sinon.match.any);
+    });
+
+    it("should only log the summary header failState when quiet is true", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {quiet: true}});
+      reporter.logSummaryHeader = sinon.spy();
+      reporter.logSummary = sinon.spy();
+      reporter.logNonPassed = sinon.spy();
+      let failState = <TestRunFailState> { only: {exists: true} };
+
+      // act
+      reporter.finish(<TestRun>{failState: failState});
+
+      // assert
+      expect(reporter.logSummary).not.to.have.been.called;
+      expect(reporter.logNonPassed).not.to.have.been.called;
+      expect(reporter.logSummaryHeader).to.have.been.calledWith(sinon.match.any, failState);
+    });
+
+    it("should log the full summary info when quiet is false", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {quiet: false}});
+      reporter.logSummary = sinon.spy();
+      let summary = <TestRunSummary> { passedCount: 123 };
+
+      // act
+      reporter.finish(<TestRun>{summary: summary});
+
+      // assert
+      expect(reporter.logSummary).to.have.been.calledWith(summary, sinon.match.any);
+    });
+
+    it("should only log the summary header failState when quiet is false", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {quiet: false}});
+      reporter.logSummary = sinon.spy();
+      let summary = <TestRunSummary> { passedCount: 123 };
+      let failState = <TestRunFailState> { only: {exists: true} };
+
+      // act
+      reporter.finish(<TestRun>{summary: summary, failState: failState});
+
+      // assert
+      expect(reporter.logSummary).to.have.been.calledWith(sinon.match.any, failState);
+    });
+
+    it("should log the non passed info when quiet is false", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {quiet: false}});
+      reporter.logNonPassed = sinon.spy();
+      let summary = <TestRunSummary> { passedCount: 123 };
+      let failState = <TestRunFailState> { only: {exists: true} };
+
+      // act
+      reporter.finish(<TestRun>{summary: summary, failState: failState});
+
+      // assert
+      expect(reporter.logNonPassed).to.have.been.calledWith(summary);
+    });
+  });
+
+  describe("logSummary", () => {
+    let revertChalk: () => void;
+    let mockFailedStyle: ChalkChain;
+    let mockPassedStyle: ChalkChain;
+    let mockInconclusiveStyle: ChalkChain;
+
+    beforeEach(() => {
+      let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+      mockFailedStyle = <ChalkChain><{}> sinon.spy();
+      mockPassedStyle = <ChalkChain><{}> sinon.spy();
+      mockInconclusiveStyle = <ChalkChain><{}> sinon.spy();
+      revertChalk = RewiredPlugin.__set__({chalk: {bold: x => x, green: mockPassedStyle, red: mockFailedStyle, yellow: mockInconclusiveStyle}});
+      reporter = new rewiredImp(mockCompare, mockLogger, mockUtil);
+      reporter.init();
+    });
+
+    afterEach(() => {
+      revertChalk();
+    });
+
+    it("should log the passed count with the passedStyle", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{passedCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockPassedStyle).to.have.been.calledWith(sinon.match(/123/));
+    });
+
+    it("should log the passed count with 'Passed:' prefix", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{passedCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockPassedStyle).to.have.been.calledWith(sinon.match(/Passed:/));
+    });
+
+    it("should log the passed count with prefix that is 10 char long", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{passedCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockPassedStyle).to.have.been.calledWith(sinon.match(/^.{10}123$/));
+    });
+
+    it("should log the failed count with the failedStyle", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{failedCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockFailedStyle).to.have.been.calledWith(sinon.match(/123/));
+    });
+
+    it("should log the failed count with 'Failed:' prefix", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{failedCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockFailedStyle).to.have.been.calledWith(sinon.match(/Failed:/));
+    });
+
+    it("should log the failed count with prefix that is 10 char long", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{failedCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockFailedStyle).to.have.been.calledWith(sinon.match(/^.{10}123$/));
+    });
+
+    it("should not log the todo count when it is zero", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{todoCount: 0}, <TestRunFailState>{});
+
+      // assert
+      expect(mockInconclusiveStyle).not.to.have.been.calledWith(sinon.match(/Todo:/));
+    });
+
+    it("should log the todo count with the todoStyle", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockInconclusiveStyle).to.have.been.calledWith(sinon.match(/123/));
+    });
+
+    it("should log the todo count with 'Todo:' prefix", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockInconclusiveStyle).to.have.been.calledWith(sinon.match(/Todo:/));
+    });
+
+    it("should log the todo count with prefix that is 10 char long", () => {
+      // arrange
+      reporter.paddedLog = sinon.spy();
+
+      // act
+      reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
+
+      // assert
+      expect(mockInconclusiveStyle).to.have.been.calledWith(sinon.match(/^.{10}123$/));
     });
   });
 });
