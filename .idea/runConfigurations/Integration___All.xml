@@ -2,7 +2,7 @@
   <configuration default="false" name="Integration - All" type="mocha-javascript-test-runner" factoryName="Mocha" singleton="false">
     <node-interpreter>$USER_HOME$/.nvm/versions/node/v6.9.0/bin/node</node-interpreter>
     <node-options />
-    <working-directory>$PROJECT_DIR$</working-directory>
+    <working-directory>$PROJECT_DIR$/test/integration</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <envs>
       <env name="PATH" value="/Users/ben/.nvm/versions/node/v6.9.0/bin:/usr/bin:/usr/local/bin" />
@@ -10,9 +10,9 @@
       <env name="noisyTestRun" value="true" />
     </envs>
     <ui>bdd</ui>
-    <extra-mocha-options>-t 100000</extra-mocha-options>
+    <extra-mocha-options>--compilers ts:ts-node/register --timeout 100000</extra-mocha-options>
     <test-kind>PATTERN</test-kind>
-    <test-pattern>**/integration/**/*.test.js</test-pattern>
+    <test-pattern>**/*.test.ts</test-pattern>
     <method />
   </configuration>
 </component>

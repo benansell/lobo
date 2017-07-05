@@ -1,14 +1,14 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Unit - Mocha" type="mocha-javascript-test-runner" factoryName="Mocha">
-    <node-interpreter>project</node-interpreter>
+    <node-interpreter>$USER_HOME$/.nvm/versions/node/v6.9.0/bin/node</node-interpreter>
     <node-options />
-    <working-directory>$PROJECT_DIR$</working-directory>
+    <working-directory>$PROJECT_DIR$/test/unit</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <envs />
-    <ui>bdd</ui>
-    <extra-mocha-options />
+    <ui>tdd</ui>
+    <extra-mocha-options>--compilers ts:ts-node/register</extra-mocha-options>
     <test-kind>PATTERN</test-kind>
-    <test-pattern>**/unit/**/*.test.js</test-pattern>
+    <test-pattern>**/*.test.ts</test-pattern>
     <method />
   </configuration>
 </component>

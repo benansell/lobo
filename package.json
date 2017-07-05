@@ -59,12 +59,32 @@
     "mocha": "^3.4.2",
     "mocha-junit-reporter": "^1.13.0",
     "mocha-lcov-reporter": "^1.2.0",
+    "nyc": "^11.0.3",
     "rewire": "^2.5.2",
     "rimraf": "^2.5.4",
     "sinon": "^2.3.2",
     "sinon-chai": "^2.10.0",
+    "source-map-support": "^0.4.15",
+    "ts-node": "^3.1.0",
     "tslint": "^5.4.3",
     "typescript": "^2.3.4"
+  },
+  "nyc": {
+    "exclude": [
+      "**/*.d.ts",
+      "test/**/*.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "reporter": [
+      "lcov",
+      "text-summary"
+    ],
+    "report-dir": "../../test-result/unit/coverage",
+    "require": [
+      "ts-node/register"
+    ]
   },
   "scripts": {
     "clean": "rimraf node_modules test-result",
@@ -74,12 +94,11 @@
     "test-lint": "npm run test-lint-src --silent && npm run test-lint-tests --silent",
     "test-lint-src": "tslint --format stylish --type-check --project tsconfig.json --exclude '**/elm-stuff/**'",
     "test-lint-tests": "tslint --format stylish --type-check --project test/tsconfig.json --exclude '**/elm-stuff/**'",
-    "test-unit": "istanbul --include-all-sources cover --dir ./test-result/unit/coverage node_modules/mocha/bin/_mocha -- --reporter dot test/unit/**/**/*.test.js test/unit/**/**/**/*.test.js",
-    "test-unit-ci": "istanbul --include-all-sources cover --dir ./test-result/unit/coverage node_modules/mocha/bin/_mocha -- --reporter mocha-junit-reporter --reporter-options mochaFile=./test-result/unit/unit-tests.xml test/unit/**/**/*.test.js test/unit/**/**/**/*.test.js",
-    "test-integration": "mocha test/integration/**/*.test.js test/integration/**/**/*.test.js -t 100000",
-    "pretest": "npm run build --silent && npm run test-lint --silent",
+    "test-unit-mocha": "cd test/unit && mocha --opts mocha.opts --reporter dot",
+    "test-unit": "cd test/unit && nyc mocha --opts mocha.opts --reporter dot",
+    "test-unit-ci": "cd test/unit && nyc mocha --opts mocha.opts --reporter mocha-junit-reporter --reporter-options mochaFile=../../test-result/unit/unit-tests.xml",
+    "test-integration": "cd test/integration && mocha --opts mocha.opts",
     "test": "npm run test-unit --silent && npm run test-integration --silent",
-    "pretest-ci": "npm run build --silent && npm run test-lint --silent",
     "test-ci": "npm run test-unit-ci --silent && npm run test-integration --silent"
   }
 }

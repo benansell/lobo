@@ -21,6 +21,7 @@ elm-stuff
 plugin/elm-test-extra/ElmTest/
 
 # tests
+.nyc_output
 test/**/tests/elm-package.json
 test/**/elm-test*/**/elm-package.json
 test-result

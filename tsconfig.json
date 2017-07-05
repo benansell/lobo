@@ -9,7 +9,7 @@
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noResolve": true,
+    "noResolve": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "strictNullChecks": true,
