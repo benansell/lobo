@@ -1,8 +1,24 @@
 import * as bluebird from "bluebird";
 import {createLogger, Logger} from "./logger";
 import {createReporter, Reporter} from "./reporter";
-import {ProgressReport, TestReportRoot} from "./plugin";
-import {LoboConfig, Reject, Resolve} from "./main";
+import {LoboConfig, ProgressReport, RunArgs, TestReportRoot} from "./plugin";
+
+type Reject = (reason?: Error) => void;
+
+type Resolve = (data?: object) => void;
+
+export interface LoboElmApp {
+  ports: {
+    begin: { subscribe: (args: (testCount: number) => void) => void },
+    end: { subscribe: (args: (rawResults: TestReportRoot) => void) => void },
+    progress: { subscribe: (args: (result: ProgressReport) => void) => void },
+    runTests: { send: (args: { reportProgress: boolean }) => void }
+  };
+}
+
+export interface ElmTestApp {
+  UnitTest: { worker: (args: RunArgs) => LoboElmApp };
+}
 
 export interface Runner {
   run(config: LoboConfig): bluebird<object>;
@@ -12,6 +28,20 @@ export class RunnerImp {
 
   private logger: Logger;
   private reporter: Reporter;
+
+  public static loadElmTestApp(testFile: string): ElmTestApp {
+    let app: ElmTestApp;
+
+    try {
+      // tslint:disable:no-require-imports
+      app = require(testFile);
+      // tslint:enable:no-require-imports
+    } catch (err) {
+      throw new Error("Elm program not found" + testFile);
+    }
+
+    return app;
+  }
 
   public static makeTestRunBegin(logger: Logger, reporter: Reporter, reject: Reject): (testCount: number) => void {
     return (testCount: number) => {
@@ -71,18 +101,11 @@ export class RunnerImp {
       (<{document: object}><{}>global).document = {}; // required by Dom
       (<{window: object}><{}>global).window = {}; // required by AnimationFrame
 
-      // tslint:disable:no-require-imports
-      let Elm = require(config.testFile);
-      // tslint:enable:no-require-imports
-
-      if (!Elm) {
-        throw new Error("Elm program not found" + config.testFile);
-      }
-
+      let elmApp = RunnerImp.loadElmTestApp(config.testFile);
       let initArgs = config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
       config.reporter.runArgs(initArgs);
-      let app = Elm.UnitTest.worker(initArgs);
+      let app = elmApp.UnitTest.worker(initArgs);
 
       logger.debug("Subscribing to ports");
       app.ports.begin.subscribe(RunnerImp.makeTestRunBegin(logger, reporter, reject));
