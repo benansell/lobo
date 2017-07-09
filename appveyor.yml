@@ -16,6 +16,9 @@ install:
   - npm install -g elm@%ELM_VERSION%
   - npm install
 
+build_script:
+  - npm run build
+
 test_script:
   - npm run test-ci
 
