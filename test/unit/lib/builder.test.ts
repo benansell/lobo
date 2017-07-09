@@ -10,15 +10,15 @@ chai.use(sinonChai);
 
 describe("lib builder", () => {
   let RewiredBuilder = rewire("../../../lib/builder");
-  let logger: BuilderImp;
+  let builder: BuilderImp;
 
   beforeEach(() => {
     let rewiredImp = RewiredBuilder.__get__("BuilderImp");
-    logger = new rewiredImp();
+    builder = new rewiredImp();
   });
 
-  describe("createLogger", () => {
-    it("should return logger", () => {
+  describe("createBuilder", () => {
+    it("should return builder", () => {
       // act
       let actual: Builder = createBuilder();
 

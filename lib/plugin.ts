@@ -7,6 +7,19 @@ export interface FailureMessage {
   readonly message: string;
 }
 
+export interface LoboConfig {
+  readonly compiler: string;
+  readonly noInstall: boolean;
+  readonly noUpdate: boolean;
+  readonly noWarn: boolean;
+  readonly prompt: boolean;
+  readonly reportProgress: boolean;
+  readonly reporter: PluginReporter;
+  readonly testFile: string;
+  readonly testFramework: PluginTestFrameworkWithConfig;
+  readonly testMainElm: string;
+}
+
 export interface PluginConfig {
   readonly name: string;
   readonly options: PluginOption[];
@@ -31,6 +44,14 @@ export interface PluginReporter {
   finish(results: TestRun): void;
   runArgs(args: RunArgs): void;
   update(result: ProgressReport): void;
+}
+
+export interface PluginReporterWithConfig extends PluginReporter {
+  readonly config: PluginConfig;
+}
+
+export interface PluginTestFrameworkWithConfig extends PluginTestFramework {
+  readonly config: PluginTestFrameworkConfig;
 }
 
 export type ProgressReport =

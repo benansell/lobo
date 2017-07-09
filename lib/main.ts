@@ -11,40 +11,8 @@ import {Builder, createBuilder} from "./builder";
 import {createLogger, Logger} from "./logger";
 import {createRunner, Runner} from "./runner";
 import {createUtil, Util} from "./util";
-import {PluginConfig, PluginReporter, PluginTestFramework, PluginTestFrameworkConfig} from "./plugin";
+import {LoboConfig, PluginConfig, PluginReporter, PluginReporterWithConfig, PluginTestFrameworkWithConfig} from "./plugin";
 import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
-
-// tslint:disable:no-var-requires
-// tslint:disable:no-require-imports
-let packageJson = require("../package.json");
-// tslint:enable:no-require-imports
-// tslint:enable:no-var-requires
-
-export interface LoboConfig {
-  readonly compiler: string;
-  readonly noInstall: boolean;
-  readonly noUpdate: boolean;
-  readonly noWarn: boolean;
-  readonly prompt: boolean;
-  readonly reportProgress: boolean;
-  readonly reporter: PluginReporter;
-  readonly testFile: string;
-  readonly testFramework: PluginTestFrameworkWithConfig;
-  readonly testMainElm: string;
-}
-
-export type Reject = (reason?: Error) => void;
-
-export type Resolve = (data?: object) => void;
-
-
-export interface PluginReporterWithConfig extends PluginReporter {
-  readonly config: PluginConfig;
-}
-
-export interface PluginTestFrameworkWithConfig extends PluginTestFramework {
-  readonly config: PluginTestFrameworkConfig;
-}
 
 interface PartialLoboConfig {
   compiler: string | undefined;
@@ -202,6 +170,7 @@ export class LoboImp implements Lobo {
   // ------------------------------------------------------
 
   public configure(): PartialLoboConfig {
+    let packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
     let config: PartialLoboConfig = <PartialLoboConfig> {
       testMainElm: "UnitTest.elm"
     };

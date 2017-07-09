@@ -217,7 +217,8 @@ describe("lib runner", function() {
       let worker = sinon.stub();
       worker.returns({ports: {begin: {subscribe: mockBegin}, end: {subscribe: end}, progress: {subscribe: mockProgress}, runTests: {send: mockRunTests}}});
       (<sinon.SinonStub>runner.loadElmTestApp).returns({UnitTest: {worker: worker}});
-      mockReporter.finish = sinon.spy();
+      mockReporter.finish = sinon.stub();
+      (<sinon.SinonStub>mockReporter.finish).returns(true);
 
       // act
       let actual = runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});

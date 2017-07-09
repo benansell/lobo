@@ -29,20 +29,6 @@ export class RunnerImp {
   private logger: Logger;
   private reporter: Reporter;
 
-  public static loadElmTestApp(testFile: string): ElmTestApp {
-    let app: ElmTestApp;
-
-    try {
-      // tslint:disable:no-require-imports
-      app = require(testFile);
-      // tslint:enable:no-require-imports
-    } catch (err) {
-      throw new Error("Elm program not found" + testFile);
-    }
-
-    return app;
-  }
-
   public static makeTestRunBegin(logger: Logger, reporter: Reporter, reject: Reject): (testCount: number) => void {
     return (testCount: number) => {
       try {
@@ -89,6 +75,20 @@ export class RunnerImp {
     this.reporter = reporter;
   }
 
+  public loadElmTestApp(testFile: string): ElmTestApp {
+    let app: ElmTestApp;
+
+    try {
+      // tslint:disable:no-require-imports
+      app = require(testFile);
+      // tslint:enable:no-require-imports
+    } catch (err) {
+      throw new Error("Elm program not found" + testFile);
+    }
+
+    return app;
+  }
+
   public run(config: LoboConfig): bluebird<object> {
     this.reporter.configure(config.reporter);
     let logger = this.logger;
@@ -101,7 +101,7 @@ export class RunnerImp {
       (<{document: object}><{}>global).document = {}; // required by Dom
       (<{window: object}><{}>global).window = {}; // required by AnimationFrame
 
-      let elmApp = RunnerImp.loadElmTestApp(config.testFile);
+      let elmApp = this.loadElmTestApp(config.testFile);
       let initArgs = config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
       config.reporter.runArgs(initArgs);

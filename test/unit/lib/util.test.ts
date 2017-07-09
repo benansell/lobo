@@ -10,10 +10,9 @@ import {PluginConfig} from "../../../lib/plugin";
 
 let expect = chai.expect;
 chai.use(sinonChai);
-chai.use(require("chai-things"));
 
 describe("lib util", () => {
-  let RewiredUtil = rewire("./../../../lib/util");
+  let RewiredUtil = rewire("../../../lib/util");
   let util: UtilImp;
   let mockLogger: Logger;
 
@@ -38,15 +37,18 @@ describe("lib util", () => {
   });
 
   describe("availablePlugins", () => {
+    let revertDirName: () => void;
     let revertShellJs: () => void;
     let mockFind: sinon.SinonStub;
 
     beforeEach(() => {
+      revertDirName = RewiredUtil.__set__({"__dirname": "baz"});
       mockFind = sinon.stub();
       revertShellJs = RewiredUtil.__set__({shelljs: {find: mockFind}});
     });
 
     afterEach(() => {
+      revertDirName();
       revertShellJs();
     });
 
@@ -177,7 +179,7 @@ describe("lib util", () => {
       util.getPlugin("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith("foo", sinon.match.any, sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith("foo", sinon.match.any, sinon.match.any, sinon.match.any);
     });
 
     it("should call load with supplied pluginName", () => {
@@ -194,7 +196,7 @@ describe("lib util", () => {
       util.getPlugin("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any, sinon.match.any);
     });
 
     it("should call load with supplied fileSpec", () => {
@@ -211,7 +213,24 @@ describe("lib util", () => {
       util.getPlugin("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, "baz");
+      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, "baz", sinon.match.any);
+    });
+
+    it("should call load with isConfiguration false", () => {
+      // arrange
+      let mockLoad = sinon.stub();
+      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
+      util.load = mockLoad;
+
+      let mockGetPluginConfig = sinon.stub();
+      mockGetPluginConfig.returns({});
+      util.getPluginConfig = mockGetPluginConfig;
+
+      // act
+      util.getPlugin("foo", "bar", "baz");
+
+      // assert
+      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, false);
     });
 
     it("should return the loaded the plugin", () => {
@@ -262,7 +281,7 @@ describe("lib util", () => {
       util.getPluginConfig("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith("foo", sinon.match.any, sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith("foo", sinon.match.any, sinon.match.any, sinon.match.any);
     });
 
     it("should call load with supplied pluginName", () => {
@@ -275,7 +294,7 @@ describe("lib util", () => {
       util.getPluginConfig("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any, sinon.match.any);
     });
 
     it("should call load with supplied fileSpec", () => {
@@ -288,7 +307,20 @@ describe("lib util", () => {
       util.getPluginConfig("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, "baz");
+      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, "baz", sinon.match.any);
+    });
+
+    it("should call load with isConfiguration true", () => {
+      // arrange
+      let mockLoad = sinon.stub();
+      mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
+      util.load = mockLoad;
+
+      // act
+      util.getPluginConfig("foo", "bar", "baz");
+
+      // assert
+      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, true);
     });
 
     it("should return the loaded the plugin config", () => {

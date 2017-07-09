@@ -7,8 +7,7 @@ import * as childProcess from "child_process";
 import * as promptly from "promptly";
 
 import {createLogger, Logger} from "./logger";
-import {LoboConfig, PluginTestFrameworkWithConfig, Reject, Resolve} from "./main";
-import {Dependencies} from "./plugin";
+import {Dependencies, LoboConfig, PluginTestFrameworkWithConfig} from "./plugin";
 import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
 
 interface ElmPackageJson {
@@ -20,6 +19,10 @@ interface ElmPackageCompare {
   readonly base: ElmPackageJson;
   readonly test: ElmPackageJson;
 }
+
+type Reject = (reason?: Error) => void;
+
+type Resolve = (data?: object) => void;
 
 export interface Builder {
   build(config: LoboConfig, testDirectory: string): Bluebird<object>;
@@ -262,7 +265,7 @@ export class BuilderImp implements Builder {
   }
 
   public dependencyExists(dependencies: string[][], candidate: string[]): boolean {
-    return !_.find(dependencies, (x: string) => {
+    return !_.find(dependencies, x => {
       return candidate[0] === x[0] && candidate[1] === x[1];
     });
   }

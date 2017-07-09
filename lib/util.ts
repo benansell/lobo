@@ -12,6 +12,7 @@ export interface Util {
   getPlugin<T>(type: string, pluginName: string, fileSpec: string): T;
   getPluginConfig(type: string, pluginName: string, fileSpec: string): PluginConfig;
   padRight(value: string, length: number, spacer?: string): string;
+  unsafeLoad<T>(filePath: string): T;
 }
 
 export class UtilImp implements Util {
@@ -64,7 +65,7 @@ export class UtilImp implements Util {
   }
 
   public getPlugin<T>(type: string, pluginName: string, fileSpec: string): T {
-    let value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, true);
+    let value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, false);
     let plugin: T = value.createPlugin();
     this.logger.debug(pluginName + " plugin loaded");
     (<{config: PluginConfig}><{}> plugin).config = this.getPluginConfig(type, pluginName, fileSpec);
@@ -104,9 +105,7 @@ export class UtilImp implements Util {
         filePath = path.join("..", "plugin", pluginName, fileSpec);
       }
 
-      // tslint:disable:no-require-imports
-      let value = require(filePath);
-      // tslint:enable:no-require-imports
+      let value = this.unsafeLoad<T>(filePath);
 
       return value;
     } catch (err) {
@@ -122,6 +121,14 @@ export class UtilImp implements Util {
       process.exit(1);
       return <T> {};
     }
+  }
+
+  public unsafeLoad<T>(filePath: string): T {
+    // tslint:disable:no-require-imports
+    let value = require(filePath);
+    // tslint:enable:no-require-imports
+
+    return value;
   }
 }
 

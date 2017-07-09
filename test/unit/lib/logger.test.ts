@@ -10,7 +10,7 @@ let expect = chai.expect;
 chai.use(sinonChai);
 
 describe("lib logger", () => {
-  let RewiredLogger = rewire("./../../../lib/logger");
+  let RewiredLogger = rewire("../../../lib/logger");
   let logger: LoggerImp;
 
   beforeEach(() => {
