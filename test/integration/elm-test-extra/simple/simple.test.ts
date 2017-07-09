@@ -193,9 +193,14 @@ describe("elm-test-extra-simple", () => {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(5, 2);
-      expect(result.stdout).to.matches(/Tests(.|\n)+SecondChildTest\n.+failingTest - Child/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+FailingGrandChildTest\n.+failingTest - GrandChild/);
+      reporterExpect(result).summaryCounts(10, 4);
+      expect(result.stdout).to.matches(/Tests\n.+Suite A\n.+SecondChildTest\n.+1\) FailingTest - Child/);
+      expect(result.stdout).to.matches(
+        /Tests\n.+Suite A\n.+SecondChildTest(.|\n)+FailingGrandChildTest\n.+2\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B\n.+SecondChildTest\n.+3\) FailingTest - Child/);
+      expect(result.stdout).to.matches(
+        /Tests(.|\n)+Suite B\n.+SecondChildTest(.|\n)+FailingGrandChildTest\n.+4\) FailingTest - GrandChild/);
+
       expect(result.code).to.equal(1);
     });
   });

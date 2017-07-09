@@ -193,10 +193,15 @@ describe("elm-test-simple", () => {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(6, 3);
-      expect(result.stdout).to.matches(/Tests\n.+failingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+SecondChildTest\n.+failingTest - Child/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+FailingGrandChildTest\n.+failingTest - GrandChild/);
+      reporterExpect(result).summaryCounts(12, 6);
+      expect(result.stdout).to.matches(/Tests\n.+Suite A\n.+1\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests\n.+Suite A(.|\n)+SecondChildTest\n.+2\) FailingTest - Child/);
+      expect(result.stdout).to.matches(
+        /Tests\n.+Suite A(.|\n)+SecondChildTest(.|\n)+FailingGrandChildTest\n.+3\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B\n.+4\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B(.|\n)+SecondChildTest\n.+5\) FailingTest - Child/);
+      expect(result.stdout).to.matches(
+        /Tests(.|\n)+Suite B(.|\n)+SecondChildTest(.|\n)+FailingGrandChildTest\n.+6\) FailingTest - GrandChild/);
       expect(result.code).to.equal(1);
     });
   });

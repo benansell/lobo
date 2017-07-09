@@ -14,13 +14,13 @@ all =
 
 failingTest : Test
 failingTest =
-    test "failingTest - Concat" <|
+    test "FailingTest - Concat" <|
         \() ->
             Expect.fail "Expected fail"
 
 
 passingTest : Test
 passingTest =
-    test "passingTest Concat" <|
+    test "PassingTest Concat" <|
         \() ->
             Expect.pass
