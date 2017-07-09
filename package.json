@@ -98,7 +98,7 @@
     "test-unit": "cd test/unit && nyc mocha --opts mocha.opts --reporter dot",
     "test-unit-ci": "cd test/unit && nyc mocha --opts mocha.opts --reporter mocha-junit-reporter --reporter-options mochaFile=../../test-result/unit/unit-tests.xml",
     "test-integration": "cd test/integration && mocha --opts mocha.opts",
-    "test": "npm run test-unit --silent && npm run test-integration --silent",
-    "test-ci": "npm run test-unit-ci --silent && npm run test-integration --silent"
+    "test": "npm run test-lint && npm run test-unit --silent && npm run test-integration --silent",
+    "test-ci": "npm run test-lint && npm run test-unit-ci --silent && npm run test-integration --silent"
   }
 }
