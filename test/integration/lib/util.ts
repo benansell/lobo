@@ -65,15 +65,15 @@ export class Util {
     }
   }
 
-  private rmDir(path: string): void {
-    if (!shelljs.test("-e", path)) {
+  private rmDir(filePath: string): void {
+    if (!shelljs.test("-e", filePath)) {
       return;
     }
 
-    shelljs.rm("-r", path);
+    shelljs.rm("-r", filePath);
 
-    if (shelljs.test("-e", path)) {
-      throw new Error("rm -r failed for " + path);
+    if (shelljs.test("-e", filePath)) {
+      throw new Error("rm -r failed for " + filePath);
     }
   }
 }

@@ -147,14 +147,14 @@ export class LoboImp implements Lobo {
     }).on("ready", () => {
       this.ready = true;
       this.launch(config);
-    }).on("all", (event: string, path: string) => {
-      this.logger.trace("watch - event: " + event + ", path: " + path);
+    }).on("all", (event: string, filePath: string) => {
+      this.logger.trace("watch - event: " + event + ", path: " + filePath);
 
       if (this.ready === false) {
         return;
       }
 
-      this.logger.debug("Rebuild triggered by \"" + event + "\" at " + path);
+      this.logger.debug("Rebuild triggered by \"" + event + "\" at " + filePath);
 
       if (this.busy) {
         this.waiting = true;
