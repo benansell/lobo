@@ -1,6 +1,7 @@
 "use strict";
 
 import * as chai from "chai";
+import * as path from "path";
 import rewire = require("rewire");
 import * as sinon from "sinon";
 import * as sinonChai from "sinon-chai";
@@ -35,11 +36,14 @@ describe("lib elm-package-helper", () => {
 
   describe("path", () => {
     it("should return path starting in supplied directory", () => {
+      // arrange
+      let expected = `${path.sep}foo${path.sep}bar`;
+
       // act
-      let actual = helper.path("/foo/bar");
+      let actual = helper.path(expected);
 
       // assert
-      expect(actual).to.match(/^\/foo\/bar/);
+      expect(actual).to.match(new RegExp("^" + expected));
     });
 
     it("should return path ending in elm-package.json path for supplied directory", () => {
@@ -114,12 +118,13 @@ describe("lib elm-package-helper", () => {
     it("should write package to supplied directory", () => {
       // arrange
       let packageJson = <ElmPackageJson> {sourceDirectories: ["foo"]};
+      let expected = `${path.sep}foo${path.sep}bar`;
 
       // act
-      helper.write("/foo", packageJson);
+      helper.write(expected, packageJson);
 
       // assert
-      expect(mockWrite).to.have.been.calledWith(sinon.match(/^\/foo\//), sinon.match.any);
+      expect(mockWrite).to.have.been.calledWith(sinon.match(new RegExp("^" + expected)), sinon.match.any);
     });
 
     it("should write package to 'elm-package.json'", () => {
