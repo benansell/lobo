@@ -22,7 +22,7 @@ build_script:
 test_script:
   - npm run test-ci
 
-after_test:
+on_finish:
   - ps: |
         $wc = New-Object 'System.Net.WebClient'
         Get-ChildItem . -Name -Recurse '*-tests.xml'  |
