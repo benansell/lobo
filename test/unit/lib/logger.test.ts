@@ -362,6 +362,21 @@ describe("lib logger", () => {
   });
 
   describe("levelToStyle", () => {
+    let revertChalk: () => void;
+
+    beforeEach(() => {
+      revertChalk = RewiredLogger.__set__({chalk: {
+        dim: { gray: x => "dim gray"},
+        gray: x => "gray",
+        red: x => "red",
+        reset: x => "reset",
+        yellow: x => "yellow"
+      }});
+    });
+
+    afterEach(() => {
+      revertChalk();
+    });
 
     it("should throw an error when the log level is unknown", () => {
       expect(() => {
@@ -369,7 +384,7 @@ describe("lib logger", () => {
       }).to.throw("Unknown log level: -1");
     });
 
-    let tests = [{level: LogLevel.Trace, expected: "dim"},
+    let tests = [{level: LogLevel.Trace, expected: "dim gray"},
       {level: LogLevel.Debug, expected: "gray"},
       {level: LogLevel.Info, expected: "reset"},
       {level: LogLevel.Warn, expected: "yellow"},
@@ -381,8 +396,7 @@ describe("lib logger", () => {
         let actual = logger.levelToStyle(test.level);
 
         // assert
-        let style = (<{ _styles: string[] }><{}>actual)._styles[0];
-        expect(style).to.equal(test.expected);
+        expect(actual()).to.equal(test.expected);
       });
     });
   });
