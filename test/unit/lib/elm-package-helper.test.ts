@@ -1,5 +1,6 @@
 "use strict";
 
+import * as _ from "lodash";
 import * as chai from "chai";
 import * as path from "path";
 import rewire = require("rewire");
@@ -43,7 +44,7 @@ describe("lib elm-package-helper", () => {
       let actual = helper.path(expected);
 
       // assert
-      expect(actual).to.match(new RegExp("^" + expected));
+      expect(actual).to.match(new RegExp("^" + _.escapeRegExp(expected)));
     });
 
     it("should return path ending in elm-package.json path for supplied directory", () => {
@@ -124,7 +125,7 @@ describe("lib elm-package-helper", () => {
       helper.write(expected, packageJson);
 
       // assert
-      expect(mockWrite).to.have.been.calledWith(sinon.match(new RegExp("^" + expected)), sinon.match.any);
+      expect(mockWrite).to.have.been.calledWith(sinon.match(new RegExp("^" + _.escapeRegExp(expected))), sinon.match.any);
     });
 
     it("should write package to 'elm-package.json'", () => {
