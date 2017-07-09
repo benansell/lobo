@@ -139,15 +139,44 @@ export class DefaultReporterImp implements PluginReporter {
   }
 
   public sortItemsByLabel(items: LeafItem[]): LeafItem[] {
-    if (items.length === 0) {
-      return items;
+    if (!items || items.length === 0) {
+      return [];
     }
 
-    let failureSortKey = (x: LeafItem) => x.labels.join(" ") + " " + x.result.label;
-    let maxItem = <LeafItem> _.maxBy(items, (x: LeafItem) => failureSortKey(x).length);
-    let max = failureSortKey(maxItem).length;
+    let maxSize = <number> _.max(_.map(items, x => x.labels.length));
+    let maxLabelLength = this.calculateMaxLabelLength(items);
 
-    return _.sortBy(items, [(x: LeafItem) => _.padStart(failureSortKey(x), max, " ")]).reverse();
+    return _.sortBy(items, (x: LeafItem) => this.toFailureSortKey(maxSize, maxLabelLength, x));
+  }
+
+  public toFailureSortKey(maxSize: number, maxLabelLength: number, item: LeafItem): string {
+    let maxSizeLength = maxSize.toString.length;
+    let toSortKey = (x: string) => this.util.padRight(x, maxLabelLength);
+
+    let prefix = _.map(item.labels, y => toSortKey(y)).join(" " + this.util.padRight("?", maxSizeLength, "?") + ":");
+    let suffix = " " + this.util.padRight(item.labels.length.toString(), maxSizeLength, "?") + ":" + toSortKey(item.result.label);
+
+    return prefix + suffix;
+  }
+
+  public calculateMaxLabelLength(items: LeafItem[]): number {
+    let maxLabelLength = 0;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].result.label.length > maxLabelLength) {
+        maxLabelLength = items[i].result.label.length;
+      }
+
+      for (let j = 0; j < items[i].labels.length; j++) {
+        let label = items[i].labels[j];
+
+        if (label.length > maxLabelLength) {
+          maxLabelLength = label.length;
+        }
+      }
+    }
+
+    return maxLabelLength;
   }
 
   public logNonPassed(summary: TestRunSummary): void {
@@ -164,14 +193,9 @@ export class DefaultReporterImp implements PluginReporter {
     let sortedItemList = this.sortItemsByLabel(itemList);
     let padding = "    ";
     let context: string[] = [];
-    let index = 1;
 
-    while (sortedItemList.length > 0) {
-      let item = sortedItemList.pop();
-
-      if (!item) {
-        continue;
-      }
+    for (let i = 0; i < sortedItemList.length; i++) {
+      let item = sortedItemList[i];
 
       let isNotRun = false;
       let style = this.failedStyle;
@@ -184,14 +208,13 @@ export class DefaultReporterImp implements PluginReporter {
         style = this.todoStyle;
       }
 
-      context = this.logLabels(item.labels, item.result.label, index, context, style);
+      context = this.logLabels(item.labels, item.result.label, i + 1, context, style);
 
       if (isNotRun) {
         this.logNotRunMessage(<TestRunLeaf<TestReportSkippedLeaf>>item, padding);
       } else {
         this.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>>item, padding);
       }
-      index++;
     }
   }
 
@@ -231,7 +254,7 @@ export class DefaultReporterImp implements PluginReporter {
     let stdout = <{ columns: number }><{}>process.stdout;
 
     // default to a width of 80 when process is not running in a terminal
-    let maxLength = stdout.columns ? stdout.columns - padding.length : 80;
+    let maxLength = stdout && stdout.columns ? stdout.columns - padding.length : 80;
     let givenStyle = this.givenStyle("Given");
 
     _.forEach(item.result.resultMessages, (resultMessage: FailureMessage) => {
