@@ -12,6 +12,6 @@ all =
 
 failingTest : Test
 failingTest =
-    test "failingTest - GrandChild" <|
+    test "FailingTest - GrandChild" <|
         \() ->
             Expect.fail "Expected fail"

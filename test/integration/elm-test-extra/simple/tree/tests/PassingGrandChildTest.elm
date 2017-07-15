@@ -12,6 +12,6 @@ all =
 
 passingTest : Test
 passingTest =
-    test "passingTest - Grandchild" <|
+    test "PassingTest - Grandchild" <|
         \() ->
             Expect.pass

@@ -34,4 +34,7 @@ install:
   - npm install
 
 script:
-  - npm test
+  - npm run build
+  - npm run test-lint
+  - npm run test-unit-coveralls
+  - npm run test-integration

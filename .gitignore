@@ -2,6 +2,12 @@
 node_modules/
 npm-debug.log
 
+# typescript
+*.js
+*.js.map
+!/bin/lobo.js
+!/wallaby.js
+
 # emacs temp files
 .\#*
 
@@ -15,6 +21,7 @@ elm-stuff
 plugin/elm-test-extra/ElmTest/
 
 # tests
+.nyc_output
 test/**/tests/elm-package.json
 test/**/elm-test*/**/elm-package.json
 test-result

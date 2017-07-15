@@ -11,6 +11,23 @@ import Test exposing (Test, describe, test)
 all : Test
 all =
     describe "Tests"
+        [ suiteA
+        , suiteB
+        ]
+
+suiteA : Test
+suiteA =
+    describe "Suite A"
+        [ passingTest
+        , ConcatChildTest.all
+        , FirstChildTest.all
+        , SecondChildTest.all
+        , FuzzyChildTest.all
+        ]
+
+suiteB : Test
+suiteB =
+    describe "Suite B"
         [ passingTest
         , ConcatChildTest.all
         , FirstChildTest.all
@@ -21,6 +38,6 @@ all =
 
 passingTest : Test
 passingTest =
-    test "passingTest Child" <|
+    test "PassingTest Child" <|
         \() ->
             Expect.pass
