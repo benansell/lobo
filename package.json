@@ -97,7 +97,7 @@
     "test-lint-tests": "tslint --format stylish --type-check --project test/tsconfig.json --exclude '**/elm-stuff/**'",
     "test-unit-mocha": "cd test/unit && mocha --opts mocha.opts --reporter dot",
     "test-unit": "cd test/unit && nyc mocha --opts mocha.opts --reporter dot",
-    "test-unit-ci": "cd test/unit && nyc report mocha --opts mocha.opts --reporter mocha-junit-reporter --reporter-options mochaFile=../../test-result/unit/unit-tests.xml",
+    "test-unit-ci": "cd test/unit && nyc mocha --opts mocha.opts --reporter mocha-junit-reporter --reporter-options mochaFile=../../test-result/unit/unit-tests.xml",
     "test-unit-coveralls": "cd test/unit && nyc mocha --opts mocha.opts --reporter dot && nyc report --reporter=text-lcov | coveralls",
     "test-integration": "cd test/integration && mocha --opts mocha.opts",
     "test": "npm run test-lint && npm run test-unit --silent && npm run test-integration --silent",
