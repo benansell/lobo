@@ -12,6 +12,7 @@ import * as bluebird from "bluebird";
 
 let expect = chai.expect;
 chai.use(sinonChai);
+chai.use(require("chai-things"));
 
 describe("lib builder", () => {
   let RewiredBuilder = rewire("../../../lib/builder");
@@ -1285,6 +1286,18 @@ describe("lib builder", () => {
       expect(actual).to.include(".");
     });
 
+    it("should return array with current dir only when no other dirs are specified other than the test source directories", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: []}};
+
+      // act
+      let actual = builder.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, "testDir", testFramework);
+
+      // assert
+      expect(actual.length).to.equal(1);
+      expect(actual).to.include(".");
+    });
+
     it("should return array with current dir relative test directory", () => {
       // arrange
       let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: ["foo"]}};
@@ -1379,6 +1392,19 @@ describe("lib builder", () => {
   });
 
   describe("mergeDependencies", () => {
+    it("should return empty dependency list when source, test and framework dependencies do not exist", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{};
+      let testPackageJson = <ElmPackageJson>{};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {}};
+
+      // act
+      let actual = builder.mergeDependencies(sourcePackageJson, testPackageJson, testFramework);
+
+      // assert
+      expect(actual.length).to.equal(0);
+    });
+
     it("should return the source and test framework dependencies when the test dependencies does not exist", () => {
       // arrange
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "foo"}};
@@ -1552,6 +1578,17 @@ describe("lib builder", () => {
       expect(mockExec).to.have.been.calledWith(sinon.match(/ --yes/), sinon.match.any);
     });
 
+    it("should call elm-package to install the packages with cwd as the supplied directory", () => {
+      // arrange
+      let config = <LoboConfig> {compiler: "foo"};
+
+      // act
+      builder.runElmPackageInstall(config, "bar", false, mockResolve, mockReject);
+
+      // assert
+      expect(mockExec).to.have.been.calledWith(sinon.match.any, sinon.match((x => x.cwd === "bar")));
+    });
+
     it("should call resolve when there are no elm-package install errors", () => {
       // arrange
       let config = <LoboConfig> {compiler: "foo"};
@@ -1565,7 +1602,7 @@ describe("lib builder", () => {
 
     it("should catch any elm-package installation errors and call the specified reject with the error", () => {
       // arrange
-      let config = <LoboConfig> {compiler: "foo"};
+      let config = <LoboConfig> {};
       let expected = new Error();
       mockExec.throws(expected);
 
@@ -1668,6 +1705,17 @@ describe("lib builder", () => {
 
       // assert
       expect(mockExec).to.have.been.calledWith(sinon.match(/ --warn/), sinon.match.any);
+    });
+
+    it("should call elm-make to build the tests with cwd as supplied directory", () => {
+      // arrange
+      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", noWarn: false};
+
+      // act
+      builder.make(config, "bar");
+
+      // assert
+      expect(mockExec).to.have.been.calledWith(sinon.match.any, sinon.match(x => x.cwd === "bar"));
     });
 
     it("should call resolve when there are no elm-make build errors", () => {

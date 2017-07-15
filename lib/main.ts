@@ -375,7 +375,7 @@ export class LoboImp implements Lobo {
     } else {
       this.logger.error("Unhandled exception", errorString);
 
-      if (error.stack) {
+      if (error && error.stack) {
         this.logger.debug(error.stack);
       }
     }

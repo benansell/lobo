@@ -1033,6 +1033,14 @@ describe("plugin default-reporter reporter-plugin", () => {
       expect(mockYellow).to.have.been.calledWith("bar");
     });
 
+    it("should not replace failure markers when '│ ' is missing", () => {
+      // act
+      let actual = reporter.formatFailure("foo\n╷\n│bar\n╵\nbaz", 123);
+
+      // assert
+      expect(actual).to.equal("foo\n╷\n│bar\n╵\nbaz");
+    });
+
     it("should replace failure markers '╷', │' and '╵' with '┌','│' and'└' ", () => {
       // act
       let actual = reporter.formatFailure("foo\n╷\n│ bar\n╵\nbaz", 123);

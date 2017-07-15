@@ -723,6 +723,70 @@ describe("lib main", () => {
       expect(actual.prompt).to.be.true;
     });
 
+    it("should silence shelljs when verbose is false", () => {
+      // arrange
+      let shelljs = rewiredMain.__get__("shelljs");
+      shelljs.config.silent = false;
+      let mockCleanup = Sinon.stub();
+      (<{verbose: boolean}>programMocks).verbose = false;
+      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+
+      // act
+      let actual: LoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(shelljs.config.silent).to.be.true;
+    });
+
+    it("should not silence shelljs when verbose is true", () => {
+      // arrange
+      let shelljs = rewiredMain.__get__("shelljs");
+      shelljs.config.silent = false;
+      let mockCleanup = Sinon.stub();
+      (<{verbose: boolean}>programMocks).verbose = true;
+      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+
+      // act
+      let actual: LoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(shelljs.config.silent).to.be.false;
+    });
+
+    it("should silence shelljs when veryVerbose is false", () => {
+      // arrange
+      let shelljs = rewiredMain.__get__("shelljs");
+      shelljs.config.silent = false;
+      let mockCleanup = Sinon.stub();
+      (<{veryVerbose: boolean}>programMocks).veryVerbose = false;
+      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+
+      // act
+      let actual: LoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(shelljs.config.silent).to.be.true;
+    });
+
+    it("should not silence shelljs when veryVerbose is true", () => {
+      // arrange
+      let shelljs = rewiredMain.__get__("shelljs");
+      shelljs.config.silent = false;
+      let mockCleanup = Sinon.stub();
+      (<{veryVerbose: boolean}>programMocks).veryVerbose = true;
+      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+
+      // act
+      let actual: LoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(shelljs.config.silent).to.be.false;
+    });
+    
     it("should convert program prompt 'Yes' to true", () => {
       // arrange
       let mockCleanup = Sinon.stub();
@@ -997,6 +1061,17 @@ describe("lib main", () => {
       expect(mockLogger.error).to.have.been.calledWith("Invalid configuration combination");
     });
 
+    it("should not log an error when the test framework is elm-test and showSkip is false", () => {
+      // arrange
+      let revert = rewiredMain.__with__({program: {framework: "elm-test", showSkip: false}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockLogger.error).not.to.have.been.calledWith("Invalid configuration combination");
+    });
+
     it("should call process.exit with an exitCode of 1 when the test framework is elm-test and showSkip is true", () => {
       // arrange
       let revert = rewiredMain.__with__({program: {framework: "elm-test", showSkip: true}, shelljs: {test: () => true}});
@@ -1172,6 +1247,17 @@ describe("lib main", () => {
   });
 
   describe("handleUncaughtException", () => {
+    it("should log undefined error", () => {
+      // arrange
+      let config = <LoboConfig> {};
+
+      // act
+      lobo.handleUncaughtException(undefined, config);
+
+      // assert
+      expect(mockLogger.error).to.have.been.calledWith("Unhandled exception", Sinon.match.any);
+    });
+
     it("should log unknown general errors", () => {
       // arrange
       let error = new Error();
@@ -1187,6 +1273,19 @@ describe("lib main", () => {
     it("should log unknown reference errors", () => {
       // arrange
       let error = new ReferenceError();
+      let config = <LoboConfig> {};
+
+      // act
+      lobo.handleUncaughtException(error, config);
+
+      // assert
+      expect(mockLogger.error).to.have.been.calledWith("Unhandled exception", Sinon.match.any);
+    });
+
+    it("should log unknown reference errors when stack trace does not exist", () => {
+      // arrange
+      let error = new ReferenceError();
+      error.stack = undefined;
       let config = <LoboConfig> {};
 
       // act
