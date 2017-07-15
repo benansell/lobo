@@ -13,7 +13,6 @@ import {Logger} from "../../../lib/logger";
 import {Runner} from "../../../lib/runner";
 import {Util} from "../../../lib/util";
 import {LoboConfig, PluginReporterWithConfig, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
-import p = require("proxyquire");
 
 
 let expect = chai.expect;
