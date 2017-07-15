@@ -1554,7 +1554,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo\/elm-package install/), Sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo(\/|\\)elm-package install/), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages without --yes when prompt is true", () => {
@@ -1639,7 +1639,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^abc\/elm-make /), Sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^abc(\/|\\)elm-make /), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages from the specified elm-install path", () => {
@@ -1650,7 +1650,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo\/elm-package install/), Sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo(\/|\\)elm-package install/), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests to the specified output testFile", () => {

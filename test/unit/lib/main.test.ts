@@ -74,7 +74,7 @@ describe("lib main", () => {
       let actual = LoboImp.generateTestFileName();
 
       // assert
-      expect(actual).to.match(/\/lobo-test.+\.js$/);
+      expect(actual).to.match(/(\/|\\)lobo-test.+\.js$/);
     });
 
     it("should return a js file name", () => {
