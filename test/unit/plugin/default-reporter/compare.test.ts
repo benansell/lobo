@@ -38,6 +38,15 @@ describe("plugin default-reporter compare", () => {
       expect(actual.right).to.equal("   ^^^");
     });
 
+    it("should not add hint to quotes when on left value when left is not string representation of right numeric value", () => {
+      // act
+      let actual = compare.diff("\"123\"", "456");
+
+      // assert
+      expect(actual.left).to.equal("     ");
+      expect(actual.right).to.equal("^^^");
+    });
+
     it("should add hint to quotes when on left value when left is string representation of right numeric value", () => {
       // act
       let actual = compare.diff("\"123\"", "123");

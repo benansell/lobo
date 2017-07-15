@@ -80,7 +80,7 @@ export class CompareImp {
       valueWithoutToken = this.diff(l, r);
     }
 
-    let spacer = valueWithoutToken.left === valueWithoutToken.right ? "^" : " ";
+    let spacer = left !== right && l === r ? "^" : " ";
     let leftSpacer = left === l ? "" : spacer;
     let rightSpacer = right === r ? "" : spacer;
 
