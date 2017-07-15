@@ -38,13 +38,13 @@ export interface Lobo {
 export class LoboImp implements Lobo {
 
   private builder: Builder;
-  private busy: boolean = false;
+  private busy: boolean;
   private elmPackageHelper: ElmPackageHelper;
   private logger: Logger;
-  private ready: boolean = false;
+  private ready: boolean;
   private runner: Runner;
   private util: Util;
-  private waiting: boolean = false;
+  private waiting: boolean;
 
   public static generateTestFileName(): string {
     let tmpFile = tmp.fileSync({prefix: "lobo-test-", postfix: ".js"});
@@ -52,12 +52,17 @@ export class LoboImp implements Lobo {
     return tmpFile.name;
   }
 
-  constructor(builder: Builder, elmPackageHelper: ElmPackageHelper, logger: Logger, runner: Runner, util: Util) {
+  constructor(builder: Builder, elmPackageHelper: ElmPackageHelper, logger: Logger, runner: Runner, util: Util,
+              busy: boolean, ready: boolean, waiting: boolean) {
     this.builder = builder;
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
     this.runner = runner;
     this.util = util;
+
+    this.busy = busy;
+    this.ready = ready;
+    this.waiting = waiting;
   }
 
   public execute(): void {
@@ -83,7 +88,7 @@ export class LoboImp implements Lobo {
     }
   }
 
-  public launch(partialConfig: PartialLoboConfig): void {
+  public launch(partialConfig: PartialLoboConfig): bluebird<void> {
     partialConfig.testFile = LoboImp.generateTestFileName();
     let config = <LoboConfig> partialConfig;
 
@@ -92,7 +97,7 @@ export class LoboImp implements Lobo {
       () => this.runner.run(config)
     ];
 
-    bluebird.mapSeries(stages, (item) => {
+    return bluebird.mapSeries(stages, (item) => {
       return item();
     }).then(() => {
       this.logger.debug("launch success");
@@ -385,5 +390,5 @@ export class LoboImp implements Lobo {
 }
 
 export function createLobo(): Lobo {
-  return new LoboImp(createBuilder(), createElmPackageHelper(), createLogger(), createRunner(), createUtil());
+  return new LoboImp(createBuilder(), createElmPackageHelper(), createLogger(), createRunner(), createUtil(), false, false, false);
 }
