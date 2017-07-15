@@ -1,4 +1,4 @@
-import * as bluebird from "bluebird";
+import * as Bluebird from "bluebird";
 import {createLogger, Logger} from "./logger";
 import {createReporter, Reporter} from "./reporter";
 import {LoboConfig, ProgressReport, RunArgs, TestReportRoot} from "./plugin";
@@ -21,7 +21,7 @@ export interface ElmTestApp {
 }
 
 export interface Runner {
-  run(config: LoboConfig): bluebird<object>;
+  run(config: LoboConfig): Bluebird<object>;
 }
 
 export class RunnerImp {
@@ -89,12 +89,12 @@ export class RunnerImp {
     return app;
   }
 
-  public run(config: LoboConfig): bluebird<object> {
+  public run(config: LoboConfig): Bluebird<object> {
     this.reporter.configure(config.reporter);
     let logger = this.logger;
     let reporter = this.reporter;
 
-    return new bluebird((resolve: Resolve, reject: Reject) => {
+    return new Bluebird((resolve: Resolve, reject: Reject) => {
       logger.info("-----------------------------------[ TEST ]-------------------------------------");
 
       // add to the global scope browser global properties that are used by elm imports

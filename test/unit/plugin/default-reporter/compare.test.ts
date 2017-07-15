@@ -1,7 +1,7 @@
 "use strict";
 
 import * as chai from "chai";
-import * as sinon from "sinon";
+import * as Sinon from "sinon";
 import {Compare, CompareImp, createCompare} from "../../../../plugin/default-reporter/compare";
 import {Logger} from "../../../../lib/logger";
 
@@ -12,9 +12,9 @@ describe("plugin default-reporter compare", () => {
   let mockLogger: Logger;
 
   beforeEach(() => {
-    mockLogger = <any> sinon.mock();
-    mockLogger.error = sinon.spy();
-    mockLogger.debug = sinon.spy();
+    mockLogger = <any> Sinon.mock();
+    mockLogger.error = Sinon.spy();
+    mockLogger.debug = Sinon.spy();
     compare = new CompareImp(mockLogger);
   });
 

@@ -1,6 +1,6 @@
 
 import * as _ from "lodash";
-import * as chalk from "chalk";
+import * as Chalk from "chalk";
 import * as program from "commander";
 import {Compare, createCompare} from "./compare";
 import {
@@ -23,15 +23,15 @@ export class DefaultReporterImp implements PluginReporter {
   private compare: Compare;
   private logger: Logger;
   private util: Util;
-  private passedStyle: chalk.ChalkChain = chalk.green;
-  private failedStyle: chalk.ChalkChain = chalk.red;
-  private givenStyle: chalk.ChalkChain = chalk.yellow;
-  private inconclusiveStyle: chalk.ChalkChain = chalk.yellow;
-  private headerStyle: chalk.ChalkChain = chalk.bold;
-  private labelStyle: chalk.ChalkChain = chalk.dim;
-  private onlyStyle: chalk.ChalkChain;
-  private skipStyle: chalk.ChalkChain;
-  private todoStyle: chalk.ChalkChain;
+  private passedStyle: Chalk.ChalkChain = Chalk.green;
+  private failedStyle: Chalk.ChalkChain = Chalk.red;
+  private givenStyle: Chalk.ChalkChain = Chalk.yellow;
+  private inconclusiveStyle: Chalk.ChalkChain = Chalk.yellow;
+  private headerStyle: Chalk.ChalkChain = Chalk.bold;
+  private labelStyle: Chalk.ChalkChain = Chalk.dim;
+  private onlyStyle: Chalk.ChalkChain;
+  private skipStyle: Chalk.ChalkChain;
+  private todoStyle: Chalk.ChalkChain;
   private initArgs: RunArgs;
 
   public constructor(compare: Compare, logger: Logger, util: Util) {
@@ -57,7 +57,7 @@ export class DefaultReporterImp implements PluginReporter {
     } else if (result.resultType === "PASSED") {
       process.stdout.write(".");
     } else if (result.resultType === "FAILED") {
-      process.stdout.write(chalk.red("!"));
+      process.stdout.write(Chalk.red("!"));
     } else if (result.resultType === "SKIPPED") {
       process.stdout.write(this.skipStyle("?"));
     } else if (result.resultType === "TODO") {
@@ -218,7 +218,7 @@ export class DefaultReporterImp implements PluginReporter {
     }
   }
 
-  public logLabels(labels: string[], itemLabel: string, index: number, context: string[], itemStyle: chalk.ChalkChain): string[] {
+  public logLabels(labels: string[], itemLabel: string, index: number, context: string[], itemStyle: Chalk.ChalkChain): string[] {
     if (labels.length === 0) {
       return context;
     }
@@ -280,7 +280,7 @@ export class DefaultReporterImp implements PluginReporter {
 
   public formatFailure(message: string, maxLength: number): string {
     if (message.indexOf("│") === -1) {
-      return message.replace(message, "\n  " + chalk.yellow(message) + "\n");
+      return message.replace(message, "\n  " + Chalk.yellow(message) + "\n");
     }
 
     let lines = message.split("\n");
@@ -303,7 +303,7 @@ export class DefaultReporterImp implements PluginReporter {
       lines[4] = "└ " + lines[4];
 
       let expectMessage = lines[2].substring(2, lines[2].length);
-      lines[2] = lines[2].replace(expectMessage, chalk.yellow(expectMessage));
+      lines[2] = lines[2].replace(expectMessage, Chalk.yellow(expectMessage));
     }
 
     let expectEqualRegex = /Expect.equal(Dicts|Lists|Sets)*/;
@@ -344,12 +344,12 @@ export class DefaultReporterImp implements PluginReporter {
     let sectionLength = length - prefix.length - 1;
 
     chunks[0] = firstPrefix + contentLine.substring(1, sectionLength + 1);
-    chunks[1] = prefix + chalk.red(diffLine.substring(1, sectionLength + 1));
+    chunks[1] = prefix + Chalk.red(diffLine.substring(1, sectionLength + 1));
 
     for (let i = 1; i < size; i++) {
       offset = (i * sectionLength) + 1;
       chunks[i * 2] = prefix + contentLine.substring(offset, offset + sectionLength);
-      chunks[i * 2 + 1] = prefix + chalk.red(diffLine.substring(offset, offset + sectionLength));
+      chunks[i * 2 + 1] = prefix + Chalk.red(diffLine.substring(offset, offset + sectionLength));
     }
 
     return chunks;

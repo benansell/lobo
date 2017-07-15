@@ -1,4 +1,4 @@
-import * as chalk from "chalk";
+import * as Chalk from "chalk";
 import * as _ from "lodash";
 import {createLogger, Logger} from "../../lib/logger";
 
@@ -63,8 +63,8 @@ export class CompareImp {
       let rightLength = right ? right.length : 0;
 
       return {
-        left: chalk.yellow(_.repeat(unknown, leftLength)),
-        right: chalk.yellow(_.repeat(unknown, rightLength))
+        left: Chalk.yellow(_.repeat(unknown, leftLength)),
+        right: Chalk.yellow(_.repeat(unknown, rightLength))
       };
     }
   }

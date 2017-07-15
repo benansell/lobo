@@ -4,13 +4,13 @@ import * as _ from "lodash";
 import * as chai from "chai";
 import * as path from "path";
 import rewire = require("rewire");
-import * as sinon from "sinon";
-import * as sinonChai from "sinon-chai";
+import * as Sinon from "sinon";
+import * as SinonChai from "sinon-chai";
 import {createElmPackageHelper, ElmPackageHelper, ElmPackageHelperImp, ElmPackageJson} from "../../../lib/elm-package-helper";
 import {Logger} from "../../../lib/logger";
 
 let expect = chai.expect;
-chai.use(sinonChai);
+chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib elm-package-helper", () => {
@@ -20,8 +20,8 @@ describe("lib elm-package-helper", () => {
 
   beforeEach(() => {
     let rewiredImp = RewiredHelper.__get__("ElmPackageHelperImp");
-    mockLogger = <any> sinon.stub();
-    mockLogger.debug = <any> sinon.stub();
+    mockLogger = <any> Sinon.stub();
+    mockLogger.debug = <any> Sinon.stub();
     helper = new rewiredImp(mockLogger);
   });
 
@@ -61,7 +61,7 @@ describe("lib elm-package-helper", () => {
     let mockRead;
 
     beforeEach(() => {
-      mockRead = sinon.stub();
+      mockRead = Sinon.stub();
       revertRead = RewiredHelper.__set__({fs: {readFileSync: mockRead}})
     });
 
@@ -108,7 +108,7 @@ describe("lib elm-package-helper", () => {
     let mockWrite;
 
     beforeEach(() => {
-      mockWrite = sinon.stub();
+      mockWrite = Sinon.stub();
       revertWrite = RewiredHelper.__set__({fs: {writeFileSync: mockWrite}})
     });
 
@@ -125,7 +125,7 @@ describe("lib elm-package-helper", () => {
       helper.write(expected, packageJson);
 
       // assert
-      expect(mockWrite).to.have.been.calledWith(sinon.match(new RegExp("^" + _.escapeRegExp(expected))), sinon.match.any);
+      expect(mockWrite).to.have.been.calledWith(Sinon.match(new RegExp("^" + _.escapeRegExp(expected))), Sinon.match.any);
     });
 
     it("should write package to 'elm-package.json'", () => {
@@ -136,7 +136,7 @@ describe("lib elm-package-helper", () => {
       helper.write("/foo", packageJson);
 
       // assert
-      expect(mockWrite).to.have.been.calledWith(sinon.match(/\elm-package\.json$/), sinon.match.any);
+      expect(mockWrite).to.have.been.calledWith(Sinon.match(/\elm-package\.json$/), Sinon.match.any);
     });
 
     it("should write package json with 'sourceDirectories' renamed as 'source-directories'", () => {
@@ -147,8 +147,8 @@ describe("lib elm-package-helper", () => {
       helper.write("/foo", packageJson);
 
       // assert
-      expect(mockWrite).not.to.have.been.calledWith(sinon.match.any, sinon.match(/"sourceDirectories":/));
-      expect(mockWrite).to.have.been.calledWith(sinon.match.any, sinon.match(/"source-directories":/));
+      expect(mockWrite).not.to.have.been.calledWith(Sinon.match.any, Sinon.match(/"sourceDirectories":/));
+      expect(mockWrite).to.have.been.calledWith(Sinon.match.any, Sinon.match(/"source-directories":/));
     });
   });
 });

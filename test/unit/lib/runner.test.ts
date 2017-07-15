@@ -1,18 +1,17 @@
 "use strict";
 
 import * as chai from "chai";
-import * as sinon from "sinon";
+import * as Sinon from "sinon";
 import rewire = require("rewire");
-import * as sinonChai from "sinon-chai";
-
+import * as SinonChai from "sinon-chai";
+import {SinonStub} from "sinon";
 import {Logger} from "../../../lib/logger";
 import {createRunner, Runner, RunnerImp} from "../../../lib/runner";
 import {Reporter} from "../../../lib/reporter";
 import {LoboConfig, PluginReporter, PluginTestFramework, ProgressReport, TestReportRoot} from "../../../lib/plugin";
-import {underline} from "chalk";
 
 let expect = chai.expect;
-chai.use(sinonChai);
+chai.use(SinonChai);
 
 describe("lib runner", function() {
   let RewiredRunner = rewire("../../../lib/runner");
@@ -25,14 +24,14 @@ describe("lib runner", function() {
   beforeEach(() => {
     let rewiredImp = RewiredRunner.__get__("RunnerImp");
     mockLogger = <Logger> {};
-    mockLogger.debug = <any> sinon.spy();
-    mockLogger.info = <any> sinon.spy();
-    mockLogger.trace = <any> sinon.spy();
+    mockLogger.debug = <any> Sinon.spy();
+    mockLogger.info = <any> Sinon.spy();
+    mockLogger.trace = <any> Sinon.spy();
     mockReporter = <Reporter> {};
     runner = new rewiredImp(mockLogger, mockReporter);
 
-    mockReject = <any> sinon.spy();
-    mockResolve = <any> sinon.spy();
+    mockReject = <any> Sinon.spy();
+    mockResolve = <any> Sinon.spy();
   });
 
   describe("createRunner", () => {
@@ -62,7 +61,7 @@ describe("lib runner", function() {
   describe("makeTestRunBegin", () => {
     it("should return a function that calls reporter.init with the supplied testCount", () => {
       // arrange
-      mockReporter.init = sinon.spy();
+      mockReporter.init = Sinon.spy();
 
       // act
       let actual = RunnerImp.makeTestRunBegin(mockLogger, mockReporter, mockReject);
@@ -91,7 +90,7 @@ describe("lib runner", function() {
   describe("makeTestRunProgress", () => {
     it("should return a function that calls reporter.update with the supplied progress report", () => {
       // arrange
-      mockReporter.update = sinon.spy();
+      mockReporter.update = Sinon.spy();
       let expected = <ProgressReport> {reason: "foobar"};
 
       // act
@@ -121,7 +120,7 @@ describe("lib runner", function() {
   describe("makeTestRunComplete", () => {
     it("should return a function that calls reporter.finish with the supplied results", () => {
       // arrange
-      mockReporter.finish = sinon.spy();
+      mockReporter.finish = Sinon.spy();
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
@@ -183,21 +182,28 @@ describe("lib runner", function() {
     let mockRunTests;
 
     beforeEach(() => {
-      mockReporter.configure = sinon.spy();
+      mockReporter.configure = Sinon.spy();
 
       mockFramework = <PluginTestFramework> {};
-      mockFramework.initArgs = sinon.spy();
+      mockFramework.initArgs = Sinon.spy();
 
       mockPluginReporter = <PluginReporter> {};
-      mockPluginReporter.runArgs = sinon.spy();
+      mockPluginReporter.runArgs = Sinon.spy();
 
-      let mockLoadElmTestApp = sinon.stub();
-      let mockWorker = sinon.stub();
-      mockBegin = sinon.spy();
-      mockEnd = sinon.spy();
-      mockProgress = sinon.spy();
-      mockRunTests = sinon.spy();
-      mockWorker.returns({ports: {begin: {subscribe: mockBegin}, end: {subscribe: mockEnd}, progress: {subscribe: mockProgress}, runTests: {send: mockRunTests}}});
+      let mockLoadElmTestApp = Sinon.stub();
+      let mockWorker = Sinon.stub();
+      mockBegin = Sinon.spy();
+      mockEnd = Sinon.spy();
+      mockProgress = Sinon.spy();
+      mockRunTests = Sinon.spy();
+      mockWorker.returns({
+        ports: {
+          begin: {subscribe: mockBegin},
+          end: {subscribe: mockEnd},
+          progress: {subscribe: mockProgress},
+          runTests: {send: mockRunTests}
+        }
+      });
       mockLoadElmTestApp.returns({UnitTest: {worker: mockWorker}});
       runner.loadElmTestApp = mockLoadElmTestApp;
     });
@@ -214,11 +220,18 @@ describe("lib runner", function() {
       // arrange
       let complete = undefined;
       let end = (x) => complete = x;
-      let worker = sinon.stub();
-      worker.returns({ports: {begin: {subscribe: mockBegin}, end: {subscribe: end}, progress: {subscribe: mockProgress}, runTests: {send: mockRunTests}}});
-      (<sinon.SinonStub>runner.loadElmTestApp).returns({UnitTest: {worker: worker}});
-      mockReporter.finish = sinon.stub();
-      (<sinon.SinonStub>mockReporter.finish).returns(true);
+      let worker = Sinon.stub();
+      worker.returns({
+        ports: {
+          begin: {subscribe: mockBegin},
+          end: {subscribe: end},
+          progress: {subscribe: mockProgress},
+          runTests: {send: mockRunTests}
+        }
+      });
+      (<SinonStub>runner.loadElmTestApp).returns({UnitTest: {worker: worker}});
+      mockReporter.finish = Sinon.stub();
+      (<SinonStub>mockReporter.finish).returns(true);
 
       // act
       let actual = runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});

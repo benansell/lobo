@@ -1,4 +1,4 @@
-import * as chalk from "chalk";
+import * as Chalk from "chalk";
 import * as program from "commander";
 import {ChalkChain} from "chalk";
 
@@ -110,15 +110,15 @@ export class LoggerImp implements Logger {
   public levelToStyle(level: LogLevel): ChalkChain {
     switch (level) {
       case LogLevel.Trace:
-        return chalk.dim.gray;
+        return Chalk.dim.gray;
       case LogLevel.Debug:
-        return chalk.gray;
+        return Chalk.gray;
       case LogLevel.Info:
-        return chalk.reset; // don"t apply any style
+        return Chalk.reset; // don"t apply any style
       case LogLevel.Warn:
-        return chalk.yellow;
+        return Chalk.yellow;
       case LogLevel.Error:
-        return chalk.red;
+        return Chalk.red;
       default:
         throw new Error("Unknown log level: " + level);
     }

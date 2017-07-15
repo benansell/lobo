@@ -1,6 +1,6 @@
-import * as bluebird from "bluebird";
+import * as Bluebird from "bluebird";
 import * as _ from "lodash";
-import * as chalk from "chalk";
+import * as Chalk from "chalk";
 import * as chokidar from "chokidar";
 import * as program from "commander";
 import * as path from "path";
@@ -88,7 +88,7 @@ export class LoboImp implements Lobo {
     }
   }
 
-  public launch(partialConfig: PartialLoboConfig): bluebird<void> {
+  public launch(partialConfig: PartialLoboConfig): Bluebird<void> {
     partialConfig.testFile = LoboImp.generateTestFileName();
     let config = <LoboConfig> partialConfig;
 
@@ -97,7 +97,7 @@ export class LoboImp implements Lobo {
       () => this.runner.run(config)
     ];
 
-    return bluebird.mapSeries(stages, (item) => {
+    return Bluebird.mapSeries(stages, (item) => {
       return item();
     }).then(() => {
       this.logger.debug("launch success");
@@ -258,7 +258,7 @@ export class LoboImp implements Lobo {
     let plugins = this.util.availablePlugins(fileSpec);
 
     _.forEach(plugins, (name: string) => {
-      this.logger.info("   " + chalk.underline(name) + ":");
+      this.logger.info("   " + Chalk.underline(name) + ":");
       this.logger.info("");
       let config = this.util.getPluginConfig(type, name, fileSpec);
 

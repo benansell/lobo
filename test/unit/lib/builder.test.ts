@@ -2,22 +2,23 @@
 
 import * as chai from "chai";
 import rewire = require("rewire");
-import * as sinon from "sinon";
-import * as sinonChai from "sinon-chai";
+import * as Sinon from "sinon";
+import {SinonStub} from "sinon";
+import * as SinonChai from "sinon-chai";
 import {Builder, BuilderImp, createBuilder} from "../../../lib/builder";
 import {Dependencies, LoboConfig, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
 import {Logger} from "../../../lib/logger";
 import {ElmPackageHelper, ElmPackageJson} from "../../../lib/elm-package-helper";
-import * as bluebird from "bluebird";
+import * as Bluebird from "bluebird";
 
 let expect = chai.expect;
-chai.use(sinonChai);
+chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib builder", () => {
   let RewiredBuilder = rewire("../../../lib/builder");
   let builder: BuilderImp;
-  let mockConfirm: sinon.SinonStub;
+  let mockConfirm: SinonStub;
   let mockHelper: ElmPackageHelper;
   let mockLogger: Logger;
   let mockReject: any;
@@ -25,19 +26,19 @@ describe("lib builder", () => {
   let revertPrompt: () => void;
 
   beforeEach(() => {
-    mockConfirm = sinon.stub();
+    mockConfirm = Sinon.stub();
     revertPrompt = RewiredBuilder.__set__({promptly: {confirm: mockConfirm}});
     let rewiredImp = RewiredBuilder.__get__("BuilderImp");
     mockLogger = <Logger> {};
-    mockLogger.debug = <any> sinon.spy();
-    mockLogger.error = <any> sinon.spy();
-    mockLogger.info = <any> sinon.spy();
-    mockLogger.trace = <any> sinon.spy();
-    mockHelper = <ElmPackageHelper> {path: x => x, read: sinon.stub(), write: sinon.stub()};
+    mockLogger.debug = <any> Sinon.spy();
+    mockLogger.error = <any> Sinon.spy();
+    mockLogger.info = <any> Sinon.spy();
+    mockLogger.trace = <any> Sinon.spy();
+    mockHelper = <ElmPackageHelper> {path: x => x, read: Sinon.stub(), write: Sinon.stub()};
     builder = new rewiredImp(mockHelper, mockLogger);
 
-    mockReject = <any> sinon.spy();
-    mockResolve = <any> sinon.spy();
+    mockReject = <any> Sinon.spy();
+    mockResolve = <any> Sinon.spy();
   });
 
   afterEach(() => {
@@ -58,10 +59,10 @@ describe("lib builder", () => {
     it("should not call ensureElmPackageExists when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.stub();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.stub();
 
       // act
       let actual = builder.build(config, "bar");
@@ -75,10 +76,10 @@ describe("lib builder", () => {
     it("should not call syncTestElmPackage when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.stub();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.stub();
 
       // act
       let actual = builder.build(config, "bar");
@@ -92,10 +93,10 @@ describe("lib builder", () => {
     it("should call installDependencies when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.stub();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.stub();
 
       // act
       let actual = builder.build(config, "bar");
@@ -109,10 +110,10 @@ describe("lib builder", () => {
     it("should call make when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.stub();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.stub();
 
       // act
       let actual = builder.build(config, "bar");
@@ -126,170 +127,170 @@ describe("lib builder", () => {
     it("should call ensureElmPackageExists with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.stub();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.stub();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.ensureElmPackageExists).to.have.been.calledWith(config, sinon.match.any, sinon.match.any);
+        expect(builder.ensureElmPackageExists).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call ensureElmPackageExists with the base directory of '.' and location 'current'", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.stub();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.stub();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.ensureElmPackageExists).to.have.been.calledWith(sinon.match.any, ".", "current");
+        expect(builder.ensureElmPackageExists).to.have.been.calledWith(Sinon.match.any, ".", "current");
       });
     });
 
     it("should call ensureElmPackageExists with the supplied test directory and location of 'test", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.ensureElmPackageExists).to.have.been.calledWith(sinon.match.any, "bar", "tests");
+        expect(builder.ensureElmPackageExists).to.have.been.calledWith(Sinon.match.any, "bar", "tests");
       });
     });
 
     it("should call syncTestElmPackage with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.syncTestElmPackage).to.have.been.calledWith(config, sinon.match.any, sinon.match.any);
+        expect(builder.syncTestElmPackage).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call syncTestElmPackage with a base directory of '.'", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.syncTestElmPackage).to.have.been.calledWith(sinon.match.any, ".", sinon.match.any);
+        expect(builder.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, ".", Sinon.match.any);
       });
     });
 
     it("should call syncTestElmPackage with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.syncTestElmPackage).to.have.been.calledWith(sinon.match.any, sinon.match.any, "bar");
+        expect(builder.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "bar");
       });
     });
 
     it("should call installDependencies with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.installDependencies).to.have.been.calledWith(config, sinon.match.any);
+        expect(builder.installDependencies).to.have.been.calledWith(config, Sinon.match.any);
       });
     });
 
     it("should call installDependencies with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.installDependencies).to.have.been.calledWith(sinon.match.any, "bar");
+        expect(builder.installDependencies).to.have.been.calledWith(Sinon.match.any, "bar");
       });
     });
 
     it("should call make with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.make).to.have.been.calledWith(config, sinon.match.any);
+        expect(builder.make).to.have.been.calledWith(config, Sinon.match.any);
       });
     });
 
     it("should call make with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
-      builder.ensureElmPackageExists = sinon.stub();
-      builder.syncTestElmPackage = sinon.stub();
-      builder.installDependencies = sinon.stub();
-      builder.make = sinon.spy();
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
 
       // act
       let actual = builder.build(config, "bar");
 
       // assert
       actual.then(() => {
-        expect(builder.make).to.have.been.calledWith(sinon.match.any, "bar");
+        expect(builder.make).to.have.been.calledWith(Sinon.match.any, "bar");
       });
     });
   });
@@ -301,7 +302,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: false};
 
       // act
-      let actual: bluebird<object> = undefined;
+      let actual: Bluebird<object> = undefined;
       revert(() => actual = builder.ensureElmPackageExists(config, "foo", "bar"));
 
       // assert
@@ -311,7 +312,7 @@ describe("lib builder", () => {
     it("should not prompt the user before running elm package install when config.prompt is false", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: false};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
 
       // act
       builder.ensureElmPackageExists(config, "foo", "bar");
@@ -324,7 +325,7 @@ describe("lib builder", () => {
     it("should prompt the user before running elm package install when config.prompt is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
 
       // act
       builder.ensureElmPackageExists(config, "foo", "bar");
@@ -337,7 +338,7 @@ describe("lib builder", () => {
     it("should not call runElmPackageInstall when config.prompt is true and error occurs", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
       mockConfirm.callsFake((message, defaults, action) => action({}, "foo"));
 
       // act
@@ -351,7 +352,7 @@ describe("lib builder", () => {
     it("should not call runElmPackageInstall when config.prompt is true and user answers false", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, false));
 
       // act
@@ -365,26 +366,26 @@ describe("lib builder", () => {
     it("should call runElmPackageInstall with prompt false when config.prompt is false", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: false};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
 
       // act
       builder.ensureElmPackageExists(config, "foo", "bar");
 
       // assert
-      expect(builder.runElmPackageInstall).to.have.been.calledWith(sinon.match.any, sinon.match.any, false, sinon.match.any, sinon.match.any);
+      expect(builder.runElmPackageInstall).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, false, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call runElmPackageInstall with prompt true when config.prompt is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
 
       // act
       builder.ensureElmPackageExists(config, "foo", "bar");
 
       // assert
-      expect(builder.runElmPackageInstall).to.have.been.calledWith(sinon.match.any, sinon.match.any, true, sinon.match.any, sinon.match.any);
+      expect(builder.runElmPackageInstall).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, true, Sinon.match.any, Sinon.match.any);
     });
   });
 
@@ -392,69 +393,69 @@ describe("lib builder", () => {
     it("should call readElmPackage with the supplied base package directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.readElmPackage).to.have.been.calledWith("bar", sinon.match.any);
+        expect(builder.readElmPackage).to.have.been.calledWith("bar", Sinon.match.any);
       });
     });
 
     it("should call readElmPackage with the supplied test package directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.readElmPackage).to.have.been.calledWith(sinon.match.any, "baz");
+        expect(builder.readElmPackage).to.have.been.calledWith(Sinon.match.any, "baz");
       });
     });
 
     it("should call updateSourceDirectories with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.updateSourceDirectories).to.have.been.calledWith(config, sinon.match.any, sinon.match.any, sinon.match.any, sinon.match.any);
+        expect(builder.updateSourceDirectories).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call updateSourceDirectories with the supplied base package directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
@@ -462,19 +463,19 @@ describe("lib builder", () => {
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any, sinon.match.any, sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call updateSourceDirectories with the result.base from readElmPackage", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "abc", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "abc", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
@@ -482,19 +483,19 @@ describe("lib builder", () => {
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(sinon.match.any, sinon.match.any, "abc", sinon.match.any, sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call updateSourceDirectories with the supplied test package directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
@@ -502,19 +503,19 @@ describe("lib builder", () => {
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, "baz", sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
       });
     });
 
     it("should call updateSourceDirectories with the result.test from readElmPackage", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "abc"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "abc"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
@@ -522,83 +523,83 @@ describe("lib builder", () => {
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, sinon.match.any, "abc");
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
       });
     });
 
     it("should call updateDependencies with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.updateDependencies).to.have.been.calledWith(config, sinon.match.any, sinon.match.any, sinon.match.any);
+        expect(builder.updateDependencies).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call updateDependencies with the result.base from updateSourceDirectories", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "abc", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "abc", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.updateDependencies).to.have.been.calledWith(sinon.match.any, "abc", sinon.match.any, sinon.match.any);
+        expect(builder.updateDependencies).to.have.been.calledWith(Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call updateDependencies with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "abc", test: "b"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "abc", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.updateDependencies).to.have.been.calledWith(sinon.match.any, sinon.match.any, "baz", sinon.match.any);
+        expect(builder.updateDependencies).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
       });
     });
 
     it("should call updateDependencies with the result.test from updateSourceDirectories", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
-      builder.readElmPackage = sinon.stub();
-      (<sinon.SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
-      builder.updateSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "abc"});
-      builder.updateDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.updateDependencies).resolves({});
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "abc"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
       let actual = builder.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.updateDependencies).to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, "abc");
+        expect(builder.updateDependencies).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
       });
     });
   });
@@ -606,31 +607,31 @@ describe("lib builder", () => {
   describe("readElmPackage", () => {
     it("should log an error when unable to read the source elm-package.json from the supplied base directory", () => {
       // arrange
-      (<sinon.SinonStub>mockHelper.read).onSecondCall().returns({});
+      (<SinonStub>mockHelper.read).onSecondCall().returns({});
 
       // act
       let actual = builder.readElmPackage("foo", "bar");
       actual.catchReturn({});
 
       // assert
-      expect(mockLogger.error).to.have.been.calledWith(sinon.match(/main elm-package.json/));
+      expect(mockLogger.error).to.have.been.calledWith(Sinon.match(/main elm-package.json/));
     });
 
     it("should log an error when unable to read the test elm-package.json from the supplied test directory", () => {
       // arrange
-      (<sinon.SinonStub>mockHelper.read).onFirstCall().returns({});
+      (<SinonStub>mockHelper.read).onFirstCall().returns({});
 
       // act
       let actual = builder.readElmPackage("foo", "bar");
       actual.catchReturn({});
 
       // assert
-      expect(mockLogger.error).to.have.been.calledWith(sinon.match(/test elm-package.json/));
+      expect(mockLogger.error).to.have.been.calledWith(Sinon.match(/test elm-package.json/));
     });
 
     it("should read the source elm-package.json from the supplied base directory", () => {
       // arrange
-      (<sinon.SinonStub>mockHelper.read).returns({});
+      (<SinonStub>mockHelper.read).returns({});
 
       // act
       builder.readElmPackage("foo", "bar");
@@ -641,7 +642,7 @@ describe("lib builder", () => {
 
     it("should read the test elm-package.json from the supplied test directory", () => {
       // arrange
-      (<sinon.SinonStub>mockHelper.read).returns({});
+      (<SinonStub>mockHelper.read).returns({});
 
       // act
       builder.readElmPackage("foo", "bar");
@@ -654,8 +655,8 @@ describe("lib builder", () => {
       // arrange
       let expectedSource = {name: "source"};
       let expectedTest = {name: "test"};
-      (<sinon.SinonStub>mockHelper.read).onFirstCall().returns(expectedSource);
-      (<sinon.SinonStub>mockHelper.read).onSecondCall().returns(expectedTest);
+      (<SinonStub>mockHelper.read).onFirstCall().returns(expectedSource);
+      (<SinonStub>mockHelper.read).onSecondCall().returns(expectedTest);
 
       // act
       let actual = builder.readElmPackage("foo", "bar");
@@ -670,8 +671,8 @@ describe("lib builder", () => {
       // arrange
       let expectedSource = {name: "source"};
       let expectedTest = {name: "test"};
-      (<sinon.SinonStub>mockHelper.read).onFirstCall().returns(expectedSource);
-      (<sinon.SinonStub>mockHelper.read).onSecondCall().returns(expectedTest);
+      (<SinonStub>mockHelper.read).onFirstCall().returns(expectedSource);
+      (<SinonStub>mockHelper.read).onSecondCall().returns(expectedTest);
 
       // act
       let actual = builder.readElmPackage("foo", "bar");
@@ -689,14 +690,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.mergeSourceDirectories = sinon.stub();
+      builder.mergeSourceDirectories = Sinon.stub();
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(sourcePackageJson, sinon.match.any, sinon.match.any, sinon.match.any, sinon.match.any);
+        .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call mergeSourceDirectories with the specified base directory", () => {
@@ -704,14 +705,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.mergeSourceDirectories = sinon.stub();
+      builder.mergeSourceDirectories = Sinon.stub();
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any, sinon.match.any, sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call mergeSourceDirectories with the specified test package json", () => {
@@ -719,14 +720,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.mergeSourceDirectories = sinon.stub();
+      builder.mergeSourceDirectories = Sinon.stub();
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(sinon.match.any, sinon.match.any, testPackageJson, sinon.match.any, sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call mergeSourceDirectories with the specified test directory", () => {
@@ -734,14 +735,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.mergeSourceDirectories = sinon.stub();
+      builder.mergeSourceDirectories = Sinon.stub();
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, "baz", sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
     });
 
     it("should call mergeSourceDirectories with the specified testFramework", () => {
@@ -749,14 +750,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.mergeSourceDirectories = sinon.stub();
+      builder.mergeSourceDirectories = Sinon.stub();
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, sinon.match.any, config.testFramework);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, config.testFramework);
     });
 
     it("should return the unaltered base package json when there is no difference", () => {
@@ -764,8 +765,8 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.mergeSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.mergeSourceDirectories).returns(testPackageJson.sourceDirectories);
+      builder.mergeSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.mergeSourceDirectories).returns(testPackageJson.sourceDirectories);
 
       // act
       let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
@@ -781,8 +782,8 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.mergeSourceDirectories = sinon.stub();
-      (<sinon.SinonStub>builder.mergeSourceDirectories).returns(testPackageJson.sourceDirectories);
+      builder.mergeSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.mergeSourceDirectories).returns(testPackageJson.sourceDirectories);
 
       // act
       let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
@@ -798,7 +799,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
@@ -813,7 +814,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
@@ -828,7 +829,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action({}, "foo"));
 
       // act
@@ -844,7 +845,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, false));
 
       // act
@@ -860,16 +861,16 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
-      builder.mergeSourceDirectories = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
+      builder.mergeSourceDirectories = Sinon.stub();
       let expected = ["foo", "bar"];
-      (<sinon.SinonStub>builder.mergeSourceDirectories).returns(expected);
+      (<SinonStub>builder.mergeSourceDirectories).returns(expected);
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
-      expect(builder.updateSourceDirectoriesAction).to.have.been.calledWith(expected, sinon.match.any, sinon.match.any);
+      expect(builder.updateSourceDirectoriesAction).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
     });
 
     it("should return the unaltered base package json when there is a difference and config.prompt is false", () => {
@@ -877,7 +878,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
 
       // act
       let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
@@ -893,9 +894,9 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
       let expected = <ElmPackageJson> {sourceDirectories: ["foo", "bar"]};
-      (<sinon.SinonStub>builder.updateSourceDirectoriesAction).returns(expected);
+      (<SinonStub>builder.updateSourceDirectoriesAction).returns(expected);
 
       // act
       let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
@@ -911,17 +912,17 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
-      builder.mergeSourceDirectories = sinon.stub();
+      builder.mergeSourceDirectories = Sinon.stub();
       let expected = ["foo", "bar"];
-      (<sinon.SinonStub>builder.mergeSourceDirectories).returns(expected);
+      (<SinonStub>builder.mergeSourceDirectories).returns(expected);
 
       // act
       builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
-      expect(builder.updateSourceDirectoriesAction).to.have.been.calledWith(expected, sinon.match.any, sinon.match.any);
+      expect(builder.updateSourceDirectoriesAction).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
     });
 
     it("should return the unaltered base package json when there is a difference and config.prompt is true", () => {
@@ -929,7 +930,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
 
       // act
@@ -946,9 +947,9 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      builder.updateSourceDirectoriesAction = sinon.stub();
+      builder.updateSourceDirectoriesAction = Sinon.stub();
       let expected = <ElmPackageJson> {sourceDirectories: ["foo", "bar"]};
-      (<sinon.SinonStub>builder.updateSourceDirectoriesAction).returns(expected);
+      (<SinonStub>builder.updateSourceDirectoriesAction).returns(expected);
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
 
       // act
@@ -978,7 +979,7 @@ describe("lib builder", () => {
       builder.updateSourceDirectoriesAction(["foo"], "bar", <ElmPackageJson>{});
 
       // assert
-      expect(mockHelper.write).to.have.been.calledWith("bar", sinon.match.any);
+      expect(mockHelper.write).to.have.been.calledWith("bar", Sinon.match.any);
     });
 
     it("should write the updated package json to the supplied directory", () => {
@@ -989,7 +990,7 @@ describe("lib builder", () => {
       builder.updateSourceDirectoriesAction(expected, "bar", <ElmPackageJson>{});
 
       // assert
-      expect(mockHelper.write).to.have.been.calledWith(sinon.match.any, {sourceDirectories: expected});
+      expect(mockHelper.write).to.have.been.calledWith(Sinon.match.any, {sourceDirectories: expected});
     });
   });
 
@@ -999,14 +1000,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.mergeDependencies = sinon.stub();
+      builder.mergeDependencies = Sinon.stub();
 
       // act
       builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeDependencies)
-        .to.have.been.calledWith(sourcePackageJson, sinon.match.any, sinon.match.any);
+        .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call mergeDependencies with the specified test package json", () => {
@@ -1014,14 +1015,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.mergeDependencies = sinon.stub();
+      builder.mergeDependencies = Sinon.stub();
 
       // act
       builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeDependencies)
-        .to.have.been.calledWith(sinon.match.any, testPackageJson, sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, testPackageJson, Sinon.match.any);
     });
 
     it("should call mergeDependencies with the specified testFramework", () => {
@@ -1029,14 +1030,14 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.mergeDependencies = sinon.stub();
+      builder.mergeDependencies = Sinon.stub();
 
       // act
       builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(builder.mergeDependencies)
-        .to.have.been.calledWith(sinon.match.any, sinon.match.any, config.testFramework);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, config.testFramework);
     });
 
     it("should return the unaltered base package json when there is no difference", () => {
@@ -1044,8 +1045,8 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.mergeDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.mergeDependencies).returns(testPackageJson.dependencies);
+      builder.mergeDependencies = Sinon.stub();
+      (<SinonStub>builder.mergeDependencies).returns(testPackageJson.dependencies);
 
       // act
       let actual = builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
@@ -1061,8 +1062,8 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.mergeDependencies = sinon.stub();
-      (<sinon.SinonStub>builder.mergeDependencies).returns(testPackageJson.dependencies);
+      builder.mergeDependencies = Sinon.stub();
+      (<SinonStub>builder.mergeDependencies).returns(testPackageJson.dependencies);
 
       // act
       let actual = builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
@@ -1078,7 +1079,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
 
       // act
       builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
@@ -1093,7 +1094,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
 
       // act
       builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
@@ -1108,7 +1109,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action({}, "foo"));
 
       // act
@@ -1124,7 +1125,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, false));
 
       // act
@@ -1140,16 +1141,16 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
-      builder.mergeDependencies = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
+      builder.mergeDependencies = Sinon.stub();
       let expected = ["foo", "bar"];
-      (<sinon.SinonStub>builder.mergeDependencies).returns(expected);
+      (<SinonStub>builder.mergeDependencies).returns(expected);
 
       // act
       builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
 
       // assert
-      expect(builder.updateDependenciesAction).to.have.been.calledWith(expected, sinon.match.any, sinon.match.any);
+      expect(builder.updateDependenciesAction).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
     });
 
     it("should return the unaltered base package json when there is a difference and config.prompt is false", () => {
@@ -1157,7 +1158,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
 
       // act
       let actual = builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
@@ -1173,9 +1174,9 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: false};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
       let expected = <ElmPackageJson> {dependencies: <Dependencies>{foo: "qux"}};
-      (<sinon.SinonStub>builder.updateDependenciesAction).returns(expected);
+      (<SinonStub>builder.updateDependenciesAction).returns(expected);
 
       // act
       let actual = builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
@@ -1191,17 +1192,17 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
-      builder.mergeDependencies = sinon.stub();
+      builder.mergeDependencies = Sinon.stub();
       let expected = ["foo", "bar"];
-      (<sinon.SinonStub>builder.mergeDependencies).returns(expected);
+      (<SinonStub>builder.mergeDependencies).returns(expected);
 
       // act
       builder.updateDependencies(config, sourcePackageJson, "baz", testPackageJson);
 
       // assert
-      expect(builder.updateDependenciesAction).to.have.been.calledWith(expected, sinon.match.any, sinon.match.any);
+      expect(builder.updateDependenciesAction).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
     });
 
     it("should return the unaltered base package json when there is a difference and config.prompt is true", () => {
@@ -1209,7 +1210,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
 
       // act
@@ -1226,9 +1227,9 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {dependencies: <Dependencies> {foo: "bar"}}}, prompt: true};
       let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
       let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      builder.updateDependenciesAction = sinon.stub();
+      builder.updateDependenciesAction = Sinon.stub();
       let expected = <ElmPackageJson> {dependencies: <Dependencies> {foo: "qux"}};
-      (<sinon.SinonStub>builder.updateDependenciesAction).returns(expected);
+      (<SinonStub>builder.updateDependenciesAction).returns(expected);
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
 
       // act
@@ -1258,7 +1259,7 @@ describe("lib builder", () => {
       builder.updateDependenciesAction([["foo", "bar"]], "baz", <ElmPackageJson>{});
 
       // assert
-      expect(mockHelper.write).to.have.been.calledWith("baz", sinon.match.any);
+      expect(mockHelper.write).to.have.been.calledWith("baz", Sinon.match.any);
     });
 
     it("should write the updated package json to the supplied directory", () => {
@@ -1269,7 +1270,7 @@ describe("lib builder", () => {
       builder.updateDependenciesAction(expected, "baz", <ElmPackageJson>{});
 
       // assert
-      expect(mockHelper.write).to.have.been.calledWith(sinon.match.any, sinon.match(value => value.dependencies.foo = "bar"));
+      expect(mockHelper.write).to.have.been.calledWith(Sinon.match.any, Sinon.match(value => value.dependencies.foo = "bar"));
     });
   });
 
@@ -1472,50 +1473,50 @@ describe("lib builder", () => {
     it("should return a promise that calls runElmPackageInstall with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
 
       // act
       builder.installDependencies(config, "bar");
 
       // assert
-      expect(builder.runElmPackageInstall).to.have.been.calledWith(config, sinon.match.any, sinon.match.any);
+      expect(builder.runElmPackageInstall).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
     });
 
     it("should return a promise that calls runElmPackageInstall with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
 
       // act
       builder.installDependencies(config, "bar");
 
       // assert
-      expect(builder.runElmPackageInstall).to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any);
+      expect(builder.runElmPackageInstall).to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any);
     });
 
     it("should return a promise that calls runElmPackageInstall with the supplied config.prompt", () => {
       // arrange
       let config = <LoboConfig> {testFramework: {config: {sourceDirectories: ["foo"]}}, prompt: true};
-      builder.runElmPackageInstall = sinon.spy();
+      builder.runElmPackageInstall = Sinon.spy();
 
       // act
       builder.installDependencies(config, "bar");
 
       // assert
-      expect(builder.runElmPackageInstall).to.have.been.calledWith(sinon.match.any, sinon.match.any, true);
+      expect(builder.runElmPackageInstall).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, true);
     });
   });
 
   describe("runElmPackageInstall", () => {
     let revertChildProcess: () => void;
-    let mockExec: sinon.SinonStub;
+    let mockExec: SinonStub;
     let mockResolve: () => void;
     let mockReject: (Error) => void;
 
     beforeEach(() => {
-      mockExec = sinon.stub();
-      mockResolve = sinon.spy();
-      mockReject = sinon.spy();
+      mockExec = Sinon.stub();
+      mockResolve = Sinon.spy();
+      mockReject = Sinon.spy();
       revertChildProcess = RewiredBuilder.__set__({childProcess: {execSync: mockExec}});
     });
 
@@ -1542,7 +1543,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/elm-package install/), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/elm-package install/), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages from the specified elm-install path", () => {
@@ -1553,7 +1554,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/^foo\/elm-package install/), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo\/elm-package install/), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages without --yes when prompt is true", () => {
@@ -1564,7 +1565,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match((x) => x.indexOf("--yes") === -1), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match((x) => x.indexOf("--yes") === -1), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages with --yes when prompt is false", () => {
@@ -1575,7 +1576,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", false, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/ --yes/), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/ --yes/), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages with cwd as the supplied directory", () => {
@@ -1586,7 +1587,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", false, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match.any, sinon.match((x => x.cwd === "bar")));
+      expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match((x => x.cwd === "bar")));
     });
 
     it("should call resolve when there are no elm-package install errors", () => {
@@ -1617,12 +1618,12 @@ describe("lib builder", () => {
   describe("make", () => {
     let revertChildProcess: () => void;
     let revertConsole: () => void;
-    let mockExec: sinon.SinonStub;
+    let mockExec: SinonStub;
 
     beforeEach(() => {
-      mockExec = sinon.stub();
+      mockExec = Sinon.stub();
       revertChildProcess = RewiredBuilder.__set__({childProcess: {execSync: mockExec}});
-      revertConsole = RewiredBuilder.__set__({console: {log: sinon.stub()}});
+      revertConsole = RewiredBuilder.__set__({console: {log: Sinon.stub()}});
     });
 
     afterEach(() => {
@@ -1638,7 +1639,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/^abc\/elm-make /), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^abc\/elm-make /), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages from the specified elm-install path", () => {
@@ -1649,7 +1650,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/^foo\/elm-package install/), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo\/elm-package install/), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests to the specified output testFile", () => {
@@ -1660,7 +1661,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/--output=baz/), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/--output=baz/), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests without --yes when prompt is true", () => {
@@ -1671,7 +1672,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match((x) => x.indexOf("--yes") === -1), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match((x) => x.indexOf("--yes") === -1), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests with --yes when prompt is false", () => {
@@ -1682,7 +1683,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/ --yes/), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/ --yes/), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests without --warn when noWarn is true", () => {
@@ -1693,7 +1694,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match((x) => x.indexOf("--warn") === -1), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match((x) => x.indexOf("--warn") === -1), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests with --warn when noWarn is false", () => {
@@ -1704,7 +1705,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match(/ --warn/), sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/ --warn/), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests with cwd as supplied directory", () => {
@@ -1715,7 +1716,7 @@ describe("lib builder", () => {
       builder.make(config, "bar");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(sinon.match.any, sinon.match(x => x.cwd === "bar"));
+      expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "bar"));
     });
 
     it("should call resolve when there are no elm-make build errors", () => {

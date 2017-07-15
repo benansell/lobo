@@ -1,11 +1,11 @@
 "use strict";
 
-import * as bluebird from "bluebird";
+import * as Bluebird from "bluebird";
 import * as chai from "chai";
 import rewire = require("rewire");
 import * as Sinon from "sinon";
 import {SinonStub} from "sinon";
-import * as sinonChai from "sinon-chai";
+import * as SinonChai from "sinon-chai";
 import {createLobo, Lobo, LoboImp} from "../../../lib/main";
 import {Builder} from "../../../lib/builder";
 import {ElmPackageHelper} from "../../../lib/elm-package-helper";
@@ -17,7 +17,7 @@ import p = require("proxyquire");
 
 
 let expect = chai.expect;
-chai.use(sinonChai);
+chai.use(SinonChai);
 
 describe("lib main", () => {
   let rewiredMain = rewire("../../../lib/main");
@@ -34,14 +34,23 @@ describe("lib main", () => {
 
   beforeEach(() => {
     mockExit = Sinon.stub();
-    revertExit = rewiredMain.__set__({process: { exit: mockExit}});
+    revertExit = rewiredMain.__set__({process: {exit: mockExit}});
     rewiredImp = rewiredMain.__get__("LoboImp");
-    mockBuilder = <Builder> { build: Sinon.stub()};
+    mockBuilder = <Builder> {build: Sinon.stub()};
     mockHelper = <ElmPackageHelper><{}> {read: Sinon.stub()};
-    mockLogger = <Logger> { debug: Sinon.stub(), error: Sinon.stub(), info: Sinon.stub(),
-      trace: Sinon.stub(), warn: Sinon.stub()};
-    mockRunner = <Runner> { run: Sinon.stub()};
-    mockUtil = <Util><{}> { availablePlugins: Sinon.stub(), checkNodeVersion: Sinon.stub(), getPlugin: Sinon.stub(), getPluginConfig: Sinon.stub(), padRight: Sinon.stub(), unsafeLoad: Sinon.stub()};
+    mockLogger = <Logger> {
+      debug: Sinon.stub(), error: Sinon.stub(), info: Sinon.stub(),
+      trace: Sinon.stub(), warn: Sinon.stub()
+    };
+    mockRunner = <Runner> {run: Sinon.stub()};
+    mockUtil = <Util><{}> {
+      availablePlugins: Sinon.stub(),
+      checkNodeVersion: Sinon.stub(),
+      getPlugin: Sinon.stub(),
+      getPluginConfig: Sinon.stub(),
+      padRight: Sinon.stub(),
+      unsafeLoad: Sinon.stub()
+    };
 
     lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
   });
@@ -168,7 +177,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: {testDirectory: "foo"}});
 
       // act
-      let actual: bluebird<void> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = lobo.launch(expected));
 
       // assert
@@ -197,7 +206,7 @@ describe("lib main", () => {
       lobo.done = Sinon.spy();
 
       // act
-      let actual: bluebird<void> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = lobo.launch(expected));
 
       // assert
@@ -213,7 +222,7 @@ describe("lib main", () => {
       lobo.done = Sinon.spy();
 
       // act
-      let actual: bluebird<void> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = lobo.launch(expected));
 
       // assert
@@ -228,7 +237,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: {watch: false}});
 
       // act
-      let actual: bluebird<void> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = lobo.launch(<LoboConfig>{}));
 
       // assert
@@ -245,7 +254,7 @@ describe("lib main", () => {
       lobo.done = Sinon.spy();
 
       // act
-      let actual: bluebird<void> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = lobo.launch(expected));
 
       // assert
@@ -323,7 +332,7 @@ describe("lib main", () => {
       mockWatch = Sinon.stub();
       mockOn = Sinon.stub();
       mockOn.returns({on: mockOn});
-      mockWatch.returns({ on: mockOn});
+      mockWatch.returns({on: mockOn});
 
       revertWatch = rewiredMain.__set__({chokidar: {watch: mockWatch}});
     });
@@ -334,7 +343,7 @@ describe("lib main", () => {
 
     it("should watch the root elm-package.json", () => {
       // arrange
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
 
       // act
       lobo.watch(config);
@@ -345,7 +354,7 @@ describe("lib main", () => {
 
     it("should watch paths excluding elm-stuff directory", () => {
       // arrange
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
 
       // act
       lobo.watch(config);
@@ -357,9 +366,9 @@ describe("lib main", () => {
 
     it("should watch the directories in the test elm-package json", () => {
       // arrange
-      let config = <LoboConfig> { testFile: "foo"};
-      (<SinonStub>mockHelper.read).returns({ sourceDirectories: [".", "../src"]});
-      let revert = rewiredMain.__with__({process: { cwd: () => "./" }, program: {testDirectory: "./test"}, shelljs: {test: () => true}});
+      let config = <LoboConfig> {testFile: "foo"};
+      (<SinonStub>mockHelper.read).returns({sourceDirectories: [".", "../src"]});
+      let revert = rewiredMain.__with__({process: {cwd: () => "./"}, program: {testDirectory: "./test"}, shelljs: {test: () => true}});
 
       // act
       revert(() => lobo.watch(config));
@@ -371,10 +380,10 @@ describe("lib main", () => {
 
     it("should call launch with supplied config when 'ready' event is received", () => {
       // arrange
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
       lobo.launch = Sinon.spy();
       mockOn.callsFake((event, func) => {
-        if(event === "ready") {
+        if (event === "ready") {
           func();
         }
 
@@ -390,9 +399,9 @@ describe("lib main", () => {
 
     it("should not call launch with supplied config when 'all' event is received and ready is false", () => {
       // arrange
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
       mockOn.callsFake((event, func) => {
-        if(event === "all") {
+        if (event === "all") {
           func();
         }
 
@@ -411,9 +420,9 @@ describe("lib main", () => {
 
     it("should not call launch with supplied config when 'all' event is received and ready is true and busy is true", () => {
       // arrange
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
       mockOn.callsFake((event, func) => {
-        if(event === "all") {
+        if (event === "all") {
           func();
         }
 
@@ -432,9 +441,9 @@ describe("lib main", () => {
 
     it("should call launch with supplied config when 'all' event is received and ready is true", () => {
       // arrange
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
       mockOn.callsFake((event, func) => {
-        if(event === "all") {
+        if (event === "all") {
           func();
         }
 
@@ -462,26 +471,33 @@ describe("lib main", () => {
     let mockParse: SinonStub;
     let programMocks: {};
     let mockVersion: SinonStub;
-    
+
     beforeEach(() => {
       (<SinonStub>mockUtil.unsafeLoad).returns({});
-      revertProcess = rewiredMain.__set__({process: { argv: []}});
+      revertProcess = rewiredMain.__set__({process: {argv: []}});
       mockAllowUnknownOption = Sinon.stub();
       mockOn = Sinon.stub();
       mockOption = Sinon.stub();
       mockOpts = Sinon.stub();
       mockParse = Sinon.stub();
       mockVersion = Sinon.stub();
-      
-      programMocks = { allowUnknownOption: mockAllowUnknownOption, on: mockOn, option: mockOption, opts: mockOpts, parse: mockParse, version: mockVersion};
+
+      programMocks = {
+        allowUnknownOption: mockAllowUnknownOption,
+        on: mockOn,
+        option: mockOption,
+        opts: mockOpts,
+        parse: mockParse,
+        version: mockVersion
+      };
       mockVersion.returns(programMocks);
       mockOption.returns(programMocks);
-      
+
       revertProgram = rewiredMain.__set__({program: programMocks});
     });
-    
+
     afterEach(() => {
-      revertProcess();  
+      revertProcess();
       revertProgram();
     });
 
@@ -497,11 +513,11 @@ describe("lib main", () => {
       mockOn.firstCall.args[1]();
       expect(lobo.showCustomHelp).to.have.been.called;
     });
-    
+
     it("should set the program version from the npm package.json", () => {
       // arrange
       (<SinonStub>mockUtil.unsafeLoad).returns({version: "123"});
-      
+
       // act
       lobo.configure();
 
@@ -631,7 +647,7 @@ describe("lib main", () => {
 
     it("should return config with reporter set to the value returned from loadReporter", () => {
       // arrange
-      let expected = <PluginReporterWithConfig> { config: {name: "foo"}};
+      let expected = <PluginReporterWithConfig> {config: {name: "foo"}};
       lobo.loadReporter = Sinon.stub();
       (<SinonStub>lobo.loadReporter).returns(expected);
 
@@ -644,7 +660,7 @@ describe("lib main", () => {
 
     it("should return config with testFramework set to the value returned from loadTestFramework", () => {
       // arrange
-      let expected = <PluginTestFrameworkWithConfig> { config: {name: "foo"}};
+      let expected = <PluginTestFrameworkWithConfig> {config: {name: "foo"}};
       lobo.loadTestFramework = Sinon.stub();
       (<SinonStub>lobo.loadTestFramework).returns(expected);
 
@@ -658,7 +674,7 @@ describe("lib main", () => {
     it("should set cleanup of temp files when debug option is false", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{debug: boolean}>programMocks).debug = false;
+      (<{ debug: boolean }>programMocks).debug = false;
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -671,7 +687,7 @@ describe("lib main", () => {
     it("should not set cleanup of temp files when debug option is true", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{debug: boolean}>programMocks).debug = true;
+      (<{ debug: boolean }>programMocks).debug = true;
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -684,7 +700,7 @@ describe("lib main", () => {
     it("should convert program prompt 'y' to true", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "y";
+      (<{ prompt: string }>programMocks).prompt = "y";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -698,7 +714,7 @@ describe("lib main", () => {
     it("should convert program prompt 'Y' to true", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "Y";
+      (<{ prompt: string }>programMocks).prompt = "Y";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -712,7 +728,7 @@ describe("lib main", () => {
     it("should convert program prompt 'yes' to true", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "yes";
+      (<{ prompt: string }>programMocks).prompt = "yes";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -728,7 +744,7 @@ describe("lib main", () => {
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
       let mockCleanup = Sinon.stub();
-      (<{verbose: boolean}>programMocks).verbose = false;
+      (<{ verbose: boolean }>programMocks).verbose = false;
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -744,7 +760,7 @@ describe("lib main", () => {
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
       let mockCleanup = Sinon.stub();
-      (<{verbose: boolean}>programMocks).verbose = true;
+      (<{ verbose: boolean }>programMocks).verbose = true;
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -760,7 +776,7 @@ describe("lib main", () => {
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
       let mockCleanup = Sinon.stub();
-      (<{veryVerbose: boolean}>programMocks).veryVerbose = false;
+      (<{ veryVerbose: boolean }>programMocks).veryVerbose = false;
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -776,7 +792,7 @@ describe("lib main", () => {
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
       let mockCleanup = Sinon.stub();
-      (<{veryVerbose: boolean}>programMocks).veryVerbose = true;
+      (<{ veryVerbose: boolean }>programMocks).veryVerbose = true;
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -786,11 +802,11 @@ describe("lib main", () => {
       // assert
       expect(shelljs.config.silent).to.be.false;
     });
-    
+
     it("should convert program prompt 'Yes' to true", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "Yes";
+      (<{ prompt: string }>programMocks).prompt = "Yes";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -804,7 +820,7 @@ describe("lib main", () => {
     it("should convert program prompt 'n' to false", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "n";
+      (<{ prompt: string }>programMocks).prompt = "n";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -818,7 +834,7 @@ describe("lib main", () => {
     it("should convert program prompt 'N' to false", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "N";
+      (<{ prompt: string }>programMocks).prompt = "N";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -832,7 +848,7 @@ describe("lib main", () => {
     it("should convert program prompt 'no' to false", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "no";
+      (<{ prompt: string }>programMocks).prompt = "no";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -846,7 +862,7 @@ describe("lib main", () => {
     it("should convert program prompt 'No' to false", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{prompt: string}>programMocks).prompt = "No";
+      (<{ prompt: string }>programMocks).prompt = "No";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -860,7 +876,7 @@ describe("lib main", () => {
     it("should set the compiler path to program.compiler", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{compiler: string}>programMocks).compiler = "foo";
+      (<{ compiler: string }>programMocks).compiler = "foo";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -874,7 +890,7 @@ describe("lib main", () => {
     it("should set the compiler path to a normalized program.compiler path", () => {
       // arrange
       let mockCleanup = Sinon.stub();
-      (<{compiler: string}>programMocks).compiler = "foo/../bar";
+      (<{ compiler: string }>programMocks).compiler = "foo/../bar";
       let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
 
       // act
@@ -1121,7 +1137,7 @@ describe("lib main", () => {
 
     it("should return the loaded reporter plugin", () => {
       // arrange
-      let expected = <PluginReporterWithConfig> { config: {name: "foo"}};
+      let expected = <PluginReporterWithConfig> {config: {name: "foo"}};
       lobo.loadPlugin = Sinon.stub();
       (<SinonStub>lobo.loadPlugin).returns(expected);
 
@@ -1170,7 +1186,7 @@ describe("lib main", () => {
 
     it("should return the loaded test plugin", () => {
       // arrange
-      let expected = <PluginTestFrameworkWithConfig> { config: {name: "foo"}};
+      let expected = <PluginTestFrameworkWithConfig> {config: {name: "foo"}};
       lobo.loadPlugin = Sinon.stub();
       (<SinonStub>lobo.loadPlugin).returns(expected);
 
@@ -1224,7 +1240,7 @@ describe("lib main", () => {
       let expected = {config: {name: "abc", options: [{flags: "def", description: "ghi"}]}};
       (<SinonStub>mockUtil.getPlugin).returns(expected);
       let mockOption = Sinon.stub();
-      let revert = rewiredMain.__with__({program: { option: mockOption}});
+      let revert = rewiredMain.__with__({program: {option: mockOption}});
 
       // act
       revert(() => lobo.loadPlugin("foo", "bar", "baz"));
@@ -1299,7 +1315,7 @@ describe("lib main", () => {
       // arrange
       let error = new ReferenceError("ElmTest.Plugin$findTests is not defined");
       error.stack = "foo";
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
 
       // act
       lobo.handleUncaughtException(error, config);
@@ -1313,7 +1329,7 @@ describe("lib main", () => {
       // arrange
       let error = new ReferenceError();
       error.stack = "foo";
-      let config = <LoboConfig> { testFile: "foo"};
+      let config = <LoboConfig> {testFile: "foo"};
 
       // act
       lobo.handleUncaughtException(error, config);

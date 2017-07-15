@@ -2,14 +2,15 @@
 
 import * as chai from "chai";
 import rewire = require("rewire");
-import * as sinon from "sinon";
-import * as sinonChai from "sinon-chai";
+import * as Sinon from "sinon";
+import {SinonStub} from "sinon";
+import * as SinonChai from "sinon-chai";
 import {createUtil, Util, UtilImp} from "../../../lib/util";
 import {Logger} from "../../../lib/logger";
 import {PluginConfig} from "../../../lib/plugin";
 
 let expect = chai.expect;
-chai.use(sinonChai);
+chai.use(SinonChai);
 
 describe("lib util", () => {
   let RewiredUtil = rewire("../../../lib/util");
@@ -18,11 +19,11 @@ describe("lib util", () => {
 
   beforeEach(() => {
     let rewiredImp = RewiredUtil.__get__("UtilImp");
-    mockLogger = <any> sinon.mock();
-    mockLogger.debug = <any> sinon.stub();
-    mockLogger.info = <any> sinon.stub();
-    mockLogger.error = <any> sinon.stub();
-    mockLogger.trace = <any> sinon.stub();
+    mockLogger = <any> Sinon.mock();
+    mockLogger.debug = <any> Sinon.stub();
+    mockLogger.info = <any> Sinon.stub();
+    mockLogger.error = <any> Sinon.stub();
+    mockLogger.trace = <any> Sinon.stub();
     util = new rewiredImp(mockLogger);
   });
 
@@ -39,11 +40,11 @@ describe("lib util", () => {
   describe("availablePlugins", () => {
     let revertDirName: () => void;
     let revertShellJs: () => void;
-    let mockFind: sinon.SinonStub;
+    let mockFind: SinonStub;
 
     beforeEach(() => {
       revertDirName = RewiredUtil.__set__({"__dirname": "baz"});
-      mockFind = sinon.stub();
+      mockFind = Sinon.stub();
       revertShellJs = RewiredUtil.__set__({shelljs: {find: mockFind}});
     });
 
@@ -75,15 +76,15 @@ describe("lib util", () => {
     let processPatch;
 
     beforeEach(() => {
-      mockExit = sinon.stub(process, "exit");
+      mockExit = Sinon.stub(process, "exit");
 
       let processVersion = process.versions.node.split(".");
       processMajor = parseInt(processVersion[0], 10);
       processMinor = parseInt(processVersion[1], 10);
       processPatch = parseInt(processVersion[2], 10);
 
-      mockLogInfo = sinon.stub(console, "info");
-      mockLogError = sinon.stub(console, "error");
+      mockLogInfo = Sinon.stub(console, "info");
+      mockLogError = Sinon.stub(console, "error");
     });
 
     afterEach(() => {
@@ -167,11 +168,11 @@ describe("lib util", () => {
   describe("getPlugin", () => {
     it("should call load with supplied type", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = sinon.stub();
+      let mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -179,16 +180,16 @@ describe("lib util", () => {
       util.getPlugin("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith("foo", sinon.match.any, sinon.match.any, sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call load with supplied pluginName", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = sinon.stub();
+      let mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -196,16 +197,16 @@ describe("lib util", () => {
       util.getPlugin("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any, sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call load with supplied fileSpec", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = sinon.stub();
+      let mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -213,16 +214,16 @@ describe("lib util", () => {
       util.getPlugin("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, "baz", sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
     });
 
     it("should call load with isConfiguration false", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = sinon.stub();
+      let mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -230,17 +231,17 @@ describe("lib util", () => {
       util.getPlugin("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, false);
+      expect(mockLoad).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, false);
     });
 
     it("should return the loaded the plugin", () => {
       // arrange
       let expected = {name: "qux"};
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => expected });
       util.load = mockLoad;
 
-      let mockGetPluginConfig = sinon.stub();
+      let mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -254,11 +255,11 @@ describe("lib util", () => {
     it("should return the loaded the plugin with config", () => {
       // arrange
       let expected = {name: "qux"};
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = sinon.stub();
+      let mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns(expected);
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -273,7 +274,7 @@ describe("lib util", () => {
   describe("getPluginConfig", () => {
     it("should call load with supplied type", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -281,12 +282,12 @@ describe("lib util", () => {
       util.getPluginConfig("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith("foo", sinon.match.any, sinon.match.any, sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call load with supplied pluginName", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -294,12 +295,12 @@ describe("lib util", () => {
       util.getPluginConfig("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, "bar", sinon.match.any, sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call load with supplied fileSpec", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -307,12 +308,12 @@ describe("lib util", () => {
       util.getPluginConfig("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, "baz", sinon.match.any);
+      expect(mockLoad).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
     });
 
     it("should call load with isConfiguration true", () => {
       // arrange
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -320,13 +321,13 @@ describe("lib util", () => {
       util.getPluginConfig("foo", "bar", "baz");
 
       // assert
-      expect(mockLoad).to.have.been.calledWith(sinon.match.any, sinon.match.any, sinon.match.any, true);
+      expect(mockLoad).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, true);
     });
 
     it("should return the loaded the plugin config", () => {
       // arrange
       let expected = <PluginConfig> {name: "qux"};
-      let mockLoad = sinon.stub();
+      let mockLoad = Sinon.stub();
       mockLoad.returns(<{PluginConfig: PluginConfig}> { PluginConfig: expected});
       util.load = mockLoad;
 
@@ -395,7 +396,7 @@ describe("lib util", () => {
     let revertPath: () => void;
 
     beforeEach(() => {
-      mockExit = sinon.stub(process, "exit");
+      mockExit = Sinon.stub(process, "exit");
     });
 
     afterEach(() => {
@@ -424,36 +425,36 @@ describe("lib util", () => {
       util.load("foo", "bar", "baz", true);
 
       // assert
-      expect(mockLogger.error).to.have.been.calledWith(sinon.match(/syntax error/));
+      expect(mockLogger.error).to.have.been.calledWith(Sinon.match(/syntax error/));
     });
 
     it("should catch other errors in load and log error as 'not found'", () => {
       // arrange
       let mockJoin = function() {throw new Error("foo"); };
       revertPath = RewiredUtil.__set__({path: {join: mockJoin}});
-      util.availablePlugins = sinon.stub();
-      util.closestMatch = sinon.stub();
+      util.availablePlugins = Sinon.stub();
+      util.closestMatch = Sinon.stub();
 
       // act
       util.load("foo", "bar", "baz", true);
 
       // assert
-      expect(mockLogger.error).to.have.been.calledWith(sinon.match(/not found/));
+      expect(mockLogger.error).to.have.been.calledWith(Sinon.match(/not found/));
     });
 
     it("should catch other errors in load suggest closest plugin name", () => {
       // arrange
       let mockJoin = function() {throw new Error("foo"); };
       revertPath = RewiredUtil.__set__({path: {join: mockJoin}});
-      util.availablePlugins = sinon.stub();
-      let mockClosestMatch = sinon.stub();
+      util.availablePlugins = Sinon.stub();
+      let mockClosestMatch = Sinon.stub();
       util.closestMatch = mockClosestMatch;
 
         // act
       util.load("foo", "bar", "baz", false);
 
       // assert
-      expect(mockClosestMatch).to.have.been.calledWith("bar", sinon.match.any);
+      expect(mockClosestMatch).to.have.been.calledWith("bar", Sinon.match.any);
     });
   });
 });

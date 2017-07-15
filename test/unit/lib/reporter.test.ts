@@ -2,8 +2,9 @@
 
 import * as chai from "chai";
 import rewire = require("rewire");
-import * as sinon from "sinon";
-import * as sinonChai from "sinon-chai";
+import * as Sinon from "sinon";
+import {SinonStub} from "sinon";
+import * as SinonChai from "sinon-chai";
 import {createReporter, Reporter, ReporterImp} from "../../../lib/reporter";
 import {
   PluginReporter, ProgressReport, RunArgs, TestReportNode, TestReportRoot, TestReportSuiteNode, TestRun, TestRunFailState,
@@ -11,7 +12,7 @@ import {
 } from "../../../lib/plugin";
 
 let expect = chai.expect;
-chai.use(sinonChai);
+chai.use(SinonChai);
 
 describe("lib reporter", () => {
   let RewiredReporter = rewire("./../../../lib/reporter");
@@ -21,7 +22,7 @@ describe("lib reporter", () => {
   beforeEach(() => {
     let rewiredImp = RewiredReporter.__get__("ReporterImp");
     reporter = new rewiredImp();
-    mockReporterPlugin = <PluginReporter> {finish: sinon.spy(), init: sinon.spy(), runArgs: sinon.spy(), update: sinon.spy()};
+    mockReporterPlugin = <PluginReporter> {finish: Sinon.spy(), init: Sinon.spy(), runArgs: Sinon.spy(), update: Sinon.spy()};
     reporter.configure(mockReporterPlugin);
   });
 
@@ -89,8 +90,8 @@ describe("lib reporter", () => {
     it("should call processResults with the supplied raw results", () => {
       // arrange
       let expected = <TestReportRoot>{runType: "NORMAL"};
-      reporter.processResults = sinon.stub();
-      (<sinon.SinonStub>reporter.processResults).returns(<TestRun>{summary: {}});
+      reporter.processResults = Sinon.stub();
+      (<SinonStub>reporter.processResults).returns(<TestRun>{summary: {}});
 
       // act
       reporter.finish(expected);
@@ -102,8 +103,8 @@ describe("lib reporter", () => {
     it("should call plugin.finish with the processed results", () => {
       // arrange
       let expected = <TestRun> {summary: {outcome: "PASSED"}};
-      reporter.processResults = sinon.stub();
-      (<sinon.SinonStub>reporter.processResults).returns(expected);
+      reporter.processResults = Sinon.stub();
+      (<SinonStub>reporter.processResults).returns(expected);
 
       // act
       reporter.finish(<TestReportRoot>{});

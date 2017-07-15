@@ -2,12 +2,12 @@
 
 import * as chai from "chai";
 import rewire = require("rewire");
-import * as sinon from "sinon";
-import * as sinonChai from "sinon-chai";
+import * as Sinon from "sinon";
+import * as SinonChai from "sinon-chai";
 import {createLogger, Logger, LoggerImp, LogLevel} from "../../../lib/logger";
 
 let expect = chai.expect;
-chai.use(sinonChai);
+chai.use(SinonChai);
 
 describe("lib logger", () => {
   let RewiredLogger = rewire("../../../lib/logger");
@@ -31,141 +31,141 @@ describe("lib logger", () => {
   describe("trace", () => {
     it("should call log with the level 'trace'", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.trace("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(LogLevel.Trace, sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Trace, Sinon.match.any, Sinon.match.any)).to.be.true;
     });
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.trace("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
+      expect(mockLog.calledWith(Sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
   describe("debug", () => {
     it("should call log with the level 'debug'", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.debug("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(LogLevel.Debug, sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Debug, Sinon.match.any, Sinon.match.any)).to.be.true;
     });
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.debug("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
+      expect(mockLog.calledWith(Sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
   describe("info", () => {
     it("should call log with the level 'info'", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.info("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(LogLevel.Info, sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Info, Sinon.match.any, Sinon.match.any)).to.be.true;
     });
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.info("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
+      expect(mockLog.calledWith(Sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
   describe("warn", () => {
     it("should call log with the level 'warn'", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.warn("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(LogLevel.Warn, sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Warn, Sinon.match.any, Sinon.match.any)).to.be.true;
     });
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.warn("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
+      expect(mockLog.calledWith(Sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
   describe("error", () => {
     it("should call log with the level 'error'", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.error("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(LogLevel.Error, sinon.match.any, sinon.match.any)).to.be.true;
+      expect(mockLog.calledWith(LogLevel.Error, Sinon.match.any, Sinon.match.any)).to.be.true;
     });
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = sinon.spy();
+      let mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
       logger.error("foo", "bar");
 
       // assert
-      expect(mockLog.calledWith(sinon.match.any, "foo", "bar")).to.be.true;
+      expect(mockLog.calledWith(Sinon.match.any, "foo", "bar")).to.be.true;
     });
   });
 
   describe("log", () => {
     it("should do nothing when showLogMessage is false", () => {
       // arrange
-      let mockShowMassage = sinon.stub();
+      let mockShowMassage = Sinon.stub();
       mockShowMassage.returns(false);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = sinon.spy();
+      let mockLevelToLogger = Sinon.spy();
       logger.levelToLogger = mockLevelToLogger;
 
       // act
@@ -177,16 +177,16 @@ describe("lib logger", () => {
 
     it("should log the message with the level style when there is no data", () => {
       // arrange
-      let mockShowMassage = sinon.stub();
+      let mockShowMassage = Sinon.stub();
       mockShowMassage.returns(true);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = sinon.stub();
+      let mockLevelToLogger = Sinon.stub();
       logger.levelToLogger = mockLevelToLogger;
-      let mockLogger = sinon.spy();
+      let mockLogger = Sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      let mockLevelToStyle = sinon.stub();
+      let mockLevelToStyle = Sinon.stub();
       mockLevelToStyle.returns(() => {
         return "baz";
       });
@@ -201,16 +201,16 @@ describe("lib logger", () => {
 
     it("should log the stringified data with the level style when there is data", () => {
       // arrange
-      let mockShowMassage = sinon.stub();
+      let mockShowMassage = Sinon.stub();
       mockShowMassage.returns(true);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = sinon.stub();
+      let mockLevelToLogger = Sinon.stub();
       logger.levelToLogger = mockLevelToLogger;
-      let mockLogger = sinon.spy();
+      let mockLogger = Sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      let mockLevelToStyle = sinon.stub();
+      let mockLevelToStyle = Sinon.stub();
       mockLevelToStyle.returns((value: {}) => value);
       logger.levelToStyle = mockLevelToStyle;
 
@@ -223,16 +223,16 @@ describe("lib logger", () => {
 
     it("should log instances of error with the level style when there is data", () => {
       // arrange
-      let mockShowMassage = sinon.stub();
+      let mockShowMassage = Sinon.stub();
       mockShowMassage.returns(true);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = sinon.stub();
+      let mockLevelToLogger = Sinon.stub();
       logger.levelToLogger = mockLevelToLogger;
-      let mockLogger = sinon.spy();
+      let mockLogger = Sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      let mockLevelToStyle = sinon.stub();
+      let mockLevelToStyle = Sinon.stub();
       mockLevelToStyle.returns((value: {}) => value);
       logger.levelToStyle = mockLevelToStyle;
       let error = new Error("foo");
@@ -365,13 +365,15 @@ describe("lib logger", () => {
     let revertChalk: () => void;
 
     beforeEach(() => {
-      revertChalk = RewiredLogger.__set__({chalk: {
-        dim: { gray: x => "dim gray"},
-        gray: x => "gray",
-        red: x => "red",
-        reset: x => "reset",
-        yellow: x => "yellow"
-      }});
+      revertChalk = RewiredLogger.__set__({
+        Chalk: {
+          dim: {gray: x => "dim gray"},
+          gray: x => "gray",
+          red: x => "red",
+          reset: x => "reset",
+          yellow: x => "yellow"
+        }
+      });
     });
 
     afterEach(() => {

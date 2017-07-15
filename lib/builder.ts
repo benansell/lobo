@@ -1,6 +1,6 @@
-import * as bluebird from "bluebird";
+import * as Bluebird from "bluebird";
 import * as _ from "lodash";
-import * as chalk from "chalk";
+import * as Chalk from "chalk";
 import * as path from "path";
 import * as shelljs from "shelljs";
 import * as childProcess from "child_process";
@@ -25,26 +25,26 @@ type Reject = (reason?: Error) => void;
 type Resolve = (data?: object) => void;
 
 export interface Builder {
-  build(config: LoboConfig, testDirectory: string): bluebird<object>;
+  build(config: LoboConfig, testDirectory: string): Bluebird<object>;
 }
 
 export class BuilderImp implements Builder {
 
   private logger: Logger;
   private elmPackageHelper: ElmPackageHelper;
-  private yOrN: string = chalk.dim(" [Y/n]");
+  private yOrN: string = Chalk.dim(" [Y/n]");
 
   constructor(elmPackageHelper: ElmPackageHelper, logger: Logger) {
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
   }
 
-  public build(config: LoboConfig, testDirectory: string): bluebird<object> {
+  public build(config: LoboConfig, testDirectory: string): Bluebird<object> {
     this.logger.info("-----------------------------------[ BUILD ]------------------------------------");
 
     let baseElmPackageDir = ".";
     let testElmPackageDir = testDirectory;
-    let steps: Array<() => bluebird<object>> = [];
+    let steps: Array<() => Bluebird<object>> = [];
 
     if (config.noUpdate) {
       this.logger.info("Ignored sync of base and test elm-package.json files due to configuration");
@@ -56,11 +56,11 @@ export class BuilderImp implements Builder {
 
     steps = steps.concat([() => this.installDependencies(config, testDirectory), () => this.make(config, testDirectory)]);
 
-    return bluebird.mapSeries(steps, item => item());
+    return Bluebird.mapSeries(steps, item => item());
   }
 
-  public ensureElmPackageExists(config: LoboConfig, elmPackageDir: string, location: string): bluebird<object> {
-    return new bluebird((resolve: Resolve, reject: Reject) => {
+  public ensureElmPackageExists(config: LoboConfig, elmPackageDir: string, location: string): Bluebird<object> {
+    return new Bluebird((resolve: Resolve, reject: Reject) => {
       if (shelljs.test("-e", this.elmPackageHelper.path(elmPackageDir))) {
         resolve();
         return;
@@ -87,17 +87,17 @@ export class BuilderImp implements Builder {
     });
   }
 
-  public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string): bluebird<object> {
+  public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string): Bluebird<object> {
     let steps = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
       (result: ElmPackageCompare) => this.updateSourceDirectories(config, baseElmPackageDir, result.base, testElmPackageDir, result.test),
       (result: ElmPackageCompare) => this.updateDependencies(config, result.base, testElmPackageDir, result.test)];
 
     let value: ElmPackageCompare;
-    return bluebird.mapSeries(steps, (item) => item(value).then((result: ElmPackageCompare) => value = result));
+    return Bluebird.mapSeries(steps, (item) => item(value).then((result: ElmPackageCompare) => value = result));
   }
 
-  public readElmPackage(baseElmPackageDir: string, testElmPackageDir: string): bluebird<object> {
-    return new bluebird<object>((resolve: Resolve, reject: Reject) => {
+  public readElmPackage(baseElmPackageDir: string, testElmPackageDir: string): Bluebird<object> {
+    return new Bluebird<object>((resolve: Resolve, reject: Reject) => {
       let baseElmPackage = this.elmPackageHelper.read(baseElmPackageDir);
 
       if (!baseElmPackage) {
@@ -117,8 +117,8 @@ export class BuilderImp implements Builder {
   }
 
   public updateSourceDirectories(config: LoboConfig, baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                                 testElmPackage: ElmPackageJson): bluebird<object> {
-    return new bluebird((resolve: Resolve, reject: Reject) => {
+                                 testElmPackage: ElmPackageJson): Bluebird<object> {
+    return new Bluebird((resolve: Resolve, reject: Reject) => {
       let sourceDirectories =
         this.mergeSourceDirectories(baseElmPackage, baseElmPackageDir, testElmPackage, testElmPackageDir, config.testFramework);
       let diff = _.difference(sourceDirectories, testElmPackage.sourceDirectories);
@@ -161,8 +161,8 @@ export class BuilderImp implements Builder {
   }
 
   public updateDependencies(config: LoboConfig, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                            testElmPackage: ElmPackageJson): bluebird<object> {
-    return new bluebird((resolve: Resolve, reject: Reject) => {
+                            testElmPackage: ElmPackageJson): Bluebird<object> {
+    return new Bluebird((resolve: Resolve, reject: Reject) => {
       let dependencies = this.mergeDependencies(baseElmPackage, testElmPackage, config.testFramework);
       let existing = _.toPairs(testElmPackage.dependencies);
       let diff = _.filter(dependencies, base => this.isNotExistingDependency(existing, base));
@@ -266,8 +266,8 @@ export class BuilderImp implements Builder {
     });
   }
 
-  public installDependencies(config: LoboConfig, testDirectory: string): bluebird<object> {
-    return new bluebird((resolve: Resolve, reject: Reject) => {
+  public installDependencies(config: LoboConfig, testDirectory: string): Bluebird<object> {
+    return new Bluebird((resolve: Resolve, reject: Reject) => {
       this.runElmPackageInstall(config, testDirectory, config.prompt, resolve, reject);
     });
   }
@@ -303,8 +303,8 @@ export class BuilderImp implements Builder {
     }
   }
 
-  public make(config: LoboConfig, testDirectory: string): bluebird<object> {
-    return new bluebird((resolve: Resolve, reject: Reject) => {
+  public make(config: LoboConfig, testDirectory: string): Bluebird<object> {
+    return new Bluebird((resolve: Resolve, reject: Reject) => {
       let pluginDirectory = path.resolve(__dirname, "..", "plugin");
       let testStuffMainElm = path.join(pluginDirectory, config.testFramework.config.name, config.testMainElm);
       let command = "elm-make";
@@ -330,7 +330,7 @@ export class BuilderImp implements Builder {
         resolve();
       } catch (err) {
         console.log("");
-        console.log(chalk.red.bold("  BUILD FAILED"));
+        console.log(Chalk.red.bold("  BUILD FAILED"));
         console.log("");
         this.logger.debug(err);
         reject(err);
