@@ -9,6 +9,9 @@
     <a href="https://travis-ci.org/benansell/lobo">
         <img src="https://travis-ci.org/benansell/lobo.svg?branch=master" alt="Build Status - travis">
     </a>
+    <a href="https://coveralls.io/github/benansell/lobo?branch=master">
+        <img src="https://coveralls.io/repos/github/benansell/lobo/badge.svg?branch=master" alt="Coverage Status">
+    </a>
 </p>
 
 
