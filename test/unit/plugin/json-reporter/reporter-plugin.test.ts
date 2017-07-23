@@ -169,24 +169,28 @@ describe("plugin json-reporter reporter-plugin", () => {
     });
   });
 
-  describe("logSummary", () => {
+  describe("toSummary", () => {
     it("should log the summary without runResults", () => {
       // act
-      reporter.logSummary(<TestRunSummary> {outcome: "foo", runResults: []});
+      let actual = reporter.toSummary(<TestRunSummary> {outcome: "foo", runResults: []});
 
       // assert
-      expect(mockLogger.log).to.have.been.calledWith("{\"outcome\":\"foo\"}");
+      expect(actual).not.to.haveOwnProperty("runResults");
     });
   });
 
-  describe("logFull", () => {
+  describe("toFull", () => {
     it("should log the summary with runResults", () => {
       // act
-      reporter.logFull(<TestRunSummary> {outcome: "foo", runResults: []});
+      let actual = reporter.toFull(<TestRunSummary> {outcome: "foo", runResults: []});
 
       // assert
-      expect(mockLogger.log).to.have.been.calledWith("{\"outcome\":\"foo\",\"runResults\":[]}");
+      expect(actual).to.haveOwnProperty("runResults");
     });
+  });
+
+  describe("toString", () => {
+
   });
 
   describe("runArgs", () => {
@@ -217,30 +221,125 @@ describe("plugin json-reporter reporter-plugin", () => {
   });
 
   describe("finish", () => {
-    it("should log the summary when program.quiet is true", () => {
+    it("should log the results as string when reportFile does not exist", () => {
       // arrange
       let expected = <TestRunSummary> {outcome: "foo"};
-      RewiredReporter.__set__({program: {quiet: true}});
-      reporter.logSummary = Sinon.spy();
+      let revert = RewiredReporter.__with__({program: {reportFile: undefined}});
+      reporter.toString = Sinon.stub();
+      (<SinonStub>reporter.toString).returns("bar");
 
       // act
-      reporter.finish(<TestRun>{summary: expected});
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
 
       // assert
-      expect(reporter.logSummary).to.have.been.calledWith(expected);
+      actual.then(() => {
+        expect(mockLogger.log).to.have.been.calledWith("bar");
+      });
     });
 
-    it("should log the full details when program.quiet is false", () => {
+    it("should write the results to reportFile path when reportFile exists", () => {
       // arrange
       let expected = <TestRunSummary> {outcome: "foo"};
-      RewiredReporter.__set__({program: {quiet: false}});
-      reporter.logFull = Sinon.spy();
+      let writeFile = Sinon.stub();
+      writeFile.callsFake((filePath, data, callback) => callback());
+      let revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
+      reporter.toString = Sinon.stub();
+      (<SinonStub>reporter.toString).returns("baz");
 
       // act
-      reporter.finish(<TestRun>{summary: expected});
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
 
       // assert
-      expect(reporter.logFull).to.have.been.calledWith(expected);
+      actual.then(() => {
+        expect(writeFile).to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any);
+      });
+    });
+
+    it("should write the results to as string when reportFile exists", () => {
+      // arrange
+      let expected = <TestRunSummary> {outcome: "foo"};
+      let writeFile = Sinon.stub();
+      writeFile.callsFake((filePath, data, callback) => callback());
+      let revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
+      reporter.toString = Sinon.stub();
+      (<SinonStub>reporter.toString).returns("baz");
+
+      // act
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
+
+      // assert
+      actual.then(() => {
+        expect(writeFile).to.have.been.calledWith(Sinon.match.any, "baz", Sinon.match.any);
+      });
+    });
+
+    it("should return a promise that calls reject when writeFile fails", () => {
+      // arrange
+      let expected = new Error("qux");
+      let writeFile = Sinon.stub();
+      writeFile.callsFake((filePath, data, callback) => callback(expected));
+      let revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
+      reporter.toString = Sinon.stub();
+      (<SinonStub>reporter.toString).returns("baz");
+
+      // act
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: {}}));
+
+      // assert
+      actual.catch((err) => {
+        expect(err).to.equal(expected);
+      });
+    });
+  });
+
+  describe("toString", () => {
+    it("should return the summary when program.quiet is true", () => {
+      // arrange
+      let expected = <TestRunSummary> {outcome: "foo"};
+      let revert = RewiredReporter.__with__({program: {quiet: true}});
+      reporter.toSummary = Sinon.stub();
+      (<SinonStub>reporter.toSummary).returns(expected);
+
+      // act
+      let actual: string = undefined;
+      revert(() => actual = reporter.toString(<TestRun>{}, false));
+
+      // assert
+      expect(actual).to.equal("{\"outcome\":\"foo\"}");
+    });
+
+    it("should return the full details when program.quiet is false", () => {
+      // arrange
+      let expected = <TestRunSummary> {outcome: "foo", runResults: []};
+      let revert = RewiredReporter.__with__({program: {quiet: false, reportFile: "foo"}});
+      reporter.toFull = Sinon.stub();
+      (<SinonStub>reporter.toFull).returns(expected);
+
+      // act
+      let actual: string = undefined;
+      revert(() => actual = reporter.toString(<TestRun>{}, false));
+
+      // assert
+      expect(actual).to.equal("{\"outcome\":\"foo\",\"runResults\":[]}");
+    });
+
+    it("should return indented string when prettyPrint is true", () => {
+      // arrange
+      let expected = <TestRunSummary> {outcome: "foo", runResults: []};
+      let revert = RewiredReporter.__with__({program: {quiet: false, reportFile: "foo"}});
+      reporter.toFull = Sinon.stub();
+      (<SinonStub>reporter.toFull).returns(expected);
+
+      // act
+      let actual: string = undefined;
+      revert(() => actual = reporter.toString(<TestRun>{}, true));
+
+      // assert
+      expect(actual).to.equal("{\n  \"outcome\": \"foo\",\n  \"runResults\": []\n}");
     });
   });
 });
