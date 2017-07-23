@@ -1,11 +1,8 @@
 import * as Bluebird from "bluebird";
 import {createLogger, Logger} from "./logger";
 import {createReporter, Reporter} from "./reporter";
-import {LoboConfig, ProgressReport, RunArgs, TestReportRoot} from "./plugin";
+import {LoboConfig, ProgressReport, Reject, Resolve, RunArgs, TestReportRoot} from "./plugin";
 
-type Reject = (reason?: Error) => void;
-
-type Resolve = (data?: object) => void;
 
 export interface LoboElmApp {
   ports: {
@@ -55,18 +52,9 @@ export class RunnerImp {
   public static makeTestRunComplete(logger: Logger, reporter: Reporter, resolve: Resolve, reject: Reject):
   (rawResults: TestReportRoot) => void {
     return (rawResults: TestReportRoot) => {
-      try {
-        logger.trace("Test run complete", rawResults);
-        let result = reporter.finish(rawResults);
-
-        if (result === true) {
-          resolve();
-        } else {
-          reject();
-        }
-      } catch (err) {
-        reject(err);
-      }
+      logger.trace("Test run complete", rawResults);
+      let promise = reporter.finish(rawResults);
+      promise.then(() => resolve()).catch(err => reject(err));
     };
   }
 

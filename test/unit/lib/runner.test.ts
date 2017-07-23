@@ -120,7 +120,13 @@ describe("lib runner", function() {
   describe("makeTestRunComplete", () => {
     it("should return a function that calls reporter.finish with the supplied results", () => {
       // arrange
-      mockReporter.finish = Sinon.spy();
+      mockReporter.finish = Sinon.stub();
+      (<SinonStub>mockReporter.finish).returns({
+        then: func => {
+          func();
+          return {'catch': Sinon.stub()};
+        }
+      });
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
@@ -133,7 +139,13 @@ describe("lib runner", function() {
 
     it("should return a function that calls resolve when reporter.finish is true", () => {
       // arrange
-      mockReporter.finish = () => true;
+      mockReporter.finish = Sinon.stub();
+      (<SinonStub>mockReporter.finish).returns({
+        then: func => {
+          func();
+          return {'catch': Sinon.stub()};
+        }
+      });
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
@@ -144,9 +156,14 @@ describe("lib runner", function() {
       expect(mockResolve).to.have.been.calledWith();
     });
 
-    it("should return a function that calls reject when reporter.finish is false", () => {
+    it("should return a function that calls reject when reporter.finish throws error", () => {
       // arrange
-      mockReporter.finish = () => false;
+      mockReporter.finish = Sinon.stub();
+      (<SinonStub>mockReporter.finish).returns({
+        then: () => {
+          return {'catch': func => func()};
+        }
+      });
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
@@ -155,21 +172,6 @@ describe("lib runner", function() {
 
       // assert
       expect(mockReject).to.have.been.calledWith();
-    });
-
-    it("should return a function that calls supplied reject when an error is thrown", () => {
-      // arrange
-      let expected = new Error("foo");
-      mockReporter.finish = () => {
-        throw expected
-      };
-
-      // act
-      let actual = RunnerImp.makeTestRunComplete(mockLogger, mockReporter, mockResolve, mockReject);
-      actual(<TestReportRoot> {});
-
-      // assert
-      expect(mockReject).to.have.been.calledWith(expected);
     });
   });
 
@@ -231,7 +233,12 @@ describe("lib runner", function() {
       });
       (<SinonStub>runner.loadElmTestApp).returns({UnitTest: {worker: worker}});
       mockReporter.finish = Sinon.stub();
-      (<SinonStub>mockReporter.finish).returns(true);
+      (<SinonStub>mockReporter.finish).returns({
+        then: func => {
+          func();
+          return {'catch': Sinon.stub()};
+        }
+      });
 
       // act
       let actual = runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});

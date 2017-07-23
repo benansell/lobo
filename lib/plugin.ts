@@ -1,3 +1,5 @@
+import * as Bluebird from "bluebird";
+
 export interface Dependencies {
   [index: string]: string;
 }
@@ -41,9 +43,13 @@ export interface PluginOption {
 
 export interface PluginReporter {
   init(testCount: number): void;
-  finish(results: TestRun): void;
+  finish(results: TestRun): Bluebird<object>;
   runArgs(args: RunArgs): void;
   update(result: ProgressReport): void;
+}
+
+export interface PluginReporterLogger {
+  log(message: string): void;
 }
 
 export interface PluginReporterWithConfig extends PluginReporter {
@@ -60,6 +66,10 @@ export type ProgressReport =
   | TestReportPassedLeaf
   | TestReportSkippedLeaf
   | TestReportTodoLeaf;
+
+export type Reject = (reason?: Error) => void;
+
+export type Resolve = (data?: object) => void;
 
 export type ResultType =
   "FAILED"

@@ -1,5 +1,6 @@
 "use strict";
 
+import * as Bluebird from "bluebird";
 import * as chai from "chai";
 import rewire = require("rewire");
 import * as Sinon from "sinon";
@@ -8,6 +9,7 @@ import {createPlugin, JsonReporter} from "../../../../plugin/json-reporter/repor
 import {
   PluginReporter, ProgressReport, RunType, TestReportConfig, TestRun, TestRunSummary
 } from "../../../../lib/plugin";
+import {SinonStub} from "sinon";
 
 let expect = chai.expect;
 chai.use(SinonChai);

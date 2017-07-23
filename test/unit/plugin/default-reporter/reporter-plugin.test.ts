@@ -1,5 +1,6 @@
 "use strict";
 
+import * as Bluebird from "bluebird";
 import * as chai from "chai";
 import * as Chalk from "chalk";
 import * as Sinon from "sinon";
@@ -29,7 +30,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
   beforeEach(() => {
     let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
-    mockCompare = <Compare> { diff: Sinon.stub() };
+    mockCompare = <Compare> {diff: Sinon.stub()};
     mockLogger = {log: Sinon.spy()};
     mockUtil = <Util> {};
     mockUtil.padRight = x => x;
@@ -240,14 +241,15 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("finish", () => {
     it("should only log the summary header info when quiet is true", () => {
       // arrange
-      RewiredPlugin.__set__({program: {quiet: true}});
+      let revert = RewiredPlugin.__with__({program: {quiet: true}});
       reporter.logSummaryHeader = Sinon.spy();
       reporter.logSummary = Sinon.spy();
       reporter.logNonPassed = Sinon.spy();
       let summary = <TestRunSummary> {passedCount: 123};
 
       // act
-      reporter.finish(<TestRun>{summary: summary});
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: summary}));
 
       // assert
       expect(reporter.logSummary).not.to.have.been.called;
@@ -257,14 +259,15 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should only log the summary header failState when quiet is true", () => {
       // arrange
-      RewiredPlugin.__set__({program: {quiet: true}});
+      let revert = RewiredPlugin.__with__({program: {quiet: true}});
       reporter.logSummaryHeader = Sinon.spy();
       reporter.logSummary = Sinon.spy();
       reporter.logNonPassed = Sinon.spy();
       let failState = <TestRunFailState> {only: {exists: true}};
 
       // act
-      reporter.finish(<TestRun>{failState: failState});
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{failState: failState}));
 
       // assert
       expect(reporter.logSummary).not.to.have.been.called;
@@ -274,12 +277,13 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log the full summary info when quiet is false", () => {
       // arrange
-      RewiredPlugin.__set__({program: {quiet: false}});
+      let revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logSummary = Sinon.spy();
       let summary = <TestRunSummary> {passedCount: 123};
 
       // act
-      reporter.finish(<TestRun>{summary: summary});
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: summary}));
 
       // assert
       expect(reporter.logSummary).to.have.been.calledWith(summary, Sinon.match.any);
@@ -287,13 +291,14 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should only log the summary header failState when quiet is false", () => {
       // arrange
-      RewiredPlugin.__set__({program: {quiet: false}});
+      let revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logSummary = Sinon.spy();
       let summary = <TestRunSummary> {passedCount: 123};
       let failState = <TestRunFailState> {only: {exists: true}};
 
       // act
-      reporter.finish(<TestRun>{summary: summary, failState: failState});
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: summary, failState: failState}));
 
       // assert
       expect(reporter.logSummary).to.have.been.calledWith(Sinon.match.any, failState);
@@ -301,16 +306,34 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log the non passed info when quiet is false", () => {
       // arrange
-      RewiredPlugin.__set__({program: {quiet: false}});
+      let revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logNonPassed = Sinon.spy();
       let summary = <TestRunSummary> {passedCount: 123};
       let failState = <TestRunFailState> {only: {exists: true}};
 
       // act
-      reporter.finish(<TestRun>{summary: summary, failState: failState});
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: summary, failState: failState}));
 
       // assert
       expect(reporter.logNonPassed).to.have.been.calledWith(summary);
+    });
+
+    it("should return a promise that calls reject when writeFile fails", () => {
+      // arrange
+      let expected = new Error("qux");
+      let revert = RewiredPlugin.__with__({program: {quiet: false}});
+      reporter.logSummary = Sinon.stub();
+      (<SinonStub>reporter.logSummary).throws(expected);
+
+      // act
+      let actual: Bluebird<Object> = undefined;
+      revert(() => actual = reporter.finish(<TestRun>{summary: {}}));
+
+      // assert
+      actual.catch((err) => {
+        expect(err).to.equal(expected);
+      });
     });
   });
 
@@ -731,10 +754,10 @@ describe("plugin default-reporter reporter-plugin", () => {
     it("should log failed items", () => {
       // arrange
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportFailedLeaf>>{ labels: [], result: {label: "foo"}};
+      let expected = <TestRunLeaf<TestReportFailedLeaf>>{labels: [], result: {label: "foo"}};
 
       // act
-      reporter.logNonPassed(<TestRunSummary>{ failures: [expected]});
+      reporter.logNonPassed(<TestRunSummary>{failures: [expected]});
 
       // assert
       expect(reporter.logFailureMessage).to.have.been.calledWith(expected, Sinon.match.any);
@@ -744,10 +767,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let revert = RewiredPlugin.__with__({program: {showSkip: false}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{ labels: [], result: {label: "foo"}};
+      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{ failures: [], skipped: [expected]}));
+      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], skipped: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).not.to.have.been.called;
@@ -757,10 +780,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let revert = RewiredPlugin.__with__({program: {showSkip: true}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{ labels: [], result: {label: "foo", resultType: "IGNORED"}};
+      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{ failures: [], skipped: [expected]}));
+      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], skipped: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).to.have.been.calledWith(expected, Sinon.match.any);
@@ -770,10 +793,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let revert = RewiredPlugin.__with__({program: {showSkip: true}});
       reporter.logNotRunMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{ labels: [], result: {label: "foo", resultType: "SKIPPED"}};
+      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "SKIPPED"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{ failures: [], skipped: [expected]}));
+      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], skipped: [expected]}));
 
       // assert
       expect(reporter.logNotRunMessage).to.have.been.calledWith(expected, Sinon.match.any);
@@ -783,10 +806,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let revert = RewiredPlugin.__with__({program: {showTodo: false}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportTodoLeaf>>{ labels: [], result: {label: "foo"}};
+      let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{ failures: [], todo: [expected]}));
+      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], todo: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).not.to.have.been.called;
@@ -796,10 +819,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let revert = RewiredPlugin.__with__({program: {showTodo: true}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportTodoLeaf>>{ labels: [], result: {label: "foo", resultType: "IGNORED"}};
+      let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{ failures: [], todo: [expected]}));
+      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], todo: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).to.have.been.calledWith(expected, Sinon.match.any);
@@ -809,10 +832,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let revert = RewiredPlugin.__with__({program: {showTodo: true}});
       reporter.logNotRunMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportTodoLeaf>>{ labels: [], result: {label: "foo", resultType: "TODO"}};
+      let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "TODO"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{ failures: [], todo: [expected]}));
+      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], todo: [expected]}));
 
       // assert
       expect(reporter.logNotRunMessage).to.have.been.calledWith(expected, Sinon.match.any);
@@ -977,7 +1000,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.paddedLog = Sinon.spy();
 
       // act
-      reporter.logNotRunMessage(<TestRunLeaf<TestReportSkippedLeaf>> { result: { reason: "foo"}}, "?");
+      reporter.logNotRunMessage(<TestRunLeaf<TestReportSkippedLeaf>> {result: {reason: "foo"}}, "?");
 
       // assert
       expect(reporter.paddedLog).to.have.been.calledWith("?foo");
@@ -1082,7 +1105,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.formatFailure("foo\n╷\n│ Expect.equalDicts bar\n╵\nbaz\n Diff: qux\n quux", 123);
 
       // assert
-      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo","│","│ Expect.equalDicts bar","│","└ baz"], Sinon.match.any);
+      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equalDicts bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equalLists'", () => {
@@ -1106,7 +1129,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.formatFailure("foo\n╷\n│ Expect.equalLists bar\n╵\nbaz\n Diff: qux\n quux", 123);
 
       // assert
-      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo","│","│ Expect.equalLists bar","│","└ baz"], Sinon.match.any);
+      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equalLists bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equalSets'", () => {
@@ -1130,7 +1153,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.formatFailure("foo\n╷\n│ Expect.equalSets bar\n╵\nbaz\n Diff: qux\n quux", 123);
 
       // assert
-      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo","│","│ Expect.equalSets bar","│","└ baz"], Sinon.match.any);
+      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equalSets bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure for equals failure with message as lines", () => {
@@ -1142,7 +1165,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.formatFailure("foo\n╷\n│ Expect.equal bar\n╵\nbaz", 123);
 
       // assert
-      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo","│","│ Expect.equal bar","│","└ baz"], Sinon.match.any);
+      expect(reporter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure for equals failure with supplied maxLength", () => {
@@ -1174,7 +1197,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       (<SinonStub> mockCompare.diff).returns({left: "^^^", right: "^^^"});
 
       // act
-      let actual = reporter.formatExpectEqualFailure(["┌ foo","│","│ Expect.equal bar","│","└ baz"], 123);
+      let actual = reporter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
 
       // assert
       expect(actual).to.include("│ ^^^");
@@ -1185,7 +1208,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       (<SinonStub> mockCompare.diff).returns({left: "^^^", right: "^^^"});
 
       // act
-      let actual = reporter.formatExpectEqualFailure(["┌ foo","│","│ Expect.equal bar","│","└ baz"], 123);
+      let actual = reporter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
 
       // assert
       expect(actual).to.include("  ^^^");
@@ -1196,7 +1219,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       (<SinonStub> mockCompare.diff).returns({left: "^^^", right: "^^^"});
 
       // act
-      let actual = reporter.formatExpectEqualFailure(["┌ foo","│","│ bar","│","└ baz"], 6);
+      let actual = reporter.formatExpectEqualFailure(["┌ foo", "│", "│ bar", "│", "└ baz"], 6);
 
       // assert
       expect(actual.length).to.equal(8);
@@ -1215,7 +1238,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       (<SinonStub> mockCompare.diff).returns({left: "^^^^^^", right: "^^^"});
 
       // act
-      let actual = reporter.formatExpectEqualFailure(["┌ fooabc","│","│ bar","│","└ baz"], 6);
+      let actual = reporter.formatExpectEqualFailure(["┌ fooabc", "│", "│ bar", "│", "└ baz"], 6);
 
       // assert
       expect(actual.length).to.equal(10);

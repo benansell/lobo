@@ -22,7 +22,7 @@ describe("lib reporter", () => {
   beforeEach(() => {
     let rewiredImp = RewiredReporter.__get__("ReporterImp");
     reporter = new rewiredImp();
-    mockReporterPlugin = <PluginReporter> {finish: Sinon.spy(), init: Sinon.spy(), runArgs: Sinon.spy(), update: Sinon.spy()};
+    mockReporterPlugin = <PluginReporter> {finish: Sinon.stub(), init: Sinon.spy(), runArgs: Sinon.spy(), update: Sinon.spy()};
     reporter.configure(mockReporterPlugin);
   });
 
@@ -92,6 +92,7 @@ describe("lib reporter", () => {
       let expected = <TestReportRoot>{runType: "NORMAL"};
       reporter.processResults = Sinon.stub();
       (<SinonStub>reporter.processResults).returns(<TestRun>{summary: {}});
+      (<SinonStub>mockReporterPlugin.finish).returns({then: Sinon.stub()});
 
       // act
       reporter.finish(expected);
@@ -105,12 +106,43 @@ describe("lib reporter", () => {
       let expected = <TestRun> {summary: {outcome: "PASSED"}};
       reporter.processResults = Sinon.stub();
       (<SinonStub>reporter.processResults).returns(expected);
+      (<SinonStub>mockReporterPlugin.finish).returns({then: Sinon.stub()});
 
       // act
       reporter.finish(<TestReportRoot>{});
 
       // assert
       expect(mockReporterPlugin.finish).to.have.been.calledWith(expected);
+    });
+
+    it("should return a promise that resolves when the results are a success", () => {
+      // arrange
+      let expected = <TestRun> {summary: {success: true}};
+      reporter.processResults = Sinon.stub();
+      (<SinonStub>reporter.processResults).returns(expected);
+      let onFulfill: Function = undefined;
+      (<SinonStub>mockReporterPlugin.finish).returns({ then: func => onFulfill = func});
+
+      // act
+      reporter.finish(<TestReportRoot>{});
+
+      // assert
+      expect(onFulfill()).not.to.throw;
+    });
+
+    it("should return a promise that rejects when the results are a failure", () => {
+      // arrange
+      let expected = <TestRun> {summary: {success: false}};
+      reporter.processResults = Sinon.stub();
+      (<SinonStub>reporter.processResults).returns(expected);
+      let onFulfill: Function = undefined;
+      (<SinonStub>mockReporterPlugin.finish).returns({ then: func => onFulfill = func});
+
+      // act
+      reporter.finish(<TestReportRoot>{});
+
+      // assert
+      expect(() => onFulfill()).to.throw("Failed");
     });
   });
 

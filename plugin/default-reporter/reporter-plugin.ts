@@ -1,27 +1,20 @@
-
+import * as Bluebird from "bluebird";
 import * as _ from "lodash";
 import * as Chalk from "chalk";
 import * as program from "commander";
 import {Compare, createCompare} from "./compare";
-import {
-  FailureMessage,
-  PluginReporter, ProgressReport, RunArgs, TestReportFailedLeaf, TestReportSkippedLeaf, TestReportTodoLeaf, TestRun,
-  TestRunFailState,
-  TestRunLeaf,
-  TestRunSummary
-} from "../../lib/plugin";
+import * as plugin from "../../lib/plugin";
 import {createUtil, Util} from "../../lib/util";
 
-type LeafItem = TestRunLeaf<TestReportFailedLeaf> | TestRunLeaf<TestReportSkippedLeaf> | TestRunLeaf<TestReportTodoLeaf>;
+type LeafItem = plugin.TestRunLeaf<plugin.TestReportFailedLeaf>
+  | plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>
+  | plugin.TestRunLeaf<plugin.TestReportTodoLeaf>;
 
-interface Logger {
-  log(message: string): void;
-}
 
-export class DefaultReporterImp implements PluginReporter {
+export class DefaultReporterImp implements plugin.PluginReporter {
 
   private compare: Compare;
-  private logger: Logger;
+  private logger: plugin.PluginReporterLogger;
   private util: Util;
   private passedStyle: Chalk.ChalkChain = Chalk.green;
   private failedStyle: Chalk.ChalkChain = Chalk.red;
@@ -32,15 +25,15 @@ export class DefaultReporterImp implements PluginReporter {
   private onlyStyle: Chalk.ChalkChain;
   private skipStyle: Chalk.ChalkChain;
   private todoStyle: Chalk.ChalkChain;
-  private initArgs: RunArgs;
+  private initArgs: plugin.RunArgs;
 
-  public constructor(compare: Compare, logger: Logger, util: Util) {
+  public constructor(compare: Compare, logger: plugin.PluginReporterLogger, util: Util) {
     this.compare = compare;
     this.logger = logger;
     this.util = util;
   }
 
-  public runArgs(args: RunArgs): void {
+  public runArgs(args: plugin.RunArgs): void {
     this.initArgs = args;
   }
 
@@ -51,7 +44,7 @@ export class DefaultReporterImp implements PluginReporter {
     this.todoStyle = program.failOnTodo ? this.failedStyle : this.inconclusiveStyle;
   }
 
-  public update(result: ProgressReport): void {
+  public update(result: plugin.ProgressReport): void {
     if (!result) {
       process.stdout.write(" ");
     } else if (result.resultType === "PASSED") {
@@ -67,25 +60,30 @@ export class DefaultReporterImp implements PluginReporter {
     }
   }
 
-  public finish(results: TestRun): void {
-    let summary = results.summary;
-    let failState = results.failState;
+  public finish(results: plugin.TestRun): Bluebird<object> {
+    return new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+      try {
+        let summary = results.summary;
+        let failState = results.failState;
+        this.paddedLog("");
 
-    if (program.quiet) {
-      this.paddedLog("");
-      this.logSummaryHeader(summary, failState);
-      this.paddedLog("");
-      return;
-    }
+        if (program.quiet) {
+          this.logSummaryHeader(summary, failState);
+        } else {
+          this.logSummary(summary, failState);
+          this.paddedLog("");
+          this.logNonPassed(summary);
+        }
 
-    this.paddedLog("");
-    this.logSummary(summary, failState);
-    this.paddedLog("");
-    this.logNonPassed(summary);
-    this.paddedLog("");
+        this.paddedLog("");
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
-  public logSummary(summary: TestRunSummary, failState: TestRunFailState): void {
+  public logSummary(summary: plugin.TestRunSummary, failState: plugin.TestRunFailState): void {
     this.logger.log("");
     this.logger.log("==================================== Summary ===================================");
 
@@ -122,7 +120,7 @@ export class DefaultReporterImp implements PluginReporter {
     this.logger.log("================================================================================");
   }
 
-  public logSummaryHeader(summary: TestRunSummary, failState: TestRunFailState): void {
+  public logSummaryHeader(summary: plugin.TestRunSummary, failState: plugin.TestRunFailState): void {
     let outcomeStyle = this.passedStyle;
 
     if (summary.failedCount > 0) {
@@ -179,7 +177,7 @@ export class DefaultReporterImp implements PluginReporter {
     return maxLabelLength;
   }
 
-  public logNonPassed(summary: TestRunSummary): void {
+  public logNonPassed(summary: plugin.TestRunSummary): void {
     let itemList: LeafItem[] = _.clone(summary.failures);
 
     if (program.showSkip) {
@@ -211,9 +209,9 @@ export class DefaultReporterImp implements PluginReporter {
       context = this.logLabels(item.labels, item.result.label, i + 1, context, style);
 
       if (isNotRun) {
-        this.logNotRunMessage(<TestRunLeaf<TestReportSkippedLeaf>>item, padding);
+        this.logNotRunMessage(<plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>>item, padding);
       } else {
-        this.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>>item, padding);
+        this.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>>item, padding);
       }
     }
   }
@@ -250,14 +248,14 @@ export class DefaultReporterImp implements PluginReporter {
     return context;
   }
 
-  public logFailureMessage(item: TestRunLeaf<TestReportFailedLeaf>, padding: string): void {
+  public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): void {
     let stdout = <{ columns: number }><{}>process.stdout;
 
     // default to a width of 80 when process is not running in a terminal
     let maxLength = stdout && stdout.columns ? stdout.columns - padding.length : 80;
     let givenStyle = this.givenStyle("Given");
 
-    _.forEach(item.result.resultMessages, (resultMessage: FailureMessage) => {
+    _.forEach(item.result.resultMessages, (resultMessage: plugin.FailureMessage) => {
       if (resultMessage.given && resultMessage.given.length > 0) {
         this.paddedLog("");
         this.paddedLog("  • " + givenStyle);
@@ -272,7 +270,7 @@ export class DefaultReporterImp implements PluginReporter {
     });
   }
 
-  public logNotRunMessage(item: TestRunLeaf<TestReportSkippedLeaf>, padding: string): void {
+  public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): void {
     this.paddedLog("");
     this.paddedLog(this.formatMessage(item.result.reason, padding));
     this.paddedLog("");
@@ -373,6 +371,6 @@ export class DefaultReporterImp implements PluginReporter {
   }
 }
 
-export function createPlugin(): PluginReporter {
+export function createPlugin(): plugin.PluginReporter {
   return new DefaultReporterImp(createCompare(), console, createUtil());
 }
