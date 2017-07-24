@@ -296,6 +296,16 @@ describe("lib builder", () => {
   });
 
   describe("ensureElmPackageExists", () => {
+    let revertShellJs: () => void;
+
+    beforeEach(() => {
+      revertShellJs = RewiredBuilder.__set__({shelljs: {test: x => false}});
+    });
+
+    afterEach(() => {
+      revertShellJs();
+    });
+
     it("should do nothing when elm-package.json already exists", () => {
       // arrange
       let revert = RewiredBuilder.__with__({shelljs: {test: x => true}});

@@ -1,6 +1,6 @@
 import * as Chalk from "chalk";
 import * as _ from "lodash";
-import {createLogger, Logger} from "../../lib/logger";
+import {createLogger, Logger} from "./logger";
 
 export interface Difference {
   readonly left: string;
@@ -19,11 +19,11 @@ interface NumberDetail {
   whole: string;
 }
 
-export interface Compare {
+export interface Comparer {
   diff(left: string, right: string): Difference;
 }
 
-export class CompareImp {
+export class ComparerImp {
 
   private logger: Logger;
 
@@ -381,6 +381,6 @@ export class CompareImp {
   }
 }
 
-export function createCompare(): Compare {
-  return new CompareImp(createLogger());
+export function createComparer(): Comparer {
+  return new ComparerImp(createLogger());
 }

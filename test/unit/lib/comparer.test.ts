@@ -2,26 +2,26 @@
 
 import * as chai from "chai";
 import * as Sinon from "sinon";
-import {Compare, CompareImp, createCompare} from "../../../../plugin/default-reporter/compare";
-import {Logger} from "../../../../lib/logger";
+import {Comparer, ComparerImp, createComparer} from "../../../lib/comparer";
+import {Logger} from "../../../lib/logger";
 
 let expect = chai.expect;
 
-describe("plugin default-reporter compare", () => {
-  let compare: CompareImp;
+describe("lib compare", () => {
+  let comparer: ComparerImp;
   let mockLogger: Logger;
 
   beforeEach(() => {
     mockLogger = <any> Sinon.mock();
     mockLogger.error = Sinon.spy();
     mockLogger.debug = Sinon.spy();
-    compare = new CompareImp(mockLogger);
+    comparer = new ComparerImp(mockLogger);
   });
 
   describe("createCompare", () => {
     it("should return compare", () => {
       // act
-      let actual: Compare = createCompare();
+      let actual: Comparer = createComparer();
 
       // assert
       expect(actual).to.exist;
@@ -31,7 +31,7 @@ describe("plugin default-reporter compare", () => {
   describe("diff", () => {
     it("should hint to whole value when a union type", () => {
       // act
-      let actual = compare.diff("Foo", "FooBar");
+      let actual = comparer.diff("Foo", "FooBar");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -40,7 +40,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not add hint to quotes when on left value when left is not string representation of right numeric value", () => {
       // act
-      let actual = compare.diff("\"123\"", "456");
+      let actual = comparer.diff("\"123\"", "456");
 
       // assert
       expect(actual.left).to.equal("     ");
@@ -49,7 +49,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to quotes when on left value when left is string representation of right numeric value", () => {
       // act
-      let actual = compare.diff("\"123\"", "123");
+      let actual = comparer.diff("\"123\"", "123");
 
       // assert
       expect(actual.left).to.equal("^   ^");
@@ -58,7 +58,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to quotes when on right value when right is string representation of left numeric value", () => {
       // act
-      let actual = compare.diff("123", "\"123\"");
+      let actual = comparer.diff("123", "\"123\"");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -68,7 +68,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not add hint to position of quotes in string value", () => {
       // act
-      let actual = compare.diff("\"foobar\"", "\"baz\"");
+      let actual = comparer.diff("\"foobar\"", "\"baz\"");
 
       // assert
       expect(actual.left).to.equal(" ^^^^^^ ");
@@ -77,7 +77,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not add hint two empty lists", () => {
       // act
-      let actual = compare.diff("[]", "[]");
+      let actual = comparer.diff("[]", "[]");
 
       // assert
       expect(actual.left).to.equal("  ");
@@ -86,7 +86,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint for single item list with different values", () => {
       // act
-      let actual = compare.diff("[1]", "[2]");
+      let actual = comparer.diff("[1]", "[2]");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -95,7 +95,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not add hint to position of brackets in list value", () => {
       // act
-      let actual = compare.diff("[1,2,3]", "[45,6,7]");
+      let actual = comparer.diff("[1,2,3]", "[45,6,7]");
 
       // assert
       expect(actual.left).to.equal("       ");
@@ -104,7 +104,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences in list values", () => {
       // act
-      let actual = compare.diff("[1,2,3]", "[5,6]");
+      let actual = comparer.diff("[1,2,3]", "[5,6]");
 
       // assert
       expect(actual.left).to.equal("     ^ ");
@@ -113,7 +113,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences in list values", () => {
       // act
-      let actual = compare.diff("[1,2]", "[5,6,7]");
+      let actual = comparer.diff("[1,2]", "[5,6,7]");
 
       // assert
       expect(actual.left).to.equal("     ");
@@ -122,7 +122,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when union", () => {
       // act
-      let actual = compare.diff("Nothing", "Just 1");
+      let actual = comparer.diff("Nothing", "Just 1");
 
       // assert
       expect(actual.left).to.equal("^^^^^^^");
@@ -131,7 +131,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when union with brackets", () => {
       // act
-      let actual = compare.diff("Foo", "Bar (Just 1)");
+      let actual = comparer.diff("Foo", "Bar (Just 1)");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -140,7 +140,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when both union with brackets", () => {
       // act
-      let actual = compare.diff("Foo (Just 1)", "Foo (Just 2)");
+      let actual = comparer.diff("Foo (Just 1)", "Foo (Just 2)");
 
       // assert
       expect(actual.left).to.equal("            ");
@@ -149,7 +149,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when both union of different lengths with brackets", () => {
       // act
-      let actual = compare.diff("Foo", "Foo (Bar 1) Baz");
+      let actual = comparer.diff("Foo", "Foo (Bar 1) Baz");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -158,7 +158,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when union with brackets", () => {
       // act
-      let actual = compare.diff("Foo \"bar\" True", "Baz (Just 1)");
+      let actual = comparer.diff("Foo \"bar\" True", "Baz (Just 1)");
 
       // assert
       expect(actual.left).to.equal("          ^^^^");
@@ -167,7 +167,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when union with different records no common fields", () => {
       // act
-      let actual = compare.diff("Foo { id = 1 }", "Baz { name = \"baz\" }");
+      let actual = comparer.diff("Foo { id = 1 }", "Baz { name = \"baz\" }");
 
       // assert
       expect(actual.left).to.equal("    ^^^^^^^^^^");
@@ -176,7 +176,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when union with different records 1 common field", () => {
       // act
-      let actual = compare.diff("Foo { id = 1 }", "Baz { id = 2, name = \"baz\" }");
+      let actual = comparer.diff("Foo { id = 1 }", "Baz { id = 2, name = \"baz\" }");
 
       // assert
       expect(actual.left).to.equal("              ");
@@ -185,7 +185,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add hint to differences when union with different records 1 common field", () => {
       // act
-      let actual = compare.diff("{ id = 1, version = \"bar\" }", "{ id = 2, name = \"foo\", version = \"baz\" }");
+      let actual = comparer.diff("{ id = 1, version = \"bar\" }", "{ id = 2, name = \"foo\", version = \"baz\" }");
 
       // assert
       expect(actual.left).to.equal("                           ");
@@ -194,7 +194,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not add hint to position of brackets in record value", () => {
       // act
-      let actual = compare.diff("{ id = 1 }", "{ id = 2 }");
+      let actual = comparer.diff("{ id = 1 }", "{ id = 2 }");
 
       // assert
       expect(actual.left).to.equal("          ");
@@ -203,7 +203,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not add hint when records only contain empty lists", () => {
       // act
-      let actual = compare.diff("{ items = [] }", "{ items = [] }");
+      let actual = comparer.diff("{ items = [] }", "{ items = [] }");
 
       // assert
       expect(actual.left).to.equal("              ");
@@ -212,7 +212,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint record type with unsorted keys", () => {
       // act
-      let actual = compare.diff("{ id = 1, value = 10 }", "{ value = 10, id = 2 }");
+      let actual = comparer.diff("{ id = 1, value = 10 }", "{ value = 10, id = 2 }");
 
       // assert
       expect(actual.left).to.equal("                      ");
@@ -221,7 +221,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not hint embedded identical records", () => {
       // act
-      let actual = compare.diff("{ id = 1, position = { x = 1, y = 2 }}", "{ id = 1, position = { x = 1, y = 2 }}");
+      let actual = comparer.diff("{ id = 1, position = { x = 1, y = 2 }}", "{ id = 1, position = { x = 1, y = 2 }}");
 
       // assert
       expect(actual.left).to.equal("                                      ");
@@ -230,7 +230,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint embedded different records", () => {
       // act
-      let actual = compare.diff("{ id = 1, position = { x = 1, y = 2 }}", "{ id = 1, position = { x = 1, y = 3 }}");
+      let actual = comparer.diff("{ id = 1, position = { x = 1, y = 2 }}", "{ id = 1, position = { x = 1, y = 3 }}");
 
       // assert
       expect(actual.left).to.equal("                                      ");
@@ -239,7 +239,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not add hint list of 1 item of identical records", () => {
       // act
-      let actual = compare.diff("[{ id = 1 }]", "[{ id = 2 }]");
+      let actual = comparer.diff("[{ id = 1 }]", "[{ id = 2 }]");
 
       // assert
       expect(actual.left).to.equal("            ");
@@ -248,7 +248,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not hint list of identical records", () => {
       // act
-      let actual = compare.diff("[{ id = 1 },{ id = 2 }]", "[{ id = 1 },{ id = 2 }]");
+      let actual = comparer.diff("[{ id = 1 },{ id = 2 }]", "[{ id = 1 },{ id = 2 }]");
 
       // assert
       expect(actual.left).to.equal("                       ");
@@ -257,7 +257,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint list of records where one list is empty and other list has 1 item", () => {
       // act
-      let actual = compare.diff("[]", "[{ id = 1 }]");
+      let actual = comparer.diff("[]", "[{ id = 1 }]");
 
       // assert
       expect(actual.left).to.equal("  ");
@@ -266,7 +266,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint list of records where one list is empty and other list has 2 items", () => {
       // act
-      let actual = compare.diff("[]", "[{ id = 1 },{ id = 1 }]");
+      let actual = comparer.diff("[]", "[{ id = 1 },{ id = 1 }]");
 
       // assert
       expect(actual.left).to.equal("  ");
@@ -275,7 +275,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should not hint list of identical records", () => {
       // act
-      let actual = compare.diff("[{ id = 1 },{ id = 2 }]", "[{ id = 1 },{ id = 2 }]");
+      let actual = comparer.diff("[{ id = 1 },{ id = 2 }]", "[{ id = 1 },{ id = 2 }]");
 
       // assert
       expect(actual.left).to.equal("                       ");
@@ -284,7 +284,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint list of records of different lengths 1 key", () => {
       // act
-      let actual = compare.diff("{ items = [{ id = 1 }]}", "{ items = [] }");
+      let actual = comparer.diff("{ items = [{ id = 1 }]}", "{ items = [] }");
 
       // assert
       expect(actual.left).to.equal("           ^^^^^^^^^^  ");
@@ -293,7 +293,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint list of records of different lengths 2 keys", () => {
       // act
-      let actual = compare.diff("{ items = [{ id = 1, version = 2 }]}", "{ items = [] }");
+      let actual = comparer.diff("{ items = [{ id = 1, version = 2 }]}", "{ items = [] }");
 
       // assert
       expect(actual.left).to.equal("           ^^^^^^^^^^^^^^^^^^^^^^^  ");
@@ -302,7 +302,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint list of records of different lengths 2 keys", () => {
       // act
-      let actual = compare.diff("{ items = [{ id = 1, version = 2 },{ id = 2, version = 3 }]}", "{ items = [] }");
+      let actual = comparer.diff("{ items = [{ id = 1, version = 2 },{ id = 2, version = 3 }]}", "{ items = [] }");
 
       // assert
       expect(actual.left).to.equal("           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ");
@@ -311,7 +311,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should catch diff error and return '' for left when it is undefined", () => {
       // act
-      let actual = compare.diff(undefined, "foo");
+      let actual = comparer.diff(undefined, "foo");
 
       // assert
       expect(actual.left).to.equal("");
@@ -319,7 +319,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should catch diff error and return '' for right when it is undefined", () => {
       // act
-      let actual = compare.diff("foo", undefined);
+      let actual = comparer.diff("foo", undefined);
 
       // assert
       expect(actual.right).to.equal("");
@@ -327,7 +327,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should catch diff error and return '?' repeated for length of left", () => {
       // act
-      let actual = compare.diff("foo", undefined);
+      let actual = comparer.diff("foo", undefined);
 
       // assert
       expect(actual.left).to.match(/\?{3}/);
@@ -335,7 +335,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should catch diff error and return '?' repeated for length of right", () => {
       // act
-      let actual = compare.diff(undefined, "foo");
+      let actual = comparer.diff(undefined, "foo");
 
       // assert
       expect(actual.right).to.match(/\?{3}/);
@@ -345,7 +345,7 @@ describe("plugin default-reporter compare", () => {
   describe("diffValue", () => {
     it("should not add a left or right hint when the inputs are equal", () => {
       // act
-      let actual = compare.diffValue("foo", "foo");
+      let actual = comparer.diffValue("foo", "foo");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -354,7 +354,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add a right hint when the inputs are different but of equal length", () => {
       // act
-      let actual = compare.diffValue("bar", "baz");
+      let actual = comparer.diffValue("bar", "baz");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -363,7 +363,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should add a right hint when the inputs are different and right is longer", () => {
       // act
-      let actual = compare.diffValue("foo", "foobar");
+      let actual = comparer.diffValue("foo", "foobar");
 
       // assert
       expect(actual.left).to.equal("   ");
@@ -373,7 +373,7 @@ describe("plugin default-reporter compare", () => {
     it("should add a left hint when the inputs are different and left is longer contains right",
       () => {
         // act
-        let actual = compare.diffValue("foobar", "foo");
+        let actual = comparer.diffValue("foobar", "foo");
 
         // assert
         expect(actual.left).to.equal("   ^^^");
@@ -383,7 +383,7 @@ describe("plugin default-reporter compare", () => {
     it("should add a left hint when the inputs are different and left is longer contains right",
       () => {
         // act
-        let actual = compare.diffValue("foobar", "bar");
+        let actual = comparer.diffValue("foobar", "bar");
 
         // assert
         expect(actual.left).to.equal("^^^   ");
@@ -393,7 +393,7 @@ describe("plugin default-reporter compare", () => {
     it("should add a right hint when the inputs are different and right is longer contains left",
       () => {
         // act
-        let actual = compare.diffValue("bar", "foobar");
+        let actual = comparer.diffValue("bar", "foobar");
 
         // assert
         expect(actual.left).to.equal("   ");
@@ -403,7 +403,7 @@ describe("plugin default-reporter compare", () => {
     it("should add a left hint when the inputs are different and right is longer does not contain left",
       () => {
         // act
-        let actual = compare.diffValue("baz", "foobar");
+        let actual = comparer.diffValue("baz", "foobar");
 
         // assert
         expect(actual.left).to.equal("   ");
@@ -413,7 +413,7 @@ describe("plugin default-reporter compare", () => {
     it("should add a left hint when the inputs are different and right is longer left in middle",
       () => {
         // act
-        let actual = compare.diffValue("faobar", "ob");
+        let actual = comparer.diffValue("faobar", "ob");
 
         // assert
         expect(actual.left).to.equal("^^  ^^");
@@ -422,7 +422,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint around decimal when only one side has a decimal", () => {
       // act
-      let actual = compare.diffValue("24.0", "124");
+      let actual = comparer.diffValue("24.0", "124");
 
       // assert
       expect(actual.left).to.equal("   ^");
@@ -431,7 +431,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint around decimal when both sides have a decimal", () => {
       // act
-      let actual = compare.diffValue("24.0", "124.0");
+      let actual = comparer.diffValue("24.0", "124.0");
 
       // assert
       expect(actual.left).to.equal("    ");
@@ -440,7 +440,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint around decimal when one side is negative", () => {
       // act
-      let actual = compare.diffValue("-224.0", "124.0");
+      let actual = comparer.diffValue("-224.0", "124.0");
 
       // assert
       expect(actual.left).to.equal("^^    ");
@@ -449,7 +449,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint around decimal and exponent when both sides have a exponent", () => {
       // act
-      let actual = compare.diffValue("24.0e+123", "124.0");
+      let actual = comparer.diffValue("24.0e+123", "124.0");
 
       // assert
       expect(actual.left).to.equal("    ^^^^^");
@@ -458,7 +458,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint when one side is NaN", () => {
       // act
-      let actual = compare.diffValue("24.0", "NaN");
+      let actual = comparer.diffValue("24.0", "NaN");
 
       // assert
       expect(actual.left).to.equal("^^^^");
@@ -467,7 +467,7 @@ describe("plugin default-reporter compare", () => {
 
     it("should hint when one side is Infinite", () => {
       // act
-      let actual = compare.diffValue("24.0", "Infinity");
+      let actual = comparer.diffValue("24.0", "Infinity");
 
       // assert
       expect(actual.left).to.equal("    ");
