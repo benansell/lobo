@@ -271,9 +271,8 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   }
 
   public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): void {
-    this.paddedLog("");
-    this.paddedLog(this.testResultFormatter.formatMessage(item.result.reason, padding));
-    this.paddedLog("");
+    let message = this.testResultFormatter.formatNotRun(item, padding);
+    this.logger.log(message);
   }
 
   public paddedLog(message: string): void {
@@ -282,7 +281,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       return;
     }
 
-    this.logger.log("  " + message);
+    this.logger.log(this.testResultFormatter.defaultIndentation + message);
   }
 }
 

@@ -1,18 +1,30 @@
 import * as _ from "lodash";
 import * as Chalk from "chalk";
+import * as os from "os";
 import {Comparer, createComparer} from "./comparer";
+import * as plugin from "./plugin";
 
 export interface TestResultFormatter {
-  formatFailure(message: string, maxLength: number): string;
+  defaultIndentation: string;
+  formatNotRun(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): string;
 
+  formatFailure(message: string, maxLength: number): string;
   formatMessage(rawMessage: string, padding: string): string;
 }
 
 export class TestResultFormatterImp implements TestResultFormatter {
   private comparer: Comparer;
 
+  public get defaultIndentation(): string { return "  "; }
+
   public constructor(comparer: Comparer) {
     this.comparer = comparer;
+  }
+
+  public formatNotRun(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): string {
+    let message = this.formatMessage(item.result.reason, padding);
+
+    return `${os.EOL}${this.defaultIndentation}${message}${os.EOL}`;
   }
 
   public formatFailure(message: string, maxLength: number): string {

@@ -10,8 +10,16 @@ import * as SinonChai from "sinon-chai";
 import {createPlugin, DefaultReporterImp} from "../../../../plugin/default-reporter/reporter-plugin";
 import {
   FailureMessage,
-  PluginReporter, ProgressReport, ResultType, RunArgs, TestReportFailedLeaf, TestReportSkippedLeaf, TestReportTodoLeaf, TestRun,
-  TestRunFailState, TestRunLeaf,
+  PluginReporter,
+  ProgressReport,
+  ResultType,
+  RunArgs,
+  TestReportFailedLeaf,
+  TestReportSkippedLeaf,
+  TestReportTodoLeaf,
+  TestRun,
+  TestRunFailState,
+  TestRunLeaf,
   TestRunSummary
 } from "../../../../lib/plugin";
 import {TestResultFormatter} from "../../../../lib/test-result-formatter";
@@ -30,7 +38,12 @@ describe("plugin default-reporter reporter-plugin", () => {
 
   beforeEach(() => {
     let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
-    mockFormatter = <TestResultFormatter> { formatFailure: Sinon.stub(), formatMessage: Sinon.stub() };
+    mockFormatter = <TestResultFormatter> {
+      defaultIndentation: "",
+      formatNotRun: Sinon.stub(),
+      formatFailure: Sinon.stub(),
+      formatMessage: Sinon.stub()
+    };
     (<SinonStub>mockFormatter.formatMessage).callsFake((message, padding) => padding + message);
     mockLogger = {log: Sinon.spy()};
     mockUtil = <Util> {};
@@ -996,15 +1009,15 @@ describe("plugin default-reporter reporter-plugin", () => {
   });
 
   describe("logNotRunMessage", () => {
-    it("should log the reason padded by the supplied value", () => {
+    it("should log the message returned by formatNotRun", () => {
       // arrange
-      reporter.paddedLog = Sinon.spy();
+      (<SinonStub>mockFormatter.formatNotRun).returns("bar");
 
       // act
       reporter.logNotRunMessage(<TestRunLeaf<TestReportSkippedLeaf>> {result: {reason: "foo"}}, "?");
 
       // assert
-      expect(reporter.paddedLog).to.have.been.calledWith("?foo");
+      expect(mockLogger.log).to.have.been.calledWith("bar");
     });
   });
 
@@ -1017,7 +1030,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       expect(mockLogger.log).to.have.been.calledWith("");
     });
 
-    it("should log message with padding of 2", () => {
+    it("should log message with default indentation from test result formatter", () => {
+      // arrange
+      mockFormatter.defaultIndentation = "  ";
+
       // act
       reporter.paddedLog("foo");
 
