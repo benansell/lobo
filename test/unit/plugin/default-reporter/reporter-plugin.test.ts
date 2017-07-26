@@ -41,10 +41,8 @@ describe("plugin default-reporter reporter-plugin", () => {
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: "",
       formatNotRun: Sinon.stub(),
-      formatFailure: Sinon.stub(),
-      formatMessage: Sinon.stub()
+      formatFailure: Sinon.stub()
     };
-    (<SinonStub>mockFormatter.formatMessage).callsFake((message, padding) => padding + message);
     mockLogger = {log: Sinon.spy()};
     mockUtil = <Util> {};
     mockUtil.padRight = x => x;
@@ -768,7 +766,7 @@ describe("plugin default-reporter reporter-plugin", () => {
     it("should log failed items", () => {
       // arrange
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportFailedLeaf>>{labels: [], result: {label: "foo"}};
+      let expected = <TestRunLeaf<TestReportFailedLeaf>> {labels: [], result: {label: "foo"}};
 
       // act
       reporter.logNonPassed(<TestRunSummary>{failures: [expected]});
@@ -931,80 +929,15 @@ describe("plugin default-reporter reporter-plugin", () => {
   });
 
   describe("logFailureMessage", () => {
-    it("should call formatFailure for supplied failure message", () => {
+    it("should log the message returned by formatFailure", () => {
       // arrange
-      let expected = <FailureMessage>{message: ""};
-      mockFormatter.formatFailure = Sinon.spy();
+      (<SinonStub>mockFormatter.formatFailure).returns("bar");
 
       // act
-      reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?");
+      reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {labels: [], result: {label: "foo"}}, "?");
 
       // assert
-      expect(mockFormatter.formatFailure).to.have.been.calledWith(expected.message, Sinon.match.any);
-    });
-
-    it("should call formatFailure with default of 80 columns when stdout is undefined", () => {
-      // arrange
-      let revert = RewiredPlugin.__with__({process: {stdout: undefined}});
-      let expected = <FailureMessage>{message: ""};
-      mockFormatter.formatFailure = Sinon.spy();
-
-      // act
-      revert(() => reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?"));
-
-      // assert
-      expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, 80);
-    });
-
-    it("should call formatFailure with default of 80 columns when stdout.columns is undefined", () => {
-      // arrange
-      let revert = RewiredPlugin.__with__({process: {stdout: {columns: undefined}}});
-      let expected = <FailureMessage>{message: ""};
-      mockFormatter.formatFailure = Sinon.spy();
-
-      // act
-      revert(() => reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?"));
-
-      // assert
-      expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, 80);
-    });
-
-    it("should call formatFailure with std.columns minus padding length when stdout.columns exists", () => {
-      // arrange
-      let revert = RewiredPlugin.__with__({process: {stdout: {columns: 10}}});
-      let expected = <FailureMessage>{message: ""};
-      mockFormatter.formatFailure = Sinon.spy();
-
-      // act
-      revert(() => reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?"));
-
-      // assert
-      expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, 9);
-    });
-
-    it("should log the formatted failure message from the supplied failure", () => {
-      // arrange
-      let expected = <FailureMessage>{message: "foo"};
-      mockFormatter.formatFailure = x => x;
-      mockFormatter.formatMessage = (message, padding) => message;
-
-      // act
-      reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?");
-
-      // assert
-      expect(mockLogger.log).to.have.been.calledWith(expected.message);
-    });
-
-    it("should log the failure given from the supplied failure with padding of 2", () => {
-      // arrange
-      let expected = <FailureMessage>{given: "foo", message: ""};
-      mockFormatter.formatMessage = (x, y) => x;
-
-      // act
-      reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?");
-
-      // assert
-      expect(mockLogger.log).to.have.been.calledWith("  " + expected.given);
+      expect(mockLogger.log).to.have.been.calledWith("bar");
     });
   });
 

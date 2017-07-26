@@ -6,19 +6,39 @@ import * as plugin from "./plugin";
 
 export interface TestResultFormatter {
   defaultIndentation: string;
+  formatFailure(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): string;
   formatNotRun(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): string;
-
-  formatFailure(message: string, maxLength: number): string;
-  formatMessage(rawMessage: string, padding: string): string;
 }
 
 export class TestResultFormatterImp implements TestResultFormatter {
   private comparer: Comparer;
+  private givenStyle: Chalk.ChalkChain = Chalk.yellow;
 
   public get defaultIndentation(): string { return "  "; }
 
   public constructor(comparer: Comparer) {
     this.comparer = comparer;
+  }
+
+  public formatFailure(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): string {
+    let stdout = <{ columns: number }><{}>process.stdout;
+
+    // default to a width of 80 when process is not running in a terminal
+    let maxLength = stdout && stdout.columns ? stdout.columns - padding.length : 80;
+    let lines: string[] = [];
+
+    _.forEach(item.result.resultMessages, (resultMessage: plugin.FailureMessage) => {
+      if (resultMessage.given && resultMessage.given.length > 0) {
+        lines.push(`${os.EOL}${this.defaultIndentation}${this.defaultIndentation}• ${this.givenStyle("Given")}`);
+        let givenMessage = this.formatMessage(this.defaultIndentation + resultMessage.given, padding);
+        lines.push(`${os.EOL}${givenMessage}${os.EOL}`);
+      }
+
+      let message = this.formatFailureMessage(resultMessage.message, maxLength);
+      lines.push(`${os.EOL}${this.formatMessage(message, padding)}${os.EOL}`);
+    });
+
+    return lines.join("");
   }
 
   public formatNotRun(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): string {
@@ -27,7 +47,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
     return `${os.EOL}${this.defaultIndentation}${message}${os.EOL}`;
   }
 
-  public formatFailure(message: string, maxLength: number): string {
+  public formatFailureMessage(message: string, maxLength: number): string {
     if (message.indexOf("│") === -1) {
       return message.replace(message, "\n  " + Chalk.yellow(message) + "\n");
     }
@@ -109,7 +129,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
       return "";
     }
 
-    return padding + message.replace(/(\n)+/g, "\n" + padding);
+    return padding + message.replace(/(\n)+/g, os.EOL + padding);
   }
 }
 

@@ -18,7 +18,6 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   private util: Util;
   private passedStyle: Chalk.ChalkChain = Chalk.green;
   private failedStyle: Chalk.ChalkChain = Chalk.red;
-  private givenStyle: Chalk.ChalkChain = Chalk.yellow;
   private inconclusiveStyle: Chalk.ChalkChain = Chalk.yellow;
   private headerStyle: Chalk.ChalkChain = Chalk.bold;
   private labelStyle: Chalk.ChalkChain = Chalk.dim;
@@ -26,6 +25,26 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   private skipStyle: Chalk.ChalkChain;
   private todoStyle: Chalk.ChalkChain;
   private initArgs: plugin.RunArgs;
+
+  public static calculateMaxLabelLength(items: LeafItem[]): number {
+    let maxLabelLength = 0;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].result.label.length > maxLabelLength) {
+        maxLabelLength = items[i].result.label.length;
+      }
+
+      for (let j = 0; j < items[i].labels.length; j++) {
+        let label = items[i].labels[j];
+
+        if (label.length > maxLabelLength) {
+          maxLabelLength = label.length;
+        }
+      }
+    }
+
+    return maxLabelLength;
+  }
 
   public constructor(logger: plugin.PluginReporterLogger, testResultFormatter: TestResultFormatter, util: Util) {
     this.logger = logger;
@@ -142,7 +161,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     }
 
     let maxSize = <number> _.max(_.map(items, x => x.labels.length));
-    let maxLabelLength = this.calculateMaxLabelLength(items);
+    let maxLabelLength = DefaultReporterImp.calculateMaxLabelLength(items);
 
     return _.sortBy(items, (x: LeafItem) => this.toFailureSortKey(maxSize, maxLabelLength, x));
   }
@@ -155,26 +174,6 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     let suffix = " " + this.util.padRight(item.labels.length.toString(), maxSizeLength, "?") + ":" + toSortKey(item.result.label);
 
     return prefix + suffix;
-  }
-
-  public calculateMaxLabelLength(items: LeafItem[]): number {
-    let maxLabelLength = 0;
-
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].result.label.length > maxLabelLength) {
-        maxLabelLength = items[i].result.label.length;
-      }
-
-      for (let j = 0; j < items[i].labels.length; j++) {
-        let label = items[i].labels[j];
-
-        if (label.length > maxLabelLength) {
-          maxLabelLength = label.length;
-        }
-      }
-    }
-
-    return maxLabelLength;
   }
 
   public logNonPassed(summary: plugin.TestRunSummary): void {
@@ -249,25 +248,8 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   }
 
   public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): void {
-    let stdout = <{ columns: number }><{}>process.stdout;
-
-    // default to a width of 80 when process is not running in a terminal
-    let maxLength = stdout && stdout.columns ? stdout.columns - padding.length : 80;
-    let givenStyle = this.givenStyle("Given");
-
-    _.forEach(item.result.resultMessages, (resultMessage: plugin.FailureMessage) => {
-      if (resultMessage.given && resultMessage.given.length > 0) {
-        this.paddedLog("");
-        this.paddedLog("  • " + givenStyle);
-        this.logger.log(this.testResultFormatter.formatMessage("  " + resultMessage.given, padding));
-      }
-
-      this.paddedLog("");
-
-      let message = this.testResultFormatter.formatFailure(resultMessage.message, maxLength);
-      this.logger.log(this.testResultFormatter.formatMessage(message, padding));
-      this.paddedLog("");
-    });
+    let message = this.testResultFormatter.formatFailure(item, padding);
+    this.logger.log(message);
   }
 
   public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): void {
