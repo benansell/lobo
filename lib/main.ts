@@ -33,6 +33,7 @@ interface PluginWithConfig {
 
 export interface Lobo {
   execute(): void;
+  handleUncaughtException(error: Error, config?: PartialLoboConfig): void;
 }
 
 export class LoboImp implements Lobo {
@@ -389,6 +390,10 @@ export class LoboImp implements Lobo {
   }
 }
 
-export function createLobo(): Lobo {
+export function createLobo(returnFake: boolean = false): Lobo {
+  if (returnFake) {
+    return <Lobo> { execute: () => { /* do nothing */ } };
+  }
+
   return new LoboImp(createBuilder(), createElmPackageHelper(), createLogger(), createRunner(), createUtil(), false, false, false);
 }

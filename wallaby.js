@@ -1,6 +1,7 @@
 module.exports = function(w) {
   return {
     files: [
+      "bin/**/*.ts",
       "lib/**/*.ts",
       "plugin/**/*.ts"
     ],
