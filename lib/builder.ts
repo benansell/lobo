@@ -9,6 +9,8 @@ import * as promptly from "promptly";
 import {createLogger, Logger} from "./logger";
 import {Dependencies, LoboConfig, PluginTestFrameworkWithConfig, Reject, Resolve} from "./plugin";
 import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
+import {createUtil, Util} from "./util";
+
 
 interface ElmPackageJson {
   dependencies: Dependencies;
@@ -29,11 +31,13 @@ export class BuilderImp implements Builder {
 
   private logger: Logger;
   private elmPackageHelper: ElmPackageHelper;
+  private util: Util;
   private yOrN: string = Chalk.dim(" [Y/n]");
 
-  constructor(elmPackageHelper: ElmPackageHelper, logger: Logger) {
+  constructor(elmPackageHelper: ElmPackageHelper, logger: Logger, util: Util) {
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
+    this.util = util;
   }
 
   public build(config: LoboConfig, testDirectory: string): Bluebird<object> {
@@ -228,10 +232,12 @@ export class BuilderImp implements Builder {
     }
 
     let relativePath = path.relative(testElmPackageDir, additionDir);
+    let absoluteSourceDirs = _.map(sourceDirs, p => this.util.resolveDir(testElmPackageDir, p));
+
     let relativeSourceDirectories =
       _.map(additions, p => path.join(relativePath, p)
         .replace(/\\/g, "/"))
-        .filter(p => sourceDirs.indexOf(p) === -1);
+        .filter(p => absoluteSourceDirs.indexOf(this.util.resolveDir(testElmPackageDir, p)) === -1);
 
     return sourceDirs.concat(relativeSourceDirectories);
   }
@@ -337,5 +343,5 @@ export class BuilderImp implements Builder {
 }
 
 export function createBuilder(): Builder {
-  return new BuilderImp(createElmPackageHelper(), createLogger());
+  return new BuilderImp(createElmPackageHelper(), createLogger(), createUtil());
 }

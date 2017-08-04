@@ -10,6 +10,7 @@ import {Dependencies, LoboConfig, PluginTestFrameworkWithConfig} from "../../../
 import {Logger} from "../../../lib/logger";
 import {ElmPackageHelper, ElmPackageJson} from "../../../lib/elm-package-helper";
 import * as Bluebird from "bluebird";
+import {Util} from "../../../lib/util";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -21,6 +22,7 @@ describe("lib builder", () => {
   let mockConfirm: SinonStub;
   let mockHelper: ElmPackageHelper;
   let mockLogger: Logger;
+  let mockUtil: Util;
   let mockReject: any;
   let mockResolve: any;
   let revertPrompt: () => void;
@@ -35,7 +37,9 @@ describe("lib builder", () => {
     mockLogger.info = <any> Sinon.spy();
     mockLogger.trace = <any> Sinon.spy();
     mockHelper = <ElmPackageHelper> {path: x => x, read: Sinon.stub(), write: Sinon.stub()};
-    builder = new rewiredImp(mockHelper, mockLogger);
+    mockUtil = <Util> {};
+    mockUtil.resolveDir = <any> Sinon.spy();
+    builder = new rewiredImp(mockHelper, mockLogger, mockUtil);
 
     mockReject = <any> Sinon.spy();
     mockResolve = <any> Sinon.spy();
@@ -1337,6 +1341,7 @@ describe("lib builder", () => {
 
     it("should return array with base source directories relative test directory", () => {
       // arrange
+      mockUtil.resolveDir = (...dirs) => dirs.join();
       let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: ["foo"]}};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
@@ -1350,6 +1355,7 @@ describe("lib builder", () => {
 
     it("should return array with lobo relative test directory", () => {
       // arrange
+      mockUtil.resolveDir = (...dirs) => dirs.join();
       let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: ["foo"]}};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
@@ -1375,6 +1381,9 @@ describe("lib builder", () => {
     });
 
     it("should return directories with added additions relative to the test directory when directories are same", () => {
+      // arrange
+      mockUtil.resolveDir = (...dirs) => dirs.join();
+
       // act
       let actual = builder.addSourceDirectories(["foo"], "bar", "bar", ["qux"]);
 
@@ -1384,6 +1393,9 @@ describe("lib builder", () => {
     });
 
     it("should return directories with added additions relative to the test directory when directories are different", () => {
+      // arrange
+      mockUtil.resolveDir = (...dirs) => dirs.join();
+
       // act
       let actual = builder.addSourceDirectories(["foo"], "bar", "baz", ["qux"]);
 
@@ -1393,6 +1405,9 @@ describe("lib builder", () => {
     });
 
     it("should return directories with added additions relative to the test directory when test directory is sub-directory", () => {
+      // arrange
+      mockUtil.resolveDir = (...dirs) => dirs.join();
+
       // act
       let actual = builder.addSourceDirectories(["foo"], "bar", "bar/baz", ["qux"]);
 

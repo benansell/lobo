@@ -1,4 +1,5 @@
 import * as levenshtein from "fast-levenshtein";
+import * as fs from "fs";
 import * as _ from "lodash";
 import * as shelljs from "shelljs";
 import {createLogger, Logger} from "./logger";
@@ -12,6 +13,7 @@ export interface Util {
   getPlugin<T>(type: string, pluginName: string, fileSpec: string): T;
   getPluginConfig(type: string, pluginName: string, fileSpec: string): PluginConfig;
   padRight(value: string, length: number, spacer?: string): string;
+  resolveDir(...dirs: string[]): string;
   unsafeLoad<T>(filePath: string): T;
 }
 
@@ -30,6 +32,7 @@ export class UtilImp implements Util {
 
     return _.map(files, (file: string) => {
       let pluginPath = path.relative(pluginDirectory, file);
+
       return path.dirname(pluginPath);
     });
   }
@@ -54,8 +57,7 @@ export class UtilImp implements Util {
       (nodeVersion[0] === major && nodeVersion[1] < minor) ||
       (nodeVersion[0] === major && nodeVersion[1] === minor && nodeVersion[2] < patch)) {
       this.logger.info("using node v" + nodeVersionString);
-      this.logger.error("lobo requires node v" + major + "." + minor + "." + patch + " or greater " +
-        "- upgrade the installed version of node and try again");
+      this.logger.error(`lobo requires node v${major}.${minor}.${patch} or greater - upgrade the installed version of node and try again`);
       process.exit(1);
     }
   }
@@ -121,6 +123,22 @@ export class UtilImp implements Util {
       process.exit(1);
       return <T> {};
     }
+  }
+
+  public resolveDir(...dirs: string[]): string {
+    let resolved = path.resolve(...dirs);
+
+    if (!fs.exists(resolved)) {
+      return resolved;
+    }
+
+    let stats = fs.lstatSync(resolved);
+
+    if (!stats.isSymbolicLink()) {
+      return resolved;
+    }
+
+    return fs.realpathSync(resolved);
   }
 
   public unsafeLoad<T>(filePath: string): T {
