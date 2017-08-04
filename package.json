@@ -53,6 +53,7 @@
     "@types/sinon": "^2.3.1",
     "@types/sinon-chai": "^2.7.28",
     "@types/tmp": "0.0.33",
+    "@types/wallabyjs": "^0.0.6",
     "chai": "^4.0.2",
     "chai-things": "^0.2.0",
     "coveralls": "^2.13.1",
