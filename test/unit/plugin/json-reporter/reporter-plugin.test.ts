@@ -189,10 +189,6 @@ describe("plugin json-reporter reporter-plugin", () => {
     });
   });
 
-  describe("toString", () => {
-
-  });
-
   describe("runArgs", () => {
     it("should do nothing", () => {
       // act

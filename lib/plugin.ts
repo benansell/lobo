@@ -140,6 +140,18 @@ export interface TestReportSuiteNode extends TestReportNode {
 export interface TestReportTodoLeaf extends TestReportNode, TestReportTimed {
 }
 
+export interface TestResultDecorator {
+  diff(value: string): string;
+  expect(value: string): string;
+  failed(value: string): string;
+  given(value: string): string;
+  inconclusive(value: string): string;
+  only(value: string): string;
+  passed(value: string): string;
+  skip(value: string): string;
+  todo(value: string): string;
+}
+
 export interface TestRun {
   readonly failState: TestRunFailState;
   readonly summary: TestRunSummary;

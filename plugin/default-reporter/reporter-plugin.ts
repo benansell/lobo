@@ -5,6 +5,7 @@ import * as program from "commander";
 import {TestResultFormatter, createTestResultFormatter} from "../../lib/test-result-formatter";
 import * as plugin from "../../lib/plugin";
 import {createUtil, Util} from "../../lib/util";
+import {createTestResultDecoratorConsole} from "../../lib/test-result-decorator-console";
 
 type LeafItem = plugin.TestRunLeaf<plugin.TestReportFailedLeaf>
   | plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>
@@ -14,16 +15,11 @@ type LeafItem = plugin.TestRunLeaf<plugin.TestReportFailedLeaf>
 export class DefaultReporterImp implements plugin.PluginReporter {
 
   private logger: plugin.PluginReporterLogger;
+  private decorator: plugin.TestResultDecorator;
   private testResultFormatter: TestResultFormatter;
   private util: Util;
-  private passedStyle: Chalk.ChalkChain = Chalk.green;
-  private failedStyle: Chalk.ChalkChain = Chalk.red;
-  private inconclusiveStyle: Chalk.ChalkChain = Chalk.yellow;
   private headerStyle: Chalk.ChalkChain = Chalk.bold;
   private labelStyle: Chalk.ChalkChain = Chalk.dim;
-  private onlyStyle: Chalk.ChalkChain;
-  private skipStyle: Chalk.ChalkChain;
-  private todoStyle: Chalk.ChalkChain;
   private initArgs: plugin.RunArgs;
 
   public static calculateMaxLabelLength(items: LeafItem[]): number {
@@ -46,8 +42,10 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     return maxLabelLength;
   }
 
-  public constructor(logger: plugin.PluginReporterLogger, testResultFormatter: TestResultFormatter, util: Util) {
+  public constructor(logger: plugin.PluginReporterLogger, decorator: plugin.TestResultDecorator,
+                     testResultFormatter: TestResultFormatter, util: Util) {
     this.logger = logger;
+    this.decorator = decorator;
     this.testResultFormatter = testResultFormatter;
     this.util = util;
   }
@@ -58,25 +56,11 @@ export class DefaultReporterImp implements plugin.PluginReporter {
 
   public init(): void {
     // ignore testCount
-    this.onlyStyle = program.failOnOnly ? this.failedStyle : this.inconclusiveStyle;
-    this.skipStyle = program.failOnSkip ? this.failedStyle : this.inconclusiveStyle;
-    this.todoStyle = program.failOnTodo ? this.failedStyle : this.inconclusiveStyle;
   }
 
   public update(result: plugin.ProgressReport): void {
-    if (!result) {
-      process.stdout.write(" ");
-    } else if (result.resultType === "PASSED") {
-      process.stdout.write(".");
-    } else if (result.resultType === "FAILED") {
-      process.stdout.write(Chalk.red("!"));
-    } else if (result.resultType === "SKIPPED") {
-      process.stdout.write(this.skipStyle("?"));
-    } else if (result.resultType === "TODO") {
-      process.stdout.write(this.todoStyle("-"));
-    } else {
-      process.stdout.write(" ");
-    }
+    let output = this.testResultFormatter.formatUpdate(result);
+    process.stdout.write(output);
   }
 
   public finish(results: plugin.TestRun): Bluebird<object> {
@@ -108,22 +92,22 @@ export class DefaultReporterImp implements plugin.PluginReporter {
 
     this.logSummaryHeader(summary, failState);
 
-    this.paddedLog(this.passedStyle("Passed:   " + summary.passedCount));
-    this.paddedLog(this.failedStyle("Failed:   " + summary.failedCount));
+    this.paddedLog(this.decorator.passed("Passed:   " + summary.passedCount));
+    this.paddedLog(this.decorator.failed("Failed:   " + summary.failedCount));
 
     if (summary.todoCount > 0) {
-      this.paddedLog(this.todoStyle("Todo:     " + summary.todoCount));
+      this.paddedLog(this.decorator.todo("Todo:     " + summary.todoCount));
     }
 
     if (program.framework !== "elm-test") {
       // full run details not available when using elm-test
 
       if (summary.skippedCount > 0) {
-        this.paddedLog(this.skipStyle("Skipped:  " + summary.skippedCount));
+        this.paddedLog(this.decorator.skip("Skipped:  " + summary.skippedCount));
       }
 
       if (summary.onlyCount > 0) {
-        this.paddedLog(this.onlyStyle("Ignored:  " + summary.onlyCount));
+        this.paddedLog(this.decorator.only("Ignored:  " + summary.onlyCount));
       }
     }
 
@@ -140,16 +124,16 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   }
 
   public logSummaryHeader(summary: plugin.TestRunSummary, failState: plugin.TestRunFailState): void {
-    let outcomeStyle = this.passedStyle;
+    let outcomeStyle = this.decorator.passed;
 
     if (summary.failedCount > 0) {
-      outcomeStyle = this.failedStyle;
+      outcomeStyle = this.decorator.failed;
     } else if (!failState.only || !failState.skip || !failState.todo) {
-      outcomeStyle = this.failedStyle;
+      outcomeStyle = this.decorator.failed;
     } else if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
-      outcomeStyle = this.failedStyle;
+      outcomeStyle = this.decorator.failed;
     } else if (failState.skip.exists || failState.todo.exists) {
-      outcomeStyle = this.inconclusiveStyle;
+      outcomeStyle = this.decorator.inconclusive;
     }
 
     this.paddedLog(this.headerStyle(outcomeStyle(summary.outcome)));
@@ -195,14 +179,14 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       let item = sortedItemList[i];
 
       let isNotRun = false;
-      let style = this.failedStyle;
+      let style = this.decorator.failed;
 
       if (item.result.resultType === "SKIPPED") {
         isNotRun = true;
-        style = this.skipStyle;
+        style = this.decorator.skip;
       } else if (item.result.resultType === "TODO") {
         isNotRun = true;
-        style = this.todoStyle;
+        style = this.decorator.todo;
       }
 
       context = this.logLabels(item.labels, item.result.label, i + 1, context, style);
@@ -215,7 +199,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     }
   }
 
-  public logLabels(labels: string[], itemLabel: string, index: number, context: string[], itemStyle: Chalk.ChalkChain): string[] {
+  public logLabels(labels: string[], itemLabel: string, index: number, context: string[], itemStyle: (x: string) => string): string[] {
     if (labels.length === 0) {
       return context;
     }
@@ -268,5 +252,5 @@ export class DefaultReporterImp implements plugin.PluginReporter {
 }
 
 export function createPlugin(): plugin.PluginReporter {
-  return new DefaultReporterImp(console, createTestResultFormatter(), createUtil());
+  return new DefaultReporterImp(console, createTestResultDecoratorConsole(), createTestResultFormatter(), createUtil());
 }

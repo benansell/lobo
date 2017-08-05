@@ -9,14 +9,13 @@ import rewire = require("rewire");
 import * as SinonChai from "sinon-chai";
 import {createPlugin, DefaultReporterImp} from "../../../../plugin/default-reporter/reporter-plugin";
 import {
-  FailureMessage,
   PluginReporter,
   ProgressReport,
   ResultType,
   RunArgs,
   TestReportFailedLeaf,
   TestReportSkippedLeaf,
-  TestReportTodoLeaf,
+  TestReportTodoLeaf, TestResultDecorator,
   TestRun,
   TestRunFailState,
   TestRunLeaf,
@@ -32,21 +31,32 @@ chai.use(SinonChai);
 describe("plugin default-reporter reporter-plugin", () => {
   let RewiredPlugin = rewire("../../../../plugin/default-reporter/reporter-plugin");
   let reporter: DefaultReporterImp;
+  let mockDecorator: TestResultDecorator;
   let mockFormatter: TestResultFormatter;
   let mockLogger: { log(message: string): void };
   let mockUtil: Util;
 
   beforeEach(() => {
     let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+    mockDecorator = <TestResultDecorator> {
+      diff: x => x,
+      failed: x => x,
+      inconclusive: x => x,
+      only: x => x,
+      passed: x => x,
+      skip: x => x,
+      todo: x => x,
+    };
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: "",
       formatNotRun: Sinon.stub(),
-      formatFailure: Sinon.stub()
+      formatFailure: Sinon.stub(),
+      formatUpdate: Sinon.stub()
     };
     mockLogger = {log: Sinon.spy()};
     mockUtil = <Util> {};
     mockUtil.padRight = x => x;
-    reporter = new rewiredImp(mockLogger, mockFormatter, mockUtil);
+    reporter = new rewiredImp(mockLogger, mockDecorator, mockFormatter, mockUtil);
   });
 
   describe("createPlugin", () => {
@@ -75,178 +85,26 @@ describe("plugin default-reporter reporter-plugin", () => {
   });
 
   describe("init", () => {
-    let revertChalk: () => void;
-    let mockFailedStyle: ChalkChain;
-    let mockPassedStyle: ChalkChain;
-    let mockInconclusiveStyle: ChalkChain;
-
-    beforeEach(() => {
-      let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
-      mockFailedStyle = <ChalkChain><{}> Sinon.spy();
-      mockPassedStyle = <ChalkChain><{}> Sinon.spy();
-      mockInconclusiveStyle = <ChalkChain><{}> Sinon.spy();
-      revertChalk = RewiredPlugin.__set__({
-        Chalk: {
-          bold: x => x,
-          green: mockPassedStyle,
-          red: mockFailedStyle,
-          yellow: mockInconclusiveStyle
-        }
-      });
-      reporter = new rewiredImp(mockLogger, mockFormatter, mockUtil);
-    });
-
-    afterEach(() => {
-      revertChalk();
-    });
-
-    it("should set onlyStyle to failedStyle when failOnOnly is true", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {framework: "elm-test-extra", failOnOnly: true}});
-      reporter.paddedLog = Sinon.spy();
-
+    it("should do nothing", () => {
       // act
-      reporter.init();
-      reporter.logSummary(<TestRunSummary>{onlyCount: 123}, <TestRunFailState>{});
-
-      // assert
-      expect(mockFailedStyle).to.have.been.calledWith("Ignored:  123");
-    });
-
-    it("should set onlyStyle to inconclusiveStyle when failOnOnly is false", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {framework: "elm-test-extra", failOnOnly: false}});
-      reporter.paddedLog = Sinon.spy();
-
-      // act
-      reporter.init();
-      reporter.logSummary(<TestRunSummary>{onlyCount: 123}, <TestRunFailState>{});
-
-      // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith("Ignored:  123");
-    });
-
-    it("should set skipStyle to failedStyle when failOnSkip is true", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {framework: "elm-test-extra", failOnSkip: true}});
-      reporter.paddedLog = Sinon.spy();
-
-      // act
-      reporter.init();
-      reporter.logSummary(<TestRunSummary>{skippedCount: 123}, <TestRunFailState>{});
-
-      // assert
-      expect(mockFailedStyle).to.have.been.calledWith("Skipped:  123");
-    });
-
-    it("should set skipStyle to inconclusiveStyle when failOnSkip is false", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {framework: "elm-test-extra", failOnSkip: false}});
-      reporter.paddedLog = Sinon.spy();
-
-      // act
-      reporter.init();
-      reporter.logSummary(<TestRunSummary>{skippedCount: 123}, <TestRunFailState>{});
-
-      // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith("Skipped:  123");
-    });
-
-    it("should set todoStyle to failedStyle when failOnTodo is true", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {framework: "elm-test-extra", failOnTodo: true}});
-      reporter.paddedLog = Sinon.spy();
-
-      // act
-      reporter.init();
-      reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
-
-      // assert
-      expect(mockFailedStyle).to.have.been.calledWith("Todo:     123");
-    });
-
-    it("should set todoStyle to inconclusiveStyle when failOnTodo is false", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {framework: "elm-test-extra", failOnTodo: false}});
-      reporter.paddedLog = Sinon.spy();
-
-      // act
-      reporter.init();
-      reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
-
-      // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith("Todo:     123");
+      expect(reporter.init()).not.to.throw;
     });
   });
 
   describe("update", () => {
-    let original;
-    let output;
+    it("should report output from test result formatter", () => {
+      // arrange
+      let mockWrite = Sinon.stub();
+      let revert = RewiredPlugin.__with__({process: {stdout: { write: mockWrite}}});
+      (<SinonStub>mockFormatter.formatUpdate).returns("foo");
+      let result = <ProgressReport>{resultType: "PASSED"};
 
-    function write(str): boolean {
-      output += str;
-
-      return true;
-    }
-
-    beforeEach(() => {
-      output = "";
-      original = process.stdout.write;
-      process.stdout.write = write;
-
-      reporter.init();
-    });
-
-    afterEach(() => {
-      process.stdout.write = original;
-    });
-
-    it("should report '.' when a test has 'PASSED'", () => {
       // act
-      reporter.update(<ProgressReport>{resultType: "PASSED"});
+      revert(() => reporter.update(result));
 
       // assert
-      expect(output).to.equal(".");
-    });
-
-    it("should report '!' when a test has 'FAILED'", () => {
-      // act
-      reporter.update(<ProgressReport>{resultType: "FAILED"});
-
-      // assert
-      expect(output).to.equal(Chalk.red("!"));
-    });
-
-    it("should report '?' when a test has 'SKIPPED'", () => {
-      // act
-      reporter.update(<ProgressReport>{resultType: "SKIPPED"});
-
-      // assert
-      expect(output).to.equal(Chalk.yellow("?"));
-    });
-
-    it("should report '-' when a test has 'SKIPPED'", () => {
-      // act
-      reporter.update(<ProgressReport>{resultType: "TODO"});
-
-      // assert
-      expect(output).to.equal(Chalk.yellow("-"));
-    });
-
-    it("should report ' ' when reportProgress is undefined", () => {
-      // act
-      reporter.update(undefined);
-
-      // assert
-      expect(output).to.equal(" ");
-    });
-
-    it("should report ' ' when a test has unknown resultType", () => {
-      // act
-      reporter.update(<ProgressReport>{resultType: <ResultType>"foo bar"});
-
-      // assert
-      expect(output).to.equal(" ");
+      expect(mockFormatter.formatUpdate).to.have.been.calledWith(result);
+      expect(mockWrite).to.have.been.calledWith("foo");
     });
   });
 
@@ -352,24 +210,17 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("logSummary", () => {
     let revertChalk: () => void;
     let revertFramework: () => void;
-    let mockFailedStyle: ChalkChain;
-    let mockPassedStyle: ChalkChain;
-    let mockInconclusiveStyle: ChalkChain;
 
     beforeEach(() => {
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
-      mockFailedStyle = <ChalkChain><{}> Sinon.spy();
-      mockPassedStyle = <ChalkChain><{}> Sinon.spy();
-      mockInconclusiveStyle = <ChalkChain><{}> Sinon.spy();
-      revertChalk = RewiredPlugin.__set__({
-        Chalk: {
-          bold: x => x,
-          green: mockPassedStyle,
-          red: mockFailedStyle,
-          yellow: mockInconclusiveStyle
-        }
-      });
-      reporter = new rewiredImp(mockLogger, mockFormatter, mockUtil);
+      mockDecorator.failed = Sinon.spy();
+      mockDecorator.inconclusive = Sinon.spy();
+      mockDecorator.only = Sinon.spy();
+      mockDecorator.passed = Sinon.spy();
+      mockDecorator.skip = Sinon.spy();
+      mockDecorator.todo = Sinon.spy();
+      revertChalk = RewiredPlugin.__set__({Chalk: {bold: x => x}});
+      reporter = new rewiredImp(mockLogger, mockDecorator, mockFormatter, mockUtil);
       reporter.init();
     });
 
@@ -386,7 +237,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{passedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockPassedStyle).to.have.been.calledWith(Sinon.match(/123/));
+      expect(mockDecorator.passed).to.have.been.calledWith(Sinon.match(/123/));
     });
 
     it("should log the passed count with 'Passed:' prefix", () => {
@@ -394,7 +245,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{passedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockPassedStyle).to.have.been.calledWith(Sinon.match(/Passed:/));
+      expect(mockDecorator.passed).to.have.been.calledWith(Sinon.match(/Passed:/));
     });
 
     it("should log the passed count with prefix that is 10 char long", () => {
@@ -402,7 +253,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{passedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockPassedStyle).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
+      expect(mockDecorator.passed).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
     });
 
     it("should log the failed count with the failedStyle", () => {
@@ -410,7 +261,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{failedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith(Sinon.match(/123/));
+      expect(mockDecorator.failed).to.have.been.calledWith(Sinon.match(/123/));
     });
 
     it("should log the failed count with 'Failed:' prefix", () => {
@@ -418,7 +269,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{failedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith(Sinon.match(/Failed:/));
+      expect(mockDecorator.failed).to.have.been.calledWith(Sinon.match(/Failed:/));
     });
 
     it("should log the failed count with prefix that is 10 char long", () => {
@@ -429,7 +280,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{failedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
+      expect(mockDecorator.failed).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
     });
 
     it("should not log the todo count when it is zero", () => {
@@ -437,7 +288,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{todoCount: 0}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).not.to.have.been.calledWith(Sinon.match(/Todo:/));
+      expect(mockDecorator.todo).not.to.have.been.calledWith(Sinon.match(/Todo:/));
     });
 
     it("should log the todo count with the todoStyle", () => {
@@ -445,7 +296,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/123/));
+      expect(mockDecorator.todo).to.have.been.calledWith(Sinon.match(/123/));
     });
 
     it("should log the todo count with 'Todo:' prefix", () => {
@@ -453,7 +304,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/Todo:/));
+      expect(mockDecorator.todo).to.have.been.calledWith(Sinon.match(/Todo:/));
     });
 
     it("should log the todo count with prefix that is 10 char long", () => {
@@ -461,7 +312,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{todoCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
+      expect(mockDecorator.todo).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
     });
 
     it("should not log the skipped count when it is non-zero and framework is 'elm-test'", () => {
@@ -472,7 +323,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{skippedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).not.to.have.been.calledWith(Sinon.match(/Skipped:/));
+      expect(mockDecorator.skip).not.to.have.been.calledWith(Sinon.match(/Skipped:/));
     });
 
     it("should not log the skipped count when it is zero and framework is not 'elm-test'", () => {
@@ -480,7 +331,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{skippedCount: 0}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).not.to.have.been.calledWith(Sinon.match(/Skipped:/));
+      expect(mockDecorator.skip).not.to.have.been.calledWith(Sinon.match(/Skipped:/));
     });
 
     it("should log the skipped count with the skippedStyle and framework is not 'elm-test'", () => {
@@ -488,7 +339,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{skippedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/123/));
+      expect(mockDecorator.skip).to.have.been.calledWith(Sinon.match(/123/));
     });
 
     it("should log the skipped count with 'Skipped:' prefix and framework is not 'elm-test'", () => {
@@ -496,7 +347,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{skippedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/Skipped:/));
+      expect(mockDecorator.skip).to.have.been.calledWith(Sinon.match(/Skipped:/));
     });
 
     it("should log the skipped count with prefix that is 10 char long and framework is not 'elm-test'", () => {
@@ -504,7 +355,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{skippedCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
+      expect(mockDecorator.skip).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
     });
 
     it("should not log the only count when it is non-zero and framework is 'elm-test'", () => {
@@ -515,7 +366,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{onlyCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).not.to.have.been.calledWith(Sinon.match(/Ignored:/));
+      expect(mockDecorator.only).not.to.have.been.calledWith(Sinon.match(/Ignored:/));
     });
 
     it("should not log the only count when it is zero and framework is not 'elm-test'", () => {
@@ -523,7 +374,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{onlyCount: 0}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).not.to.have.been.calledWith(Sinon.match(/Ignored:/));
+      expect(mockDecorator.only).not.to.have.been.calledWith(Sinon.match(/Ignored:/));
     });
 
     it("should log the only count with the onlyStyle and framework is not 'elm-test'", () => {
@@ -531,7 +382,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{onlyCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/123/));
+      expect(mockDecorator.only).to.have.been.calledWith(Sinon.match(/123/));
     });
 
     it("should log the only count with 'Ignored:' prefix and framework is not 'elm-test'", () => {
@@ -539,7 +390,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{onlyCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/Ignored:/));
+      expect(mockDecorator.only).to.have.been.calledWith(Sinon.match(/Ignored:/));
     });
 
     it("should log the only count with prefix that is 10 char long and framework is not 'elm-test'", () => {
@@ -547,7 +398,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{onlyCount: 123}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
+      expect(mockDecorator.only).to.have.been.calledWith(Sinon.match(/^.{10}123$/));
     });
 
     it("should not log the duration when it is undefined", () => {
@@ -555,7 +406,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummary(<TestRunSummary>{durationMilliseconds: undefined}, <TestRunFailState>{});
 
       // assert
-      expect(mockInconclusiveStyle).not.to.have.been.calledWith(Sinon.match(/Duration:/));
+      expect(mockDecorator.only).not.to.have.been.calledWith(Sinon.match(/Duration:/));
     });
 
     it("should log the duration with 'Duration:' prefix", () => {
@@ -595,24 +446,21 @@ describe("plugin default-reporter reporter-plugin", () => {
 
   describe("logSummaryHeader", () => {
     let revertChalk: () => void;
-    let mockFailedStyle: ChalkChain;
-    let mockPassedStyle: ChalkChain;
-    let mockInconclusiveStyle: ChalkChain;
-
+    
     beforeEach(() => {
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
-      mockFailedStyle = <ChalkChain><{}> Sinon.spy();
-      mockPassedStyle = <ChalkChain><{}> Sinon.spy();
-      mockInconclusiveStyle = <ChalkChain><{}> Sinon.spy();
+      mockDecorator.failed = Sinon.spy();
+      mockDecorator.passed = Sinon.spy();
+      mockDecorator.inconclusive = Sinon.spy();
       revertChalk = RewiredPlugin.__set__({
         Chalk: {
           bold: x => x,
-          green: mockPassedStyle,
-          red: mockFailedStyle,
-          yellow: mockInconclusiveStyle
+          green: mockDecorator.passed,
+          red: mockDecorator.failed,
+          yellow: mockDecorator.inconclusive
         }
       });
-      reporter = new rewiredImp(mockLogger, mockFormatter, mockUtil);
+      reporter = new rewiredImp(mockLogger, mockDecorator, mockFormatter, mockUtil);
       reporter.init();
     });
 
@@ -625,7 +473,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{failedCount: 123, outcome: "foo"}, <TestRunFailState> {});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.failed).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of failed when failState.only does not exist", () => {
@@ -633,7 +481,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: undefined, skip: {}, todo: {}});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.failed).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of failed when failState.skip does not exist", () => {
@@ -641,7 +489,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {}, skip: undefined, todo: {}});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.failed).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of failed when failState.todo does not exist", () => {
@@ -649,7 +497,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {}, skip: {}, todo: undefined});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.failed).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of failed when failState.only is a failure", () => {
@@ -657,7 +505,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {isFailure: true}, skip: {}, todo: {}});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.failed).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of failed when failState.skip is a failure", () => {
@@ -665,7 +513,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {}, skip: {isFailure: true}, todo: {}});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.failed).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of failed when failState.todo is a failure", () => {
@@ -673,7 +521,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {}, skip: {}, todo: {isFailure: true}});
 
       // assert
-      expect(mockFailedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.failed).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of inconclusive when failState.skip.exists is true", () => {
@@ -681,7 +529,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {}, skip: {exists: true}, todo: {}});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.inconclusive).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of inconclusive when failState.todo.exists is true", () => {
@@ -689,7 +537,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {}, skip: {}, todo: {exists: true}});
 
       // assert
-      expect(mockInconclusiveStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.inconclusive).to.have.been.calledWith("foo");
     });
 
     it("should use an outcomeStyle of passed when everything has run and not a failure", () => {
@@ -697,7 +545,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logSummaryHeader(<TestRunSummary>{outcome: "foo"}, <TestRunFailState> {only: {}, skip: {}, todo: {}});
 
       // assert
-      expect(mockPassedStyle).to.have.been.calledWith("foo");
+      expect(mockDecorator.passed).to.have.been.calledWith("foo");
     });
   });
 

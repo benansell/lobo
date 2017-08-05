@@ -1,23 +1,25 @@
 import * as _ from "lodash";
-import * as Chalk from "chalk";
 import * as os from "os";
 import {Comparer, createComparer} from "./comparer";
 import * as plugin from "./plugin";
+import {createTestResultDecoratorConsole} from "./test-result-decorator-console";
 
 export interface TestResultFormatter {
   defaultIndentation: string;
   formatFailure(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): string;
   formatNotRun(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): string;
+  formatUpdate(item: plugin.ProgressReport): string;
 }
 
 export class TestResultFormatterImp implements TestResultFormatter {
+  public defaultIndentation: string = "  ";
+
   private comparer: Comparer;
-  private givenStyle: Chalk.ChalkChain = Chalk.yellow;
+  private decorator: plugin.TestResultDecorator;
 
-  public get defaultIndentation(): string { return "  "; }
-
-  public constructor(comparer: Comparer) {
+  public constructor(comparer: Comparer, decorator: plugin.TestResultDecorator) {
     this.comparer = comparer;
+    this.decorator = decorator;
   }
 
   public formatFailure(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): string {
@@ -29,7 +31,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
 
     _.forEach(item.result.resultMessages, (resultMessage: plugin.FailureMessage) => {
       if (resultMessage.given && resultMessage.given.length > 0) {
-        lines.push(`${os.EOL}${this.defaultIndentation}${this.defaultIndentation}• ${this.givenStyle("Given")}`);
+        lines.push(`${os.EOL}${this.defaultIndentation}${this.defaultIndentation}• ${this.decorator.given("Given")}`);
         let givenMessage = this.formatMessage(this.defaultIndentation + resultMessage.given, padding);
         lines.push(`${os.EOL}${givenMessage}${os.EOL}`);
       }
@@ -49,7 +51,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
 
   public formatFailureMessage(message: string, maxLength: number): string {
     if (message.indexOf("│") === -1) {
-      return message.replace(message, "\n  " + Chalk.yellow(message) + "\n");
+      return message.replace(message, "\n  " + this.decorator.expect(message) + "\n");
     }
 
     let lines = message.split("\n");
@@ -72,7 +74,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
       lines[4] = "└ " + lines[4];
 
       let expectMessage = lines[2].substring(2, lines[2].length);
-      lines[2] = lines[2].replace(expectMessage, Chalk.yellow(expectMessage));
+      lines[2] = lines[2].replace(expectMessage, this.decorator.expect(expectMessage));
     }
 
     let expectEqualRegex = /Expect.equal(Dicts|Lists|Sets)*/;
@@ -113,12 +115,12 @@ export class TestResultFormatterImp implements TestResultFormatter {
     let sectionLength = length - prefix.length - 1;
 
     chunks[0] = firstPrefix + contentLine.substring(1, sectionLength + 1);
-    chunks[1] = prefix + Chalk.red(diffLine.substring(1, sectionLength + 1));
+    chunks[1] = prefix + this.decorator.diff(diffLine.substring(1, sectionLength + 1));
 
     for (let i = 1; i < size; i++) {
       offset = (i * sectionLength) + 1;
       chunks[i * 2] = prefix + contentLine.substring(offset, offset + sectionLength);
-      chunks[i * 2 + 1] = prefix + Chalk.red(diffLine.substring(offset, offset + sectionLength));
+      chunks[i * 2 + 1] = prefix + this.decorator.diff(diffLine.substring(offset, offset + sectionLength));
     }
 
     return chunks;
@@ -131,8 +133,28 @@ export class TestResultFormatterImp implements TestResultFormatter {
 
     return padding + message.replace(/(\n)+/g, os.EOL + padding);
   }
+
+  public formatUpdate(item: plugin.ProgressReport): string {
+    if (!item) {
+      return " ";
+    } else if (item.resultType === "PASSED") {
+      return ".";
+    } else if (item.resultType === "FAILED") {
+      return this.decorator.failed("!");
+    } else if (item.resultType === "SKIPPED") {
+      return this.decorator.skip("?");
+    } else if (item.resultType === "TODO") {
+      return this.decorator.todo("-");
+    }
+
+    return " ";
+  }
 }
 
-export function createTestResultFormatter(): TestResultFormatter {
-  return new TestResultFormatterImp(createComparer());
+export function createTestResultFormatter(testResultDecorator?: plugin.TestResultDecorator): TestResultFormatter {
+  if (!testResultDecorator) {
+    testResultDecorator = createTestResultDecoratorConsole();
+  }
+
+  return new TestResultFormatterImp(createComparer(), testResultDecorator);
 }

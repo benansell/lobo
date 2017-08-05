@@ -7,7 +7,10 @@ import rewire = require("rewire");
 import * as SinonChai from "sinon-chai";
 import {createTestResultFormatter, TestResultFormatter, TestResultFormatterImp} from "../../../lib/test-result-formatter";
 import {Comparer} from "../../../lib/comparer";
-import {FailureMessage, TestReportFailedLeaf, TestReportSkippedLeaf, TestRunLeaf} from "../../../lib/plugin";
+import {
+  FailureMessage, ProgressReport, ResultType, TestReportFailedLeaf, TestReportSkippedLeaf, TestResultDecorator,
+  TestRunLeaf
+} from "../../../lib/plugin";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -16,13 +19,22 @@ describe("lib test-result-formatter", () => {
   let RewiredFormatter = rewire("../../../lib/test-result-formatter");
   let formatter: TestResultFormatterImp;
   let mockComparer: Comparer;
+  let mockDecorator: TestResultDecorator;
   let mockLogger: { log(message: string): void };
 
   beforeEach(() => {
     let rewiredImp = RewiredFormatter.__get__("TestResultFormatterImp");
     mockComparer = <Comparer> {diff: Sinon.stub()};
+    mockDecorator = <TestResultDecorator><{}>{
+      diff: Sinon.stub(),
+      expect: Sinon.stub(),
+      failed: Sinon.stub(),
+      given: Sinon.stub(),
+      skip: Sinon.stub(),
+      todo: Sinon.stub()
+    };
     mockLogger = {log: Sinon.spy()};
-    formatter = new rewiredImp(mockComparer);
+    formatter = new rewiredImp(mockComparer, mockDecorator);
   });
 
   describe("createTestResultFormatter", () => {
@@ -146,33 +158,20 @@ describe("lib test-result-formatter", () => {
   });
 
   describe("formatFailureMessage", () => {
-    let revertChalk: () => void;
-    let mockYellow: SinonStub;
-
-    beforeEach(() => {
-      mockYellow = Sinon.stub();
-      mockYellow.callsFake(x => x);
-      revertChalk = RewiredFormatter.__set__({Chalk: {yellow: mockYellow}});
-    });
-
-    afterEach(() => {
-      revertChalk();
-    });
-
-    it("should style the whole message as yellow when there are no '│'", () => {
+    it("should style the whole message with expect styling when there are no '│'", () => {
       // act
       formatter.formatFailureMessage("foo\n bar\n baz\n", 123);
 
       // assert
-      expect(mockYellow).to.have.been.calledWith("foo\n bar\n baz\n");
+      expect(mockDecorator.expect).to.have.been.calledWith("foo\n bar\n baz\n");
     });
 
-    it("should not style the message as yellow when there an unexpected number of lines", () => {
+    it("should not style the message with expect styling when there an unexpected number of lines", () => {
       // act
       formatter.formatFailureMessage("foo\n│ bar\n", 123);
 
       // assert
-      expect(mockYellow).not.to.have.been.called;
+      expect(mockDecorator.expect).not.to.have.been.called;
     });
 
     it("should return the message unaltered when there an unexpected number of lines", () => {
@@ -186,12 +185,12 @@ describe("lib test-result-formatter", () => {
       expect(actual).to.equal(expected);
     });
 
-    it("should style the failure message as yellow when there are '│'", () => {
+    it("should style the failure message using expect styling when there are '│'", () => {
       // act
       formatter.formatFailureMessage("foo\n╷\n│ bar\n╵\nbaz", 123);
 
       // assert
-      expect(mockYellow).to.have.been.calledWith("bar");
+      expect(mockDecorator.expect).to.have.been.calledWith("bar");
     });
 
     it("should not replace failure markers when '│ ' is missing", () => {
@@ -203,6 +202,9 @@ describe("lib test-result-formatter", () => {
     });
 
     it("should replace failure markers '╷', │' and '╵' with '┌','│' and'└' ", () => {
+      // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
+
       // act
       let actual = formatter.formatFailureMessage("foo\n╷\n│ bar\n╵\nbaz", 123);
 
@@ -212,6 +214,7 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equal'", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -224,6 +227,7 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equalDicts'", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -236,6 +240,7 @@ describe("lib test-result-formatter", () => {
 
     it("should remove elm-test diff lines when failure message contains them for 'Expect.equalDicts'", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -248,6 +253,7 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equalLists'", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -260,6 +266,7 @@ describe("lib test-result-formatter", () => {
 
     it("should remove elm-test diff lines when failure message contains them for 'Expect.equalLists'", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -272,6 +279,7 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equalSets'", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -284,6 +292,7 @@ describe("lib test-result-formatter", () => {
 
     it("should remove elm-test diff lines when failure message contains them for 'Expect.equalSets'", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -296,6 +305,7 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatExpectEqualFailure for equals failure with message as lines", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -308,6 +318,7 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatExpectEqualFailure for equals failure with supplied maxLength", () => {
       // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
       formatter.formatExpectEqualFailure = Sinon.stub();
       (<SinonStub>formatter.formatExpectEqualFailure).returns([]);
 
@@ -320,19 +331,10 @@ describe("lib test-result-formatter", () => {
   });
 
   describe("formatExpectEqualFailure", () => {
-    let revertChalk: () => void;
-
-    beforeEach(() => {
-      revertChalk = RewiredFormatter.__set__({Chalk: {red: x => x}});
-    });
-
-    afterEach(() => {
-      revertChalk();
-    });
-
     it("should return lines with left diff hint from compare.diff added", () => {
       // arrange
-      (<SinonStub> mockComparer.diff).returns({left: "^^^", right: "^^^"});
+      (<SinonStub>mockDecorator.diff).callsFake(x => x);
+      (<SinonStub>mockComparer.diff).returns({left: "^^^", right: "^^^"});
 
       // act
       let actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
@@ -343,7 +345,8 @@ describe("lib test-result-formatter", () => {
 
     it("should return lines with right diff hint from compare.diff added", () => {
       // arrange
-      (<SinonStub> mockComparer.diff).returns({left: "^^^", right: "^^^"});
+      (<SinonStub>mockDecorator.diff).callsFake(x => x);
+      (<SinonStub>mockComparer.diff).returns({left: "^^^", right: "^^^"});
 
       // act
       let actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
@@ -354,7 +357,8 @@ describe("lib test-result-formatter", () => {
 
     it("should return lines without splitting when length is under maxLength", () => {
       // arrange
-      (<SinonStub> mockComparer.diff).returns({left: "^^^", right: "^^^"});
+      (<SinonStub>mockDecorator.diff).callsFake(x => x);
+      (<SinonStub>mockComparer.diff).returns({left: "^^^", right: "^^^"});
 
       // act
       let actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ bar", "│", "└ baz"], 6);
@@ -373,7 +377,8 @@ describe("lib test-result-formatter", () => {
 
     it("should return split lines when length is over max length", () => {
       // arrange
-      (<SinonStub> mockComparer.diff).returns({left: "^^^^^^", right: "^^^"});
+      (<SinonStub>mockDecorator.diff).callsFake(x => x);
+      (<SinonStub>mockComparer.diff).returns({left: "^^^^^^", right: "^^^"});
 
       // act
       let actual = formatter.formatExpectEqualFailure(["┌ fooabc", "│", "│ bar", "│", "└ baz"], 6);
@@ -430,6 +435,65 @@ describe("lib test-result-formatter", () => {
 
       // assert
       expect(actual).to.equal("??foo\n??bar");
+    });
+  });
+
+  describe("formatUpdate", () => {
+    it("should report '.' when a test has 'PASSED'", () => {
+      // act
+      let output = formatter.formatUpdate(<ProgressReport>{resultType: "PASSED"});
+
+      // assert
+      expect(output).to.equal(".");
+    });
+
+    it("should report '!' with failed styling when a test has 'FAILED'", () => {
+      // arrange
+      (<SinonStub>mockDecorator.failed).callsFake(x => x + " foo");
+
+      // act
+      let output = formatter.formatUpdate(<ProgressReport>{resultType: "FAILED"});
+
+      // assert
+      expect(output).to.equal("! foo");
+    });
+
+    it("should report '?' with skipped styling when a test has 'SKIPPED'", () => {
+      // arrange
+      (<SinonStub>mockDecorator.skip).callsFake(x => x + " foo");
+
+      // act
+      let output = formatter.formatUpdate(<ProgressReport>{resultType: "SKIPPED"});
+
+      // assert
+      expect(output).to.equal("? foo");
+    });
+
+    it("should report '-' with todo styling when a test has 'TODO'", () => {
+      // arrange
+      (<SinonStub>mockDecorator.todo).callsFake(x => x + " foo");
+
+      // act
+      let output = formatter.formatUpdate(<ProgressReport>{resultType: "TODO"});
+
+      // assert
+      expect(output).to.equal("- foo");
+    });
+
+    it("should report ' ' when reportProgress is undefined", () => {
+      // act
+      let output = formatter.formatUpdate(undefined);
+
+      // assert
+      expect(output).to.equal(" ");
+    });
+
+    it("should report ' ' when a test has unknown resultType", () => {
+      // act
+      let output = formatter.formatUpdate(<ProgressReport>{resultType: <ResultType>"foo bar"});
+
+      // assert
+      expect(output).to.equal(" ");
     });
   });
 });
