@@ -2,7 +2,6 @@
 
 import * as Bluebird from "bluebird";
 import * as chai from "chai";
-import * as Chalk from "chalk";
 import * as Sinon from "sinon";
 import {SinonStub} from "sinon";
 import rewire = require("rewire");
@@ -11,7 +10,6 @@ import {createPlugin, DefaultReporterImp} from "../../../../plugin/default-repor
 import {
   PluginReporter,
   ProgressReport,
-  ResultType,
   RunArgs,
   TestReportFailedLeaf,
   TestReportSkippedLeaf,
@@ -39,13 +37,8 @@ describe("plugin default-reporter reporter-plugin", () => {
   beforeEach(() => {
     let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
     mockDecorator = <TestResultDecorator> {
-      diff: x => x,
       failed: x => x,
-      inconclusive: x => x,
-      only: x => x,
-      passed: x => x,
-      skip: x => x,
-      todo: x => x,
+      passed: x => x
     };
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: "",

@@ -4,6 +4,11 @@ import * as plugin from "./plugin";
 
 export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator {
 
+  public bulletPoint: string = "•";
+  public verticalBarEnd: string = "└";
+  public verticalBarMiddle: string = "│";
+  public verticalBarStart: string = "┌";
+
   public only: (value: string) => string;
   public skip: (value: string) => string;
   public todo: (value: string) => string;
@@ -24,6 +29,10 @@ export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator
 
   public failed(value: string): string {
     return Chalk.red(value);
+  }
+
+  public line(line: string): string {
+    return line;
   }
 
   public given(value: string): string {

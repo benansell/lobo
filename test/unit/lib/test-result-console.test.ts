@@ -113,6 +113,34 @@ describe("lib test-result-decorator-console", () => {
       expect(mockYellowStyle).to.have.been.calledWith("foo");
     });
   });
+
+  describe("bulletPoint", () => {
+    it("should be •", () => {
+      // assert
+      expect(decorator.bulletPoint).to.equal("•");
+    });
+  });
+
+  describe("verticalBarEnd", () => {
+    it("should be └", () => {
+      // assert
+      expect(decorator.verticalBarEnd).to.equal("└");
+    });
+  });
+
+  describe("verticalBarMiddle", () => {
+    it("should be │", () => {
+      // assert
+      expect(decorator.verticalBarMiddle).to.equal("│");
+    });
+  });
+
+  describe("verticalBarStart", () => {
+    it("should be ┌", () => {
+      // assert
+      expect(decorator.verticalBarStart).to.equal("┌");
+    });
+  });
   
   describe("diff", () => {
     it("should return value styled with red", () => {
@@ -150,6 +178,16 @@ describe("lib test-result-decorator-console", () => {
 
       // assert
       expect(actual).to.equal("foobar");
+    });
+  });
+
+  describe("line", () => {
+    it("should return value without any changes", () => {
+      // act
+      let actual  = decorator.line("foo");
+
+      // assert
+      expect(actual).to.equal("foo");
     });
   });
 

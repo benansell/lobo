@@ -9,7 +9,6 @@ import {createTestResultFormatter, TestResultFormatter, TestResultFormatterImp} 
 import {Comparer} from "../../../lib/comparer";
 import {
   FailureMessage, ProgressReport, ResultType, TestReportFailedLeaf, TestReportSkippedLeaf, TestResultDecorator,
-  TestRunLeaf
 } from "../../../lib/plugin";
 
 let expect = chai.expect;
@@ -29,6 +28,7 @@ describe("lib test-result-formatter", () => {
       diff: Sinon.stub(),
       expect: Sinon.stub(),
       failed: Sinon.stub(),
+      line: Sinon.stub(),
       given: Sinon.stub(),
       skip: Sinon.stub(),
       todo: Sinon.stub()
@@ -47,17 +47,30 @@ describe("lib test-result-formatter", () => {
     });
   });
 
-  describe("logFailureMessage", () => {
+  describe("formatFailure", () => {
     it("should call formatFailure for supplied failure message", () => {
       // arrange
       let expected = <FailureMessage>{message: ""};
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
-      formatter.formatFailure(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?");
+      formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
 
       // assert
       expect(formatter.formatFailureMessage).to.have.been.calledWith(expected.message, Sinon.match.any);
+    });
+
+    it("should call formatFailure with supplied columns value", () => {
+      // arrange
+      let revert = RewiredFormatter.__with__({process: {stdout: undefined}});
+      let expected = <FailureMessage>{message: ""};
+      formatter.formatFailureMessage = Sinon.spy();
+
+      // act
+      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123));
+
+      // assert
+      expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 123);
     });
 
     it("should call formatFailure with default of 80 columns when stdout is undefined", () => {
@@ -67,7 +80,7 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
-      revert(() => formatter.formatFailure(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?"));
+      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?"));
 
       // assert
       expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 80);
@@ -80,7 +93,7 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
-      revert(() => formatter.formatFailure(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?"));
+      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?"));
 
       // assert
       expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 80);
@@ -93,42 +106,103 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
-      revert(() => formatter.formatFailure(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?"));
+      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?"));
 
       // assert
       expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 9);
     });
 
-    it("should log the formatted failure message from the supplied failure", () => {
+    it("should return the formatted failure message from the supplied failure", () => {
       // arrange
       let expected = <FailureMessage>{message: "foo"};
       formatter.formatFailureMessage = x => x;
       formatter.formatMessage = (message, padding) => message;
 
       // act
-      let actual = formatter.formatFailure(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
 
       // assert
       expect(actual).to.match(/foo/);
     });
 
-    it("should log the failure given from the supplied failure with padding of 2", () => {
+    it("should return the failure given from the supplied failure with padding of 2", () => {
       // arrange
+      (<SinonStub>mockDecorator.line).callsFake(x => x);
       let expected = <FailureMessage>{given: "foo", message: ""};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestRunLeaf<TestReportFailedLeaf>> {result: {resultMessages: [expected]}}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
 
       // assert
       expect(actual).to.match(/ {2}foo/);
+    });
+
+    it("should return the failure with bullet points replaced with decorator value", () => {
+      // arrange
+      (<SinonStub>mockDecorator.given).callsFake(x => x);
+      (<SinonStub>mockDecorator.line).callsFake(x => x);
+      mockDecorator.bulletPoint = "::";
+      let expected = <FailureMessage>{given: "foo", message: ""};
+      formatter.formatMessage = (x, y) => x;
+
+      // act
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+
+      // assert
+      expect(actual).not.to.match(/•/);
+      expect(actual).to.match(/:: Given/);
+    });
+
+    it("should return the failure with vertical bar end replaced with decorator value", () => {
+      // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
+      mockDecorator.verticalBarEnd = "::";
+      let expected = <FailureMessage>{message: "└foo└"};
+      formatter.formatMessage = (x, y) => x;
+
+      // act
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+
+      // assert
+      expect(actual).not.to.match(/└/);
+      expect(actual).to.match(/::foo::/);
+    });
+
+    it("should return the failure with vertical bar middle replaced with decorator value", () => {
+      // arrange
+      mockDecorator.verticalBarMiddle = "::";
+      let expected = <FailureMessage>{message: "│foo│"};
+      formatter.formatMessage = (x, y) => x;
+
+      // act
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+
+      // assert
+      expect(actual).not.to.match(/│/);
+      expect(actual).to.match(/::foo::/);
+    });
+
+    it("should return the failure with vertical bar start replaced with decorator value", () => {
+      // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
+      mockDecorator.verticalBarStart = "::";
+      let expected = <FailureMessage>{message: "┌foo┌"};
+      formatter.formatMessage = (x, y) => x;
+
+      // act
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+
+      // assert
+      expect(actual).not.to.match(/┌/);
+      expect(actual).to.match(/::foo::/);
     });
   });
 
   describe("formatNotRun", () => {
     it("should return the reason padded by the supplied value and 2 spaces", () => {
       // act
-      let actual = formatter.formatNotRun(<TestRunLeaf<TestReportSkippedLeaf>> {result: {reason: "foo"}}, "#");
+      let actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#");
 
       // assert
       expect(actual).to.match(/ {2}#foo/);
@@ -139,7 +213,7 @@ describe("lib test-result-formatter", () => {
       let revert = RewiredFormatter.__with__({os: {EOL: "::"}});
       // act
       let actual: string = undefined;
-      revert(() => actual = formatter.formatNotRun(<TestRunLeaf<TestReportSkippedLeaf>> {result: {reason: "foo"}}, "#"));
+      revert(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
 
       // assert
       expect(actual).to.match(/^::/);
@@ -150,7 +224,7 @@ describe("lib test-result-formatter", () => {
       let revert = RewiredFormatter.__with__({os: {EOL: "::"}});
       // act
       let actual: string = undefined;
-      revert(() => actual = formatter.formatNotRun(<TestRunLeaf<TestReportSkippedLeaf>> {result: {reason: "foo"}}, "#"));
+      revert(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
 
       // assert
       expect(actual).to.match(/::$/);
@@ -194,6 +268,9 @@ describe("lib test-result-formatter", () => {
     });
 
     it("should not replace failure markers when '│ ' is missing", () => {
+      // arrange
+      (<SinonStub>mockDecorator.line).callsFake(x => x);
+
       // act
       let actual = formatter.formatFailureMessage("foo\n╷\n│bar\n╵\nbaz", 123);
 
@@ -204,6 +281,7 @@ describe("lib test-result-formatter", () => {
     it("should replace failure markers '╷', │' and '╵' with '┌','│' and'└' ", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
+      (<SinonStub>mockDecorator.line).callsFake(x => x);
 
       // act
       let actual = formatter.formatFailureMessage("foo\n╷\n│ bar\n╵\nbaz", 123);
@@ -364,15 +442,13 @@ describe("lib test-result-formatter", () => {
       let actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ bar", "│", "└ baz"], 6);
 
       // assert
-      expect(actual.length).to.equal(8);
+      expect(actual.length).to.equal(6);
       expect(actual[0]).to.equal("┌ foo");
       expect(actual[1]).to.equal("│ ^^^");
-      expect(actual[2]).to.equal("");
-      expect(actual[3]).to.equal("│ bar");
-      expect(actual[4]).to.equal("│");
-      expect(actual[5]).to.equal("└ baz");
-      expect(actual[6]).to.equal("  ^^^");
-      expect(actual[7]).to.equal("");
+      expect(actual[2]).to.equal("│ bar");
+      expect(actual[3]).to.equal("│");
+      expect(actual[4]).to.equal("└ baz");
+      expect(actual[5]).to.equal("  ^^^");
     });
 
     it("should return split lines when length is over max length", () => {
@@ -384,39 +460,25 @@ describe("lib test-result-formatter", () => {
       let actual = formatter.formatExpectEqualFailure(["┌ fooabc", "│", "│ bar", "│", "└ baz"], 6);
 
       // assert
-      expect(actual.length).to.equal(10);
+      expect(actual.length).to.equal(8);
       expect(actual[0]).to.equal("┌ foo");
       expect(actual[1]).to.equal("│ ^^^");
       expect(actual[2]).to.equal("│ abc");
       expect(actual[3]).to.equal("│ ^^^");
-      expect(actual[4]).to.equal("");
-      expect(actual[5]).to.equal("│ bar");
-      expect(actual[6]).to.equal("│");
-      expect(actual[7]).to.equal("└ baz");
-      expect(actual[8]).to.equal("  ^^^");
-      expect(actual[9]).to.equal("");
+      expect(actual[4]).to.equal("│ bar");
+      expect(actual[5]).to.equal("│");
+      expect(actual[6]).to.equal("└ baz");
+      expect(actual[7]).to.equal("  ^^^");
     });
   });
 
   describe("chunkLine", () => {
-    let revertChalk: () => void;
-    let mockRed;
-
-    beforeEach(() => {
-      mockRed = Sinon.stub();
-      revertChalk = RewiredFormatter.__set__({Chalk: {red: mockRed}});
-    });
-
-    afterEach(() => {
-      revertChalk();
-    });
-
     it("should highlight diff with red style", () => {
       // act
       formatter.chunkLine("foo", " ^^^", 10, "x", "y");
 
       // assert
-      expect(mockRed).to.have.been.calledWith("^^^");
+      expect(mockDecorator.diff).to.have.been.calledWith("^^^");
     });
   });
 

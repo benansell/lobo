@@ -232,12 +232,12 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   }
 
   public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): void {
-    let message = this.testResultFormatter.formatFailure(item, padding);
+    let message = this.testResultFormatter.formatFailure(item.result, padding);
     this.logger.log(message);
   }
 
   public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): void {
-    let message = this.testResultFormatter.formatNotRun(item, padding);
+    let message = this.testResultFormatter.formatNotRun(item.result, padding);
     this.logger.log(message);
   }
 

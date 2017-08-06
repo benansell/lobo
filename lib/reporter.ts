@@ -58,9 +58,7 @@ export class ReporterImp implements Reporter {
     let promise = this.reporterPlugin.finish(results);
 
     return promise.then(() => {
-      if (results.summary.success) {
-        return;
-      } else {
+      if (!results.summary.success) {
         throw new Error("Failed");
       }
     });
