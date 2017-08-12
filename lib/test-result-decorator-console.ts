@@ -4,11 +4,6 @@ import * as plugin from "./plugin";
 
 export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator {
 
-  public bulletPoint: string = "•";
-  public verticalBarEnd: string = "└";
-  public verticalBarMiddle: string = "│";
-  public verticalBarStart: string = "┌";
-
   public only: (value: string) => string;
   public skip: (value: string) => string;
   public todo: (value: string) => string;
@@ -17,6 +12,10 @@ export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator
     this.only = program.failOnOnly ? this.failed : this.inconclusive;
     this.skip = program.failOnSkip ? this.failed : this.inconclusive;
     this.todo = program.failOnTodo ? this.failed : this.inconclusive;
+  }
+
+  public bulletPoint(): string {
+    return "•";
   }
 
   public diff(value: string): string {
@@ -45,6 +44,18 @@ export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator
 
   public passed(value: string): string {
     return Chalk.green(value);
+  }
+
+  public verticalBarEnd(): string {
+    return "└";
+  }
+
+  public verticalBarMiddle(): string {
+    return "│";
+  }
+
+  public verticalBarStart(): string {
+    return "┌";
   }
 }
 

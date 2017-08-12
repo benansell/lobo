@@ -25,13 +25,17 @@ describe("lib test-result-formatter", () => {
     let rewiredImp = RewiredFormatter.__get__("TestResultFormatterImp");
     mockComparer = <Comparer> {diff: Sinon.stub()};
     mockDecorator = <TestResultDecorator><{}>{
+      bulletPoint: Sinon.stub(),
       diff: Sinon.stub(),
       expect: Sinon.stub(),
       failed: Sinon.stub(),
       line: Sinon.stub(),
       given: Sinon.stub(),
       skip: Sinon.stub(),
-      todo: Sinon.stub()
+      todo: Sinon.stub(),
+      verticalBarEnd: Sinon.stub(),
+      verticalBarMiddle: Sinon.stub(),
+      verticalBarStart: Sinon.stub()
     };
     mockLogger = {log: Sinon.spy()};
     formatter = new rewiredImp(mockComparer, mockDecorator);
@@ -54,7 +58,7 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
-      formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+      formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(formatter.formatFailureMessage).to.have.been.calledWith(expected.message, Sinon.match.any);
@@ -73,45 +77,6 @@ describe("lib test-result-formatter", () => {
       expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 123);
     });
 
-    it("should call formatFailure with default of 80 columns when stdout is undefined", () => {
-      // arrange
-      let revert = RewiredFormatter.__with__({process: {stdout: undefined}});
-      let expected = <FailureMessage>{message: ""};
-      formatter.formatFailureMessage = Sinon.spy();
-
-      // act
-      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?"));
-
-      // assert
-      expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 80);
-    });
-
-    it("should call formatFailure with default of 80 columns when stdout.columns is undefined", () => {
-      // arrange
-      let revert = RewiredFormatter.__with__({process: {stdout: {columns: undefined}}});
-      let expected = <FailureMessage>{message: ""};
-      formatter.formatFailureMessage = Sinon.spy();
-
-      // act
-      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?"));
-
-      // assert
-      expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 80);
-    });
-
-    it("should call formatFailure with std.columns minus padding length when stdout.columns exists", () => {
-      // arrange
-      let revert = RewiredFormatter.__with__({process: {stdout: {columns: 10}}});
-      let expected = <FailureMessage>{message: ""};
-      formatter.formatFailureMessage = Sinon.spy();
-
-      // act
-      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?"));
-
-      // assert
-      expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 9);
-    });
-
     it("should return the formatted failure message from the supplied failure", () => {
       // arrange
       let expected = <FailureMessage>{message: "foo"};
@@ -119,7 +84,7 @@ describe("lib test-result-formatter", () => {
       formatter.formatMessage = (message, padding) => message;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).to.match(/foo/);
@@ -132,7 +97,7 @@ describe("lib test-result-formatter", () => {
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).to.match(/ {2}foo/);
@@ -142,12 +107,12 @@ describe("lib test-result-formatter", () => {
       // arrange
       (<SinonStub>mockDecorator.given).callsFake(x => x);
       (<SinonStub>mockDecorator.line).callsFake(x => x);
-      mockDecorator.bulletPoint = "::";
+      (<SinonStub>mockDecorator.bulletPoint).callsFake(() => "::");
       let expected = <FailureMessage>{given: "foo", message: ""};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/•/);
@@ -157,12 +122,12 @@ describe("lib test-result-formatter", () => {
     it("should return the failure with vertical bar end replaced with decorator value", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
-      mockDecorator.verticalBarEnd = "::";
+      (<SinonStub>mockDecorator.verticalBarEnd).callsFake(() => "::");
       let expected = <FailureMessage>{message: "└foo└"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/└/);
@@ -171,12 +136,12 @@ describe("lib test-result-formatter", () => {
 
     it("should return the failure with vertical bar middle replaced with decorator value", () => {
       // arrange
-      mockDecorator.verticalBarMiddle = "::";
+      (<SinonStub>mockDecorator.verticalBarMiddle).callsFake(() => "::");
       let expected = <FailureMessage>{message: "│foo│"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/│/);
@@ -186,12 +151,12 @@ describe("lib test-result-formatter", () => {
     it("should return the failure with vertical bar start replaced with decorator value", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
-      mockDecorator.verticalBarStart = "::";
+      (<SinonStub>mockDecorator.verticalBarStart).callsFake(() => "::");
       let expected = <FailureMessage>{message: "┌foo┌"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?");
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/┌/);

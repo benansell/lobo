@@ -5,18 +5,17 @@ import {createTestResultDecoratorConsole} from "./test-result-decorator-console"
 import * as os from "os";
 
 export interface TestResultFormatter {
-  defaultIndentation: string;
+  defaultIndentation(): string;
   formatFailure(report: plugin.TestReportFailedLeaf, padding: string, maxLength?: number): string;
   formatNotRun(report: plugin.TestReportSkippedLeaf, padding: string): string;
   formatUpdate(report: plugin.ProgressReport): string;
 }
 
 export class TestResultFormatterImp implements TestResultFormatter {
-  public defaultIndentation: string = "  ";
-  public bulletPoint: string = "•";
-  public verticalBarEnd: string = "└";
-  public verticalBarMiddle: string = "│";
-  public verticalBarStart: string = "┌";
+  public static bulletPoint: string = "•";
+  public static verticalBarEnd: string = "└";
+  public static verticalBarMiddle: string = "│";
+  public static verticalBarStart: string = "┌";
 
   private comparer: Comparer;
   private decorator: plugin.TestResultDecorator;
@@ -26,22 +25,19 @@ export class TestResultFormatterImp implements TestResultFormatter {
     this.decorator = decorator;
   }
 
-  public formatFailure(report: plugin.TestReportFailedLeaf, padding: string, maxLength?: number): string {
-    let stdout = <{ columns: number }><{}>process.stdout;
+  public defaultIndentation(): string {
+    return "  ";
+  }
 
-    if (!maxLength) {
-      // default to a width of 80 when process is not running in a terminal
-      maxLength = stdout && stdout.columns ? stdout.columns - padding.length : 80;
-    }
-
+  public formatFailure(report: plugin.TestReportFailedLeaf, padding: string, maxLength: number): string {
     let lines: string[] = [];
 
     _.forEach(report.resultMessages, (resultMessage: plugin.FailureMessage) => {
       if (resultMessage.given && resultMessage.given.length > 0) {
-        let givenMessageHeader = this.formatMessage(`${this.bulletPoint} ${this.decorator.given("Given")}`, padding);
+        let givenMessageHeader = this.formatMessage(`${TestResultFormatterImp.bulletPoint} ${this.decorator.given("Given")}`, padding);
 
         lines.push(`${os.EOL}${this.decorator.line(givenMessageHeader)}`);
-        let givenMessage = this.formatMessage(this.defaultIndentation + resultMessage.given, padding);
+        let givenMessage = this.formatMessage(this.defaultIndentation() + resultMessage.given, padding);
         lines.push(`${os.EOL}${this.decorator.line(givenMessage)}${os.EOL}`);
       }
 
@@ -52,10 +48,10 @@ export class TestResultFormatterImp implements TestResultFormatter {
     let rawOutput = lines.join("");
 
     let output = rawOutput
-      .replace(new RegExp(this.bulletPoint, "g"), this.decorator.bulletPoint)
-      .replace(new RegExp(this.verticalBarStart, "g"), this.decorator.verticalBarStart)
-      .replace(new RegExp(this.verticalBarMiddle, "g"), this.decorator.verticalBarMiddle)
-      .replace(new RegExp(this.verticalBarEnd, "g"), this.decorator.verticalBarEnd);
+      .replace(new RegExp(TestResultFormatterImp.bulletPoint, "g"), this.decorator.bulletPoint())
+      .replace(new RegExp(TestResultFormatterImp.verticalBarStart, "g"), this.decorator.verticalBarStart())
+      .replace(new RegExp(TestResultFormatterImp.verticalBarMiddle, "g"), this.decorator.verticalBarMiddle())
+      .replace(new RegExp(TestResultFormatterImp.verticalBarEnd, "g"), this.decorator.verticalBarEnd());
 
     return output;
   }
@@ -63,11 +59,11 @@ export class TestResultFormatterImp implements TestResultFormatter {
   public formatNotRun(report: plugin.TestReportSkippedLeaf, padding: string): string {
     let message = this.formatMessage(report.reason, padding);
 
-    return `${os.EOL}${this.defaultIndentation}${message}${os.EOL}`;
+    return `${os.EOL}${this.defaultIndentation()}${message}${os.EOL}`;
   }
 
   public formatFailureMessage(message: string, maxLength: number): string {
-    if (message.indexOf(this.verticalBarMiddle) === -1) {
+    if (message.indexOf(TestResultFormatterImp.verticalBarMiddle) === -1) {
       return message.replace(message, "\n  " + this.decorator.expect(message) + "\n");
     }
 
@@ -84,11 +80,11 @@ export class TestResultFormatterImp implements TestResultFormatter {
       return message;
     }
 
-    if (lines[2].indexOf(this.verticalBarMiddle + " ") !== -1) {
-      lines[0] = this.verticalBarStart + " " + lines[0];
-      lines[1] = lines[1].replace("╷", this.verticalBarMiddle);
-      lines[3] = lines[3].replace("╵", this.verticalBarMiddle);
-      lines[4] = this.verticalBarEnd + " " + lines[4];
+    if (lines[2].indexOf(TestResultFormatterImp.verticalBarMiddle + " ") !== -1) {
+      lines[0] = TestResultFormatterImp.verticalBarStart + " " + lines[0];
+      lines[1] = lines[1].replace("╷", TestResultFormatterImp.verticalBarMiddle);
+      lines[3] = lines[3].replace("╵", TestResultFormatterImp.verticalBarMiddle);
+      lines[4] = TestResultFormatterImp.verticalBarEnd + " " + lines[4];
 
       let expectMessage = lines[2].substring(2, lines[2].length);
       lines[2] = lines[2].replace(expectMessage, this.decorator.expect(expectMessage));
@@ -109,17 +105,21 @@ export class TestResultFormatterImp implements TestResultFormatter {
     let lines: Array<string | string[]> = _.clone(unprocessedLines);
     lines.push("   ");
 
+    let end = TestResultFormatterImp.verticalBarEnd + " ";
+    let middle = TestResultFormatterImp.verticalBarMiddle + " ";
+    let start = TestResultFormatterImp.verticalBarStart + " ";
+
     // remove "┌ " and "└ "
     let left = (<string>lines[0]).substring(2);
     let right = (<string>lines[4]).substring(2);
     let value = this.comparer.diff(left, right);
-    lines[1] = this.verticalBarMiddle + " " + value.left;
+    lines[1] = middle + value.left;
     lines[5] = "  " + value.right;
 
-    lines[0] = this.chunkLine(<string>lines[0], <string>lines[1], maxLength, this.verticalBarStart + " ", this.verticalBarMiddle + " ");
+    lines[0] = this.chunkLine(<string>lines[0], <string>lines[1], maxLength, start, middle);
     lines[1] = "";
 
-    lines[4] = this.chunkLine(<string>lines[4], <string>lines[5], maxLength, this.verticalBarEnd + " ", "  ");
+    lines[4] = this.chunkLine(<string>lines[4], <string>lines[5], maxLength, end, "  ");
     lines[5] = "";
 
     return <string[]> _.flattenDepth(lines, 1).filter(x => x !== "");

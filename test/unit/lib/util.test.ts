@@ -65,7 +65,7 @@ describe("lib util", () => {
     it("should return list of plugin directories containing plugins matching filespec", () => {
       // arrange
       let mockFind = Sinon.stub();
-      mockFind.returns(["plugin/1/foo", "plugin/2/foobar"]);
+      mockFind.returns(["plugin/1/foo.js", "plugin/2/foobar.js"]);
       let revert = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
 
       // act
@@ -258,24 +258,6 @@ describe("lib util", () => {
 
       // assert
       expect(actual).to.equal(expected);
-    });
-
-    it("should return the loaded the plugin with config", () => {
-      // arrange
-      let expected = {name: "qux"};
-      let mockLoad = Sinon.stub();
-      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
-      util.load = mockLoad;
-
-      let mockGetPluginConfig = Sinon.stub();
-      mockGetPluginConfig.returns(expected);
-      util.getPluginConfig = mockGetPluginConfig;
-
-      // act
-      let actual = util.getPlugin("foo", "bar", "baz");
-
-      // assert
-      expect((<{config: PluginConfig}>actual).config).to.equal(expected);
     });
   });
 
