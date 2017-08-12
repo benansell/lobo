@@ -36,11 +36,13 @@ export interface PluginTestFrameworkConfig extends PluginConfig {
   readonly dependencies: Dependencies;
 }
 
+export type PluginOptionValue = boolean | object | number | string;
+
 export interface PluginOption {
-  readonly defaultValue?: boolean | object | number | string;
+  readonly defaultValue?: PluginOptionValue;
   readonly description: string;
   readonly flags: string;
-  readonly parser?: ((arg1: boolean | object | number | string, arg2?: boolean | object | number | string) => void) | RegExp;
+  readonly parser?: ((arg1: PluginOptionValue, arg2?: PluginOptionValue) => PluginOptionValue) | RegExp;
 }
 
 export interface PluginReporter {

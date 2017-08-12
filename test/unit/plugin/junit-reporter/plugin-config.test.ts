@@ -40,4 +40,14 @@ describe("plugin junit-reporter plugin-config", () => {
       expect(options).to.include.something.that.property("flags", "--reportFile <value>");
     });
   });
+
+  describe("parseDiffMaxLength", () => {
+    it("should parse string value to int", () => {
+      // act
+      let actual = JUnitReporterConfig.parseDiffMaxLength("123");
+
+      // assert
+      expect(actual).to.equal(123);
+    });
+  });
 });
