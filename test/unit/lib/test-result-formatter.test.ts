@@ -240,7 +240,7 @@ describe("lib test-result-formatter", () => {
       let actual = formatter.formatFailureMessage("foo\n╷\n│bar\n╵\nbaz", 123);
 
       // assert
-      expect(actual).to.equal("foo\n╷\n│bar\n╵\nbaz");
+      expect(actual).to.equal("\nfoo\n╷\n│bar\n╵\nbaz\n");
     });
 
     it("should replace failure markers '╷', │' and '╵' with '┌','│' and'└' ", () => {
@@ -252,7 +252,7 @@ describe("lib test-result-formatter", () => {
       let actual = formatter.formatFailureMessage("foo\n╷\n│ bar\n╵\nbaz", 123);
 
       // assert
-      expect(actual).to.equal("┌ foo\n│\n│ bar\n│\n└ baz");
+      expect(actual).to.equal("\n┌ foo\n│\n│ bar\n│\n└ baz\n");
     });
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equal'", () => {

@@ -42,7 +42,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
       }
 
       let message = this.formatFailureMessage(resultMessage.message, maxLength!);
-      lines.push(`${os.EOL}${this.formatMessage(message, padding)}${os.EOL}`);
+      lines.push(this.formatMessage(message, padding));
     });
 
     let rawOutput = lines.join("");
@@ -53,7 +53,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
       .replace(new RegExp(TestResultFormatterImp.verticalBarMiddle, "g"), this.decorator.verticalBarMiddle())
       .replace(new RegExp(TestResultFormatterImp.verticalBarEnd, "g"), this.decorator.verticalBarEnd());
 
-    return output;
+    return output + os.EOL;
   }
 
   public formatNotRun(report: plugin.TestReportSkippedLeaf, padding: string): string {
@@ -98,7 +98,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
 
     let output = _.map(lines, x => this.decorator.line(x));
 
-    return output.join(os.EOL);
+    return `${os.EOL}${output.join(os.EOL)}${os.EOL}`;
   }
 
   public formatExpectEqualFailure(unprocessedLines: string[], maxLength: number): string[] {
