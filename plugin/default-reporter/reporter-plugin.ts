@@ -6,6 +6,7 @@ import {TestResultFormatter, createTestResultFormatter} from "../../lib/test-res
 import * as plugin from "../../lib/plugin";
 import {createUtil, Util} from "../../lib/util";
 import {createTestResultDecoratorConsole} from "../../lib/test-result-decorator-console";
+import {createReporterStandardConsole, ReporterStandardConsole} from "../../lib/reporter-standard-console";
 
 type LeafItem = plugin.TestRunLeaf<plugin.TestReportFailedLeaf>
   | plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>
@@ -15,12 +16,13 @@ type LeafItem = plugin.TestRunLeaf<plugin.TestReportFailedLeaf>
 export class DefaultReporterImp implements plugin.PluginReporter {
 
   private logger: plugin.PluginReporterLogger;
+  private standardConsole: ReporterStandardConsole;
   private decorator: plugin.TestResultDecorator;
   private testResultFormatter: TestResultFormatter;
   private util: Util;
-  private headerStyle: Chalk.ChalkChain = Chalk.bold;
   private labelStyle: Chalk.ChalkChain = Chalk.dim;
-  private initArgs: plugin.RunArgs;
+  private messagePrefixPadding: string;
+  private diffMaxLength: number;
 
   public static calculateMaxLabelLength(items: LeafItem[]): number {
     let maxLabelLength = 0;
@@ -42,16 +44,23 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     return maxLabelLength;
   }
 
-  public constructor(logger: plugin.PluginReporterLogger, decorator: plugin.TestResultDecorator,
+  public constructor(logger: plugin.PluginReporterLogger, standardConsole: ReporterStandardConsole, decorator: plugin.TestResultDecorator,
                      testResultFormatter: TestResultFormatter, util: Util) {
     this.logger = logger;
+    this.standardConsole = standardConsole;
     this.decorator = decorator;
     this.testResultFormatter = testResultFormatter;
     this.util = util;
+
+    this.messagePrefixPadding = "    ";
+
+    // default to a width of 80 when process is not running in a terminal
+    let stdout = <{ columns: number }><{}>process.stdout;
+    this.diffMaxLength = stdout && stdout.columns ? stdout.columns - this.messagePrefixPadding.length : 80;
   }
 
   public runArgs(args: plugin.RunArgs): void {
-    this.initArgs = args;
+    this.standardConsole.runArgs(args);
   }
 
   public init(): void {
@@ -59,84 +68,27 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   }
 
   public update(result: plugin.ProgressReport): void {
-    let output = this.testResultFormatter.formatUpdate(result);
-    process.stdout.write(output);
+    this.standardConsole.update(result);
   }
 
   public finish(results: plugin.TestRun): Bluebird<object> {
-    return new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
-      try {
-        let summary = results.summary;
-        let failState = results.failState;
-        this.paddedLog("");
+    let steps: Array<() => Bluebird<object>> = [];
+    steps.push(() => this.standardConsole.finish(results));
 
-        if (program.quiet) {
-          this.logSummaryHeader(summary, failState);
-        } else {
-          this.logSummary(summary, failState);
-          this.paddedLog("");
-          this.logNonPassed(summary);
+    steps.push(() => new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+      try {
+        if (!program.quiet) {
+          this.logNonPassed(results.summary);
+          this.standardConsole.paddedLog("");
         }
 
-        this.paddedLog("");
         resolve();
       } catch (err) {
         reject(err);
       }
-    });
-  }
+    }));
 
-  public logSummary(summary: plugin.TestRunSummary, failState: plugin.TestRunFailState): void {
-    this.logger.log("");
-    this.logger.log("==================================== Summary ===================================");
-
-    this.logSummaryHeader(summary, failState);
-
-    this.paddedLog(this.decorator.passed("Passed:   " + summary.passedCount));
-    this.paddedLog(this.decorator.failed("Failed:   " + summary.failedCount));
-
-    if (summary.todoCount > 0) {
-      this.paddedLog(this.decorator.todo("Todo:     " + summary.todoCount));
-    }
-
-    if (program.framework !== "elm-test") {
-      // full run details not available when using elm-test
-
-      if (summary.skippedCount > 0) {
-        this.paddedLog(this.decorator.skip("Skipped:  " + summary.skippedCount));
-      }
-
-      if (summary.onlyCount > 0) {
-        this.paddedLog(this.decorator.only("Ignored:  " + summary.onlyCount));
-      }
-    }
-
-    if (summary.durationMilliseconds) {
-      this.paddedLog("Duration: " + summary.durationMilliseconds + "ms");
-    }
-
-    this.paddedLog("");
-    this.paddedLog(this.headerStyle("TEST RUN ARGUMENTS"));
-
-    _.forOwn(this.initArgs, (value: object, key: string) => this.paddedLog(this.util.padRight(key + ": ", 12) + value));
-
-    this.logger.log("================================================================================");
-  }
-
-  public logSummaryHeader(summary: plugin.TestRunSummary, failState: plugin.TestRunFailState): void {
-    let outcomeStyle = this.decorator.passed;
-
-    if (summary.failedCount > 0) {
-      outcomeStyle = this.decorator.failed;
-    } else if (!failState.only || !failState.skip || !failState.todo) {
-      outcomeStyle = this.decorator.failed;
-    } else if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
-      outcomeStyle = this.decorator.failed;
-    } else if (failState.skip.exists || failState.todo.exists) {
-      outcomeStyle = this.decorator.inconclusive;
-    }
-
-    this.paddedLog(this.headerStyle(outcomeStyle(summary.outcome)));
+    return Bluebird.mapSeries(steps, item => item());
   }
 
   public sortItemsByLabel(items: LeafItem[]): LeafItem[] {
@@ -172,7 +124,6 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     }
 
     let sortedItemList = this.sortItemsByLabel(itemList);
-    let padding = "    ";
     let context: string[] = [];
 
     for (let i = 0; i < sortedItemList.length; i++) {
@@ -192,9 +143,9 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       context = this.logLabels(item.labels, item.result.label, i + 1, context, style);
 
       if (isNotRun) {
-        this.logNotRunMessage(<plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>>item, padding);
+        this.logNotRunMessage(<plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>>item);
       } else {
-        this.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>>item, padding);
+        this.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>>item);
       }
     }
   }
@@ -221,36 +172,28 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       }
 
       let label = labels[j];
-      this.paddedLog(this.labelStyle(labelPad + label));
+      this.standardConsole.paddedLog(this.labelStyle(labelPad + label));
       labelPad += " ";
       context.push(label);
     }
 
-    this.paddedLog("    " + index + ") " + itemStyle(itemLabel));
+    this.standardConsole.paddedLog("    " + index + ") " + itemStyle(itemLabel));
 
     return context;
   }
 
-  public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>, padding: string): void {
-    let message = this.testResultFormatter.formatFailure(item.result, padding);
+  public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>): void {
+    let message = this.testResultFormatter.formatFailure(item.result, this.messagePrefixPadding, this.diffMaxLength);
     this.logger.log(message);
   }
 
-  public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>, padding: string): void {
-    let message = this.testResultFormatter.formatNotRun(item.result, padding);
+  public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>): void {
+    let message = this.testResultFormatter.formatNotRun(item.result, this.messagePrefixPadding);
     this.logger.log(message);
-  }
-
-  public paddedLog(message: string): void {
-    if (!message) {
-      this.logger.log("");
-      return;
-    }
-
-    this.logger.log(this.testResultFormatter.defaultIndentation + message);
   }
 }
 
 export function createPlugin(): plugin.PluginReporter {
-  return new DefaultReporterImp(console, createTestResultDecoratorConsole(), createTestResultFormatter(), createUtil());
+  return new DefaultReporterImp(console, createReporterStandardConsole(), createTestResultDecoratorConsole(),
+                                createTestResultFormatter(), createUtil());
 }

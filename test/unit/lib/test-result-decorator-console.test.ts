@@ -12,7 +12,7 @@ let expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib test-result-decorator-console", () => {
-  let RewiredFormatter = rewire("../../../lib/test-result-decorator-console");
+  let RewiredDecorator = rewire("../../../lib/test-result-decorator-console");
   let rewiredImp;
   let decorator: TestResultDecoratorConsoleImp;
   let mockRedStyle: SinonStub;
@@ -24,7 +24,7 @@ describe("lib test-result-decorator-console", () => {
     mockGreenStyle = Sinon.stub();
     mockYellowStyle = Sinon.stub();
     
-    RewiredFormatter.__set__({
+    RewiredDecorator.__set__({
       Chalk: {
         green: mockGreenStyle,
         red: mockRedStyle,
@@ -32,7 +32,7 @@ describe("lib test-result-decorator-console", () => {
       }
     });
     
-    rewiredImp = RewiredFormatter.__get__("TestResultDecoratorConsoleImp");
+    rewiredImp = RewiredDecorator.__get__("TestResultDecoratorConsoleImp");
     decorator = new rewiredImp();
   });
 
@@ -47,98 +47,116 @@ describe("lib test-result-decorator-console", () => {
   });
 
   describe("ctor", () => {
-    it("should set onlyStyle to red style when failOnOnly is true", () => {
+    it("should set onlyStyle to failed style when failOnOnly is true", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({program: {failOnOnly: true}});
-      
+      let revert = RewiredDecorator.__with__({program: {failOnOnly: true}});
+
       // act
-      revert(() => new rewiredImp().only("foo"));
-      
+      let actual: Function = undefined;
+      revert(() => actual = new rewiredImp().only);
+
       // assert
-      expect(mockRedStyle).to.have.been.calledWith("foo");
+
+      expect(actual).to.equal(decorator.failed);
     });
 
-    it("should set onlyStyle to yellow style when failOnOnly is false", () => {
+    it("should set onlyStyle to inconclusive style when failOnOnly is false", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({program: {failOnOnly: false}});
+      let revert = RewiredDecorator.__with__({program: {failOnOnly: false}});
 
       // act
-      revert(() => new rewiredImp().only("foo"));
+      let actual: Function = undefined;
+      revert(() => actual = new rewiredImp().only);
 
       // assert
-      expect(mockYellowStyle).to.have.been.calledWith("foo");
+      expect(actual).to.equal(decorator.inconclusive);
     });
 
-    it("should set skipStyle to red style when failOnSkip is true", () => {
+    it("should set skipStyle to failed style when failOnSkip is true", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({program: {failOnSkip: true}});
+      let revert = RewiredDecorator.__with__({program: {failOnSkip: true}});
 
       // act
-      revert(() => new rewiredImp().skip("foo"));
+      let actual: Function = undefined;
+      revert(() => actual = new rewiredImp().skip);
 
       // assert
-      expect(mockRedStyle).to.have.been.calledWith("foo");
+      expect(actual).to.equal(decorator.failed);
     });
 
-    it("should set skipStyle to yellow style when failOnSkip is false", () => {
+    it("should set skipStyle to inconclusive style when failOnSkip is false", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({program: {failOnSkip: false}});
+      let revert = RewiredDecorator.__with__({program: {failOnSkip: false}});
 
       // act
-      revert(() => new rewiredImp().skip("foo"));
+      let actual: Function = undefined;
+      revert(() => actual = new rewiredImp().skip);
 
       // assert
-      expect(mockYellowStyle).to.have.been.calledWith("foo");
+      expect(actual).to.equal(decorator.inconclusive);
     });
 
-    it("should set todoStyle to red style when failOnTodo is true", () => {
+    it("should set todoStyle to failed style when failOnTodo is true", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({program: {failOnTodo: true}});
+      let revert = RewiredDecorator.__with__({program: {failOnTodo: true}});
 
       // act
-      revert(() => new rewiredImp().todo("foo"));
+      let actual: Function = undefined;
+      revert(() => actual = new rewiredImp().todo);
 
       // assert
-      expect(mockRedStyle).to.have.been.calledWith("foo");
+      expect(actual).to.equal(decorator.failed);
     });
 
-    it("should set todoStyle to yellow style when failOnTodo is false", () => {
+    it("should set todoStyle to inconclusive style when failOnTodo is false", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({program: {failOnTodo: false}});
+      let revert = RewiredDecorator.__with__({program: {failOnTodo: false}});
 
-      // act
-      revert(() => new rewiredImp().todo("foo"));
+      let actual: Function = undefined;
+      revert(() => actual = new rewiredImp().todo);
 
       // assert
-      expect(mockYellowStyle).to.have.been.calledWith("foo");
+      expect(actual).to.equal(decorator.inconclusive);
     });
   });
 
   describe("bulletPoint", () => {
     it("should be •", () => {
+      // act
+      let actual = decorator.bulletPoint();
+
       // assert
-      expect(decorator.bulletPoint).to.equal("•");
+      expect(actual).to.equal("•");
     });
   });
 
   describe("verticalBarEnd", () => {
     it("should be └", () => {
+      // act
+      let actual = decorator.verticalBarEnd();
+
       // assert
-      expect(decorator.verticalBarEnd).to.equal("└");
+      expect(actual).to.equal("└");
     });
   });
 
   describe("verticalBarMiddle", () => {
     it("should be │", () => {
+      // act
+      let actual = decorator.verticalBarMiddle();
+
       // assert
-      expect(decorator.verticalBarMiddle).to.equal("│");
+      expect(actual).to.equal("│");
     });
   });
 
   describe("verticalBarStart", () => {
     it("should be ┌", () => {
+      // act
+      let actual = decorator.verticalBarStart();
+
       // assert
-      expect(decorator.verticalBarStart).to.equal("┌");
+      expect(actual).to.equal("┌");
     });
   });
   
