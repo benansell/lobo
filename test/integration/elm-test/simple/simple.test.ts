@@ -1,6 +1,5 @@
 "use strict";
 
-import * as os from "os";
 import * as chai from "chai";
 import {TestRunner} from "../../lib/test-runner";
 import reporterExpect from "../../lib/default-reporter-expect";
@@ -85,18 +84,18 @@ describe("elm-test-simple", () => {
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}┌ \"foobar\"" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│\\s{3}\\^ \\^\\^\\^\\s" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│ Expect.equal" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}└ \"fao\"" + os.EOL), "g");
+      expect(failureMessage).to.match(/\r?\n\s{4}┌ "foobar"\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}│\s{3}\^ \^\^\^\s\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}│ Expect.equal\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}│\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}└ "fao"/g);
 
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}┌ \"\"" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│ Expect.equal" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}└ \" \"" + os.EOL), "g");
-      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{11}" + os.EOL), "g");
+      expect(failureMessage).to.match(/\r?\n\s{4}┌ ""\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}│\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}│ Expect.equal\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}│\r?\n/g);
+      expect(failureMessage).to.match(/\r?\n\s{4}└ " "/g);
+      expect(failureMessage).to.match(/\r?\n\s{11}\r?\n/g);
     });
   });
 
@@ -195,16 +194,14 @@ describe("elm-test-simple", () => {
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(12, 6);
-      expect(result.stdout).to.matches(new RegExp(`Tests${os.EOL}.+Suite A${os.EOL}.+1\\) FailingTest - Concat`));
-      expect(result.stdout)
-        .to.matches(new RegExp(`Tests${os.EOL}.+Suite A(.|${os.EOL})+SecondChildTest${os.EOL}.+2\\) FailingTest - Child`));
-      expect(result.stdout).to.matches(new RegExp(`Tests${os.EOL}.+Suite A(.|${os.EOL})+SecondChildTest(.|${os.EOL})`
-        + `+FailingGrandChildTest${os.EOL}.+3\\) FailingTest - GrandChild`));
-      expect(result.stdout).to.matches(new RegExp(`Tests(.|${os.EOL})+Suite B${os.EOL}.+4\\) FailingTest - Concat`));
-      expect(result.stdout)
-        .to.matches(new RegExp(`Tests(.|${os.EOL})+Suite B(.|${os.EOL})+SecondChildTest${os.EOL}.+5\\) FailingTest - Child`));
-      expect(result.stdout).to.matches(new RegExp(`Tests(.|${os.EOL})+Suite B(.|${os.EOL})+SecondChildTest(.|${os.EOL})`
-        + `+FailingGrandChildTest${os.EOL}.+6\\) FailingTest - GrandChild`));
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+1\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest\r?\n.+2\) FailingTest - Child/);
+      expect(result.stdout).to.matches(
+        /Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+3\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+4\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest\r?\n.+5\) FailingTest - Child/);
+      expect(result.stdout).to.matches(
+        /Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+6\) FailingTest - GrandChild/);
       expect(result.code).to.equal(1);
     });
   });
