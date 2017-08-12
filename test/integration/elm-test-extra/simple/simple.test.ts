@@ -89,13 +89,6 @@ describe("elm-test-extra-simple", () => {
       expect(failureMessage).to.match(/\r*\n\s{4}│ Expect.equal\r*\n/g);
       expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
       expect(failureMessage).to.match(/\r*\n\s{4}└ "fao"/g);
-
-      expect(failureMessage).to.match(/\r*\n\s{4}┌ ""\r*\n/g);
-      expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
-      expect(failureMessage).to.match(/\r*\n\s{4}│ Expect.equal\r*\n/g);
-      expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
-      expect(failureMessage).to.match(/\r*\n\s{4}└ " "/g);
-      expect(failureMessage).to.match(/\r*\n\s{11}\r*\n/g);
     });
   });
 
