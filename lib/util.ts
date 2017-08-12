@@ -126,7 +126,7 @@ export class UtilImp implements Util {
   public resolveDir(...dirs: string[]): string {
     let resolved = path.resolve(...dirs);
 
-    if (!fs.exists(resolved)) {
+    if (!fs.existsSync(resolved)) {
       return resolved;
     }
 

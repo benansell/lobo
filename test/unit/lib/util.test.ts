@@ -38,7 +38,7 @@ describe("lib util", () => {
     mockVersions = Sinon.stub();
 
     RewiredUtil.__set__({
-      fs: { exists: mockExists, lstatSync: mockLstat, realpathSync: mockRealPath },
+      fs: { existsSync: mockExists, lstatSync: mockLstat, realpathSync: mockRealPath },
       path: { dirname: mockDirname, relative: mockRelativePath, resolve: mockResolvePath},
       process: { exit: mockExit, versions: mockVersions}});
     let rewiredImp = RewiredUtil.__get__("UtilImp");
