@@ -1,5 +1,6 @@
 "use strict";
 
+import * as os from "os";
 import * as chai from "chai";
 import {TestRunner} from "../../lib/test-runner";
 import reporterExpect from "../../lib/default-reporter-expect";
@@ -84,18 +85,18 @@ describe("elm-test-simple", () => {
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
-      expect(failureMessage).to.match(/\n\s{4}┌ "foobar"\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\s\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}└ "fao"/g);
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}┌ \"foobar\"" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│\\s{3}\\^ \\^\\^\\^\\s" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│ Expect.equal" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}└ \"fao\"" + os.EOL), "g");
 
-      expect(failureMessage).to.match(/\n\s{4}┌ ""\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}└ " "/g);
-      expect(failureMessage).to.match(/\n\s{11}\n/g);
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}┌ \"\"" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│ Expect.equal" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}│" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{4}└ \" \"" + os.EOL), "g");
+      expect(failureMessage).to.match(new RegExp(os.EOL + "\\s{11}" + os.EOL), "g");
     });
   });
 
@@ -194,14 +195,16 @@ describe("elm-test-simple", () => {
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(12, 6);
-      expect(result.stdout).to.matches(/Tests\n.+Suite A\n.+1\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests\n.+Suite A(.|\n)+SecondChildTest\n.+2\) FailingTest - Child/);
-      expect(result.stdout).to.matches(
-        /Tests\n.+Suite A(.|\n)+SecondChildTest(.|\n)+FailingGrandChildTest\n.+3\) FailingTest - GrandChild/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B\n.+4\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B(.|\n)+SecondChildTest\n.+5\) FailingTest - Child/);
-      expect(result.stdout).to.matches(
-        /Tests(.|\n)+Suite B(.|\n)+SecondChildTest(.|\n)+FailingGrandChildTest\n.+6\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(new RegExp(`Tests${os.EOL}.+Suite A${os.EOL}.+1\\) FailingTest - Concat`));
+      expect(result.stdout)
+        .to.matches(new RegExp(`Tests${os.EOL}.+Suite A(.|${os.EOL})+SecondChildTest${os.EOL}.+2\\) FailingTest - Child`));
+      expect(result.stdout).to.matches(new RegExp(`Tests${os.EOL}.+Suite A(.|${os.EOL})+SecondChildTest(.|${os.EOL})`
+        + `+FailingGrandChildTest${os.EOL}.+3\\) FailingTest - GrandChild`));
+      expect(result.stdout).to.matches(new RegExp(`Tests(.|${os.EOL})+Suite B${os.EOL}.+4\\) FailingTest - Concat`));
+      expect(result.stdout)
+        .to.matches(new RegExp(`Tests(.|${os.EOL})+Suite B(.|${os.EOL})+SecondChildTest${os.EOL}.+5\\) FailingTest - Child`));
+      expect(result.stdout).to.matches(new RegExp(`Tests(.|${os.EOL})+Suite B(.|${os.EOL})+SecondChildTest(.|${os.EOL})`
+        + `+FailingGrandChildTest${os.EOL}.+6\\) FailingTest - GrandChild`));
       expect(result.code).to.equal(1);
     });
   });
