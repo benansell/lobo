@@ -22,6 +22,7 @@ describe("lib test-result-formatter", () => {
   let mockLogger: { log(message: string): void };
 
   beforeEach(() => {
+    RewiredFormatter.__set__({os: {EOL: "\n"}});
     let rewiredImp = RewiredFormatter.__get__("TestResultFormatterImp");
     mockComparer = <Comparer> {diff: Sinon.stub()};
     mockDecorator = <TestResultDecorator><{}>{
