@@ -11,7 +11,10 @@ import {Builder, createBuilder} from "./builder";
 import {createLogger, Logger} from "./logger";
 import {createRunner, Runner} from "./runner";
 import {createUtil, Util} from "./util";
-import {LoboConfig, PluginConfig, PluginReporter, PluginReporterWithConfig, PluginTestFrameworkWithConfig} from "./plugin";
+import {
+  LoboConfig, PluginConfig, PluginReporter, PluginReporterWithConfig, PluginTestFrameworkConfig,
+  PluginTestFrameworkWithConfig
+} from "./plugin";
 import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
 
 interface PartialLoboConfig {
@@ -31,12 +34,28 @@ interface PluginWithConfig {
   config: PluginConfig;
 }
 
+interface PluginTypeDetail {
+  fileSpec: string;
+  type: string;
+}
+
 export interface Lobo {
   execute(): void;
   handleUncaughtException(error: Error, config?: PartialLoboConfig): void;
 }
 
 export class LoboImp implements Lobo {
+
+  private pluginType: { reporter: PluginTypeDetail, testFramework: PluginTypeDetail } = {
+    reporter: {
+      fileSpec: "reporter-plugin",
+      type: "reporter"
+    },
+    testFramework: {
+      fileSpec: "test-plugin",
+      type: "testing framework"
+    }
+  };
 
   private builder: Builder;
   private busy: boolean;
@@ -205,13 +224,16 @@ export class LoboImp implements Lobo {
     // parse args with allow unknown to find & load plugins with additional options
     program.allowUnknownOption(true);
     program.parse(process.argv);
-    config.reporter = this.loadReporter();
-    config.testFramework = this.loadTestFramework();
+    let reporterConfig = this.loadReporterConfig(program.reporter);
+    let testFrameworkConfig = this.loadTestFrameworkConfig(program.framework);
 
     // re-parse args with plugins loaded
     program.allowUnknownOption(false);
     program.parse(process.argv);
+
     this.logger.debug("options", program.opts());
+    config.reporter = this.loadReporter(program.reporter, reporterConfig);
+    config.testFramework = this.loadTestFramework(program.framework, testFrameworkConfig);
 
     if (!program.debug) {
       this.logger.debug("enabling auto-cleanup of temp files");
@@ -248,20 +270,20 @@ export class LoboImp implements Lobo {
     let maxOptionLength = 29;
     this.logger.info("  Testing Frameworks:");
     this.logger.info("");
-    this.showCustomHelpForPlugins("testing framework", "test-plugin", maxOptionLength);
+    this.showCustomHelpForPlugins(this.pluginType.testFramework, maxOptionLength);
 
     this.logger.info("  Reporters:");
     this.logger.info("");
-    this.showCustomHelpForPlugins("reporter", "reporter-plugin", maxOptionLength);
+    this.showCustomHelpForPlugins(this.pluginType.reporter, maxOptionLength);
   }
 
-  public showCustomHelpForPlugins(type: string, fileSpec: string, maxOptionLength: number): void {
-    let plugins = this.util.availablePlugins(fileSpec);
+  public showCustomHelpForPlugins(pluginTypeDetail: PluginTypeDetail, maxOptionLength: number): void {
+    let plugins = this.util.availablePlugins(pluginTypeDetail.fileSpec);
 
     _.forEach(plugins, (name: string) => {
       this.logger.info("   " + Chalk.underline(name) + ":");
       this.logger.info("");
-      let config = this.util.getPluginConfig(type, name, fileSpec);
+      let config = this.util.getPluginConfig(pluginTypeDetail.type, name, pluginTypeDetail.fileSpec);
 
       if (config && config.options && config.options.length > 0) {
         _.forEach(config.options, (option) => {
@@ -307,6 +329,22 @@ export class LoboImp implements Lobo {
       }
     }
 
+    if (program.reporter === "junit-reporter") {
+      if (!program.reportFile) {
+        this.logger.error("");
+        this.logger.error("Missing mandatory configuration option");
+        this.logger.error("--reportFile is a required option when using the junit-reporter");
+        exit = true;
+      }
+
+      if (!this.util.isInteger(program.diffMaxLength)) {
+        this.logger.error("");
+        this.logger.error("Invalid configuration option");
+        this.logger.error("--diffMaxLength value is not an integer");
+        exit = true;
+      }
+    }
+
     if (exit === true) {
       this.logger.info("");
       this.logger.info("For further help run:");
@@ -316,30 +354,46 @@ export class LoboImp implements Lobo {
     }
   }
 
-  public loadReporter(): PluginReporter {
-    return this.loadPlugin<PluginReporterWithConfig>("reporter", program.reporter, "reporter-plugin");
+  public loadReporter(pluginName: string, config: PluginConfig): PluginReporterWithConfig {
+    let plugin = this.util.getPlugin<PluginReporterWithConfig>(this.pluginType.reporter.type, pluginName,
+                                                               this.pluginType.reporter.fileSpec);
+    (<PluginWithConfig><PluginReporterWithConfig>plugin).config = config;
+
+    return plugin;
   }
 
-  public loadTestFramework(): PluginTestFrameworkWithConfig {
-    return this.loadPlugin<PluginTestFrameworkWithConfig>("testing framework", program.framework, "test-plugin");
+  public loadReporterConfig(pluginName: string): PluginConfig {
+    return this.loadPluginConfig<PluginConfig>(this.pluginType.reporter, pluginName);
   }
 
-  public loadPlugin<T extends PluginWithConfig>(type: string, pluginName: string, fileSpec: string): T {
-    let plugin = this.util.getPlugin<T>(type, pluginName, fileSpec);
+  public loadTestFramework(pluginName: string, config: PluginTestFrameworkConfig): PluginTestFrameworkWithConfig {
+    let plugin = this.util.getPlugin<PluginTestFrameworkWithConfig>(this.pluginType.testFramework.type, pluginName,
+                                                                    this.pluginType.testFramework.fileSpec);
+    (<PluginWithConfig><PluginTestFrameworkWithConfig>plugin).config = config;
 
-    if (!plugin || !plugin.config || !plugin.config.options) {
-      return plugin;
+    return plugin;
+  }
+
+  public loadTestFrameworkConfig(pluginName: string): PluginTestFrameworkConfig {
+    return this.loadPluginConfig<PluginTestFrameworkConfig>(this.pluginType.testFramework, pluginName);
+  }
+
+  public loadPluginConfig<T extends PluginConfig>(pluginTypeDetail: PluginTypeDetail, pluginName: string): T {
+    let config = this.util.getPluginConfig<T>(pluginTypeDetail.type, pluginName, pluginTypeDetail.fileSpec);
+
+    if (!config || !config.options) {
+      return config;
     }
 
-    _.forEach(plugin.config.options, opt => {
+    _.forEach(config.options, opt => {
       if (opt.flags) {
-        program.option(opt.flags, opt.description);
+        program.option(opt.flags, opt.description, opt.parser, opt.defaultValue);
       } else {
-        this.logger.error("Ignoring " + type + " option with missing flags property", opt);
+        this.logger.error("Ignoring " + pluginTypeDetail.type + " option with missing flags property", opt);
       }
     });
 
-    return plugin;
+    return config;
   }
 
   public handleUncaughtException(error: Error, config?: PartialLoboConfig): void {

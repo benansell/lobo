@@ -11,7 +11,8 @@ export interface Util {
   checkNodeVersion(major: number, minor: number, patch: number): void;
   closestMatch(name: string, items: string[]): string;
   getPlugin<T>(type: string, pluginName: string, fileSpec: string): T;
-  getPluginConfig(type: string, pluginName: string, fileSpec: string): PluginConfig;
+  getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T;
+  isInteger(value: number): boolean;
   padRight(value: string, length: number, spacer?: string): string;
   resolveDir(...dirs: string[]): string;
   unsafeLoad<T>(filePath: string): T;
@@ -26,7 +27,7 @@ export class UtilImp implements Util {
   }
 
   public availablePlugins(fileSpec: RegExp | string): string[] {
-    let pattern = new RegExp(fileSpec);
+    let pattern = new RegExp(fileSpec + ".*\.js$");
     let pluginDirectory = path.resolve(__dirname, "..", "plugin");
     let files = shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
 
@@ -70,14 +71,13 @@ export class UtilImp implements Util {
     let value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, false);
     let plugin: T = value.createPlugin();
     this.logger.debug(pluginName + " plugin loaded");
-    (<{config: PluginConfig}><{}> plugin).config = this.getPluginConfig(type, pluginName, fileSpec);
     this.logger.trace("plugin", plugin);
 
     return plugin;
   }
 
-  public getPluginConfig(type: string, pluginName: string, fileSpec: string): PluginConfig {
-      let value = this.load<{PluginConfig: PluginConfig}>(type, pluginName, fileSpec, true);
+  public getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T {
+      let value = this.load<{PluginConfig: T}>(type, pluginName, fileSpec, true);
       let config = value.PluginConfig;
       this.logger.debug(pluginName + " plugin configured");
       this.logger.trace("plugin configuration", config);
@@ -107,9 +107,7 @@ export class UtilImp implements Util {
         filePath = path.join("..", "plugin", pluginName, fileSpec);
       }
 
-      let value = this.unsafeLoad<T>(filePath);
-
-      return value;
+      return this.unsafeLoad<T>(filePath);
     } catch (err) {
       if (err && err instanceof SyntaxError) {
         this.logger.error("Unable to load " + pluginName + " due to a syntax error in " + pluginName + "/" + fileSpec + ".js");
@@ -143,10 +141,8 @@ export class UtilImp implements Util {
 
   public unsafeLoad<T>(filePath: string): T {
     // tslint:disable:no-require-imports
-    let value = require(filePath);
+    return require(filePath);
     // tslint:enable:no-require-imports
-
-    return value;
   }
 }
 

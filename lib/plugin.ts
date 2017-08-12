@@ -37,8 +37,10 @@ export interface PluginTestFrameworkConfig extends PluginConfig {
 }
 
 export interface PluginOption {
-  readonly flags: string;
+  readonly defaultValue?: boolean | object | number | string;
   readonly description: string;
+  readonly flags: string;
+  readonly parser?: ((arg1: boolean | object | number | string, arg2?: boolean | object | number | string) => void) | RegExp;
 }
 
 export interface PluginReporter {
