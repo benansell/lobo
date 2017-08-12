@@ -84,18 +84,18 @@ describe("elm-test-extra-simple", () => {
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
-      expect(failureMessage).to.match(/\r?\n\s{4}┌ "foobar"\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}│\s{3}\^ \^\^\^\s\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}│ Expect.equal\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}│\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}└ "fao"/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}┌ "foobar"\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\s{3}\^ \^\^\^\s\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│ Expect.equal\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}└ "fao"/g);
 
-      expect(failureMessage).to.match(/\r?\n\s{4}┌ ""\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}│\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}│ Expect.equal\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}│\r?\n/g);
-      expect(failureMessage).to.match(/\r?\n\s{4}└ " "/g);
-      expect(failureMessage).to.match(/\r?\n\s{11}\r?\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}┌ ""\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│ Expect.equal\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}└ " "/g);
+      expect(failureMessage).to.match(/\r*\n\s{11}\r*\n/g);
     });
   });
 
