@@ -1,4 +1,5 @@
 import * as levenshtein from "fast-levenshtein";
+import * as fs from "fs";
 import * as _ from "lodash";
 import * as shelljs from "shelljs";
 import {createLogger, Logger} from "./logger";
@@ -10,8 +11,10 @@ export interface Util {
   checkNodeVersion(major: number, minor: number, patch: number): void;
   closestMatch(name: string, items: string[]): string;
   getPlugin<T>(type: string, pluginName: string, fileSpec: string): T;
-  getPluginConfig(type: string, pluginName: string, fileSpec: string): PluginConfig;
+  getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T;
+  isInteger(value: number): boolean;
   padRight(value: string, length: number, spacer?: string): string;
+  resolveDir(...dirs: string[]): string;
   unsafeLoad<T>(filePath: string): T;
 }
 
@@ -24,12 +27,13 @@ export class UtilImp implements Util {
   }
 
   public availablePlugins(fileSpec: RegExp | string): string[] {
-    let pattern = new RegExp(fileSpec);
+    let pattern = new RegExp(fileSpec + ".*\.js$");
     let pluginDirectory = path.resolve(__dirname, "..", "plugin");
     let files = shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
 
     return _.map(files, (file: string) => {
       let pluginPath = path.relative(pluginDirectory, file);
+
       return path.dirname(pluginPath);
     });
   }
@@ -54,8 +58,7 @@ export class UtilImp implements Util {
       (nodeVersion[0] === major && nodeVersion[1] < minor) ||
       (nodeVersion[0] === major && nodeVersion[1] === minor && nodeVersion[2] < patch)) {
       this.logger.info("using node v" + nodeVersionString);
-      this.logger.error("lobo requires node v" + major + "." + minor + "." + patch + " or greater " +
-        "- upgrade the installed version of node and try again");
+      this.logger.error(`lobo requires node v${major}.${minor}.${patch} or greater - upgrade the installed version of node and try again`);
       process.exit(1);
     }
   }
@@ -68,14 +71,13 @@ export class UtilImp implements Util {
     let value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, false);
     let plugin: T = value.createPlugin();
     this.logger.debug(pluginName + " plugin loaded");
-    (<{config: PluginConfig}><{}> plugin).config = this.getPluginConfig(type, pluginName, fileSpec);
     this.logger.trace("plugin", plugin);
 
     return plugin;
   }
 
-  public getPluginConfig(type: string, pluginName: string, fileSpec: string): PluginConfig {
-      let value = this.load<{PluginConfig: PluginConfig}>(type, pluginName, fileSpec, true);
+  public getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T {
+      let value = this.load<{PluginConfig: T}>(type, pluginName, fileSpec, true);
       let config = value.PluginConfig;
       this.logger.debug(pluginName + " plugin configured");
       this.logger.trace("plugin configuration", config);
@@ -105,9 +107,7 @@ export class UtilImp implements Util {
         filePath = path.join("..", "plugin", pluginName, fileSpec);
       }
 
-      let value = this.unsafeLoad<T>(filePath);
-
-      return value;
+      return this.unsafeLoad<T>(filePath);
     } catch (err) {
       if (err && err instanceof SyntaxError) {
         this.logger.error("Unable to load " + pluginName + " due to a syntax error in " + pluginName + "/" + fileSpec + ".js");
@@ -123,12 +123,26 @@ export class UtilImp implements Util {
     }
   }
 
+  public resolveDir(...dirs: string[]): string {
+    let resolved = path.resolve(...dirs);
+
+    if (!fs.existsSync(resolved)) {
+      return resolved;
+    }
+
+    let stats = fs.lstatSync(resolved);
+
+    if (!stats.isSymbolicLink()) {
+      return resolved;
+    }
+
+    return fs.realpathSync(resolved);
+  }
+
   public unsafeLoad<T>(filePath: string): T {
     // tslint:disable:no-require-imports
-    let value = require(filePath);
+    return require(filePath);
     // tslint:enable:no-require-imports
-
-    return value;
   }
 }
 

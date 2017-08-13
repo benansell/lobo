@@ -2,12 +2,14 @@
 
 import * as chai from "chai";
 import rewire = require("rewire");
+import * as path from "path";
 import * as Sinon from "sinon";
 import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createUtil, Util, UtilImp} from "../../../lib/util";
 import {Logger} from "../../../lib/logger";
 import {PluginConfig} from "../../../lib/plugin";
+import {Stats} from "fs";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -16,9 +18,31 @@ describe("lib util", () => {
   let RewiredUtil = rewire("../../../lib/util");
   let util: UtilImp;
   let mockLogger: Logger;
+  let mockDirname: SinonStub;
+  let mockExit: SinonStub;
+  let mockExists: SinonStub;
+  let mockLstat: SinonStub;
+  let mockRealPath: SinonStub;
+  let mockRelativePath: SinonStub;
+  let mockResolvePath: SinonStub;
+  let mockVersions: SinonStub;
 
   beforeEach(() => {
+    mockDirname = Sinon.stub();
+    mockExit = Sinon.stub();
+    mockExists = Sinon.stub();
+    mockLstat = Sinon.stub();
+    mockRealPath = Sinon.stub();
+    mockRelativePath = Sinon.stub();
+    mockResolvePath = Sinon.stub();
+    mockVersions = Sinon.stub();
+
+    RewiredUtil.__set__({
+      fs: { existsSync: mockExists, lstatSync: mockLstat, realpathSync: mockRealPath },
+      path: { dirname: mockDirname, relative: mockRelativePath, resolve: mockResolvePath},
+      process: { exit: mockExit, versions: mockVersions}});
     let rewiredImp = RewiredUtil.__get__("UtilImp");
+
     mockLogger = <any> Sinon.mock();
     mockLogger.debug = <any> Sinon.stub();
     mockLogger.info = <any> Sinon.stub();
@@ -38,27 +62,15 @@ describe("lib util", () => {
   });
 
   describe("availablePlugins", () => {
-    let revertDirName: () => void;
-    let revertShellJs: () => void;
-    let mockFind: SinonStub;
-
-    beforeEach(() => {
-      revertDirName = RewiredUtil.__set__({"__dirname": "baz"});
-      mockFind = Sinon.stub();
-      revertShellJs = RewiredUtil.__set__({shelljs: {find: mockFind}});
-    });
-
-    afterEach(() => {
-      revertDirName();
-      revertShellJs();
-    });
-
     it("should return list of plugin directories containing plugins matching filespec", () => {
       // arrange
-      mockFind.returns(["plugin/1/foo", "plugin/2/foobar"]);
+      let mockFind = Sinon.stub();
+      mockFind.returns(["plugin/1/foo.js", "plugin/2/foobar.js"]);
+      let revert = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
 
       // act
-      let actual = util.availablePlugins("foo");
+      let actual: string[] = undefined;
+      revert(() => actual = util.availablePlugins("foo"));
 
       // assert
       expect(actual.length).to.equal(2);
@@ -68,7 +80,6 @@ describe("lib util", () => {
   });
 
   describe("checkNodeVersion", () => {
-    let mockExit;
     let mockLogInfo;
     let mockLogError;
     let processMajor;
@@ -76,19 +87,16 @@ describe("lib util", () => {
     let processPatch;
 
     beforeEach(() => {
-      mockExit = Sinon.stub(process, "exit");
-
-      let processVersion = process.versions.node.split(".");
-      processMajor = parseInt(processVersion[0], 10);
-      processMinor = parseInt(processVersion[1], 10);
-      processPatch = parseInt(processVersion[2], 10);
+      processMajor = 123;
+      processMinor = 456;
+      processPatch = 789;
+      (<{node: string}><{}>mockVersions).node = "123.456.789";
 
       mockLogInfo = Sinon.stub(console, "info");
       mockLogError = Sinon.stub(console, "error");
     });
 
     afterEach(() => {
-      mockExit.restore();
       mockLogInfo.restore();
       mockLogError.restore();
     });
@@ -251,24 +259,6 @@ describe("lib util", () => {
       // assert
       expect(actual).to.equal(expected);
     });
-
-    it("should return the loaded the plugin with config", () => {
-      // arrange
-      let expected = {name: "qux"};
-      let mockLoad = Sinon.stub();
-      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
-      util.load = mockLoad;
-
-      let mockGetPluginConfig = Sinon.stub();
-      mockGetPluginConfig.returns(expected);
-      util.getPluginConfig = mockGetPluginConfig;
-
-      // act
-      let actual = util.getPlugin("foo", "bar", "baz");
-
-      // assert
-      expect((<{config: PluginConfig}>actual).config).to.equal(expected);
-    });
   });
 
   describe("getPluginConfig", () => {
@@ -392,25 +382,14 @@ describe("lib util", () => {
   });
 
   describe("load", () => {
-    let mockExit;
-    let revertPath: () => void;
-
-    beforeEach(() => {
-      mockExit = Sinon.stub(process, "exit");
-    });
-
-    afterEach(() => {
-      mockExit.restore();
-      revertPath();
-    });
-
     it("should load and return elm-test plugin config", () => {
       // arrange
       let mockJoin = x => "../plugin/elm-test/plugin-config";
-      revertPath = RewiredUtil.__set__({path: {join: mockJoin}});
+      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
-      let actual = util.load<{PluginConfig: PluginConfig}>("foo", "bar", "baz", true);
+      let actual: { PluginConfig: PluginConfig } = undefined;
+      revertPath(() => actual = util.load<{ PluginConfig: PluginConfig }>("foo", "bar", "baz", true));
 
       // assert
       expect(actual.PluginConfig.name).to.equal("elm-test");
@@ -419,10 +398,10 @@ describe("lib util", () => {
     it("should catch syntax error in config and log error", () => {
       // arrange
       let mockJoin = function() {throw new SyntaxError("foo"); };
-      revertPath = RewiredUtil.__set__({path: {join: mockJoin}});
+      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
-      util.load("foo", "bar", "baz", true);
+      revertPath(() => util.load("foo", "bar", "baz", true));
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith(Sinon.match(/syntax error/));
@@ -431,12 +410,12 @@ describe("lib util", () => {
     it("should catch other errors in load and log error as 'not found'", () => {
       // arrange
       let mockJoin = function() {throw new Error("foo"); };
-      revertPath = RewiredUtil.__set__({path: {join: mockJoin}});
+      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
       util.closestMatch = Sinon.stub();
 
       // act
-      util.load("foo", "bar", "baz", true);
+      revertPath(() => util.load("foo", "bar", "baz", true));
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith(Sinon.match(/not found/));
@@ -445,16 +424,61 @@ describe("lib util", () => {
     it("should catch other errors in load suggest closest plugin name", () => {
       // arrange
       let mockJoin = function() {throw new Error("foo"); };
-      revertPath = RewiredUtil.__set__({path: {join: mockJoin}});
+      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
       let mockClosestMatch = Sinon.stub();
       util.closestMatch = mockClosestMatch;
 
         // act
-      util.load("foo", "bar", "baz", false);
+      revertPath(() => util.load("foo", "bar", "baz", false));
 
       // assert
       expect(mockClosestMatch).to.have.been.calledWith("bar", Sinon.match.any);
+    });
+  });
+
+  describe("resolveDir", () => {
+    it("should return the resolved path when it does not exist", () => {
+      // arrange
+      mockExists.returns(false);
+      mockResolvePath.returns("/bar");
+
+      // act
+      let actual = util.resolveDir("foo");
+
+      // assert
+      expect(actual).to.equal("/bar");
+    });
+
+    it("should return the resolved path when it exists and is not a symbolic link", () => {
+      // arrange
+      mockExists.returns(true);
+      let mockStats = <Stats> {};
+      mockStats.isSymbolicLink = () => false;
+      mockLstat.returns(mockStats);
+      mockResolvePath.returns("/bar");
+
+      // act
+      let actual = util.resolveDir("foo");
+
+      // assert
+      expect(actual).to.equal("/bar");
+    });
+
+    it("should return the real path when it exists is a symbolic link", () => {
+      // arrange
+      mockExists.returns(true);
+      let mockStats = <Stats> {};
+      mockStats.isSymbolicLink = () => true;
+      mockLstat.returns(mockStats);
+      mockResolvePath.returns("/bar");
+      mockRealPath.returns("/baz");
+
+      // act
+      let actual = util.resolveDir("foo");
+
+      // assert
+      expect(actual).to.equal("/baz");
     });
   });
 });

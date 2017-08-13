@@ -16,12 +16,12 @@ describe("plugin json-reporter plugin-config", () => {
   });
 
   describe("options", () => {
-    it("should no options", () => {
+    it("should have '--reportFile' option", () => {
       // act'
       let options = config.options;
 
       // assert
-      expect(options).to.be.empty;
+      expect(options).to.include.something.that.property("flags", "--reportFile [value]");
     });
   });
 });

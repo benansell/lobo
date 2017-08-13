@@ -1,15 +1,13 @@
+import * as Bluebird from "bluebird";
 import * as program from "commander";
-import {PluginReporter, ProgressReport, TestRun, TestRunSummary} from "../../lib/plugin";
+import * as plugin from "../../lib/plugin";
+import * as fs from "fs";
 
-interface Logger {
-  log(message: string): void;
-}
+export class JsonReporter implements plugin.PluginReporter {
 
-export class JsonReporter implements PluginReporter {
+  private logger: plugin.PluginReporterLogger;
 
-  private logger: Logger;
-
-  public static toCommonOutput(summary: TestRunSummary): Object {
+  public static toCommonOutput(summary: plugin.TestRunSummary): Object {
     return {
       config: summary.config,
       durationMilliseconds: summary.durationMilliseconds,
@@ -26,19 +24,8 @@ export class JsonReporter implements PluginReporter {
     };
   }
 
-  constructor(logger: Logger) {
+  constructor(logger: plugin.PluginReporterLogger) {
     this.logger = logger;
-  }
-
-  public logSummary(summary: TestRunSummary): void {
-    let output = JsonReporter.toCommonOutput(summary);
-    this.logger.log(JSON.stringify(output));
-  }
-
-  public logFull(summary: TestRunSummary): void {
-    let output: object = JsonReporter.toCommonOutput(summary);
-    (<{ runResults: object }>output).runResults = summary.runResults;
-    this.logger.log(JSON.stringify(output));
   }
 
   public runArgs(): void {
@@ -49,19 +36,59 @@ export class JsonReporter implements PluginReporter {
     // ignore testCount
   }
 
-  public  update(result: ProgressReport): void {
+  public  update(result: plugin.ProgressReport): void {
     this.logger.log(JSON.stringify(result));
   }
 
-  public finish(results: TestRun): void {
+  public finish(results: plugin.TestRun): Bluebird<object> {
+    return new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+      let toFile: boolean = program.reportFile !== undefined && program.reportFile !== null && program.reportFile.length > 0;
+      let data = this.toString(results, toFile);
+
+      if (toFile) {
+        fs.writeFile(program.reportFile, data, err => {
+          if (!err) {
+            resolve();
+            return;
+          }
+
+          reject(err);
+        });
+      } else {
+        this.logger.log(data);
+        resolve();
+      }
+    });
+  }
+
+  public toFull(summary: plugin.TestRunSummary): object {
+    let output: object = JsonReporter.toCommonOutput(summary);
+    (<{ runResults: object }>output).runResults = summary.runResults;
+
+    return output;
+  }
+
+  public toSummary(summary: plugin.TestRunSummary): object {
+    return JsonReporter.toCommonOutput(summary);
+  }
+
+  public toString(results: plugin.TestRun, prettyPrint: boolean): string {
+    let output: object;
+
     if (program.quiet) {
-      this.logSummary(results.summary);
+      output = this.toSummary(results.summary);
     } else {
-      this.logFull(results.summary);
+      output = this.toFull(results.summary);
     }
+
+    if (prettyPrint) {
+      return JSON.stringify(output, null, 2);
+    }
+
+    return JSON.stringify(output);
   }
 }
 
-export function createPlugin(): PluginReporter {
+export function createPlugin(): plugin.PluginReporter {
   return new JsonReporter(console);
 }

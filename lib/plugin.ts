@@ -1,3 +1,5 @@
+import * as Bluebird from "bluebird";
+
 export interface Dependencies {
   [index: string]: string;
 }
@@ -34,16 +36,24 @@ export interface PluginTestFrameworkConfig extends PluginConfig {
   readonly dependencies: Dependencies;
 }
 
+export type PluginOptionValue = boolean | object | number | string;
+
 export interface PluginOption {
-  readonly flags: string;
+  readonly defaultValue?: PluginOptionValue;
   readonly description: string;
+  readonly flags: string;
+  readonly parser?: ((arg1: PluginOptionValue, arg2?: PluginOptionValue) => PluginOptionValue) | RegExp;
 }
 
 export interface PluginReporter {
   init(testCount: number): void;
-  finish(results: TestRun): void;
+  finish(results: TestRun): Bluebird<object>;
   runArgs(args: RunArgs): void;
   update(result: ProgressReport): void;
+}
+
+export interface PluginReporterLogger {
+  log(message: string): void;
 }
 
 export interface PluginReporterWithConfig extends PluginReporter {
@@ -60,6 +70,10 @@ export type ProgressReport =
   | TestReportPassedLeaf
   | TestReportSkippedLeaf
   | TestReportTodoLeaf;
+
+export type Reject = (reason?: Error) => void;
+
+export type Resolve = (data?: object) => void;
 
 export type ResultType =
   "FAILED"
@@ -128,6 +142,23 @@ export interface TestReportSuiteNode extends TestReportNode {
 }
 
 export interface TestReportTodoLeaf extends TestReportNode, TestReportTimed {
+}
+
+export interface TestResultDecorator {
+  bulletPoint(): string;
+  diff(value: string): string;
+  expect(value: string): string;
+  failed(value: string): string;
+  line(line: string): string;
+  given(value: string): string;
+  inconclusive(value: string): string;
+  only(value: string): string;
+  passed(value: string): string;
+  skip(value: string): string;
+  todo(value: string): string;
+  verticalBarEnd(): string;
+  verticalBarMiddle(): string;
+  verticalBarStart(): string;
 }
 
 export interface TestRun {

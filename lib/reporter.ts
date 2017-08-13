@@ -1,47 +1,43 @@
+import * as Bluebird from "bluebird";
 import * as program from "commander";
 import * as _ from "lodash";
-import {
-  PluginReporter, ProgressReport, RunType, TestReportConfig, TestReportFailedLeaf, TestReportNode, TestReportRoot,
-  TestReportSkippedLeaf, TestReportSuiteNode, TestReportTodoLeaf, TestRun,
-  TestRunFailState, TestRunLeaf, TestRunState,
-  TestRunSummary, RunArgs
-} from "./plugin";
+import * as plugin from "./plugin";
 
 interface PartialTestRunSummary {
-  config: TestReportConfig;
+  config: plugin.TestReportConfig;
   durationMilliseconds: number | undefined;
   endDateTime: Date | undefined;
   failedCount: number;
-  failures: TestRunLeaf<TestReportFailedLeaf>[];
+  failures: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>[];
   onlyCount: number;
   outcome: string | undefined;
   passedCount: number;
-  runResults: TestReportNode[];
-  runType: RunType;
-  skipped: TestRunLeaf<TestReportSkippedLeaf>[];
+  runResults: plugin.TestReportNode[];
+  runType: plugin.RunType;
+  skipped: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>[];
   skippedCount: number;
   startDateTime: Date | undefined;
   success: boolean;
-  todo: TestRunLeaf<TestReportTodoLeaf>[];
+  todo: plugin.TestRunLeaf<plugin.TestReportTodoLeaf>[];
   todoCount: number;
 }
 
 export interface Reporter {
-  configure(plugin: PluginReporter): void;
-  finish(rawResults: TestReportRoot): boolean;
+  configure(plugin: plugin.PluginReporter): void;
+  finish(rawResults: plugin.TestReportRoot): Bluebird<void>;
   init(testCount: number): void;
-  runArgs(args: RunArgs): void;
-  update(result: ProgressReport): void;
+  runArgs(args: plugin.RunArgs): void;
+  update(result: plugin.ProgressReport): void;
 }
 
 export class ReporterImp implements Reporter {
-  private reporterPlugin: PluginReporter;
+  private reporterPlugin: plugin.PluginReporter;
 
-  public configure(plugin: PluginReporter): void {
-    this.reporterPlugin = plugin;
+  public configure(reporterPlugin: plugin.PluginReporter): void {
+    this.reporterPlugin = reporterPlugin;
   }
 
-  public runArgs(args: RunArgs): void {
+  public runArgs(args: plugin.RunArgs): void {
     this.reporterPlugin.runArgs(args);
   }
 
@@ -49,7 +45,7 @@ export class ReporterImp implements Reporter {
     this.reporterPlugin.init(testCount);
   }
 
-  public update(result: ProgressReport): void {
+  public update(result: plugin.ProgressReport): void {
     if (program.quiet) {
       return;
     }
@@ -57,14 +53,18 @@ export class ReporterImp implements Reporter {
     this.reporterPlugin.update(result);
   }
 
-  public finish(rawResults: TestReportRoot): boolean {
+  public finish(rawResults: plugin.TestReportRoot): Bluebird<void> {
     let results = this.processResults(rawResults);
-    this.reporterPlugin.finish(results);
+    let promise = this.reporterPlugin.finish(results);
 
-    return results.summary.success;
+    return promise.then(() => {
+      if (!results.summary.success) {
+        throw new Error("Failed");
+      }
+    });
   }
 
-  public processResults(rawResults: TestReportRoot): TestRun {
+  public processResults(rawResults: plugin.TestReportRoot): plugin.TestRun {
     let summary: PartialTestRunSummary = {
       config: rawResults.config,
       durationMilliseconds: undefined,
@@ -99,7 +99,7 @@ export class ReporterImp implements Reporter {
 
     this.processTestResults(rawResults.runResults, summary, []);
 
-    let failState: TestRunFailState = {
+    let failState: plugin.TestRunFailState = {
       only: this.toTestRunState(program.failOnOnly, summary.onlyCount > 0 || summary.runType === "FOCUS"),
       skip: this.toTestRunState(program.failOnSkip, summary.skippedCount > 0 || summary.runType === "SKIP"),
       todo: this.toTestRunState(program.failOnTodo, summary.todoCount > 0)
@@ -113,19 +113,19 @@ export class ReporterImp implements Reporter {
 
     summary.outcome = this.calculateOutcome(summary, failState);
 
-    return {failState: failState, summary: <TestRunSummary> summary};
+    return {failState: failState, summary: <plugin.TestRunSummary> summary};
   }
 
-  public processTestResults(results: TestReportNode[], summary: PartialTestRunSummary, labels: string[]): void {
+  public processTestResults(results: plugin.TestReportNode[], summary: PartialTestRunSummary, labels: string[]): void {
     if (!results) {
       return;
     }
 
-    _.forEach(results, (r: TestReportNode) => {
+    _.forEach(results, (r: plugin.TestReportNode) => {
       switch (r.resultType) {
         case "FAILED":
           summary.failedCount += 1;
-          summary.failures.push({labels: _.clone(labels), result: <TestReportFailedLeaf> r});
+          summary.failures.push({labels: _.clone(labels), result: <plugin.TestReportFailedLeaf> r});
           break;
         case "IGNORED":
           summary.onlyCount += 1;
@@ -135,29 +135,29 @@ export class ReporterImp implements Reporter {
           break;
         case "SKIPPED":
           summary.skippedCount += 1;
-          summary.skipped.push({labels: _.clone(labels), result: <TestReportSkippedLeaf> r});
+          summary.skipped.push({labels: _.clone(labels), result: <plugin.TestReportSkippedLeaf> r});
           break;
         case "TODO":
           summary.todoCount += 1;
-          summary.todo.push({labels: _.clone(labels), result: <TestReportTodoLeaf> r});
+          summary.todo.push({labels: _.clone(labels), result: <plugin.TestReportTodoLeaf> r});
           break;
         default:
           let newLabels = _.clone(labels);
           newLabels.push(r.label);
 
-          this.processTestResults((<TestReportSuiteNode> r).results, summary, newLabels);
+          this.processTestResults((<plugin.TestReportSuiteNode> r).results, summary, newLabels);
       }
     });
   }
 
-  public toTestRunState(flag: boolean | undefined, exists: boolean): TestRunState {
+  public toTestRunState(flag: boolean | undefined, exists: boolean): plugin.TestRunState {
     let isFailOn = flag === true;
     let isFailure = isFailOn && exists;
 
     return {exists: exists, isFailOn: isFailOn, isFailure: isFailure};
   }
 
-  public calculateOutcome(summary: PartialTestRunSummary, failState: TestRunFailState): string {
+  public calculateOutcome(summary: PartialTestRunSummary, failState: plugin.TestRunFailState): string {
     let prefix;
 
     if (summary.runType !== "NORMAL") {

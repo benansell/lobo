@@ -84,18 +84,11 @@ describe("elm-test-simple", () => {
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
-      expect(failureMessage).to.match(/\n\s{4}┌ "foobar"\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\s\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}└ "fao"/g);
-
-      expect(failureMessage).to.match(/\n\s{4}┌ ""\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}└ " "/g);
-      expect(failureMessage).to.match(/\n\s{11}\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}┌ "foobar"\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\s{3}\^ \^\^\^\s\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│ Expect.equal\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}└ "fao"/g);
     });
   });
 
@@ -194,14 +187,14 @@ describe("elm-test-simple", () => {
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(12, 6);
-      expect(result.stdout).to.matches(/Tests\n.+Suite A\n.+1\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests\n.+Suite A(.|\n)+SecondChildTest\n.+2\) FailingTest - Child/);
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+1\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest\r?\n.+2\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests\n.+Suite A(.|\n)+SecondChildTest(.|\n)+FailingGrandChildTest\n.+3\) FailingTest - GrandChild/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B\n.+4\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B(.|\n)+SecondChildTest\n.+5\) FailingTest - Child/);
+        /Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+3\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+4\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest\r?\n.+5\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests(.|\n)+Suite B(.|\n)+SecondChildTest(.|\n)+FailingGrandChildTest\n.+6\) FailingTest - GrandChild/);
+        /Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+6\) FailingTest - GrandChild/);
       expect(result.code).to.equal(1);
     });
   });

@@ -84,18 +84,11 @@ describe("elm-test-extra-simple", () => {
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
-      expect(failureMessage).to.match(/\n\s{4}┌ "foobar"\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\s{3}\^ \^\^\^\s\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}└ "fao"/g);
-
-      expect(failureMessage).to.match(/\n\s{4}┌ ""\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│ Expect.equal\n/g);
-      expect(failureMessage).to.match(/\n\s{4}│\n/g);
-      expect(failureMessage).to.match(/\n\s{4}└ " "/g);
-      expect(failureMessage).to.match(/\n\s{11}\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}┌ "foobar"\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\s{3}\^ \^\^\^\s\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│ Expect.equal\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}└ "fao"/g);
     });
   });
 
@@ -194,12 +187,12 @@ describe("elm-test-extra-simple", () => {
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(10, 4);
-      expect(result.stdout).to.matches(/Tests\n.+Suite A\n.+SecondChildTest\n.+1\) FailingTest - Child/);
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+SecondChildTest\r?\n.+1\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests\n.+Suite A\n.+SecondChildTest(.|\n)+FailingGrandChildTest\n.+2\) FailingTest - GrandChild/);
-      expect(result.stdout).to.matches(/Tests(.|\n)+Suite B\n.+SecondChildTest\n.+3\) FailingTest - Child/);
+        /Tests\r?\n.+Suite A\r?\n.+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+2\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+SecondChildTest\r?\n.+3\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests(.|\n)+Suite B\n.+SecondChildTest(.|\n)+FailingGrandChildTest\n.+4\) FailingTest - GrandChild/);
+        /Tests(.|\r?\n)+Suite B\r?\n.+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+4\) FailingTest - GrandChild/);
 
       expect(result.code).to.equal(1);
     });

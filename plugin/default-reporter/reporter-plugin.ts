@@ -1,165 +1,30 @@
-
+import * as Bluebird from "bluebird";
 import * as _ from "lodash";
 import * as Chalk from "chalk";
 import * as program from "commander";
-import {Compare, createCompare} from "./compare";
-import {
-  FailureMessage,
-  PluginReporter, ProgressReport, RunArgs, TestReportFailedLeaf, TestReportSkippedLeaf, TestReportTodoLeaf, TestRun,
-  TestRunFailState,
-  TestRunLeaf,
-  TestRunSummary
-} from "../../lib/plugin";
+import {TestResultFormatter, createTestResultFormatter} from "../../lib/test-result-formatter";
+import * as plugin from "../../lib/plugin";
 import {createUtil, Util} from "../../lib/util";
+import {createTestResultDecoratorConsole} from "../../lib/test-result-decorator-console";
+import {createReporterStandardConsole, ReporterStandardConsole} from "../../lib/reporter-standard-console";
 
-type LeafItem = TestRunLeaf<TestReportFailedLeaf> | TestRunLeaf<TestReportSkippedLeaf> | TestRunLeaf<TestReportTodoLeaf>;
+type LeafItem = plugin.TestRunLeaf<plugin.TestReportFailedLeaf>
+  | plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>
+  | plugin.TestRunLeaf<plugin.TestReportTodoLeaf>;
 
-interface Logger {
-  log(message: string): void;
-}
 
-export class DefaultReporterImp implements PluginReporter {
+export class DefaultReporterImp implements plugin.PluginReporter {
 
-  private compare: Compare;
-  private logger: Logger;
+  private logger: plugin.PluginReporterLogger;
+  private standardConsole: ReporterStandardConsole;
+  private decorator: plugin.TestResultDecorator;
+  private testResultFormatter: TestResultFormatter;
   private util: Util;
-  private passedStyle: Chalk.ChalkChain = Chalk.green;
-  private failedStyle: Chalk.ChalkChain = Chalk.red;
-  private givenStyle: Chalk.ChalkChain = Chalk.yellow;
-  private inconclusiveStyle: Chalk.ChalkChain = Chalk.yellow;
-  private headerStyle: Chalk.ChalkChain = Chalk.bold;
   private labelStyle: Chalk.ChalkChain = Chalk.dim;
-  private onlyStyle: Chalk.ChalkChain;
-  private skipStyle: Chalk.ChalkChain;
-  private todoStyle: Chalk.ChalkChain;
-  private initArgs: RunArgs;
+  private messagePrefixPadding: string;
+  private diffMaxLength: number;
 
-  public constructor(compare: Compare, logger: Logger, util: Util) {
-    this.compare = compare;
-    this.logger = logger;
-    this.util = util;
-  }
-
-  public runArgs(args: RunArgs): void {
-    this.initArgs = args;
-  }
-
-  public init(): void {
-    // ignore testCount
-    this.onlyStyle = program.failOnOnly ? this.failedStyle : this.inconclusiveStyle;
-    this.skipStyle = program.failOnSkip ? this.failedStyle : this.inconclusiveStyle;
-    this.todoStyle = program.failOnTodo ? this.failedStyle : this.inconclusiveStyle;
-  }
-
-  public update(result: ProgressReport): void {
-    if (!result) {
-      process.stdout.write(" ");
-    } else if (result.resultType === "PASSED") {
-      process.stdout.write(".");
-    } else if (result.resultType === "FAILED") {
-      process.stdout.write(Chalk.red("!"));
-    } else if (result.resultType === "SKIPPED") {
-      process.stdout.write(this.skipStyle("?"));
-    } else if (result.resultType === "TODO") {
-      process.stdout.write(this.todoStyle("-"));
-    } else {
-      process.stdout.write(" ");
-    }
-  }
-
-  public finish(results: TestRun): void {
-    let summary = results.summary;
-    let failState = results.failState;
-
-    if (program.quiet) {
-      this.paddedLog("");
-      this.logSummaryHeader(summary, failState);
-      this.paddedLog("");
-      return;
-    }
-
-    this.paddedLog("");
-    this.logSummary(summary, failState);
-    this.paddedLog("");
-    this.logNonPassed(summary);
-    this.paddedLog("");
-  }
-
-  public logSummary(summary: TestRunSummary, failState: TestRunFailState): void {
-    this.logger.log("");
-    this.logger.log("==================================== Summary ===================================");
-
-    this.logSummaryHeader(summary, failState);
-
-    this.paddedLog(this.passedStyle("Passed:   " + summary.passedCount));
-    this.paddedLog(this.failedStyle("Failed:   " + summary.failedCount));
-
-    if (summary.todoCount > 0) {
-      this.paddedLog(this.todoStyle("Todo:     " + summary.todoCount));
-    }
-
-    if (program.framework !== "elm-test") {
-      // full run details not available when using elm-test
-
-      if (summary.skippedCount > 0) {
-        this.paddedLog(this.skipStyle("Skipped:  " + summary.skippedCount));
-      }
-
-      if (summary.onlyCount > 0) {
-        this.paddedLog(this.onlyStyle("Ignored:  " + summary.onlyCount));
-      }
-    }
-
-    if (summary.durationMilliseconds) {
-      this.paddedLog("Duration: " + summary.durationMilliseconds + "ms");
-    }
-
-    this.paddedLog("");
-    this.paddedLog(this.headerStyle("TEST RUN ARGUMENTS"));
-
-    _.forOwn(this.initArgs, (value: object, key: string) => this.paddedLog(this.util.padRight(key + ": ", 12) + value));
-
-    this.logger.log("================================================================================");
-  }
-
-  public logSummaryHeader(summary: TestRunSummary, failState: TestRunFailState): void {
-    let outcomeStyle = this.passedStyle;
-
-    if (summary.failedCount > 0) {
-      outcomeStyle = this.failedStyle;
-    } else if (!failState.only || !failState.skip || !failState.todo) {
-      outcomeStyle = this.failedStyle;
-    } else if (failState.only.isFailure || failState.skip.isFailure || failState.todo.isFailure) {
-      outcomeStyle = this.failedStyle;
-    } else if (failState.skip.exists || failState.todo.exists) {
-      outcomeStyle = this.inconclusiveStyle;
-    }
-
-    this.paddedLog(this.headerStyle(outcomeStyle(summary.outcome)));
-  }
-
-  public sortItemsByLabel(items: LeafItem[]): LeafItem[] {
-    if (!items || items.length === 0) {
-      return [];
-    }
-
-    let maxSize = <number> _.max(_.map(items, x => x.labels.length));
-    let maxLabelLength = this.calculateMaxLabelLength(items);
-
-    return _.sortBy(items, (x: LeafItem) => this.toFailureSortKey(maxSize, maxLabelLength, x));
-  }
-
-  public toFailureSortKey(maxSize: number, maxLabelLength: number, item: LeafItem): string {
-    let maxSizeLength = maxSize.toString.length;
-    let toSortKey = (x: string) => this.util.padRight(x, maxLabelLength);
-
-    let prefix = _.map(item.labels, y => toSortKey(y)).join(" " + this.util.padRight("?", maxSizeLength, "?") + ":");
-    let suffix = " " + this.util.padRight(item.labels.length.toString(), maxSizeLength, "?") + ":" + toSortKey(item.result.label);
-
-    return prefix + suffix;
-  }
-
-  public calculateMaxLabelLength(items: LeafItem[]): number {
+  public static calculateMaxLabelLength(items: LeafItem[]): number {
     let maxLabelLength = 0;
 
     for (let i = 0; i < items.length; i++) {
@@ -179,7 +44,75 @@ export class DefaultReporterImp implements PluginReporter {
     return maxLabelLength;
   }
 
-  public logNonPassed(summary: TestRunSummary): void {
+  public constructor(logger: plugin.PluginReporterLogger, standardConsole: ReporterStandardConsole, decorator: plugin.TestResultDecorator,
+                     testResultFormatter: TestResultFormatter, util: Util) {
+    this.logger = logger;
+    this.standardConsole = standardConsole;
+    this.decorator = decorator;
+    this.testResultFormatter = testResultFormatter;
+    this.util = util;
+
+    this.messagePrefixPadding = "    ";
+
+    // default to a width of 80 when process is not running in a terminal
+    let stdout = <{ columns: number }><{}>process.stdout;
+    this.diffMaxLength = stdout && stdout.columns ? stdout.columns - this.messagePrefixPadding.length : 80;
+  }
+
+  public runArgs(args: plugin.RunArgs): void {
+    this.standardConsole.runArgs(args);
+  }
+
+  public init(): void {
+    // ignore testCount
+  }
+
+  public update(result: plugin.ProgressReport): void {
+    this.standardConsole.update(result);
+  }
+
+  public finish(results: plugin.TestRun): Bluebird<object> {
+    let steps: Array<() => Bluebird<object>> = [];
+    steps.push(() => this.standardConsole.finish(results));
+
+    steps.push(() => new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+      try {
+        if (!program.quiet) {
+          this.logNonPassed(results.summary);
+          this.standardConsole.paddedLog("");
+        }
+
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    }));
+
+    return Bluebird.mapSeries(steps, item => item());
+  }
+
+  public sortItemsByLabel(items: LeafItem[]): LeafItem[] {
+    if (!items || items.length === 0) {
+      return [];
+    }
+
+    let maxSize = <number> _.max(_.map(items, x => x.labels.length));
+    let maxLabelLength = DefaultReporterImp.calculateMaxLabelLength(items);
+
+    return _.sortBy(items, (x: LeafItem) => this.toFailureSortKey(maxSize, maxLabelLength, x));
+  }
+
+  public toFailureSortKey(maxSize: number, maxLabelLength: number, item: LeafItem): string {
+    let maxSizeLength = maxSize.toString.length;
+    let toSortKey = (x: string) => this.util.padRight(x, maxLabelLength);
+
+    let prefix = _.map(item.labels, y => toSortKey(y)).join(" " + this.util.padRight("?", maxSizeLength, "?") + ":");
+    let suffix = " " + this.util.padRight(item.labels.length.toString(), maxSizeLength, "?") + ":" + toSortKey(item.result.label);
+
+    return prefix + suffix;
+  }
+
+  public logNonPassed(summary: plugin.TestRunSummary): void {
     let itemList: LeafItem[] = _.clone(summary.failures);
 
     if (program.showSkip) {
@@ -191,34 +124,33 @@ export class DefaultReporterImp implements PluginReporter {
     }
 
     let sortedItemList = this.sortItemsByLabel(itemList);
-    let padding = "    ";
     let context: string[] = [];
 
     for (let i = 0; i < sortedItemList.length; i++) {
       let item = sortedItemList[i];
 
       let isNotRun = false;
-      let style = this.failedStyle;
+      let style = this.decorator.failed;
 
       if (item.result.resultType === "SKIPPED") {
         isNotRun = true;
-        style = this.skipStyle;
+        style = this.decorator.skip;
       } else if (item.result.resultType === "TODO") {
         isNotRun = true;
-        style = this.todoStyle;
+        style = this.decorator.todo;
       }
 
       context = this.logLabels(item.labels, item.result.label, i + 1, context, style);
 
       if (isNotRun) {
-        this.logNotRunMessage(<TestRunLeaf<TestReportSkippedLeaf>>item, padding);
+        this.logNotRunMessage(<plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>>item);
       } else {
-        this.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>>item, padding);
+        this.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>>item);
       }
     }
   }
 
-  public logLabels(labels: string[], itemLabel: string, index: number, context: string[], itemStyle: Chalk.ChalkChain): string[] {
+  public logLabels(labels: string[], itemLabel: string, index: number, context: string[], itemStyle: (x: string) => string): string[] {
     if (labels.length === 0) {
       return context;
     }
@@ -240,139 +172,28 @@ export class DefaultReporterImp implements PluginReporter {
       }
 
       let label = labels[j];
-      this.paddedLog(this.labelStyle(labelPad + label));
+      this.standardConsole.paddedLog(this.labelStyle(labelPad + label));
       labelPad += " ";
       context.push(label);
     }
 
-    this.paddedLog("    " + index + ") " + itemStyle(itemLabel));
+    this.standardConsole.paddedLog("    " + index + ") " + itemStyle(itemLabel));
 
     return context;
   }
 
-  public logFailureMessage(item: TestRunLeaf<TestReportFailedLeaf>, padding: string): void {
-    let stdout = <{ columns: number }><{}>process.stdout;
-
-    // default to a width of 80 when process is not running in a terminal
-    let maxLength = stdout && stdout.columns ? stdout.columns - padding.length : 80;
-    let givenStyle = this.givenStyle("Given");
-
-    _.forEach(item.result.resultMessages, (resultMessage: FailureMessage) => {
-      if (resultMessage.given && resultMessage.given.length > 0) {
-        this.paddedLog("");
-        this.paddedLog("  • " + givenStyle);
-        this.logger.log(this.formatMessage("  " + resultMessage.given, padding));
-      }
-
-      this.paddedLog("");
-
-      let message = this.formatFailure(resultMessage.message, maxLength);
-      this.logger.log(this.formatMessage(message, padding));
-      this.paddedLog("");
-    });
+  public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>): void {
+    let message = this.testResultFormatter.formatFailure(item.result, this.messagePrefixPadding, this.diffMaxLength);
+    this.logger.log(message);
   }
 
-  public logNotRunMessage(item: TestRunLeaf<TestReportSkippedLeaf>, padding: string): void {
-    this.paddedLog("");
-    this.paddedLog(this.formatMessage(item.result.reason, padding));
-    this.paddedLog("");
-  }
-
-  public formatFailure(message: string, maxLength: number): string {
-    if (message.indexOf("│") === -1) {
-      return message.replace(message, "\n  " + Chalk.yellow(message) + "\n");
-    }
-
-    let lines = message.split("\n");
-
-    // remove diff lines
-    let diffRegex = /Expect.equal(Dicts|Lists|Sets)/;
-
-    if (lines.length > 5 && diffRegex.test(lines[2])) {
-      lines.splice(5, lines.length - 5);
-    }
-
-    if (lines.length !== 5) {
-      return message;
-    }
-
-    if (lines[2].indexOf("│ ") !== -1) {
-      lines[0] = "┌ " + lines[0];
-      lines[1] = lines[1].replace("╷", "│");
-      lines[3] = lines[3].replace("╵", "│");
-      lines[4] = "└ " + lines[4];
-
-      let expectMessage = lines[2].substring(2, lines[2].length);
-      lines[2] = lines[2].replace(expectMessage, Chalk.yellow(expectMessage));
-    }
-
-    let expectEqualRegex = /Expect.equal(Dicts|Lists|Sets)*/;
-
-    if (expectEqualRegex.test(lines[2])) {
-      lines = this.formatExpectEqualFailure(lines, maxLength);
-    }
-
-    return lines.join("\n");
-  }
-
-  public formatExpectEqualFailure(unprocessedLines: string[], maxLength: number): string[] {
-    let lines: Array<string | string[]> = _.clone(unprocessedLines);
-    lines.push("   ");
-
-    // remove "┌ " and "└ "
-    let left = (<string>lines[0]).substring(2);
-    let right = (<string>lines[4]).substring(2);
-    let value = this.compare.diff(left, right);
-    lines[1] = "│ " + value.left;
-    lines[5] = "  " + value.right;
-
-    lines[0] = this.chunkLine(<string>lines[0], <string>lines[1], maxLength, "┌ ", "│ ");
-    lines[1] = "";
-
-    lines[4] = this.chunkLine(<string>lines[4], <string>lines[5], maxLength, "└ ", "  ");
-    lines[5] = "";
-
-    return <string[]> _.flattenDepth(lines, 1);
-  }
-
-  public chunkLine(rawContentLine: string, rawDiffLine: string, length: number, firstPrefix: string, prefix: string): string[] {
-    let contentLine = rawContentLine.substring(firstPrefix.length - 1);
-    let diffLine = rawDiffLine.substring(firstPrefix.length - 1);
-    let size = Math.ceil(contentLine.length / length);
-    let chunks = new Array(size * 2);
-    let offset;
-    let sectionLength = length - prefix.length - 1;
-
-    chunks[0] = firstPrefix + contentLine.substring(1, sectionLength + 1);
-    chunks[1] = prefix + Chalk.red(diffLine.substring(1, sectionLength + 1));
-
-    for (let i = 1; i < size; i++) {
-      offset = (i * sectionLength) + 1;
-      chunks[i * 2] = prefix + contentLine.substring(offset, offset + sectionLength);
-      chunks[i * 2 + 1] = prefix + Chalk.red(diffLine.substring(offset, offset + sectionLength));
-    }
-
-    return chunks;
-  }
-
-  public formatMessage(rawMessage: string, padding: string): string {
-    if (!rawMessage) {
-      return "";
-    }
-
-    return padding + rawMessage.replace(/(\n)+/g, "\n" + padding);
-  }
-
-  public paddedLog(message: string): void {
-    if (!message) {
-      this.logger.log("");
-      return;
-    }
-
-    this.logger.log("  " + message);
+  public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>): void {
+    let message = this.testResultFormatter.formatNotRun(item.result, this.messagePrefixPadding);
+    this.logger.log(message);
   }
 }
 
-export function createPlugin(): PluginReporter {
-  return new DefaultReporterImp(createCompare(), console, createUtil());
+export function createPlugin(): plugin.PluginReporter {
+  return new DefaultReporterImp(console, createReporterStandardConsole(), createTestResultDecoratorConsole(),
+                                createTestResultFormatter(), createUtil());
 }

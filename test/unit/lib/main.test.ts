@@ -12,7 +12,10 @@ import {ElmPackageHelper} from "../../../lib/elm-package-helper";
 import {Logger} from "../../../lib/logger";
 import {Runner} from "../../../lib/runner";
 import {Util} from "../../../lib/util";
-import {LoboConfig, PluginReporterWithConfig, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
+import {
+  LoboConfig, PluginConfig, PluginReporterWithConfig, PluginTestFrameworkConfig,
+  PluginTestFrameworkWithConfig
+} from "../../../lib/plugin";
 
 
 let expect = chai.expect;
@@ -47,6 +50,7 @@ describe("lib main", () => {
       checkNodeVersion: Sinon.stub(),
       getPlugin: Sinon.stub(),
       getPluginConfig: Sinon.stub(),
+      isInteger: Sinon.stub(),
       padRight: Sinon.stub(),
       unsafeLoad: Sinon.stub()
     };
@@ -74,7 +78,7 @@ describe("lib main", () => {
       let actual = LoboImp.generateTestFileName();
 
       // assert
-      expect(actual).to.match(/(\/|\\)lobo-test.+\.js$/);
+      expect(actual).to.match(/([\/\\])lobo-test.+\.js$/);
     });
 
     it("should return a js file name", () => {
@@ -473,6 +477,8 @@ describe("lib main", () => {
 
     beforeEach(() => {
       (<SinonStub>mockUtil.unsafeLoad).returns({});
+      (<SinonStub>mockUtil.getPlugin).returns({});
+      (<SinonStub>mockUtil.getPluginConfig).returns({});
       revertProcess = rewiredMain.__set__({process: {argv: []}});
       mockAllowUnknownOption = Sinon.stub();
       mockOn = Sinon.stub();
@@ -644,6 +650,48 @@ describe("lib main", () => {
       expect(mockOption).to.have.been.calledWith("--watch", Sinon.match.any);
     });
 
+    it("should call loadReporterConfig with program.reporter", () => {
+      // arrange
+      (<{reporter: string}>programMocks).reporter = "foo";
+      let revert = rewiredMain.__with__({program: programMocks});
+      lobo.loadReporterConfig = Sinon.spy();
+
+      // act
+      revert(() => lobo.configure());
+
+      // assert
+      expect(lobo.loadReporterConfig).to.have.been.calledWith("foo");
+    });
+
+    it("should call loadReporter with program.reporter", () => {
+      // arrange
+      (<{reporter: string}>programMocks).reporter = "foo";
+      let revert = rewiredMain.__with__({program: programMocks});
+      lobo.loadReporter = Sinon.spy();
+
+      // act
+      revert(() => lobo.configure());
+
+      // assert
+      expect(lobo.loadReporter).to.have.been.calledWith("foo", Sinon.match.any);
+    });
+
+    it("should call loadReporter with reporter config", () => {
+      // arrange
+      let expected = {name: "foo"};
+      lobo.loadReporterConfig = Sinon.stub();
+      (<SinonStub>lobo.loadReporterConfig).returns(expected);
+      (<{reporter: string}>programMocks).reporter = "foo";
+      let revert = rewiredMain.__with__({program: programMocks});
+      lobo.loadReporter = Sinon.spy();
+
+      // act
+      revert(() => lobo.configure());
+
+      // assert
+      expect(lobo.loadReporter).to.have.been.calledWith(Sinon.match.any, expected);
+    });
+
     it("should return config with reporter set to the value returned from loadReporter", () => {
       // arrange
       let expected = <PluginReporterWithConfig> {config: {name: "foo"}};
@@ -655,6 +703,48 @@ describe("lib main", () => {
 
       // assert
       expect(actual.reporter).to.equal(expected);
+    });
+
+    it("should call loadReporterConfig with program.framework", () => {
+      // arrange
+      (<{framework: string}>programMocks).framework = "foo";
+      let revert = rewiredMain.__with__({program: programMocks});
+      lobo.loadTestFrameworkConfig = Sinon.spy();
+
+      // act
+      revert(() => lobo.configure());
+
+      // assert
+      expect(lobo.loadTestFrameworkConfig).to.have.been.calledWith("foo");
+    });
+
+    it("should call loadReporter with program.framework", () => {
+      // arrange
+      (<{framework: string}>programMocks).framework = "foo";
+      let revert = rewiredMain.__with__({program: programMocks});
+      lobo.loadTestFramework = Sinon.spy();
+
+      // act
+      revert(() => lobo.configure());
+
+      // assert
+      expect(lobo.loadTestFramework).to.have.been.calledWith("foo", Sinon.match.any);
+    });
+
+    it("should call loadReporter with testing framework config", () => {
+      // arrange
+      let expected = {name: "foo"};
+      lobo.loadTestFrameworkConfig = Sinon.stub();
+      (<SinonStub>lobo.loadTestFrameworkConfig).returns(expected);
+      (<{framework: string}>programMocks).framework = "foo";
+      let revert = rewiredMain.__with__({program: programMocks});
+      lobo.loadTestFramework = Sinon.spy();
+
+      // act
+      revert(() => lobo.configure());
+
+      // assert
+      expect(lobo.loadTestFramework).to.have.been.calledWith(Sinon.match.any, expected);
     });
 
     it("should return config with testFramework set to the value returned from loadTestFramework", () => {
@@ -910,7 +1000,7 @@ describe("lib main", () => {
       lobo.showCustomHelp();
 
       // assert
-      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith("testing framework", Sinon.match.any, Sinon.match.any);
+      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith({fileSpec: Sinon.match.any, type: "testing framework"}, Sinon.match.any);
     });
 
     it("should call showCustomHelpForPlugins with 'test-plugin'", () => {
@@ -921,7 +1011,7 @@ describe("lib main", () => {
       lobo.showCustomHelp();
 
       // assert
-      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith(Sinon.match.any, "test-plugin", Sinon.match.any);
+      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith({fileSpec: "test-plugin", type: Sinon.match.any}, Sinon.match.any);
     });
 
     it("should call showCustomHelpForPlugins with max option length of 29", () => {
@@ -932,7 +1022,7 @@ describe("lib main", () => {
       lobo.showCustomHelp();
 
       // assert
-      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 29);
+      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith(Sinon.match.any, 29);
     });
 
     it("should call showCustomHelpForPlugins with 'testing framework'", () => {
@@ -943,7 +1033,7 @@ describe("lib main", () => {
       lobo.showCustomHelp();
 
       // assert
-      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith("reporter", Sinon.match.any, Sinon.match.any);
+      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith({fileSpec: Sinon.match.any, type: "reporter"}, Sinon.match.any);
     });
 
     it("should call showCustomHelpForPlugins with 'test-plugin'", () => {
@@ -954,17 +1044,17 @@ describe("lib main", () => {
       lobo.showCustomHelp();
 
       // assert
-      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith(Sinon.match.any, "reporter-plugin", Sinon.match.any);
+      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith({fileSpec: "reporter-plugin", type: Sinon.match.any}, Sinon.match.any);
     });
   });
 
   describe("showCustomHelpForPlugins", () => {
     it("should get the available plugins from calling util.availablePlugins with the supplied file spec", () => {
       // act
-      lobo.showCustomHelpForPlugins("foo", "bar", 123);
+      lobo.showCustomHelpForPlugins({fileSpec: "foo", type: "bar"}, 123);
 
       // assert
-      expect(mockUtil.availablePlugins).to.have.been.calledWith("bar");
+      expect(mockUtil.availablePlugins).to.have.been.calledWith("foo");
     });
 
     it("should get the config for each available plugin by calling util.getPluginConfig with the plugin name", () => {
@@ -972,8 +1062,7 @@ describe("lib main", () => {
       (<SinonStub>mockUtil.availablePlugins).returns(["abc", "def"]);
 
       // act
-      lobo.showCustomHelpForPlugins("foo", "bar", 123);
-
+      lobo.showCustomHelpForPlugins({fileSpec: "foo", type: "bar"}, 123);
 
       // assert
       expect(mockUtil.getPluginConfig).to.have.been.calledWith(Sinon.match.any, "abc", Sinon.match.any);
@@ -985,11 +1074,10 @@ describe("lib main", () => {
       (<SinonStub>mockUtil.availablePlugins).returns(["abc", "def"]);
 
       // act
-      lobo.showCustomHelpForPlugins("foo", "bar", 123);
-
+      lobo.showCustomHelpForPlugins({fileSpec: "foo", type: "bar"}, 123);
 
       // assert
-      expect(mockUtil.getPluginConfig).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any);
+      expect(mockUtil.getPluginConfig).to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any);
     });
 
     it("should get the config for each available plugin by calling util.getPluginConfig with the file spec", () => {
@@ -997,11 +1085,10 @@ describe("lib main", () => {
       (<SinonStub>mockUtil.availablePlugins).returns(["abc", "def"]);
 
       // act
-      lobo.showCustomHelpForPlugins("foo", "bar", 123);
-
+      lobo.showCustomHelpForPlugins({fileSpec: "foo", type: "bar"}, 123);
 
       // assert
-      expect(mockUtil.getPluginConfig).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "bar");
+      expect(mockUtil.getPluginConfig).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "foo");
     });
 
     it("should log the config.options for each available plugin", () => {
@@ -1011,7 +1098,7 @@ describe("lib main", () => {
       (<SinonStub>mockUtil.padRight).callsFake(x => x + " ");
 
       // act
-      lobo.showCustomHelpForPlugins("foo", "bar", 123);
+      lobo.showCustomHelpForPlugins({fileSpec: "foo", type: "bar"}, 123);
 
       // assert
       expect(mockLogger.info).to.have.been.calledWith(Sinon.match(/def.*ghi/));
@@ -1019,6 +1106,10 @@ describe("lib main", () => {
   });
 
   describe("validateConfiguration", () => {
+    beforeEach(() => {
+      (<SinonStub>mockUtil.isInteger).returns(true);
+    });
+
     it("should log an error when the elm compiler cannot be found", () => {
       // arrange
       let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar"}, shelljs: {test: () => false}});
@@ -1097,164 +1188,282 @@ describe("lib main", () => {
       // assert
       expect(mockExit).to.have.been.calledWith(1);
     });
+
+    it("should log an error when the reporter is junit and reportFile is unset", () => {
+      // arrange
+      let revert = rewiredMain.__with__({program: {reporter: "junit-reporter", reportFile: undefined}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockLogger.error).to.have.been.calledWith("Missing mandatory configuration option");
+    });
+
+    it("should not log an error when the reporter is junit and reportFile has a value", () => {
+      // arrange
+      let revert = rewiredMain.__with__({program: {reporter: "junit-reporter", reportFile: "foo"}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockLogger.error).not.to.have.been.calledWith("Missing mandatory configuration option");
+    });
+
+    it("should call process.exit with an exitCode of 1 when the reporter is junit and reportFile is unset", () => {
+      // arrange
+      let revert = rewiredMain.__with__({program: {reporter: "junit-reporter", reportFile: undefined}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockExit).to.have.been.calledWith(1);
+    });
+
+    it("should log an error when the reporter is junit and diffMaxLength is not an integer", () => {
+      // arrange
+      (<SinonStub>mockUtil.isInteger).returns(false);
+      let revert = rewiredMain.__with__({program: {reporter: "junit-reporter", reportFile: "foo", diffMaxLength: "bar"}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockLogger.error).to.have.been.calledWith("Invalid configuration option");
+    });
+
+    it("should not log an error when the reporter is junit and diffMaxLength is an integer", () => {
+      // arrange
+      (<SinonStub>mockUtil.isInteger).returns(true);
+      let revert = rewiredMain.__with__({program: {reporter: "junit-reporter", reportFile: "foo", diffMaxLength: "122"}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockLogger.error).not.to.have.been.calledWith("Invalid configuration option");
+    });
+
+    it("should call process.exit with an exitCode of 1 when the reporter is junit and diffMaxLength is not an integer", () => {
+      // arrange
+      (<SinonStub>mockUtil.isInteger).returns(false);
+      let revert = rewiredMain.__with__({program: {reporter: "junit-reporter", reportFile: "foo", diffMaxLength: "122"}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockExit).to.have.been.calledWith(1);
+    });
   });
 
   describe("loadReporter", () => {
     it("should call loadPlugin with a type of 'reporter'", () => {
       // arrange
-      lobo.loadPlugin = Sinon.spy();
+      let config = <PluginConfig> {name: "bar"};
+      (<SinonStub>mockUtil.getPlugin).returns({});
 
       // act
-      lobo.loadReporter();
+      lobo.loadReporter("foo", config);
 
       // assert
-      expect(lobo.loadPlugin).to.have.been.calledWith("reporter", Sinon.match.any, Sinon.match.any);
+      expect(mockUtil.getPlugin).to.have.been.calledWith("reporter", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call loadPlugin with the program.reporter", () => {
       // arrange
-      let revert = rewiredMain.__with__({program: {reporter: "foo"}});
-      lobo.loadPlugin = Sinon.spy();
+      let config = <PluginConfig> {name: "bar"};
+      (<SinonStub>mockUtil.getPlugin).returns({});
 
       // act
-      revert(() => lobo.loadReporter());
+      lobo.loadReporter("foo", config);
 
       // assert
-      expect(lobo.loadPlugin).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any);
+      expect(mockUtil.getPlugin).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any);
     });
 
     it("should call loadPlugin with a file spec of 'reporter-plugin'", () => {
       // arrange
-      lobo.loadPlugin = Sinon.spy();
+      let config = <PluginConfig> {name: "bar"};
+      (<SinonStub>mockUtil.getPlugin).returns({});
 
       // act
-      lobo.loadReporter();
+      lobo.loadReporter("foo", config);
 
       // assert
-      expect(lobo.loadPlugin).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "reporter-plugin");
+      expect(mockUtil.getPlugin).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "reporter-plugin");
     });
 
     it("should return the loaded reporter plugin", () => {
       // arrange
-      let expected = <PluginReporterWithConfig> {config: {name: "foo"}};
-      lobo.loadPlugin = Sinon.stub();
-      (<SinonStub>lobo.loadPlugin).returns(expected);
+      let config = <PluginConfig> {name: "bar"};
+      let expected = <PluginReporterWithConfig> {};
+      (<SinonStub>mockUtil.getPlugin).returns(expected);
 
       // act
-      let actual = lobo.loadReporter();
+      let actual = lobo.loadReporter("foo", config);
 
       // assert
       expect(actual).to.equal(expected);
+      expect(actual.config).to.equal(config);
     });
   });
 
   describe("loadTestFramework", () => {
-    it("should call loadPlugin with a type of 'testing framework'", () => {
+    it("should call getPlugin with a type of 'testing framework'", () => {
       // arrange
-      lobo.loadPlugin = Sinon.spy();
+      let config = <PluginTestFrameworkConfig> {name: "bar"};
+      (<SinonStub>mockUtil.getPlugin).returns({});
 
       // act
-      lobo.loadTestFramework();
+      lobo.loadTestFramework("foo", config);
 
       // assert
-      expect(lobo.loadPlugin).to.have.been.calledWith("testing framework", Sinon.match.any, Sinon.match.any);
+      expect(mockUtil.getPlugin).to.have.been.calledWith("testing framework", Sinon.match.any, Sinon.match.any);
     });
 
-    it("should call loadPlugin with the program.framework", () => {
+    it("should call getPlugin with the supplied pluginName", () => {
       // arrange
-      let revert = rewiredMain.__with__({program: {framework: "foo"}});
-      lobo.loadPlugin = Sinon.spy();
+      let config = <PluginTestFrameworkConfig> {name: "bar"};
+      (<SinonStub>mockUtil.getPlugin).returns({});
 
       // act
-      revert(() => lobo.loadTestFramework());
+      lobo.loadTestFramework("foo", config);
 
       // assert
-      expect(lobo.loadPlugin).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any);
+      expect(mockUtil.getPlugin).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any);
     });
 
-    it("should call loadPlugin with a file spec of 'test-plugin'", () => {
+    it("should call getPlugin with a file spec of 'test-plugin'", () => {
       // arrange
-      lobo.loadPlugin = Sinon.spy();
+      let config = <PluginTestFrameworkConfig> {name: "bar"};
+      (<SinonStub>mockUtil.getPlugin).returns({});
 
       // act
-      lobo.loadTestFramework();
+      lobo.loadTestFramework("foo", config);
 
       // assert
-      expect(lobo.loadPlugin).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "test-plugin");
+      expect(mockUtil.getPlugin).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "test-plugin");
     });
 
     it("should return the loaded test plugin", () => {
       // arrange
-      let expected = <PluginTestFrameworkWithConfig> {config: {name: "foo"}};
-      lobo.loadPlugin = Sinon.stub();
-      (<SinonStub>lobo.loadPlugin).returns(expected);
+      let expected = <PluginTestFrameworkWithConfig> {};
+      let config = <PluginTestFrameworkConfig> {name: "bar"};
+      (<SinonStub>mockUtil.getPlugin).returns(expected);
 
       // act
-      let actual = lobo.loadTestFramework();
+      let actual = lobo.loadTestFramework("foo", config);
 
       // assert
       expect(actual).to.equal(expected);
+      expect(actual.config).to.equal(config);
     });
   });
 
-  describe("loadPlugin", () => {
+  describe("loadPluginConfig", () => {
     it("should call util.getPlugin with the supplied type", () => {
       // act
-      lobo.loadPlugin("foo", "bar", "baz");
+      lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz");
 
       // assert
-      expect(mockUtil.getPlugin).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any);
+      expect(mockUtil.getPluginConfig).to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call util.getPlugin with the supplied pluginName", () => {
       // act
-      lobo.loadPlugin("foo", "bar", "baz");
+      lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz");
 
       // assert
-      expect(mockUtil.getPlugin).to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any);
+      expect(mockUtil.getPluginConfig).to.have.been.calledWith(Sinon.match.any, "baz", Sinon.match.any);
     });
 
     it("should call util.getPlugin with the supplied fileSpec", () => {
       // act
-      lobo.loadPlugin("foo", "bar", "baz");
+      lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz");
 
       // assert
-      expect(mockUtil.getPlugin).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz");
+      expect(mockUtil.getPluginConfig).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "foo");
     });
 
     it("should return the plugin loaded by util.getPlugin", () => {
       // arrange
-      let expected = {config: {name: "abc"}};
-      (<SinonStub>mockUtil.getPlugin).returns(expected);
+      let expected = {name: "abc"};
+      (<SinonStub>mockUtil.getPluginConfig).returns(expected);
 
       // act
-      let actual = lobo.loadPlugin("foo", "bar", "baz");
+      let actual = lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz");
 
       // assert
       expect(actual).to.equal(expected);
     });
 
-    it("should add the plugin options to the program options", () => {
+    it("should add the plugin options to the program option flags", () => {
       // arrange
-      let expected = {config: {name: "abc", options: [{flags: "def", description: "ghi"}]}};
-      (<SinonStub>mockUtil.getPlugin).returns(expected);
+      let expected = {name: "abc", options: [{flags: "def", description: "ghi"}]};
+      (<SinonStub>mockUtil.getPluginConfig).returns(expected);
       let mockOption = Sinon.stub();
       let revert = rewiredMain.__with__({program: {option: mockOption}});
 
       // act
-      revert(() => lobo.loadPlugin("foo", "bar", "baz"));
+      revert(() => lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz"));
 
       // assert
-      expect(mockOption).to.have.been.calledWith("def", "ghi");
+      expect(mockOption).to.have.been.calledWith("def", Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should add the plugin options to the program option description", () => {
+      // arrange
+      let expected = {name: "abc", options: [{flags: "def", description: "ghi"}]};
+      (<SinonStub>mockUtil.getPluginConfig).returns(expected);
+      let mockOption = Sinon.stub();
+      let revert = rewiredMain.__with__({program: {option: mockOption}});
+
+      // act
+      revert(() => lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz"));
+
+      // assert
+      expect(mockOption).to.have.been.calledWith(Sinon.match.any, "ghi", Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should add the plugin options to the program option parser", () => {
+      // arrange
+      let mockParser = Sinon.stub();
+      let expected = {name: "abc", options: [{flags: "def", description: "ghi", parser: mockParser}]};
+      (<SinonStub>mockUtil.getPluginConfig).returns(expected);
+      let mockOption = Sinon.stub();
+      let revert = rewiredMain.__with__({program: {option: mockOption}});
+
+      // act
+      revert(() => lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz"));
+
+      // assert
+      expect(mockOption).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, mockParser, Sinon.match.any);
+    });
+
+    it("should add the plugin options to the program option default value", () => {
+      // arrange
+      let expected = {name: "abc", options: [{flags: "def", description: "ghi", defaultValue: 123}]};
+      (<SinonStub>mockUtil.getPluginConfig).returns(expected);
+      let mockOption = Sinon.stub();
+      let revert = rewiredMain.__with__({program: {option: mockOption}});
+
+      // act
+      revert(() => lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz"));
+
+      // assert
+      expect(mockOption).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, 123);
     });
 
     it("should log an error when the plugin option does not have a flags property", () => {
       // arrange
-      let expected = {config: {name: "abc", options: [{description: "ghi"}]}};
-      (<SinonStub>mockUtil.getPlugin).returns(expected);
+      let expected = {name: "abc", options: [{description: "ghi"}]};
+      (<SinonStub>mockUtil.getPluginConfig).returns(expected);
 
       // act
-      lobo.loadPlugin("foo", "bar", "baz");
+      lobo.loadPluginConfig({fileSpec: "foo", type: "bar"}, "baz");
 
       // assert
       expect(mockLogger.error).to.have.been.called;

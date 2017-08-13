@@ -240,6 +240,7 @@ The following options are supported elm-test-extra:
 The following reporters are supported:
 * default reporter
 * JSON reporter
+* JUnit reporter
 
 ### Default Reporter
 The default reporter displays a summary of the test run followed by
@@ -261,6 +262,19 @@ This option is ignored when the quiet option is present
 The JSON reporter outputs the progress and run details as JSON. This
 reporter is generally only useful when integrating lobo with other
 tools.
+
+The following options are supported by the JSON reporter:
+* reportFile - save the output to the specified file
+
+### JUnit Reporter
+The JUnit reporter outputs progress and summary to the console and
+details of the test run to the specified report file. This
+reporter is mainly useful when integrating lobo with other build tools.
+
+The following options are supported by the JUnit reporter:
+* diffMaxLength - the max length of diffed failure messages; defaults to
+150 characters
+* reportFile - the path to save the test run report to
 
 ## Troubleshooting
 
