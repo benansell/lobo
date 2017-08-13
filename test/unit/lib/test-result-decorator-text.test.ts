@@ -3,26 +3,26 @@
 import * as chai from "chai";
 import rewire = require("rewire");
 import * as SinonChai from "sinon-chai";
-import {createTestResultDecoratorJUnit, TestResultDecoratorJUnitImp} from "../../../../plugin/junit-reporter/test-result-decorator-junit";
-import {TestResultDecorator} from "../../../../lib/plugin";
+import { createTestResultDecoratorText,   TestResultDecoratorTextImp } from "../../../lib/test-result-decorator-text";
+import {TestResultDecorator} from "../../../lib/plugin";
 
 let expect = chai.expect;
 chai.use(SinonChai);
 
-describe("plugin junit-reporter test-result-decorator-junit", () => {
-  let RewiredDecorator = rewire("../../../../plugin/junit-reporter/test-result-decorator-junit");
+describe("lib test-result-decorator-text", () => {
+  let RewiredDecorator = rewire("../../../lib/test-result-decorator-text");
   let rewiredImp;
-  let decorator: TestResultDecoratorJUnitImp;
+  let decorator: TestResultDecoratorTextImp;
 
   beforeEach(() => {
-    rewiredImp = RewiredDecorator.__get__("TestResultDecoratorJUnitImp");
+    rewiredImp = RewiredDecorator.__get__("TestResultDecoratorTextImp");
     decorator = new rewiredImp();
   });
 
-  describe("createTestResultDecoratorJUnit", () => {
+  describe("createTestResultDecoratorText", () => {
     it("should return reporter", () => {
       // act
-      let actual: TestResultDecorator = createTestResultDecoratorJUnit();
+      let actual: TestResultDecorator = createTestResultDecoratorText();
 
       // assert
       expect(actual).to.exist;
@@ -104,112 +104,112 @@ describe("plugin junit-reporter test-result-decorator-junit", () => {
   });
 
   describe("bulletPoint", () => {
-    it("should be &bullet;", () => {
+    it("should be •", () => {
       // act
       let actual = decorator.bulletPoint();
 
       // assert
-      expect(actual).to.equal("&bullet;");
+      expect(actual).to.equal("•");
     });
   });
 
   describe("verticalBarEnd", () => {
-    it("should be &boxur;", () => {
+    it("should be └", () => {
       // act
       let actual = decorator.verticalBarEnd();
 
       // assert
-      expect(actual).to.equal("&boxur;");
+      expect(actual).to.equal("└");
     });
   });
 
   describe("verticalBarMiddle", () => {
-    it("should be &boxv;", () => {
+    it("should be │", () => {
       // act
       let actual = decorator.verticalBarMiddle();
 
       // assert
-      expect(actual).to.equal("&boxv;");
+      expect(actual).to.equal("│");
     });
   });
 
   describe("verticalBarStart", () => {
-    it("should be &boxdr;", () => {
+    it("should be ┌", () => {
       // act
       let actual = decorator.verticalBarStart();
 
       // assert
-      expect(actual).to.equal("&boxdr;");
+      expect(actual).to.equal("┌");
     });
   });
   
   describe("diff", () => {
-    it("should return value styled with red span", () => {
+    it("should return value unaltered", () => {
       // act
       let actual  = decorator.diff("foo");
 
       // assert
-      expect(actual).to.equal("<span style=\"color:red\">foo<\/span>");
+      expect(actual).to.equal("foo");
     });
   });
 
   describe("expect", () => {
-    it("should return value styled with goldenrod span", () => {
+    it("should return value unaltered", () => {
       // act
       let actual  = decorator.expect("foo");
 
       // assert
-      expect(actual).to.equal("<span style=\"color:goldenrod\">foo<\/span>");
+      expect(actual).to.equal("foo");
     });
   });
 
   describe("failed", () => {
-    it("should return value styled with red span", () => {
+    it("should return value unaltered", () => {
       // act
       let actual  = decorator.failed("foo");
 
       // assert
-      expect(actual).to.equal("<span style=\"color:red\">foo<\/span>");
+      expect(actual).to.equal("foo");
     });
   });
 
   describe("line", () => {
-    it("should return value in a span", () => {
+    it("should return value unaltered", () => {
       // act
       let actual  = decorator.line("foo");
 
       // assert
-      expect(actual).to.equal("<span>foo<\/span>");
+      expect(actual).to.equal("foo");
     });
   });
 
   describe("given", () => {
-    it("should return value styled with goldenrod span", () => {
+    it("should return value unaltered", () => {
       // act
       let actual  = decorator.given("foo");
 
       // assert
-      expect(actual).to.equal("<span style=\"color:goldenrod\">foo<\/span>");
+      expect(actual).to.equal("foo");
     });
   });
 
   describe("inconclusive", () => {
-    it("should return value styled with goldenrod span", () => {
+    it("should return value unaltered", () => {
       // act
       let actual  = decorator.inconclusive("foo");
 
       // assert
-      expect(actual).to.equal("<span style=\"color:goldenrod\">foo<\/span>");
+      expect(actual).to.equal("foo");
     });
   });
 
   describe("passed", () => {
-    it("should return value styled with green span", () => {
+    it("should return value unaltered", () => {
       // act
       let actual  = decorator.passed("foo");
 
       // assert
-      expect(actual).to.equal("<span style=\"color:green\">foo<\/span>");
+      expect(actual).to.equal("foo");
     });
   });
 });

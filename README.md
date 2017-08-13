@@ -274,6 +274,8 @@ reporter is mainly useful when integrating lobo with other build tools.
 The following options are supported by the JUnit reporter:
 * diffMaxLength - the max length of diffed failure messages; defaults to
 150 characters
+* junitFormat - the formatting applied to failure messages - text or
+html; defaults to text
 * reportFile - the path to save the test run report to
 
 ## Troubleshooting

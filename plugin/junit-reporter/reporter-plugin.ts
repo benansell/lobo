@@ -6,9 +6,12 @@ import * as os from "os";
 import * as plugin from "../../lib/plugin";
 import {WriteStream} from "fs";
 import {createTestResultDecoratorConsole} from "../../lib/test-result-decorator-console";
-import {createTestResultDecoratorJUnit} from "./test-result-decorator-junit";
+import {createTestResultDecoratorHtml} from "../../lib/test-result-decorator-html";
+import {createTestResultDecoratorText} from "../../lib/test-result-decorator-text";
 import {createTestResultFormatter, TestResultFormatter} from "../../lib/test-result-formatter";
 import {createReporterStandardConsole, ReporterStandardConsole} from "../../lib/reporter-standard-console";
+
+type JUnitFormat = "console" | "html";
 
 export interface MeasuredNode extends plugin.TestReportNode {
   failedCount: number;
@@ -24,10 +27,12 @@ type WriteLine  = (line: string) => void;
 export class JUnitReporter implements plugin.PluginReporter {
 
   private consoleFormatter: TestResultFormatter;
+  private htmlFormatter: TestResultFormatter;
+  private textFormatter: TestResultFormatter;
   private standardConsole: ReporterStandardConsole;
-  private junitFormatter: TestResultFormatter;
   private logger: plugin.PluginReporterLogger;
   private diffMaxLength: number;
+  private junitFormat: JUnitFormat;
   private paddingUnit: string;
 
   public static getDurationSecondsFrom(node: {startTime?: number, endTime?: number}): number {
@@ -41,14 +46,16 @@ export class JUnitReporter implements plugin.PluginReporter {
   }
 
   constructor(logger: plugin.PluginReporterLogger, paddingUnit: string, standardConsole: ReporterStandardConsole,
-              consoleFormatter: TestResultFormatter, junitFormatter: TestResultFormatter) {
+              consoleFormatter: TestResultFormatter, htmlFormatter: TestResultFormatter, textFormatter: TestResultFormatter) {
     this.logger = logger;
     this.paddingUnit = paddingUnit;
     this.standardConsole = standardConsole;
     this.consoleFormatter = consoleFormatter;
-    this.junitFormatter = junitFormatter;
+    this.htmlFormatter = htmlFormatter;
+    this.textFormatter = textFormatter;
 
     this.diffMaxLength = program.diffMaxLength;
+    this.junitFormat = program.junitFormat;
   }
 
   public build(summary: plugin.TestRunSummary): MeasuredNode {
@@ -199,16 +206,33 @@ export class JUnitReporter implements plugin.PluginReporter {
   public writeFailure(writeLine: WriteLine, parentLabel: string, leaf: plugin.TestReportFailedLeaf, padding: string): void {
     writeLine(`${padding}<testcase name="${leaf.label}" time="${JUnitReporter.getDurationSecondsFrom(leaf)}" `
       + ` classname="${parentLabel}">`);
-    let message = this.junitFormatter.formatFailure(leaf, "", this.diffMaxLength);
+
     writeLine(`${padding}${this.paddingUnit}<failure>`);
+
+    if (this.junitFormat === "html") {
+      this.writeFailureAsHtml(writeLine, leaf, padding);
+    } else {
+      this.writeFailureAsText(writeLine, leaf, padding);
+    }
+
+    writeLine(`${padding}${this.paddingUnit}</failure>`);
+    writeLine(`${padding}</testcase>`);
+  }
+
+  public writeFailureAsText(writeLine: WriteLine, leaf: plugin.TestReportFailedLeaf, padding: string): void {
+    let message = this.textFormatter.formatFailure(leaf, "", this.diffMaxLength);
+    writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}${message}`);
+  }
+
+  public writeFailureAsHtml(writeLine: WriteLine, leaf: plugin.TestReportFailedLeaf, padding: string): void {
+    let message = this.htmlFormatter.formatFailure(leaf, "", this.diffMaxLength);
+
     writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}<![CDATA[`);
     writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}${this.paddingUnit}<pre style="overflow:auto">`);
     writeLine(`<code style="display:inline-block; line-height:1">${message}`);
     writeLine(`</code>`);
     writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}${this.paddingUnit}</pre>`);
     writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}]]>`);
-    writeLine(`${padding}${this.paddingUnit}</failure>`);
-    writeLine(`${padding}</testcase>`);
   }
 
   public writeIgnored(writeLine: WriteLine, parentLabel: string, leaf: plugin.TestReportIgnoredLeaf, padding: string): void {
@@ -255,7 +279,7 @@ export class JUnitReporter implements plugin.PluginReporter {
         let writeLine = this.createLineWriter(stream);
         this.writeResult(writeLine, measuredRoot);
         stream.end(null, () => {
-          this.logger.log("JUnit Report Successfully written to: " + reportPath);
+          this.logger.log("JUnit report successfully written to: " + reportPath);
           this.logger.log("");
           resolve();
         });
@@ -272,7 +296,8 @@ export class JUnitReporter implements plugin.PluginReporter {
 
 export function createPlugin(): plugin.PluginReporter {
   let consoleFormatter = createTestResultFormatter(createTestResultDecoratorConsole());
-  let junitFormatter = createTestResultFormatter(createTestResultDecoratorJUnit());
+  let htmlFormatter = createTestResultFormatter(createTestResultDecoratorHtml());
+  let textFormatter = createTestResultFormatter(createTestResultDecoratorText());
 
-  return new JUnitReporter(console, "  ", createReporterStandardConsole(), consoleFormatter, junitFormatter);
+  return new JUnitReporter(console, "  ", createReporterStandardConsole(), consoleFormatter, htmlFormatter, textFormatter);
 }
