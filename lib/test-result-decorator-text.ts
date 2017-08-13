@@ -1,7 +1,7 @@
 import * as program from "commander";
-import * as plugin from "../../lib/plugin";
+import * as plugin from "./plugin";
 
-export class TestResultDecoratorJUnitImp implements plugin.TestResultDecorator {
+export class TestResultDecoratorTextImp implements plugin.TestResultDecorator {
 
   public only: (value: string) => string;
   public skip: (value: string) => string;
@@ -14,51 +14,51 @@ export class TestResultDecoratorJUnitImp implements plugin.TestResultDecorator {
   }
 
   public bulletPoint(): string {
-    return "&bullet;";
+    return "•";
   }
 
   public diff(value: string): string {
-    return `<span style="color:red">${value}</span>`;
+    return value;
   }
 
   public expect(value: string): string {
-    return `<span style="color:goldenrod">${value}</span>`;
+    return value;
   }
 
   public failed(value: string): string {
-    return `<span style="color:red">${value}</span>`;
+    return value;
   }
 
   public line(line: string): string {
-   return `<span>${line}</span>`;
+    return line;
   }
 
   public given(value: string): string {
-    return `<span style="color:goldenrod">${value}</span>`;
+    return value;
   }
 
   public inconclusive(value: string): string {
-    return `<span style="color:goldenrod">${value}</span>`;
+    return value;
   }
 
   public passed(value: string): string {
-    return `<span style="color:green">${value}</span>`;
+    return value;
   }
 
   public verticalBarEnd(): string {
-    return "&boxur;";
+    return "└";
   }
 
   public verticalBarMiddle(): string {
-    return "&boxv;";
+    return "│";
   }
 
   public verticalBarStart(): string {
-    return "&boxdr;";
+    return "┌";
   }
 }
 
-export function createTestResultDecoratorJUnit(): plugin.TestResultDecorator {
-  return new TestResultDecoratorJUnitImp();
+export function createTestResultDecoratorText(): plugin.TestResultDecorator {
+  return new TestResultDecoratorTextImp();
 }
 

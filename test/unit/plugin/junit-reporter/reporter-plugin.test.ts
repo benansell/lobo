@@ -27,7 +27,8 @@ describe("plugin junit-reporter reporter-plugin", () => {
   let mockLogger: { log(message: string): void };
   let mockStandardConsole: ReporterStandardConsole;
   let mockConsoleFormatter: TestResultFormatter;
-  let mockJUnitFormatter: TestResultFormatter;
+  let mockHtmlFormatter: TestResultFormatter;
+  let mockTextFormatter: TestResultFormatter;
   let mockCreateWriteStream: SinonStub;
   let mockWriteLine: SinonStub;
 
@@ -43,9 +44,10 @@ describe("plugin junit-reporter reporter-plugin", () => {
       update: Sinon.stub()
     };
     mockConsoleFormatter = <TestResultFormatter><{}>{ formatUpdate: Sinon.stub() };
-    mockJUnitFormatter = <TestResultFormatter><{}>{ formatFailure: Sinon.stub() };
+    mockHtmlFormatter = <TestResultFormatter><{}>{ formatFailure: Sinon.stub() };
+    mockTextFormatter = <TestResultFormatter><{}>{ formatFailure: Sinon.stub() };
     mockWriteLine = Sinon.stub();
-    reporter = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockJUnitFormatter);
+    reporter = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
   });
 
   describe("createPlugin", () => {
@@ -65,11 +67,11 @@ describe("plugin junit-reporter reporter-plugin", () => {
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
 
       // act
-      let actual = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockJUnitFormatter);
+      let actual = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
       actual.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
 
       // assert
-      expect(mockJUnitFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
+      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
     });
   });
 
@@ -844,7 +846,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       let mockFormatFailure = Sinon.stub();
       mockFormatFailure.returns("baz");
-      mockJUnitFormatter.formatFailure = mockFormatFailure;
+      mockHtmlFormatter.formatFailure = mockFormatFailure;
       
       // act
       reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
@@ -853,93 +855,34 @@ describe("plugin junit-reporter reporter-plugin", () => {
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<failure>/));
     });
 
-    it("should call writeLine with the start of a cdata section", () => {
+    it("should call writeFailureAsHtml with failure node when junitFormat is html", () => {
       // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockJUnitFormatter.formatFailure = mockFormatFailure;
+      RewiredPlugin.__set__({ program: { junitFormat: "html" }});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      rep.writeFailureAsHtml = Sinon.spy();
+      let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
+      rep.writeFailure(mockWriteLine, "foo", expected, "::");
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<!\[CDATA\[/));
+      expect(rep.writeFailureAsHtml).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
     });
 
-    it("should call writeLine for the end cdata section", () => {
-      // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/]]>/));
-    });
-
-    it("should call writeLine with the message in a pre styled with overflow:auto", () => {
+    it("should call writeFailureAsText with failure node when junitFormat is html", () => {
       // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockJUnitFormatter.formatFailure = mockFormatFailure;
+      RewiredPlugin.__set__({ program: { junitFormat: "text" }});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      rep.writeFailureAsText = Sinon.spy();
+      let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
+      rep.writeFailure(mockWriteLine, "foo", expected, "::");
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<pre style=".*overflow:auto.*">/));
-    });
-
-    it("should call writeLine for the end pre node", () => {
-      // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/pre>/));
-    });
-
-    it("should call writeLine with the message in a code styled with display:inline-block", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockJUnitFormatter.formatFailure = mockFormatFailure;
-
-      // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*display:inline-block.*">/));
-    });
-
-    it("should call writeLine with the message in a code styled with line-height:1", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockJUnitFormatter.formatFailure = mockFormatFailure;
-
-      // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*line-height:1.*">/));
-    });
-
-    it("should call writeLine with the message in a code block", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockJUnitFormatter.formatFailure = mockFormatFailure;
-
-      // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*">baz/));
-    });
-
-    it("should call writeLine for the end code node", () => {
-      // act
-      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/code>/));
+      expect(rep.writeFailureAsText).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
     });
 
     it("should call writeLine for the end failure node", () => {
@@ -951,6 +894,176 @@ describe("plugin junit-reporter reporter-plugin", () => {
     });
   });
 
+  describe("writeFailureAsText", () => {
+    it("should call formatFailure with the supplied leaf", () => {
+      // arrange
+      let expected = <TestReportFailedLeaf> {label: "bar"};
+
+      // act
+      reporter.writeFailureAsText(mockWriteLine, expected, "::");
+
+      // assert
+      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call formatFailure with empty padding", () => {
+      // act
+      reporter.writeFailureAsText(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
+    });
+
+    it("should call formatFailure with diffMaxLength", () => {
+      // arrange
+      RewiredPlugin.__set__({ program: { diffMaxLength: 123 }});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.writeFailureAsText(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
+    });
+
+    it("should call writeLine with the message from textFormatter", () => {
+      // arrange
+      let mockFormatFailure = Sinon.stub();
+      mockFormatFailure.returns("baz");
+      mockTextFormatter.formatFailure = mockFormatFailure;
+
+      // act
+      reporter.writeFailureAsText(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/baz/));
+    });
+  });
+
+  describe("writeFailureAsHtml", () => {
+    it("should call formatFailure with the supplied leaf", () => {
+      // arrange
+      let expected = <TestReportFailedLeaf> {label: "bar"};
+
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, expected, "::");
+
+      // assert
+      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call formatFailure with empty padding", () => {
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
+    });
+
+    it("should call formatFailure with diffMaxLength", () => {
+      // arrange
+      RewiredPlugin.__set__({ program: { diffMaxLength: 123 }});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
+    });
+
+    it("should call writeLine with the start of a cdata section", () => {
+      // arrange
+      let mockFormatFailure = Sinon.stub();
+      mockFormatFailure.returns("baz");
+      mockHtmlFormatter.formatFailure = mockFormatFailure;
+
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<!\[CDATA\[/));
+    });
+
+    it("should call writeLine for the end cdata section", () => {
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/]]>/));
+    });
+
+    it("should call writeLine with the message in a pre styled with overflow:auto", () => {
+      // arrange
+      let mockFormatFailure = Sinon.stub();
+      mockFormatFailure.returns("baz");
+      mockHtmlFormatter.formatFailure = mockFormatFailure;
+
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<pre style=".*overflow:auto.*">/));
+    });
+
+    it("should call writeLine for the end pre node", () => {
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/pre>/));
+    });
+
+    it("should call writeLine with the message in a code styled with display:inline-block", () => {
+      // arrange
+      let mockFormatFailure = Sinon.stub();
+      mockFormatFailure.returns("baz");
+      mockHtmlFormatter.formatFailure = mockFormatFailure;
+
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*display:inline-block.*">/));
+    });
+
+    it("should call writeLine with the message in a code styled with line-height:1", () => {
+      // arrange
+      let mockFormatFailure = Sinon.stub();
+      mockFormatFailure.returns("baz");
+      mockHtmlFormatter.formatFailure = mockFormatFailure;
+
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*line-height:1.*">/));
+    });
+
+    it("should call writeLine with the message in a code block", () => {
+      // arrange
+      let mockFormatFailure = Sinon.stub();
+      mockFormatFailure.returns("baz");
+      mockHtmlFormatter.formatFailure = mockFormatFailure;
+
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*">baz/));
+    });
+
+    it("should call writeLine for the end code node", () => {
+      // act
+      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/code>/));
+    });
+  });
+  
   describe("writeIgnored", () => {
     it("should call writeLine for the testcase node with name attribute value from the label", () => {
       // act

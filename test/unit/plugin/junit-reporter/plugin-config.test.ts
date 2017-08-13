@@ -32,6 +32,22 @@ describe("plugin junit-reporter plugin-config", () => {
       expect(options).to.include.something.that.property("defaultValue", 150);
     });
 
+    it("should have optional '--junitFormat' option", () => {
+      // act'
+      let options = config.options;
+
+      // assert
+      expect(options).to.include.something.that.property("flags", "--junitFormat [value]");
+    });
+
+    it("should have '--junitFormat' option with default of text", () => {
+      // act'
+      let options = config.options;
+
+      // assert
+      expect(options).to.include.something.that.property("defaultValue", "text");
+    });
+
     it("should have '--reportFile' option", () => {
       // act'
       let options = config.options;
