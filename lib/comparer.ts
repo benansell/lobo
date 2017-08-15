@@ -32,7 +32,7 @@ export class ComparerImp {
   }
 
   public diff(left: string, right: string): Difference {
-    let curly = /^\{.*}/;
+    let curly = /^{.*}/;
     let quote = /^".*"/;
     let round = /^\(.*\)/;
     let square = /^\[.*]/;
@@ -73,14 +73,16 @@ export class ComparerImp {
     let l = left.indexOf(token) === -1 ? left : left.substring(1, left.length - 1);
     let r = right.indexOf(token) === -1 ? right : right.substring(1, right.length - 1);
     let valueWithoutToken;
+    let spacer: string;
 
     if (token === "\"") {
       valueWithoutToken = this.diffValue(l, r);
+      spacer = left !== right && l === r ? "^" : " ";
     } else {
       valueWithoutToken = this.diff(l, r);
+      spacer = left !== right && (l === r || l === "" || r === "") ? "^" : " ";
     }
 
-    let spacer = left !== right && l === r ? "^" : " ";
     let leftSpacer = left === l ? "" : spacer;
     let rightSpacer = right === r ? "" : spacer;
 
@@ -137,17 +139,33 @@ export class ComparerImp {
     while (i <= leftMax || j <= rightMax) {
       let l = i > leftMax ? "" : leftList[i];
       let r = j > rightMax ? "" : rightList[j];
+      let isLastItem = i > leftMax && j === rightMax || j > rightMax && i === leftMax;
 
-      let value = this.diff(l, r);
-      let isLastItem = i > leftMax && j === rightMax || j > rightMax && j === leftMax;
+      let value: Difference;
+
+      if (l === r) {
+        let noDifference = _.repeat(" ", l.length);
+        value = <Difference> { left: noDifference, right: noDifference };
+        i++;
+        j++;
+      } else if (rightList.indexOf(l, j) > 0) {
+        value = this.diff("", r);
+        j++;
+      } else if (leftList.indexOf(r, i) > 0) {
+        value = this.diff(l, "");
+        i++;
+      } else {
+        value = this.diff(l, r);
+        i++;
+        j++;
+      }
+
       let itemsExistInBothLists = l !== "" && r !== "";
       let spacer = isLastItem || itemsExistInBothLists ? " " : "^";
       let leftSpacer = value.left === "" ? "" : spacer;
       let rightSpacer = value.right === "" ? "" : spacer;
       acc.left += value.left + leftSpacer;
       acc.right += value.right + rightSpacer;
-      i++;
-      j++;
     }
 
     // correct empty list length;
