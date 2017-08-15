@@ -65,6 +65,14 @@ describe("lib compare", () => {
       expect(actual.right).to.equal("^   ^");
     });
 
+    it("should diff string value and empty string value", () => {
+      // act
+      let actual = comparer.diff("\"\"", "\"baz\"");
+
+      // assert
+      expect(actual.left).to.equal("  ");
+      expect(actual.right).to.equal(" ^^^ ");
+    });
 
     it("should not add hint to position of quotes in string value", () => {
       // act
@@ -93,6 +101,42 @@ describe("lib compare", () => {
       expect(actual.right).to.equal(" ^ ");
     });
 
+    it("should add hint for single missing item in list", () => {
+      // act
+      let actual = comparer.diff("[1,2,3]", "[1,3]");
+
+      // assert
+      expect(actual.left).to.equal("   ^   ");
+      expect(actual.right).to.equal("     ");
+    });
+
+    it("should add hint for missing items in both lists", () => {
+      // act
+      let actual = comparer.diff("[1,2,3]", "[1,3,4]");
+
+      // assert
+      expect(actual.left).to.equal("   ^   ");
+      expect(actual.right).to.equal("     ^ ");
+    });
+
+    it("should add hint for missing item in list with repeated value", () => {
+      // act
+      let actual = comparer.diff("[1,1]", "[1,2,1]");
+
+      // assert
+      expect(actual.left).to.equal("     ");
+      expect(actual.right).to.equal("   ^   ");
+    });
+
+    it("should add hint for missing tuple item in list", () => {
+      // act
+      let actual = comparer.diff("[(1,true),(2,false)]", "[(1,true)]");
+
+      // assert
+      expect(actual.left).to.equal("          ^^^^^^^^^ ");
+      expect(actual.right).to.equal("          ");
+    });
+
     it("should not add hint to position of brackets in list value", () => {
       // act
       let actual = comparer.diff("[1,2,3]", "[45,6,7]");
@@ -102,7 +146,7 @@ describe("lib compare", () => {
       expect(actual.right).to.equal(" ^^ ^ ^ ");
     });
 
-    it("should add hint to differences in list values", () => {
+    it("should add hint to differences in list values when left is longer than right", () => {
       // act
       let actual = comparer.diff("[1,2,3]", "[5,6]");
 
@@ -111,7 +155,7 @@ describe("lib compare", () => {
       expect(actual.right).to.equal(" ^ ^ ");
     });
 
-    it("should add hint to differences in list values", () => {
+    it("should add hint to differences in list values when right is longer than left", () => {
       // act
       let actual = comparer.diff("[1,2]", "[5,6,7]");
 
