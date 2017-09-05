@@ -82,8 +82,8 @@ export class TestResultFormatterImp implements TestResultFormatter {
 
     if (lines[2].indexOf(TestResultFormatterImp.verticalBarMiddle + " ") !== -1) {
       lines[0] = TestResultFormatterImp.verticalBarStart + " " + lines[0];
-      lines[1] = lines[1].replace("╷", TestResultFormatterImp.verticalBarMiddle);
-      lines[3] = lines[3].replace("╵", TestResultFormatterImp.verticalBarMiddle);
+      lines[1] = lines[1].replace(/(╵|╷)/, TestResultFormatterImp.verticalBarMiddle);
+      lines[3] = lines[3].replace(/(╵|╷)/, TestResultFormatterImp.verticalBarMiddle);
       lines[4] = TestResultFormatterImp.verticalBarEnd + " " + lines[4];
 
       let expectMessage = lines[2].substring(2, lines[2].length);

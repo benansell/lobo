@@ -244,13 +244,25 @@ describe("lib test-result-formatter", () => {
       expect(actual).to.equal("\nfoo\n╷\n│bar\n╵\nbaz\n");
     });
 
-    it("should replace failure markers '╷', │' and '╵' with '┌','│' and'└' ", () => {
+    it("should replace failure marker '╷' with '│'", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
       (<SinonStub>mockDecorator.line).callsFake(x => x);
 
       // act
-      let actual = formatter.formatFailureMessage("foo\n╷\n│ bar\n╵\nbaz", 123);
+      let actual = formatter.formatFailureMessage("foo\n╷\n│ bar\n╷\nbaz", 123);
+
+      // assert
+      expect(actual).to.equal("\n┌ foo\n│\n│ bar\n│\n└ baz\n");
+    });
+
+    it("should replace failure marker '╵' with '│'", () => {
+      // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
+      (<SinonStub>mockDecorator.line).callsFake(x => x);
+
+      // act
+      let actual = formatter.formatFailureMessage("foo\n╵\n│ bar\n╵\nbaz", 123);
 
       // assert
       expect(actual).to.equal("\n┌ foo\n│\n│ bar\n│\n└ baz\n");
