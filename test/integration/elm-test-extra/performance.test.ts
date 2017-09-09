@@ -1,9 +1,9 @@
 "use strict";
 
 import * as chai from "chai";
-import {TestRunner} from "../../lib/test-runner";
-import reporterExpect from "../../lib/default-reporter-expect";
-import {Util} from "../../lib/util";
+import {TestRunner} from "../lib/test-runner";
+import reporterExpect from "../lib/default-reporter-expect";
+import {Util} from "../lib/util";
 
 let expect = chai.expect;
 
@@ -17,21 +17,17 @@ describe("elm-test-extra-performance", () => {
     util = new Util();
     testContext = util.initializeTestContext(__dirname);
     util.cd(__dirname);
+    runner.clean();
+  });
+
+  beforeEach(() => {
+    runner.cleanBuildArtifacts();
   });
 
   describe("1000", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "1000");
-      runner.clean();
-    });
-
-    afterEach(() => {
-      runner.contextPop(testContext);
-    });
-
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra");
+      let result = runner.run(testContext, "elm-test-extra", "performance/1000/Tests.elm");
 
       // assert
       reporterExpect(result).summaryPassed();

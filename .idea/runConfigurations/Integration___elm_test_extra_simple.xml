@@ -1,18 +1,18 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Integration - elm-test-extra-simple" type="mocha-javascript-test-runner" factoryName="Mocha">
-    <node-interpreter>$USER_HOME$/.nvm/versions/node/v6.9.0/bin/node</node-interpreter>
+    <node-interpreter>project</node-interpreter>
     <node-options />
     <working-directory>$PROJECT_DIR$/test/integration</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <envs>
-      <env name="PATH" value="/Users/ben/.nvm/versions/node/v6.9.0/bin:/usr/bin:/usr/local/bin" />
+      <env name="PATH" value="/Users/ben/.nvm/versions/node/v6.11.2/bin:/usr/bin:/usr/local/bin" />
       <env name="disableClean" value="true" />
       <env name="noisyTestRun" value="true" />
     </envs>
     <ui>bdd</ui>
     <extra-mocha-options>--compilers ts:ts-node/register --timeout 100000</extra-mocha-options>
     <test-kind>SUITE</test-kind>
-    <test-file>$PROJECT_DIR$/test/integration/elm-test-extra/simple/simple.test.ts</test-file>
+    <test-file>$PROJECT_DIR$/test/integration/elm-test-extra/simple.test.ts</test-file>
     <test-names>
       <name value="elm-test-extra-simple" />
     </test-names>

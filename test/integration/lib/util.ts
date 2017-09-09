@@ -39,6 +39,10 @@ export class Util {
     this.rmDir("elm-stuff");
   }
 
+  public cleanBuildArtifacts(): void {
+    this.rmDir("elm-stuff/build-artifacts");
+  }
+
   public initializeTestContext(dirName: string): string[] {
     let dir = dirName;
     let testContext = [];

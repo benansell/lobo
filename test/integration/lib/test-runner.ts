@@ -15,22 +15,22 @@ export class TestRunner {
     this.util.cd("..");
   }
 
-  public contextPush(context: string[], name: string): void {
-    context.push(name);
-    this.util.cd(name);
-  }
-
-  public contextPop(context: string[]): void {
-    context.pop();
+  public cleanBuildArtifacts(): void {
+    this.util.cd("tests");
+    this.util.cleanBuildArtifacts();
     this.util.cd("..");
   }
 
-  public run(context: string[], framework: string, args?: string): ExecOutputReturnValue {
+  public run(context: string[], framework: string, testFile?: string, args?: string): ExecOutputReturnValue {
     let baseDir = _.repeat("../", context.length);
-    let command = "node " + baseDir + "bin/lobo.js --prompt=no --verbose";
+    let command = `node ${baseDir}bin/lobo.js --prompt=no --verbose`;
 
     if (framework) {
       command += " --framework=" + framework;
+    }
+
+    if (testFile) {
+      command += " --testFile=" + testFile;
     }
 
     if (args) {
