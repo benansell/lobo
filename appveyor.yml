@@ -14,11 +14,6 @@ init:
   - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 install:
-  # configure HTTP proxy
-  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-http-proxy.ps1'))
-  - IF DEFINED APPVEYOR_HTTP_PROXY_IP npm config set proxy http://%APPVEYOR_HTTP_PROXY_IP%:%APPVEYOR_HTTP_PROXY_PORT%
-  - IF DEFINED APPVEYOR_HTTP_PROXY_IP npm config set https-proxy
-
   # update node version
   - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:Platform
   - node --version
@@ -36,7 +31,7 @@ test_script:
 
 on_finish:
   # pause before completion when $blockRdp is true
-  - ps: $blockRdp = $true;
+  - ps: $blockRdp = $false;
 
   # upload unit test results
   - ps: |
