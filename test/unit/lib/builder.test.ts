@@ -69,7 +69,7 @@ describe("lib builder", () => {
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -86,7 +86,7 @@ describe("lib builder", () => {
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -103,7 +103,7 @@ describe("lib builder", () => {
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -120,7 +120,7 @@ describe("lib builder", () => {
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -137,7 +137,7 @@ describe("lib builder", () => {
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -154,7 +154,7 @@ describe("lib builder", () => {
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -171,7 +171,7 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -188,11 +188,11 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.syncTestElmPackage).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
+        expect(builder.syncTestElmPackage).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -205,11 +205,11 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, ".", Sinon.match.any);
+        expect(builder.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, ".", Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -222,11 +222,28 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
-        expect(builder.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "bar");
+        expect(builder.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "bar", Sinon.match.any);
+      });
+    });
+
+    it("should call syncTestElmPackage with the supplied test file directory", () => {
+      // arrange
+      let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      builder.ensureElmPackageExists = Sinon.stub();
+      builder.syncTestElmPackage = Sinon.stub();
+      builder.installDependencies = Sinon.stub();
+      builder.make = Sinon.spy();
+
+      // act
+      let actual = builder.build(config, "bar", "baz/Tests.elm");
+
+      // assert
+      actual.then(() => {
+        expect(builder.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz");
       });
     });
 
@@ -239,7 +256,7 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -256,7 +273,7 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -273,7 +290,7 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -290,7 +307,7 @@ describe("lib builder", () => {
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar");
+      let actual = builder.build(config, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -415,7 +432,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
@@ -434,7 +451,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
@@ -453,11 +470,12 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
-        expect(builder.updateSourceDirectories).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        expect(builder.updateSourceDirectories).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any,
+          Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -472,12 +490,12 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -492,12 +510,12 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -512,12 +530,32 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
+      });
+    });
+
+    it("should call updateSourceDirectories with the supplied test dir", () => {
+      // arrange
+      let config = <LoboConfig> {testFile: "foo", prompt: true};
+      builder.readElmPackage = Sinon.stub();
+      (<SinonStub>builder.readElmPackage).resolves({base: "a", test: "b"});
+      builder.updateSourceDirectories = Sinon.stub();
+      (<SinonStub>builder.updateSourceDirectories).resolves({base: "a", test: "b"});
+      builder.updateDependencies = Sinon.stub();
+      (<SinonStub>builder.updateDependencies).resolves({});
+
+      // act
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
+
+      // assert
+      actual.then(() => {
+        expect(builder.updateSourceDirectories)
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "qux", Sinon.match.any);
       });
     });
 
@@ -532,12 +570,12 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
         expect(builder.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
       });
     });
 
@@ -552,7 +590,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
@@ -571,7 +609,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
@@ -590,7 +628,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
@@ -609,7 +647,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateDependencies).resolves({});
 
       // act
-      let actual = builder.syncTestElmPackage(config, "bar", "baz");
+      let actual = builder.syncTestElmPackage(config, "bar", "baz", "qux");
 
       // assert
       actual.then(() => {
@@ -707,11 +745,11 @@ describe("lib builder", () => {
       builder.mergeSourceDirectories = Sinon.stub();
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call mergeSourceDirectories with the specified base directory", () => {
@@ -722,11 +760,11 @@ describe("lib builder", () => {
       builder.mergeSourceDirectories = Sinon.stub();
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call mergeSourceDirectories with the specified test package json", () => {
@@ -737,14 +775,14 @@ describe("lib builder", () => {
       builder.mergeSourceDirectories = Sinon.stub();
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
-    it("should call mergeSourceDirectories with the specified test directory", () => {
+    it("should call mergeSourceDirectories with the specified main test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", prompt: true};
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
@@ -752,11 +790,26 @@ describe("lib builder", () => {
       builder.mergeSourceDirectories = Sinon.stub();
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call mergeSourceDirectories with the specified test file directory", () => {
+      // arrange
+      let config = <LoboConfig> {testFile: "foo", prompt: true};
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      builder.mergeSourceDirectories = Sinon.stub();
+
+      // act
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+
+      // assert
+      expect(builder.mergeSourceDirectories)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "qux", Sinon.match.any);
     });
 
     it("should call mergeSourceDirectories with the specified testFramework", () => {
@@ -767,11 +820,11 @@ describe("lib builder", () => {
       builder.mergeSourceDirectories = Sinon.stub();
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(builder.mergeSourceDirectories)
-        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, config.testFramework);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, config.testFramework);
     });
 
     it("should return the unaltered base package json when there is no difference", () => {
@@ -783,7 +836,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.mergeSourceDirectories).returns(testPackageJson.sourceDirectories);
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       actual.then((result: { base: {} }) => {
@@ -800,7 +853,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.mergeSourceDirectories).returns(testPackageJson.sourceDirectories);
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       actual.then((result: { test: {} }) => {
@@ -816,7 +869,7 @@ describe("lib builder", () => {
       builder.updateSourceDirectoriesAction = Sinon.stub();
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(mockConfirm).not.to.have.been.called;
@@ -831,7 +884,7 @@ describe("lib builder", () => {
       builder.updateSourceDirectoriesAction = Sinon.stub();
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(mockConfirm).to.have.been.called;
@@ -847,7 +900,7 @@ describe("lib builder", () => {
       mockConfirm.callsFake((message, defaults, action) => action({}, "foo"));
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
       actual.catchReturn({});
 
       // assert
@@ -863,7 +916,7 @@ describe("lib builder", () => {
       mockConfirm.callsFake((message, defaults, action) => action(undefined, false));
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
       actual.catchReturn({});
 
       // assert
@@ -881,7 +934,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.mergeSourceDirectories).returns(expected);
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(builder.updateSourceDirectoriesAction).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
@@ -895,7 +948,7 @@ describe("lib builder", () => {
       builder.updateSourceDirectoriesAction = Sinon.stub();
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       actual.then((result: { base: {} }) => {
@@ -913,7 +966,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.updateSourceDirectoriesAction).returns(expected);
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       actual.then((result: { test: {} }) => {
@@ -933,7 +986,7 @@ describe("lib builder", () => {
       (<SinonStub>builder.mergeSourceDirectories).returns(expected);
 
       // act
-      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       expect(builder.updateSourceDirectoriesAction).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
@@ -948,7 +1001,7 @@ describe("lib builder", () => {
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       actual.then((result: { base: {} }) => {
@@ -967,7 +1020,7 @@ describe("lib builder", () => {
       mockConfirm.callsFake((message, defaults, action) => action(undefined, true));
 
       // act
-      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", testPackageJson);
+      let actual = builder.updateSourceDirectories(config, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
 
       // assert
       actual.then((result: { test: {} }) => {
@@ -1294,11 +1347,24 @@ describe("lib builder", () => {
       let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: []}};
 
       // act
-      let actual = builder.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, "testDir", testFramework);
+      let actual = builder.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, "testDir", ".", testFramework);
 
       // assert
       expect(actual.length).to.equal(1);
       expect(actual).to.include(".");
+    });
+
+    it("should return array with current dir and test file dir when no other dirs are specified", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: []}};
+
+      // act
+      let actual = builder.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, "testDir", "foo", testFramework);
+
+      // assert
+      expect(actual.length).to.equal(2);
+      expect(actual).to.include(".");
+      expect(actual).to.include("foo");
     });
 
     it("should return array with current dir only when no other dirs are specified other than the test source directories", () => {
@@ -1306,7 +1372,7 @@ describe("lib builder", () => {
       let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: []}};
 
       // act
-      let actual = builder.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, "testDir", testFramework);
+      let actual = builder.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, "testDir", ".", testFramework);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -1320,7 +1386,7 @@ describe("lib builder", () => {
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", testFramework);
+      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", testFramework);
 
       // assert
       expect(actual).to.include(".");
@@ -1333,7 +1399,7 @@ describe("lib builder", () => {
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", testFramework);
+      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", testFramework);
 
       // assert
       expect(actual).to.include("test");
@@ -1347,7 +1413,7 @@ describe("lib builder", () => {
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", testFramework);
+      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", testFramework);
 
       // assert
       expect(actual).to.include("../sourceDir/source");
@@ -1361,7 +1427,7 @@ describe("lib builder", () => {
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", testFramework);
+      let actual = builder.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", testFramework);
 
       // assert
       expect(actual).to.include.something.that.match(/..\/foo/);
@@ -1579,7 +1645,7 @@ describe("lib builder", () => {
       builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo(\/|\\)elm-package install/), Sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo([\/\\])elm-package install/), Sinon.match.any);
     });
 
     it("should call elm-package to install the packages without --yes when prompt is true", () => {
@@ -1641,41 +1707,72 @@ describe("lib builder", () => {
   });
 
   describe("make", () => {
-    let revertChildProcess: () => void;
-    let revertConsole: () => void;
+    let revertMocks: () => void;
     let mockExec: SinonStub;
+    let mockPathResolve: SinonStub;
+    let mockJoin: SinonStub;
 
     beforeEach(() => {
       mockExec = Sinon.stub();
-      revertChildProcess = RewiredBuilder.__set__({childProcess: {execSync: mockExec}});
-      revertConsole = RewiredBuilder.__set__({console: {log: Sinon.stub()}});
+      mockPathResolve = Sinon.stub();
+      mockJoin = Sinon.stub();
+      revertMocks = RewiredBuilder.__set__({childProcess: {execSync: mockExec}, console: {log: Sinon.stub()}, path: { resolve: mockPathResolve, join: mockJoin}});
     });
 
     afterEach(() => {
-      revertChildProcess();
-      revertConsole();
+      revertMocks();
     });
 
     it("should call elm-make to build the tests", () => {
       // arrange
       let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      mockPathResolve.callsFake(() => "def");
+      mockJoin.callsFake((...args) => args.join("/"));
 
       // act
-      builder.make(config, "bar");
+      builder.make(config, "bar", "baz");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^abc(\/|\\)elm-make /), Sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^abc([\/\\])elm-make /), Sinon.match.any);
     });
 
-    it("should call elm-package to install the packages from the specified elm-install path", () => {
+    it("should call elm-make with the qualified path to testMainElm file from the config", () => {
       // arrange
-      let config = <LoboConfig> {compiler: "foo"};
+      let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      mockPathResolve.callsFake(() => "def");
+      mockJoin.callsFake((...args) => args.join("-"));
 
       // act
-      builder.runElmPackageInstall(config, "bar", true, mockResolve, mockReject);
+      builder.make(config, "baz", "qux");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo(\/|\\)elm-package install/), Sinon.match.any);
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/elm-make.* def-foo-bar/), Sinon.match.any);
+    });
+
+    it("should call elm-make with the relative path to testFile", () => {
+      // arrange
+      let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      mockPathResolve.callsFake(() => "def");
+      mockJoin.callsFake((...args) => args.join("-"));
+
+      // act
+      builder.make(config, "baz", "qux");
+
+      // assert
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/elm-make qux/), Sinon.match.any);
+    });
+
+    it("should not call elm-make with the relative path to testFile when it is 'Tests.elm'", () => {
+      // arrange
+      let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      mockPathResolve.callsFake(() => "def");
+      mockJoin.callsFake((...args) => args.join("-"));
+
+      // act
+      builder.make(config, "baz", "Tests.elm");
+
+      // assert
+      expect(mockExec).not.to.have.been.calledWith(Sinon.match(/Tests.elm/), Sinon.match.any);
     });
 
     it("should call elm-make to build the tests to the specified output testFile", () => {
@@ -1683,7 +1780,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", testFile: "baz"};
 
       // act
-      builder.make(config, "bar");
+      builder.make(config, "baz", "qux");
 
       // assert
       expect(mockExec).to.have.been.calledWith(Sinon.match(/--output=baz/), Sinon.match.any);
@@ -1694,7 +1791,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", prompt: true};
 
       // act
-      builder.make(config, "bar");
+      builder.make(config, "baz", "qux");
 
       // assert
       expect(mockExec).to.have.been.calledWith(Sinon.match((x) => x.indexOf("--yes") === -1), Sinon.match.any);
@@ -1705,7 +1802,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", prompt: false};
 
       // act
-      builder.make(config, "bar");
+      builder.make(config, "baz", "qux");
 
       // assert
       expect(mockExec).to.have.been.calledWith(Sinon.match(/ --yes/), Sinon.match.any);
@@ -1716,7 +1813,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", noWarn: true};
 
       // act
-      builder.make(config, "bar");
+      builder.make(config, "baz", "qux");
 
       // assert
       expect(mockExec).to.have.been.calledWith(Sinon.match((x) => x.indexOf("--warn") === -1), Sinon.match.any);
@@ -1727,7 +1824,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", noWarn: false};
 
       // act
-      builder.make(config, "bar");
+      builder.make(config, "baz", "qux");
 
       // assert
       expect(mockExec).to.have.been.calledWith(Sinon.match(/ --warn/), Sinon.match.any);
@@ -1738,10 +1835,10 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", noWarn: false};
 
       // act
-      builder.make(config, "bar");
+      builder.make(config, "baz", "qux");
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "bar"));
+      expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "baz"));
     });
 
     it("should call resolve when there are no elm-make build errors", () => {
@@ -1749,7 +1846,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
 
       // act
-      let actual = builder.make(config, "bar");
+      let actual = builder.make(config, "baz", "qux");
 
       // assert
       actual.then(() => {
@@ -1764,7 +1861,7 @@ describe("lib builder", () => {
       mockExec.throws(expected);
 
       // act
-      let actual = builder.make(config, "bar");
+      let actual = builder.make(config, "baz", "qux");
 
       // assert
       actual.catch((err) => {
