@@ -1121,6 +1121,17 @@ describe("lib main", () => {
       expect(mockLogger.error).to.have.been.calledWith("Unable to find the elm compiler");
     });
 
+    it("should not log an error when the elm compiler is found", () => {
+      // arrange
+      let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar", testFile: "baz"}, shelljs: {test: () => true}});
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockLogger.error).not.to.have.been.calledWith("Unable to find the elm compiler");
+    });
+
     it("should call process.exit with an exitCode of 1 when the elm compiler cannot be found", () => {
       // arrange
       let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar", testFile: "baz"}, shelljs: {test: () => false}});
@@ -1132,27 +1143,42 @@ describe("lib main", () => {
       expect(mockExit).to.have.been.calledWith(1);
     });
 
-    it("should log an error when the Tests.elm file cannot be found in the test directory", () => {
+    it("should log an error with the specified test file when the specified test file cannot be found in the test directory", () => {
       // arrange
-      let fakeTest = (flags, fileName) => fileName !== "bar/baz/Tests.elm";
       let revert = rewiredMain.__with__({
         program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
-        shelljs: {test: fakeTest}
+        shelljs: {test: () => false},
+        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x}
       });
 
       // act
       revert(() => lobo.validateConfiguration());
 
       // assert
-      expect(mockLogger.error).to.have.been.calledWith("Unable to find \"Tests.elm\"");
+      expect(mockLogger.error).to.have.been.calledWith("Unable to find \"base\"");
+    });
+
+    it("should log an error with the specified test directory when the specified test file cannot be found in the test directory", () => {
+      // arrange
+      let revert = rewiredMain.__with__({
+        program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
+        shelljs: {test: () => false},
+        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x}
+      });
+
+      // act
+      revert(() => lobo.validateConfiguration());
+
+      // assert
+      expect(mockLogger.error).to.have.been.calledWith("abc-dir");
     });
 
     it("should call process.exit with an exitCode of 1 when the Tests.elm file cannot be found in the test directory", () => {
       // arrange
-      let fakeTest = (flags, fileName) => fileName !== "bar/baz/Tests.elm";
       let revert = rewiredMain.__with__({
-        program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
-        shelljs: {test: fakeTest}
+        program: {compiler: "foo", testDirectory: "bar", testFile: "baz-Tests.elm"},
+        shelljs: {test: () => false},
+        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x}
       });
 
       // act

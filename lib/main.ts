@@ -312,9 +312,9 @@ export class LoboImp implements Lobo {
 
     if (!shelljs.test("-e", testsElm)) {
       this.logger.error("");
-      this.logger.error("Unable to find \"Tests.elm\"");
+      this.logger.error(`Unable to find "${path.basename(program.testFile)}"`);
       this.logger.error("Please check that it exists in the test directory:");
-      this.logger.error(path.resolve(program.testDirectory));
+      this.logger.error(path.resolve(path.dirname(testsElm)));
       this.logger.info("");
       this.logger.info("You can override the default location (\"./tests\") by running either:");
       this.logger.info("lobo --testDirectory [directory containing Tests.elm]");
