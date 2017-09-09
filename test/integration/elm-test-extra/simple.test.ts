@@ -1,13 +1,13 @@
 "use strict";
 
 import * as chai from "chai";
-import {TestRunner} from "../../lib/test-runner";
-import reporterExpect from "../../lib/default-reporter-expect";
-import {Util} from "../../lib/util";
+import {TestRunner} from "../lib/test-runner";
+import reporterExpect from "../lib/default-reporter-expect";
+import {Util} from "../lib/util";
 
 let expect = chai.expect;
 
-describe("elm-test-simple", () => {
+describe("elm-test-extra-simple", () => {
   let runner: TestRunner;
   let testContext: string[];
   let util: Util;
@@ -17,21 +17,17 @@ describe("elm-test-simple", () => {
     util = new Util();
     testContext = util.initializeTestContext(__dirname);
     util.cd(__dirname);
+    runner.clean();
+  });
+
+  beforeEach(() => {
+    runner.cleanBuildArtifacts();
   });
 
   describe("pass", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "pass");
-      runner.clean();
-    });
-
-    afterEach(() => {
-      runner.contextPop(testContext);
-    });
-
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", "simple/pass/Tests.elm");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -41,28 +37,25 @@ describe("elm-test-simple", () => {
   });
 
   describe("fail", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "fail");
-      runner.clean();
-    });
+    let testDirectory: string;
 
-    afterEach(() => {
-      runner.contextPop(testContext);
+    beforeEach(() => {
+      testDirectory = "simple/fail/Tests.elm";
     });
 
     it("should report failure", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", testDirectory);
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(0, 31);
+      reporterExpect(result).summaryCounts(0, 32);
       expect(result.code).to.equal(1);
     });
 
     it("should update message to use ┌ └  instead of ╷ ╵", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", testDirectory);
 
       // assert
       let startIndex = result.stdout
@@ -77,7 +70,7 @@ describe("elm-test-simple", () => {
 
     it("should update string equals to show diff hint", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", testDirectory);
 
       // assert
       let startIndex = result.stdout
@@ -93,18 +86,15 @@ describe("elm-test-simple", () => {
   });
 
   describe("fuzz", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "fuzz");
-      runner.clean();
-    });
+    let testDirectory: string;
 
-    afterEach(() => {
-      runner.contextPop(testContext);
+    beforeEach(() => {
+      testDirectory = "simple/fuzz/Tests.elm";
     });
 
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", testDirectory);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -117,7 +107,7 @@ describe("elm-test-simple", () => {
       let expectedRunCount = 11;
 
       // act
-      let result = runner.run(testContext, "elm-test", "--runCount=" + expectedRunCount);
+      let result = runner.run(testContext, "elm-test-extra", testDirectory, "--runCount=" + expectedRunCount);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -139,7 +129,7 @@ describe("elm-test-simple", () => {
       let initialSeed = 101;
 
       // act
-      let result = runner.run(testContext, "elm-test", "--seed=" + initialSeed);
+      let result = runner.run(testContext, "elm-test-extra", testDirectory, "--seed=" + initialSeed);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -150,18 +140,9 @@ describe("elm-test-simple", () => {
   });
 
   describe("nested", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "nested");
-      runner.clean();
-    });
-
-    afterEach(() => {
-      runner.contextPop(testContext);
-    });
-
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", "simple/nested/Tests.elm");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -171,91 +152,53 @@ describe("elm-test-simple", () => {
   });
 
   describe("tree", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "tree");
-      runner.clean();
-    });
-
-    afterEach(() => {
-      runner.contextPop(testContext);
-    });
-
     it("should report failure", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", "simple/tree/Tests.elm");
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(12, 6);
-      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+1\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest\r?\n.+2\) FailingTest - Child/);
+      reporterExpect(result).summaryCounts(10, 4);
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+SecondChildTest\r?\n.+1\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+3\) FailingTest - GrandChild/);
-      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+4\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest\r?\n.+5\) FailingTest - Child/);
+        /Tests\r?\n.+Suite A\r?\n.+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+2\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+SecondChildTest\r?\n.+3\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+6\) FailingTest - GrandChild/);
+        /Tests(.|\r?\n)+Suite B\r?\n.+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+4\) FailingTest - GrandChild/);
+
       expect(result.code).to.equal(1);
     });
   });
 
   describe("only", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "only");
-      runner.clean();
-    });
-
-    afterEach(() => {
-      runner.contextPop(testContext);
-    });
-
-    it("should report only passed", () => {
+    it("should report focused passed", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "--runCount=5");
+      let result = runner.run(testContext, "elm-test-extra", "simple/only/Tests.elm", "--runCount=5");
 
       // assert
-      reporterExpect(result).summaryPartial();
+      reporterExpect(result).summaryFocused();
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(3, 0);
+      reporterExpect(result).summaryCounts(3, 0, null, null, 3);
       expect(result.code).to.equal(0);
     });
   });
 
   describe("skip", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "skip");
-      runner.clean();
-    });
-
-    afterEach(() => {
-      runner.contextPop(testContext);
-    });
-
     it("should report inconclusive", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", "simple/skip/Tests.elm");
 
       // assert
-      reporterExpect(result).summaryPartial();
       reporterExpect(result).summaryInconclusive();
-      reporterExpect(result).summaryCounts(1, 0);
+      reporterExpect(result).summaryCounts(1, 0, null, 5);
       expect(result.code).to.equal(0);
     });
   });
 
   describe("todo", () => {
-    beforeEach(() => {
-      runner.contextPush(testContext, "todo");
-      runner.clean();
-    });
-
-    afterEach(() => {
-      runner.contextPop(testContext);
-    });
-
     it("should report inconclusive", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test-extra", "simple/todo/Tests.elm");
 
       // assert
       reporterExpect(result).summaryInconclusive();

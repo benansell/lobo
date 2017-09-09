@@ -1,7 +1,7 @@
 environment:
   ELM_VERSION: "0.18.0"
   matrix:
-  - nodejs_version: "4.6"
+  - nodejs_version: "4"
 
 platform:
   - x64
@@ -9,10 +9,17 @@ platform:
 matrix:
   fast_finish: true
 
+init:
+  # report build worker details
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 install:
+  # update node version
   - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:Platform
   - node --version
   - npm --version
+
+  # install dependencies
   - npm install -g elm@%ELM_VERSION%
   - npm install
 
@@ -23,6 +30,10 @@ test_script:
   - npm run test-ci
 
 on_finish:
+  # pause before completion when $blockRdp is true
+  - ps: $blockRdp = $false;
+
+  # upload unit test results
   - ps: |
         $wc = New-Object 'System.Net.WebClient'
         Get-ChildItem . -Name -Recurse '*-tests.xml'  |

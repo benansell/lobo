@@ -24,7 +24,7 @@ interface ElmPackageCompare {
 
 
 export interface Builder {
-  build(config: LoboConfig, testDirectory: string): Bluebird<object>;
+  build(config: LoboConfig, testDirectory: string, testFile: string): Bluebird<object>;
 }
 
 export class BuilderImp implements Builder {
@@ -40,11 +40,12 @@ export class BuilderImp implements Builder {
     this.util = util;
   }
 
-  public build(config: LoboConfig, testDirectory: string): Bluebird<object> {
+  public build(config: LoboConfig, testDirectory: string, testFile: string): Bluebird<object> {
     this.logger.info("-----------------------------------[ BUILD ]------------------------------------");
 
     let baseElmPackageDir = ".";
     let testElmPackageDir = testDirectory;
+    let testDir = path.dirname(testFile);
     let steps: Array<() => Bluebird<object>> = [];
 
     if (config.noUpdate) {
@@ -52,10 +53,10 @@ export class BuilderImp implements Builder {
     } else {
       steps = steps.concat([() => this.ensureElmPackageExists(config, baseElmPackageDir, "current"),
         () => this.ensureElmPackageExists(config, testElmPackageDir, "tests"),
-        () => this.syncTestElmPackage(config, baseElmPackageDir, testElmPackageDir)]);
+        () => this.syncTestElmPackage(config, baseElmPackageDir, testElmPackageDir, testDir)]);
     }
 
-    steps = steps.concat([() => this.installDependencies(config, testDirectory), () => this.make(config, testDirectory)]);
+    steps = steps.concat([() => this.installDependencies(config, testDirectory), () => this.make(config, testDirectory, testFile)]);
 
     return Bluebird.mapSeries(steps, item => item());
   }
@@ -88,9 +89,10 @@ export class BuilderImp implements Builder {
     });
   }
 
-  public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string): Bluebird<object> {
+  public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string, testDir: string): Bluebird<object> {
     let steps = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
-      (result: ElmPackageCompare) => this.updateSourceDirectories(config, baseElmPackageDir, result.base, testElmPackageDir, result.test),
+      (result: ElmPackageCompare) =>
+        this.updateSourceDirectories(config, baseElmPackageDir, result.base, testElmPackageDir, testDir, result.test),
       (result: ElmPackageCompare) => this.updateDependencies(config, result.base, testElmPackageDir, result.test)];
 
     let value: ElmPackageCompare;
@@ -118,10 +120,10 @@ export class BuilderImp implements Builder {
   }
 
   public updateSourceDirectories(config: LoboConfig, baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                                 testElmPackage: ElmPackageJson): Bluebird<object> {
+                                 testDir: string, testElmPackage: ElmPackageJson): Bluebird<object> {
     return new Bluebird((resolve: Resolve, reject: Reject) => {
       let sourceDirectories =
-        this.mergeSourceDirectories(baseElmPackage, baseElmPackageDir, testElmPackage, testElmPackageDir, config.testFramework);
+        this.mergeSourceDirectories(baseElmPackage, baseElmPackageDir, testElmPackage, testElmPackageDir, testDir, config.testFramework);
       let diff = _.difference(sourceDirectories, testElmPackage.sourceDirectories);
 
       if (diff.length === 0) {
@@ -207,7 +209,7 @@ export class BuilderImp implements Builder {
   }
 
   public mergeSourceDirectories(baseElmPackage: ElmPackageJson, baseElmPackageDir: string, testElmPackage: ElmPackageJson,
-                                testElmPackageDir: string, testFramework: PluginTestFrameworkWithConfig): string[] {
+                                testElmPackageDir: string, testDir: string, testFramework: PluginTestFrameworkWithConfig): string[] {
     let sourceDirs: string[] = _.clone(testElmPackage.sourceDirectories);
 
     if (!sourceDirs) {
@@ -216,6 +218,10 @@ export class BuilderImp implements Builder {
 
     if (sourceDirs.indexOf(".") === -1) {
       sourceDirs.push(".");
+    }
+
+    if (sourceDirs.indexOf(testDir) === -1) {
+      sourceDirs.push(testDir);
     }
 
     sourceDirs = this.addSourceDirectories(baseElmPackage.sourceDirectories, baseElmPackageDir, testElmPackageDir, sourceDirs);
@@ -297,6 +303,7 @@ export class BuilderImp implements Builder {
     try {
       // run as child process using current process stdio so that colored output is returned
       let options = {cwd: directory, stdio: [process.stdin, process.stdout, process.stderr]};
+      this.logger.trace(command);
       childProcess.execSync(command, options);
       resolve();
     } catch (err) {
@@ -306,7 +313,7 @@ export class BuilderImp implements Builder {
     }
   }
 
-  public make(config: LoboConfig, testDirectory: string): Bluebird<object> {
+  public make(config: LoboConfig, testDirectory: string, testFile: string): Bluebird<object> {
     return new Bluebird((resolve: Resolve, reject: Reject) => {
       let pluginDirectory = path.resolve(__dirname, "..", "plugin");
       let testStuffMainElm = path.join(pluginDirectory, config.testFramework.config.name, config.testMainElm);
@@ -316,7 +323,11 @@ export class BuilderImp implements Builder {
         command = path.join(config.compiler, command);
       }
 
-      command += " " + testStuffMainElm + " --output=" + config.testFile;
+      if (testFile !== "Tests.elm") {
+        command += " " + testFile;
+      }
+
+      command += ` ${testStuffMainElm} --output=${config.testFile}`;
 
       if (!config.prompt) {
         command += " --yes";
@@ -329,12 +340,13 @@ export class BuilderImp implements Builder {
       try {
         // run as child process using current process stdio so that colored output is returned
         let options = {cwd: testDirectory, stdio: [process.stdin, process.stdout, process.stderr]};
+        this.logger.trace(command);
         childProcess.execSync(command, options);
         resolve();
       } catch (err) {
-        console.log("");
-        console.log(Chalk.red.bold("  BUILD FAILED"));
-        console.log("");
+        this.logger.error("");
+        this.logger.error(Chalk.bold("  BUILD FAILED"));
+        this.logger.error("");
         this.logger.debug(err);
         reject(err);
       }

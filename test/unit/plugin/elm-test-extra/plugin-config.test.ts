@@ -47,7 +47,7 @@ describe("plugin elm-test-extra plugin-config", () => {
       let dependencies = config.dependencies;
 
       // assert
-      expect(dependencies).to.have.property("elm-community/elm-test", "4.0.0 <= v < 5.0.0");
+      expect(dependencies).to.have.property("elm-community/elm-test", "4.2.0 <= v < 5.0.0");
     });
 
     it("should have 'mgold/elm-random-pcg' dependency", () => {

@@ -198,6 +198,10 @@ follows:
 lobo --testDirectory="test/unit"
 ```
 
+### --testFile
+Specify the relative path to the main elm tests file within the tests
+directory. The default value is "Tests.elm"
+
 ### --verbose
 Increases the verbosity of lobo logging messages. Please use this when
 reporting an issue with lobo to get details about what lobo was trying

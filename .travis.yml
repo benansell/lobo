@@ -1,5 +1,8 @@
 language: node_js
 
+node_js:
+  - "6"
+
 cache:
   directories:
     - sysconfcpus
@@ -9,7 +12,7 @@ os:
 
 env:
   matrix:
-    - ELM_VERSION=0.18.0 TARGET_NODE_VERSION=node
+    - ELM_VERSION=0.18.0
 
 before_install:
   - | # see https://github.com/elm-lang/elm-compiler/issues/1473#issuecomment-245704142
@@ -21,8 +24,6 @@ before_install:
       make && make install;
       cd ..;
     fi
-  - nvm install $TARGET_NODE_VERSION
-  - nvm use $TARGET_NODE_VERSION
   - node --version
   - npm --version
   - npm install -g elm@$ELM_VERSION

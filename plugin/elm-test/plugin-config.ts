@@ -6,7 +6,11 @@ export class ElmTestConfig implements PluginTestFrameworkConfig {
   public sourceDirectories: string[] = ["runner", "plugin/elm-test"];
 
   public dependencies: Dependencies = {
-    "elm-community/elm-test": "4.0.0 <= v < 5.0.0",
+    "eeue56/elm-lazy": "1.0.0 <= v < 2.0.0",
+    "eeue56/elm-lazy-list": "1.0.0 <= v < 2.0.0",
+    "eeue56/elm-shrink": "1.0.0 <= v < 2.0.0",
+    "elm-community/elm-test": "4.2.0 <= v < 5.0.0",
+    "elm-lang/core": "5.0.0 <= v < 6.0.0",
     "mgold/elm-random-pcg": "5.0.0 <= v < 6.0.0"
   };
 

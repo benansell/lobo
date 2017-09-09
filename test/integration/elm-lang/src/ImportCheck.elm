@@ -6,7 +6,6 @@ import AnimationFrame
 import Dom
 import Geolocation
 import Keyboard
-import Lazy
 import Mouse
 import Navigation
 import PageVisibility
