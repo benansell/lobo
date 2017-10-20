@@ -23,12 +23,14 @@ describe("lib test-result-decorator-console", () => {
     mockRedStyle = Sinon.stub();
     mockGreenStyle = Sinon.stub();
     mockYellowStyle = Sinon.stub();
-    
+
     RewiredDecorator.__set__({
-      Chalk: {
-        green: mockGreenStyle,
-        red: mockRedStyle,
-        yellow: mockYellowStyle
+      chalk_1: {
+        default: {
+          green: mockGreenStyle,
+          red: mockRedStyle,
+          yellow: mockYellowStyle
+        }
       }
     });
     

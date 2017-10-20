@@ -366,12 +366,14 @@ describe("lib logger", () => {
 
     beforeEach(() => {
       revertChalk = RewiredLogger.__set__({
-        Chalk: {
-          dim: {gray: x => "dim gray"},
-          gray: x => "gray",
-          red: x => "red",
-          reset: x => "reset",
-          yellow: x => "yellow"
+        chalk_1: {
+          default: {
+            dim: {gray: x => "dim gray"},
+            gray: x => "gray",
+            red: x => "red",
+            reset: x => "reset",
+            yellow: x => "yellow"
+          }
         }
       });
     });

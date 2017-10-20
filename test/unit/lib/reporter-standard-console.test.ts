@@ -9,16 +9,12 @@ import * as SinonChai from "sinon-chai";
 import {
   ProgressReport,
   RunArgs,
-  TestReportFailedLeaf,
-  TestReportSkippedLeaf,
-  TestReportTodoLeaf, TestResultDecorator,
+  TestResultDecorator,
   TestRun,
   TestRunFailState,
-  TestRunLeaf,
   TestRunSummary
 } from "../../../lib/plugin";
 import {Util} from "../../../lib/util";
-import {ChalkChain} from "chalk";
 import {TestResultFormatter} from "../../../lib/test-result-formatter";
 import {createReporterStandardConsole, ReporterStandardConsole, ReporterStandardConsoleImp} from "../../../lib/reporter-standard-console";
 
@@ -174,7 +170,6 @@ describe("lib reporter-standard-console", () => {
   });
 
   describe("logSummary", () => {
-    let revertChalk: () => void;
     let revertFramework: () => void;
 
     beforeEach(() => {
@@ -185,13 +180,10 @@ describe("lib reporter-standard-console", () => {
       mockDecorator.passed = Sinon.spy();
       mockDecorator.skip = Sinon.spy();
       mockDecorator.todo = Sinon.spy();
-      revertChalk = RewiredPlugin.__set__({Chalk: {bold: x => x}});
       reporter = new rewiredImp(mockLogger, mockDecorator, mockFormatter, mockUtil);
     });
 
     afterEach(() => {
-      revertChalk();
-
       if (revertFramework) {
         revertFramework();
       }
@@ -410,26 +402,12 @@ describe("lib reporter-standard-console", () => {
   });
 
   describe("logSummaryHeader", () => {
-    let revertChalk: () => void;
-    
     beforeEach(() => {
       let rewiredImp = RewiredPlugin.__get__("ReporterStandardConsoleImp");
       mockDecorator.failed = Sinon.spy();
       mockDecorator.passed = Sinon.spy();
       mockDecorator.inconclusive = Sinon.spy();
-      revertChalk = RewiredPlugin.__set__({
-        Chalk: {
-          bold: x => x,
-          green: mockDecorator.passed,
-          red: mockDecorator.failed,
-          yellow: mockDecorator.inconclusive
-        }
-      });
       reporter = new rewiredImp(mockLogger, mockDecorator, mockFormatter, mockUtil);
-    });
-
-    afterEach(() => {
-      revertChalk();
     });
 
     it("should use an outcomeStyle of failed when the failed count is non-zero", () => {
