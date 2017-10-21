@@ -1,6 +1,6 @@
 import * as Bluebird from "bluebird";
 import * as _ from "lodash";
-import * as Chalk from "chalk";
+import chalk from "chalk";
 import * as chokidar from "chokidar";
 import * as program from "commander";
 import * as path from "path";
@@ -282,7 +282,7 @@ export class LoboImp implements Lobo {
     let plugins = this.util.availablePlugins(pluginTypeDetail.fileSpec);
 
     _.forEach(plugins, (name: string) => {
-      this.logger.info("   " + Chalk.underline(name) + ":");
+      this.logger.info("   " + chalk.underline(name) + ":");
       this.logger.info("");
       let config = this.util.getPluginConfig(pluginTypeDetail.type, name, pluginTypeDetail.fileSpec);
 

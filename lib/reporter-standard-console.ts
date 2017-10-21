@@ -3,7 +3,7 @@ import * as program from "commander";
 import * as _ from "lodash";
 import * as plugin from "./plugin";
 import {createTestResultDecoratorConsole} from "./test-result-decorator-console";
-import * as Chalk from "chalk";
+import chalk, {Chalk} from "chalk";
 import {createTestResultFormatter, TestResultFormatter} from "./test-result-formatter";
 import {createUtil, Util} from "./util";
 
@@ -17,7 +17,7 @@ export interface ReporterStandardConsole {
 
 export class ReporterStandardConsoleImp implements ReporterStandardConsole {
 
-  private headerStyle: Chalk.ChalkChain = Chalk.bold;
+  private headerStyle: Chalk = chalk.bold;
   private initArgs: plugin.RunArgs;
   private logger: plugin.PluginReporterLogger;
   private decorator: plugin.TestResultDecorator;
@@ -85,7 +85,7 @@ export class ReporterStandardConsoleImp implements ReporterStandardConsole {
     this.paddedLog("");
     this.paddedLog(this.headerStyle("TEST RUN ARGUMENTS"));
 
-    _.forOwn(this.initArgs, (value: object, key: string) => this.paddedLog(this.util.padRight(key + ": ", 12) + value));
+    _.forOwn(this.initArgs, (value: number, key: string) => this.paddedLog(this.util.padRight(key + ": ", 12) + value));
 
     this.logger.log("================================================================================");
   }

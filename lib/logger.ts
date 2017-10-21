@@ -1,6 +1,5 @@
-import * as Chalk from "chalk";
+import chalk, {Chalk} from "chalk";
 import * as program from "commander";
-import {ChalkChain} from "chalk";
 
 interface NodeConsoleLogger {
   (message?: {}, ...optionalParams: {}[]): void;
@@ -107,18 +106,18 @@ export class LoggerImp implements Logger {
     }
   }
 
-  public levelToStyle(level: LogLevel): ChalkChain {
+  public levelToStyle(level: LogLevel): Chalk {
     switch (level) {
       case LogLevel.Trace:
-        return Chalk.dim.gray;
+        return chalk.dim.gray;
       case LogLevel.Debug:
-        return Chalk.gray;
+        return chalk.gray;
       case LogLevel.Info:
-        return Chalk.reset; // don"t apply any style
+        return chalk.reset; // don"t apply any style
       case LogLevel.Warn:
-        return Chalk.yellow;
+        return chalk.yellow;
       case LogLevel.Error:
-        return Chalk.red;
+        return chalk.red;
       default:
         throw new Error("Unknown log level: " + level);
     }

@@ -1,4 +1,4 @@
-import * as Chalk from "chalk";
+import chalk from "chalk";
 import * as program from "commander";
 import * as plugin from "./plugin";
 
@@ -19,15 +19,15 @@ export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator
   }
 
   public diff(value: string): string {
-    return Chalk.red(value);
+    return chalk.red(value);
   }
 
   public expect(value: string): string {
-    return Chalk.yellow(value);
+    return chalk.yellow(value);
   }
 
   public failed(value: string): string {
-    return Chalk.red(value);
+    return chalk.red(value);
   }
 
   public line(line: string): string {
@@ -35,15 +35,15 @@ export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator
   }
 
   public given(value: string): string {
-    return Chalk.yellow(value);
+    return chalk.yellow(value);
   }
 
   public inconclusive(value: string): string {
-    return Chalk.yellow(value);
+    return chalk.yellow(value);
   }
 
   public passed(value: string): string {
-    return Chalk.green(value);
+    return chalk.green(value);
   }
 
   public verticalBarEnd(): string {

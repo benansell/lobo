@@ -20,7 +20,7 @@ import {
 } from "../../../../lib/plugin";
 import {TestResultFormatter} from "../../../../lib/test-result-formatter";
 import {Util} from "../../../../lib/util";
-import {ChalkChain} from "chalk";
+import {Chalk} from "chalk";
 import {ReporterStandardConsole} from "../../../../lib/reporter-standard-console";
 
 let expect = chai.expect;
@@ -361,7 +361,7 @@ describe("plugin default-reporter reporter-plugin", () => {
     let revertLabelStyle: () => void;
 
     beforeEach(() => {
-      revertLabelStyle = RewiredPlugin.__set__({Chalk: {dim: x => x}});
+      revertLabelStyle = RewiredPlugin.__set__({chalk_1: { default: {dim: x => x}}});
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
       reporter = new rewiredImp(mockFormatter, mockStandardConsole, mockLogger, mockUtil);
     });
@@ -372,7 +372,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not pad top label", () => {
       // arrange
-      let mockStyle = <ChalkChain><{}> Sinon.stub();
+      let mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
       reporter.logLabels(["foo", "bar"], "baz", 1, [], mockStyle);
@@ -383,7 +383,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should pad child label", () => {
       // arrange
-      let mockStyle = <ChalkChain><{}> Sinon.stub();
+      let mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
       reporter.logLabels(["foo", "bar"], "baz", 1, [], mockStyle);
@@ -394,7 +394,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log labels that are in the context", () => {
       // arrange
-      let mockStyle = <ChalkChain><{}> Sinon.stub();
+      let mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
       reporter.logLabels(["foo", "bar"], "baz", 1, ["foo"], mockStyle);
@@ -405,7 +405,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should pad item label", () => {
       // arrange
-      let mockStyle = <ChalkChain><{}> (x => x);
+      let mockStyle = <Chalk><{}> (x => x);
 
       // act
       reporter.logLabels(["foo", "bar"], "baz", 1, [], mockStyle);
@@ -416,7 +416,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should add number prefix to item label", () => {
       // arrange
-      let mockStyle = <ChalkChain><{}> (x => x);
+      let mockStyle = <Chalk><{}> (x => x);
 
       // act
       reporter.logLabels(["foo", "bar"], "baz", 123, [], mockStyle);

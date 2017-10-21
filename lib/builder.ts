@@ -1,6 +1,6 @@
 import * as Bluebird from "bluebird";
 import * as _ from "lodash";
-import * as Chalk from "chalk";
+import chalk from "chalk";
 import * as path from "path";
 import * as shelljs from "shelljs";
 import * as childProcess from "child_process";
@@ -32,7 +32,7 @@ export class BuilderImp implements Builder {
   private logger: Logger;
   private elmPackageHelper: ElmPackageHelper;
   private util: Util;
-  private yOrN: string = Chalk.dim(" [Y/n]");
+  private yOrN: string = chalk.dim(" [Y/n]");
 
   constructor(elmPackageHelper: ElmPackageHelper, logger: Logger, util: Util) {
     this.elmPackageHelper = elmPackageHelper;
@@ -201,7 +201,7 @@ export class BuilderImp implements Builder {
   }
 
   public updateDependenciesAction(dependencies: string[][], testElmPackageDir: string, testElmPackage: ElmPackageJson): ElmPackageJson {
-    let sortedDependencies: string[][] = _.sortBy(dependencies, (kp: string) => kp[0]);
+    let sortedDependencies: string[][] = _.sortBy(dependencies, (kp: string[]) => kp[0]);
     testElmPackage.dependencies = _.fromPairs(sortedDependencies);
     this.elmPackageHelper.write(testElmPackageDir, testElmPackage);
 
@@ -345,7 +345,7 @@ export class BuilderImp implements Builder {
         resolve();
       } catch (err) {
         this.logger.error("");
-        this.logger.error(Chalk.bold("  BUILD FAILED"));
+        this.logger.error(chalk.bold("  BUILD FAILED"));
         this.logger.error("");
         this.logger.debug(err);
         reject(err);

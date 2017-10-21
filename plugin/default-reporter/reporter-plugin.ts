@@ -1,6 +1,6 @@
 import * as Bluebird from "bluebird";
 import * as _ from "lodash";
-import * as Chalk from "chalk";
+import chalk, {Chalk} from "chalk";
 import * as program from "commander";
 import {TestResultFormatter, createTestResultFormatter} from "../../lib/test-result-formatter";
 import * as plugin from "../../lib/plugin";
@@ -20,7 +20,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   private decorator: plugin.TestResultDecorator;
   private testResultFormatter: TestResultFormatter;
   private util: Util;
-  private labelStyle: Chalk.ChalkChain = Chalk.dim;
+  private labelStyle: Chalk = chalk.dim;
   private messagePrefixPadding: string;
   private diffMaxLength: number;
 
