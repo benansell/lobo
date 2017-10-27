@@ -8,7 +8,7 @@ import * as SinonChai from "sinon-chai";
 import {createTestResultFormatter, TestResultFormatter, TestResultFormatterImp} from "../../../lib/test-result-formatter";
 import {Comparer} from "../../../lib/comparer";
 import {
-  FailureMessage, ProgressReport, ResultType, TestReportFailedLeaf, TestReportSkippedLeaf, TestResultDecorator,
+  FailureMessage, ProgressReport, ResultType, TestReportFailedLeaf, TestReportSkippedLeaf, TestResultDecorator
 } from "../../../lib/plugin";
 
 let expect = chai.expect;
@@ -30,8 +30,8 @@ describe("lib test-result-formatter", () => {
       diff: Sinon.stub(),
       expect: Sinon.stub(),
       failed: Sinon.stub(),
-      line: Sinon.stub(),
       given: Sinon.stub(),
+      line: Sinon.stub(),
       skip: Sinon.stub(),
       todo: Sinon.stub(),
       verticalBarEnd: Sinon.stub(),
@@ -304,7 +304,8 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage("foo\n╷\n│ Expect.equalDicts bar\n╵\nbaz\n Diff: qux\n quux", 123);
 
       // assert
-      expect(formatter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equalDicts bar", "│", "└ baz"], Sinon.match.any);
+      expect(formatter.formatExpectEqualFailure).to.have.been
+        .calledWith(["┌ foo", "│", "│ Expect.equalDicts bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equalLists'", () => {
@@ -330,7 +331,8 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage("foo\n╷\n│ Expect.equalLists bar\n╵\nbaz\n Diff: qux\n quux", 123);
 
       // assert
-      expect(formatter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equalLists bar", "│", "└ baz"], Sinon.match.any);
+      expect(formatter.formatExpectEqualFailure).to.have.been
+        .calledWith(["┌ foo", "│", "│ Expect.equalLists bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure when failure message contains 'Expect.equalSets'", () => {
@@ -356,7 +358,8 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage("foo\n╷\n│ Expect.equalSets bar\n╵\nbaz\n Diff: qux\n quux", 123);
 
       // assert
-      expect(formatter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equalSets bar", "│", "└ baz"], Sinon.match.any);
+      expect(formatter.formatExpectEqualFailure).to.have.been
+        .calledWith(["┌ foo", "│", "│ Expect.equalSets bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure for equals failure with message as lines", () => {
@@ -369,7 +372,8 @@ describe("lib test-result-formatter", () => {
       formatter.formatFailureMessage("foo\n╷\n│ Expect.equal bar\n╵\nbaz", 123);
 
       // assert
-      expect(formatter.formatExpectEqualFailure).to.have.been.calledWith(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], Sinon.match.any);
+      expect(formatter.formatExpectEqualFailure).to.have.been
+        .calledWith(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], Sinon.match.any);
     });
 
     it("should call formatExpectEqualFailure for equals failure with supplied maxLength", () => {

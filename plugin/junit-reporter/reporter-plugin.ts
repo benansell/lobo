@@ -157,7 +157,7 @@ export class JUnitReporter implements plugin.PluginReporter {
       return this.write(program.reportFile, measuredRoot);
     });
 
-    return Bluebird.mapSeries(steps, item => item());
+    return Bluebird.mapSeries(steps, (item: () => Bluebird<object>) => item());
   }
 
   public writeResult(writeLine: WriteLine, measuredRoot: MeasuredNode): void {

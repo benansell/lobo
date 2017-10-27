@@ -367,7 +367,7 @@ describe("lib logger", () => {
     beforeEach(() => {
       revertChalk = RewiredLogger.__set__({
         chalk_1: {
-          default: {
+          "default": {
             dim: {gray: x => "dim gray"},
             gray: x => "gray",
             red: x => "red",

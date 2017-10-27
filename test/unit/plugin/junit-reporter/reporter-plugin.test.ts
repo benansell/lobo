@@ -34,7 +34,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
   beforeEach(() => {
     mockCreateWriteStream = Sinon.stub();
-    RewiredPlugin.__set__({ fs: { createWriteStream: mockCreateWriteStream }});
+    RewiredPlugin.__set__({fs: {createWriteStream: mockCreateWriteStream}});
     let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
     mockLogger = {log: Sinon.spy()};
     mockStandardConsole = <ReporterStandardConsole> {
@@ -43,9 +43,9 @@ describe("plugin junit-reporter reporter-plugin", () => {
       runArgs: Sinon.stub(),
       update: Sinon.stub()
     };
-    mockConsoleFormatter = <TestResultFormatter><{}>{ formatUpdate: Sinon.stub() };
-    mockHtmlFormatter = <TestResultFormatter><{}>{ formatFailure: Sinon.stub() };
-    mockTextFormatter = <TestResultFormatter><{}>{ formatFailure: Sinon.stub() };
+    mockConsoleFormatter = <TestResultFormatter><{}>{formatUpdate: Sinon.stub()};
+    mockHtmlFormatter = <TestResultFormatter><{}>{formatFailure: Sinon.stub()};
+    mockTextFormatter = <TestResultFormatter><{}>{formatFailure: Sinon.stub()};
     mockWriteLine = Sinon.stub();
     reporter = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
   });
@@ -63,7 +63,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
   describe("constructor", () => {
     it("should set diffMaxLength to program.diffMaxLength", () => {
       // arrange
-      RewiredPlugin.__set__({ program: { diffMaxLength: 123 }});
+      RewiredPlugin.__set__({program: {diffMaxLength: 123}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
 
       // act
@@ -119,7 +119,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return zero when the node startTime is undefined", () => {
       // act
-      let actual = JUnitReporter.getDurationSecondsFrom({ startTime: undefined, endTime: 456});
+      let actual = JUnitReporter.getDurationSecondsFrom({startTime: undefined, endTime: 456});
 
       // assert
       expect(actual).to.equal(0);
@@ -127,7 +127,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return zero when the node endTime is undefined", () => {
       // act
-      let actual = JUnitReporter.getDurationSecondsFrom({ startTime: 123, endTime: undefined});
+      let actual = JUnitReporter.getDurationSecondsFrom({startTime: 123, endTime: undefined});
 
       // assert
       expect(actual).to.equal(0);
@@ -135,7 +135,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return zero when the number of seconds between the node endTime and startTime", () => {
       // act
-      let actual = JUnitReporter.getDurationSecondsFrom({ startTime: 1000, endTime: 3000});
+      let actual = JUnitReporter.getDurationSecondsFrom({startTime: 1000, endTime: 3000});
 
       // assert
       expect(actual).to.equal(2);
@@ -157,7 +157,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       reporter.enrichResult = Sinon.spy();
 
       // act
-      reporter.build(<TestRunSummary> { endDateTime: expected});
+      reporter.build(<TestRunSummary> {endDateTime: expected});
 
       // assert
       expect(reporter.enrichResult).to.have.been.calledWith(Sinon.match({endTime: expected.getTime()}));
@@ -169,7 +169,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       reporter.enrichResult = Sinon.spy();
 
       // act
-      reporter.build(<TestRunSummary> { startDateTime: expected});
+      reporter.build(<TestRunSummary> {startDateTime: expected});
 
       // assert
       expect(reporter.enrichResult).to.have.been.calledWith(Sinon.match({startTime: expected.getTime()}));
@@ -179,7 +179,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
   describe("enrichResult", () => {
     it("should return a node with failedCount of 1 when supplied resultType is 'FAILED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "FAILED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "FAILED"});
 
       // assert
       expect(actual.failedCount).to.equal(1);
@@ -187,7 +187,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with testCount of 1 when supplied resultType is 'FAILED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "FAILED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "FAILED"});
 
       // assert
       expect(actual.testCount).to.equal(1);
@@ -195,7 +195,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with ignoredCount of 1 when supplied resultType is 'IGNORED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "IGNORED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "IGNORED"});
 
       // assert
       expect(actual.ignoredCount).to.equal(1);
@@ -203,7 +203,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with testCount of 1 when supplied resultType is 'IGNORED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "IGNORED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "IGNORED"});
 
       // assert
       expect(actual.testCount).to.equal(1);
@@ -211,7 +211,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with passedCount of 1 when supplied resultType is 'PASSED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "PASSED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "PASSED"});
 
       // assert
       expect(actual.passedCount).to.equal(1);
@@ -219,7 +219,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with testCount of 1 when supplied resultType is 'PASSED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "PASSED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "PASSED"});
 
       // assert
       expect(actual.testCount).to.equal(1);
@@ -227,7 +227,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with passedCount of 1 when supplied resultType is 'SKIPPED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "SKIPPED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "SKIPPED"});
 
       // assert
       expect(actual.skippedCount).to.equal(1);
@@ -235,7 +235,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with testCount of 1 when supplied resultType is 'SKIPPED'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "SKIPPED"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "SKIPPED"});
 
       // assert
       expect(actual.testCount).to.equal(1);
@@ -243,7 +243,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with todoCount of 1 when supplied resultType is 'TODO'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "TODO"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "TODO"});
 
       // assert
       expect(actual.todoCount).to.equal(1);
@@ -251,7 +251,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a node with testCount of 1 when supplied resultType is 'TODO'", () => {
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: "TODO"});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: "TODO"});
 
       // assert
       expect(actual.testCount).to.equal(1);
@@ -259,10 +259,10 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return the node from enrichResultChildren node when supplied unknown resultType", () => {
       // arrange
-      let expected = <MeasuredNode> { testCount: 123 };
+      let expected = <MeasuredNode> {testCount: 123};
       reporter.enrichResultChildren = x => expected;
       // act
-      let actual = reporter.enrichResult(<TestReportNode> { resultType: undefined});
+      let actual = reporter.enrichResult(<TestReportNode> {resultType: undefined});
 
       // assert
       expect(actual).to.equal(expected);
@@ -272,7 +272,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
   describe("enrichResultChildren", () => {
     it("should return a measuredNode that has the sum of child tests", () => {
       // arrange
-      let node = <TestReportSuiteNode> { results: [{resultType: "FAILED"}, {resultType: "PASSED"}]};
+      let node = <TestReportSuiteNode> {results: [{resultType: "FAILED"}, {resultType: "PASSED"}]};
 
       // act
       let actual = reporter.enrichResultChildren(node);
@@ -283,7 +283,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a measuredNode that has the sum of failed child tests", () => {
       // arrange
-      let node = <TestReportSuiteNode> { results: [{resultType: "FAILED"}, {resultType: "FAILED"}, {resultType: "PASSED"}]};
+      let node = <TestReportSuiteNode> {results: [{resultType: "FAILED"}, {resultType: "FAILED"}, {resultType: "PASSED"}]};
 
       // act
       let actual = reporter.enrichResultChildren(node);
@@ -294,7 +294,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a measuredNode that has the sum of ignored child tests", () => {
       // arrange
-      let node = <TestReportSuiteNode> { results: [{resultType: "IGNORED"}, {resultType: "IGNORED"}, {resultType: "PASSED"}]};
+      let node = <TestReportSuiteNode> {results: [{resultType: "IGNORED"}, {resultType: "IGNORED"}, {resultType: "PASSED"}]};
 
       // act
       let actual = reporter.enrichResultChildren(node);
@@ -305,7 +305,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a measuredNode that has the sum of passed child tests", () => {
       // arrange
-      let node = <TestReportSuiteNode> { results: [{resultType: "PASSED"}, {resultType: "PASSED"}, {resultType: "FAILED"}]};
+      let node = <TestReportSuiteNode> {results: [{resultType: "PASSED"}, {resultType: "PASSED"}, {resultType: "FAILED"}]};
 
       // act
       let actual = reporter.enrichResultChildren(node);
@@ -316,7 +316,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a measuredNode that has the sum of skipped child tests", () => {
       // arrange
-      let node = <TestReportSuiteNode> { results: [{resultType: "SKIPPED"}, {resultType: "SKIPPED"}, {resultType: "PASSED"}]};
+      let node = <TestReportSuiteNode> {results: [{resultType: "SKIPPED"}, {resultType: "SKIPPED"}, {resultType: "PASSED"}]};
 
       // act
       let actual = reporter.enrichResultChildren(node);
@@ -327,7 +327,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a measuredNode that has the sum of todo child tests", () => {
       // arrange
-      let node = <TestReportSuiteNode> { results: [{resultType: "TODO"}, {resultType: "TODO"}, {resultType: "PASSED"}]};
+      let node = <TestReportSuiteNode> {results: [{resultType: "TODO"}, {resultType: "TODO"}, {resultType: "PASSED"}]};
 
       // act
       let actual = reporter.enrichResultChildren(node);
@@ -488,7 +488,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // assert
       expect(reporter.writeFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected, Sinon.match.any);
     });
-    
+
     it("should call writeFailure with the supplied padding when the node resultType is 'FAILED'", () => {
       // arrange
       reporter.writeFailure = Sinon.spy();
@@ -752,7 +752,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       reporter.writeResultList = mockWriteResultList;
       let suite = <TestReportSuiteNode><{}>{label: "bar", results: [<TestReportFailedLeaf>{resultType: "FAILED"}]};
       reporter.writeTestSuiteStart = Sinon.stub();
-      
+
       // act
       reporter.writeResultList(mockWriteLine, "foo", [suite], "::");
 
@@ -833,7 +833,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testcase.* classname="foo".*>/));
     });
-    
+
     it("should call writeLine for the end testcase node", () => {
       // act
       reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
@@ -847,7 +847,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       let mockFormatFailure = Sinon.stub();
       mockFormatFailure.returns("baz");
       mockHtmlFormatter.formatFailure = mockFormatFailure;
-      
+
       // act
       reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
 
@@ -857,7 +857,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeFailureAsHtml with failure node when junitFormat is html", () => {
       // arrange
-      RewiredPlugin.__set__({ program: { junitFormat: "html" }});
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
       let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
       rep.writeFailureAsHtml = Sinon.spy();
@@ -872,7 +872,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeFailureAsText with failure node when junitFormat is html", () => {
       // arrange
-      RewiredPlugin.__set__({ program: { junitFormat: "text" }});
+      RewiredPlugin.__set__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
       let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
       rep.writeFailureAsText = Sinon.spy();
@@ -916,7 +916,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call formatFailure with diffMaxLength", () => {
       // arrange
-      RewiredPlugin.__set__({ program: { diffMaxLength: 123 }});
+      RewiredPlugin.__set__({program: {diffMaxLength: 123}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
       let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
 
@@ -963,7 +963,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call formatFailure with diffMaxLength", () => {
       // arrange
-      RewiredPlugin.__set__({ program: { diffMaxLength: 123 }});
+      RewiredPlugin.__set__({program: {diffMaxLength: 123}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
       let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
 
@@ -1063,7 +1063,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/code>/));
     });
   });
-  
+
   describe("writeIgnored", () => {
     it("should call writeLine for the testcase node with name attribute value from the label", () => {
       // act
@@ -1234,7 +1234,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuite.* failures="123".*>/));
     });
   });
-  
+
   describe("writeTestSuiteEnd", () => {
     it("should call writeLine for the end testcase node", () => {
       // act
@@ -1286,14 +1286,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<skipped><\/skipped>/));
     });
   });
-  
-  
+
+
   describe("write", () => {
     it("should write the results to reportFile path", () => {
       // arrange
       reporter.writeResult = Sinon.stub();
       (<SinonStub>reporter.writeResult).returns("baz");
-      mockCreateWriteStream.returns({ end: (value, cb) => cb() });
+      mockCreateWriteStream.returns({end: (value, cb) => cb()});
 
       // act
       let actual = reporter.write("foo", <MeasuredNode>{label: "bar"});
@@ -1309,7 +1309,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       let expected = <MeasuredNode>{label: "bar"};
       reporter.writeResult = Sinon.stub();
       (<SinonStub>reporter.writeResult).returns("baz");
-      mockCreateWriteStream.returns({ end: (value, cb) => cb() });
+      mockCreateWriteStream.returns({end: (value, cb) => cb()});
 
       // act
       let actual = reporter.write("foo", expected);

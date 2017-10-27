@@ -18,7 +18,7 @@ describe("lib test-result-decorator-console", () => {
   let mockRedStyle: SinonStub;
   let mockGreenStyle: SinonStub;
   let mockYellowStyle: SinonStub;
-  
+
   beforeEach(() => {
     mockRedStyle = Sinon.stub();
     mockGreenStyle = Sinon.stub();
@@ -26,14 +26,14 @@ describe("lib test-result-decorator-console", () => {
 
     RewiredDecorator.__set__({
       chalk_1: {
-        default: {
+        "default": {
           green: mockGreenStyle,
           red: mockRedStyle,
           yellow: mockYellowStyle
         }
       }
     });
-    
+
     rewiredImp = RewiredDecorator.__get__("TestResultDecoratorConsoleImp");
     decorator = new rewiredImp();
   });
@@ -161,14 +161,14 @@ describe("lib test-result-decorator-console", () => {
       expect(actual).to.equal("┌");
     });
   });
-  
+
   describe("diff", () => {
     it("should return value styled with red", () => {
       // arrange
       mockRedStyle.callsFake(x => x + "bar");
 
       // act
-      let actual  = decorator.diff("foo");
+      let actual = decorator.diff("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -181,7 +181,7 @@ describe("lib test-result-decorator-console", () => {
       mockYellowStyle.callsFake(x => x + "bar");
 
       // act
-      let actual  = decorator.expect("foo");
+      let actual = decorator.expect("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -194,7 +194,7 @@ describe("lib test-result-decorator-console", () => {
       mockRedStyle.callsFake(x => x + "bar");
 
       // act
-      let actual  = decorator.failed("foo");
+      let actual = decorator.failed("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -204,7 +204,7 @@ describe("lib test-result-decorator-console", () => {
   describe("line", () => {
     it("should return value without any changes", () => {
       // act
-      let actual  = decorator.line("foo");
+      let actual = decorator.line("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -217,7 +217,7 @@ describe("lib test-result-decorator-console", () => {
       mockYellowStyle.callsFake(x => x + "bar");
 
       // act
-      let actual  = decorator.given("foo");
+      let actual = decorator.given("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -230,7 +230,7 @@ describe("lib test-result-decorator-console", () => {
       mockYellowStyle.callsFake(x => x + "bar");
 
       // act
-      let actual  = decorator.inconclusive("foo");
+      let actual = decorator.inconclusive("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -243,7 +243,7 @@ describe("lib test-result-decorator-console", () => {
       mockGreenStyle.callsFake(x => x + "bar");
 
       // act
-      let actual  = decorator.passed("foo");
+      let actual = decorator.passed("foo");
 
       // assert
       expect(actual).to.equal("foobar");

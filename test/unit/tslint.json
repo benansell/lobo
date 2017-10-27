@@ -1,5 +1,10 @@
 {
+  "extends": [
+    "../../tslint.json"
+  ],
   "rules": {
-    "no-require-imports": false
+    "no-require-imports": false,
+    "no-unused-expression": false,
+    "no-var-requires": false
   }
 }

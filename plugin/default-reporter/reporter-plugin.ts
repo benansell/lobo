@@ -88,7 +88,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       }
     }));
 
-    return Bluebird.mapSeries(steps, item => item());
+    return Bluebird.mapSeries(steps, (item: () => Bluebird<object>) => item());
   }
 
   public sortItemsByLabel(items: LeafItem[]): LeafItem[] {

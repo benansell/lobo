@@ -40,8 +40,8 @@ describe("plugin default-reporter reporter-plugin", () => {
     mockDecorator = <TestResultDecorator> {};
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: Sinon.stub(),
-      formatNotRun: Sinon.stub(),
       formatFailure: Sinon.stub(),
+      formatNotRun: Sinon.stub(),
       formatUpdate: Sinon.stub()
     };
     mockStandardConsole = <ReporterStandardConsole> {
@@ -361,7 +361,7 @@ describe("plugin default-reporter reporter-plugin", () => {
     let revertLabelStyle: () => void;
 
     beforeEach(() => {
-      revertLabelStyle = RewiredPlugin.__set__({chalk_1: { default: {dim: x => x}}});
+      revertLabelStyle = RewiredPlugin.__set__({chalk_1: { "default": {dim: x => x}}});
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
       reporter = new rewiredImp(mockFormatter, mockStandardConsole, mockLogger, mockUtil);
     });

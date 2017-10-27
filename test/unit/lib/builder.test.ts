@@ -23,8 +23,8 @@ describe("lib builder", () => {
   let mockHelper: ElmPackageHelper;
   let mockLogger: Logger;
   let mockUtil: Util;
-  let mockReject: any;
-  let mockResolve: any;
+  let mockReject: (error: Error) => void;
+  let mockResolve: () => void;
   let revertPrompt: () => void;
 
   beforeEach(() => {
@@ -32,17 +32,17 @@ describe("lib builder", () => {
     revertPrompt = RewiredBuilder.__set__({promptly: {confirm: mockConfirm}});
     let rewiredImp = RewiredBuilder.__get__("BuilderImp");
     mockLogger = <Logger> {};
-    mockLogger.debug = <any> Sinon.spy();
-    mockLogger.error = <any> Sinon.spy();
-    mockLogger.info = <any> Sinon.spy();
-    mockLogger.trace = <any> Sinon.spy();
+    mockLogger.debug = Sinon.spy();
+    mockLogger.error = Sinon.spy();
+    mockLogger.info = Sinon.spy();
+    mockLogger.trace = Sinon.spy();
     mockHelper = <ElmPackageHelper> {path: x => x, read: Sinon.stub(), write: Sinon.stub()};
     mockUtil = <Util> {};
-    mockUtil.resolveDir = <any> Sinon.spy();
+    mockUtil.resolveDir = Sinon.spy();
     builder = new rewiredImp(mockHelper, mockLogger, mockUtil);
 
-    mockReject = <any> Sinon.spy();
-    mockResolve = <any> Sinon.spy();
+    mockReject = Sinon.spy();
+    mockResolve = Sinon.spy();
   });
 
   afterEach(() => {
@@ -403,7 +403,8 @@ describe("lib builder", () => {
       builder.ensureElmPackageExists(config, "foo", "bar");
 
       // assert
-      expect(builder.runElmPackageInstall).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, false, Sinon.match.any, Sinon.match.any);
+      expect(builder.runElmPackageInstall).to.have.been
+        .calledWith(Sinon.match.any, Sinon.match.any, false, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call runElmPackageInstall with prompt true when config.prompt is true", () => {
@@ -416,7 +417,8 @@ describe("lib builder", () => {
       builder.ensureElmPackageExists(config, "foo", "bar");
 
       // assert
-      expect(builder.runElmPackageInstall).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, true, Sinon.match.any, Sinon.match.any);
+      expect(builder.runElmPackageInstall).to.have.been
+        .calledWith(Sinon.match.any, Sinon.match.any, true, Sinon.match.any, Sinon.match.any);
     });
   });
 
@@ -474,8 +476,8 @@ describe("lib builder", () => {
 
       // assert
       actual.then(() => {
-        expect(builder.updateSourceDirectories).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any,
-          Sinon.match.any, Sinon.match.any);
+        expect(builder.updateSourceDirectories).to.have.been
+          .calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -1372,7 +1374,8 @@ describe("lib builder", () => {
       let testFramework = <PluginTestFrameworkWithConfig> {config: {sourceDirectories: []}};
 
       // act
-      let actual = builder.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, "testDir", ".", testFramework);
+      let actual = builder
+        .mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, "testDir", ".", testFramework);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -1601,8 +1604,6 @@ describe("lib builder", () => {
   describe("runElmPackageInstall", () => {
     let revertChildProcess: () => void;
     let mockExec: SinonStub;
-    let mockResolve: () => void;
-    let mockReject: (Error) => void;
 
     beforeEach(() => {
       mockExec = Sinon.stub();
@@ -1716,7 +1717,8 @@ describe("lib builder", () => {
       mockExec = Sinon.stub();
       mockPathResolve = Sinon.stub();
       mockJoin = Sinon.stub();
-      revertMocks = RewiredBuilder.__set__({childProcess: {execSync: mockExec}, console: {log: Sinon.stub()}, path: { resolve: mockPathResolve, join: mockJoin}});
+      revertMocks = RewiredBuilder.__set__({childProcess: {execSync: mockExec}, console: {log: Sinon.stub()},
+        path: { resolve: mockPathResolve, join: mockJoin}});
     });
 
     afterEach(() => {

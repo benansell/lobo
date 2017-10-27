@@ -128,7 +128,7 @@ describe("lib main", () => {
       revert(() => lobo.execute());
 
       // assert
-      expect(lobo.watch).to.have.been.calledWith(expected)
+      expect(lobo.watch).to.have.been.calledWith(expected);
     });
 
     it("should call launch with config when program.watch is false", () => {
@@ -144,7 +144,7 @@ describe("lib main", () => {
       revert(() => lobo.execute());
 
       // assert
-      expect(lobo.launch).to.have.been.calledWith(expected)
+      expect(lobo.launch).to.have.been.calledWith(expected);
     });
 
     it("should exit the process with exitCode 1 when there is an error", () => {
@@ -215,7 +215,7 @@ describe("lib main", () => {
       // assert
       actual.then(() => {
         expect(lobo.done).not.to.have.been.called;
-      })
+      });
     });
 
     it("should call done with the config when watch is true", () => {
@@ -377,8 +377,8 @@ describe("lib main", () => {
       revert(() => lobo.watch(config));
 
       // assert
-      expect(mockWatch.firstCall.args[0]).to.include('src');
-      expect(mockWatch.firstCall.args[0]).to.include('test');
+      expect(mockWatch.firstCall.args[0]).to.include("src");
+      expect(mockWatch.firstCall.args[0]).to.include("test");
     });
 
     it("should call launch with supplied config when 'ready' event is received", () => {
@@ -1000,7 +1000,8 @@ describe("lib main", () => {
       lobo.showCustomHelp();
 
       // assert
-      expect(lobo.showCustomHelpForPlugins).to.have.been.calledWith({fileSpec: Sinon.match.any, type: "testing framework"}, Sinon.match.any);
+      expect(lobo.showCustomHelpForPlugins).to.have.been
+        .calledWith({fileSpec: Sinon.match.any, type: "testing framework"}, Sinon.match.any);
     });
 
     it("should call showCustomHelpForPlugins with 'test-plugin'", () => {
@@ -1146,9 +1147,9 @@ describe("lib main", () => {
     it("should log an error with the specified test file when the specified test file cannot be found in the test directory", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
         program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
-        shelljs: {test: () => false},
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x}
+        shelljs: {test: () => false}
       });
 
       // act
@@ -1161,9 +1162,9 @@ describe("lib main", () => {
     it("should log an error with the specified test directory when the specified test file cannot be found in the test directory", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
         program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
-        shelljs: {test: () => false},
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x}
+        shelljs: {test: () => false}
       });
 
       // act
@@ -1176,9 +1177,9 @@ describe("lib main", () => {
     it("should call process.exit with an exitCode of 1 when the Tests.elm file cannot be found in the test directory", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
         program: {compiler: "foo", testDirectory: "bar", testFile: "baz-Tests.elm"},
-        shelljs: {test: () => false},
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x}
+        shelljs: {test: () => false}
       });
 
       // act
@@ -1191,9 +1192,9 @@ describe("lib main", () => {
     it("should log an error when the test framework is elm-test and showSkip is true", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {framework: "elm-test", showSkip: true},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1206,9 +1207,9 @@ describe("lib main", () => {
     it("should not log an error when the test framework is elm-test and showSkip is false", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {framework: "elm-test", showSkip: false},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1221,9 +1222,9 @@ describe("lib main", () => {
     it("should call process.exit with an exitCode of 1 when the test framework is elm-test and showSkip is true", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {framework: "elm-test", showSkip: true},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1236,9 +1237,9 @@ describe("lib main", () => {
     it("should log an error when the reporter is junit and reportFile is unset", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {reporter: "junit-reporter", reportFile: undefined},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1251,9 +1252,9 @@ describe("lib main", () => {
     it("should not log an error when the reporter is junit and reportFile has a value", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {reporter: "junit-reporter", reportFile: "foo"},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1266,9 +1267,9 @@ describe("lib main", () => {
     it("should call process.exit with an exitCode of 1 when the reporter is junit and reportFile is unset", () => {
       // arrange
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {reporter: "junit-reporter", reportFile: undefined},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1282,9 +1283,9 @@ describe("lib main", () => {
       // arrange
       (<SinonStub>mockUtil.isInteger).returns(false);
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {reporter: "junit-reporter", reportFile: "foo", diffMaxLength: "bar"},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1298,9 +1299,9 @@ describe("lib main", () => {
       // arrange
       (<SinonStub>mockUtil.isInteger).returns(true);
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {reporter: "junit-reporter", reportFile: "foo", diffMaxLength: "122"},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act
@@ -1314,9 +1315,9 @@ describe("lib main", () => {
       // arrange
       (<SinonStub>mockUtil.isInteger).returns(false);
       let revert = rewiredMain.__with__({
+        path: {join: () => undefined},
         program: {reporter: "junit-reporter", reportFile: "foo", diffMaxLength: "122"},
-        shelljs: {test: () => true},
-        path: {join: () => undefined}
+        shelljs: {test: () => true}
       });
 
       // act

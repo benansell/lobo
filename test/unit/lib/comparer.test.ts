@@ -12,7 +12,7 @@ describe("lib compare", () => {
   let mockLogger: Logger;
 
   beforeEach(() => {
-    mockLogger = <any> Sinon.mock();
+    mockLogger = <Logger><{}> Sinon.mock();
     mockLogger.error = Sinon.spy();
     mockLogger.debug = Sinon.spy();
     comparer = new ComparerImp(mockLogger);
@@ -414,55 +414,50 @@ describe("lib compare", () => {
       expect(actual.right).to.equal("   ^^^");
     });
 
-    it("should add a left hint when the inputs are different and left is longer contains right",
-      () => {
-        // act
-        let actual = comparer.diffValue("foobar", "foo");
+    it("should add a left hint when the inputs are different and left is longer contains right", () => {
+      // act
+      let actual = comparer.diffValue("foobar", "foo");
 
-        // assert
-        expect(actual.left).to.equal("   ^^^");
-        expect(actual.right).to.equal("   ");
-      });
+      // assert
+      expect(actual.left).to.equal("   ^^^");
+      expect(actual.right).to.equal("   ");
+    });
 
-    it("should add a left hint when the inputs are different and left is longer contains right",
-      () => {
-        // act
-        let actual = comparer.diffValue("foobar", "bar");
+    it("should add a left hint when the inputs are different and left is longer contains right", () => {
+      // act
+      let actual = comparer.diffValue("foobar", "bar");
 
-        // assert
-        expect(actual.left).to.equal("^^^   ");
-        expect(actual.right).to.equal("   ");
-      });
+      // assert
+      expect(actual.left).to.equal("^^^   ");
+      expect(actual.right).to.equal("   ");
+    });
 
-    it("should add a right hint when the inputs are different and right is longer contains left",
-      () => {
-        // act
-        let actual = comparer.diffValue("bar", "foobar");
+    it("should add a right hint when the inputs are different and right is longer contains left", () => {
+      // act
+      let actual = comparer.diffValue("bar", "foobar");
 
-        // assert
-        expect(actual.left).to.equal("   ");
-        expect(actual.right).to.equal("^^^   ");
-      });
+      // assert
+      expect(actual.left).to.equal("   ");
+      expect(actual.right).to.equal("^^^   ");
+    });
 
-    it("should add a left hint when the inputs are different and right is longer does not contain left",
-      () => {
-        // act
-        let actual = comparer.diffValue("baz", "foobar");
+    it("should add a left hint when the inputs are different and right is longer does not contain left", () => {
+      // act
+      let actual = comparer.diffValue("baz", "foobar");
 
-        // assert
-        expect(actual.left).to.equal("   ");
-        expect(actual.right).to.equal("^^^^^^");
-      });
+      // assert
+      expect(actual.left).to.equal("   ");
+      expect(actual.right).to.equal("^^^^^^");
+    });
 
-    it("should add a left hint when the inputs are different and right is longer left in middle",
-      () => {
-        // act
-        let actual = comparer.diffValue("faobar", "ob");
+    it("should add a left hint when the inputs are different and right is longer left in middle", () => {
+      // act
+      let actual = comparer.diffValue("faobar", "ob");
 
-        // assert
-        expect(actual.left).to.equal("^^  ^^");
-        expect(actual.right).to.equal("  ");
-      });
+      // assert
+      expect(actual.left).to.equal("^^  ^^");
+      expect(actual.right).to.equal("  ");
+    });
 
     it("should hint around decimal when only one side has a decimal", () => {
       // act

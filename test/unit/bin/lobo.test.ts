@@ -24,7 +24,7 @@ describe("bin lobo", () => {
       mockCreateLobo = Sinon.stub();
       mockCreateLobo.returns(mockLobo);
       revert = rewiredLobo.__set__( {main: { createLobo: mockCreateLobo } });
-      run = rewiredLobo.__get__('run');
+      run = rewiredLobo.__get__("run");
     });
 
     afterEach(() => {
@@ -46,15 +46,15 @@ describe("bin lobo", () => {
       // arrange
       let expected = new Error("foo");
       let fakeOn = (eventName, func) => {
-        if(eventName === "uncaughtException") {
+        if (eventName === "uncaughtException") {
           func(expected);
         }
       };
 
-      let revert = rewiredLobo.__with__({process: { on: fakeOn}});
+      let revertWith = rewiredLobo.__with__({process: { on: fakeOn}});
 
       // act
-      revert(() => run());
+      revertWith(() => run());
 
 
       // assert
