@@ -117,7 +117,7 @@ export class LoboImp implements Lobo {
       () => this.runner.run(config)
     ];
 
-    return Bluebird.mapSeries(stages, (item) => {
+    return Bluebird.mapSeries(stages, (item: () => Bluebird<object>) => {
       return item();
     }).then(() => {
       this.logger.debug("launch success");

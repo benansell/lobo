@@ -58,7 +58,7 @@ export class BuilderImp implements Builder {
 
     steps = steps.concat([() => this.installDependencies(config, testDirectory), () => this.make(config, testDirectory, testFile)]);
 
-    return Bluebird.mapSeries(steps, item => item());
+    return Bluebird.mapSeries(steps, (item: () => Bluebird<object>) => item());
   }
 
   public ensureElmPackageExists(config: LoboConfig, elmPackageDir: string, location: string): Bluebird<object> {
@@ -90,13 +90,15 @@ export class BuilderImp implements Builder {
   }
 
   public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string, testDir: string): Bluebird<object> {
-    let steps = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
+    let steps: Array<(result?: ElmPackageCompare) => Bluebird<object>> = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
       (result: ElmPackageCompare) =>
         this.updateSourceDirectories(config, baseElmPackageDir, result.base, testElmPackageDir, testDir, result.test),
       (result: ElmPackageCompare) => this.updateDependencies(config, result.base, testElmPackageDir, result.test)];
 
     let value: ElmPackageCompare;
-    return Bluebird.mapSeries(steps, (item) => item(value).then((result: ElmPackageCompare) => value = result));
+
+    return Bluebird.mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<object>) => item(value)
+      .then((result: ElmPackageCompare) => value = result));
   }
 
   public readElmPackage(baseElmPackageDir: string, testElmPackageDir: string): Bluebird<object> {
