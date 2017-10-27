@@ -38,16 +38,17 @@ describe("lib util", () => {
     mockVersions = Sinon.stub();
 
     RewiredUtil.__set__({
-      fs: { existsSync: mockExists, lstatSync: mockLstat, realpathSync: mockRealPath },
-      path: { dirname: mockDirname, relative: mockRelativePath, resolve: mockResolvePath},
-      process: { exit: mockExit, versions: mockVersions}});
+      fs: {existsSync: mockExists, lstatSync: mockLstat, realpathSync: mockRealPath},
+      path: {dirname: mockDirname, relative: mockRelativePath, resolve: mockResolvePath},
+      process: {exit: mockExit, versions: mockVersions}
+    });
     let rewiredImp = RewiredUtil.__get__("UtilImp");
 
-    mockLogger = <any> Sinon.mock();
-    mockLogger.debug = <any> Sinon.stub();
-    mockLogger.info = <any> Sinon.stub();
-    mockLogger.error = <any> Sinon.stub();
-    mockLogger.trace = <any> Sinon.stub();
+    mockLogger = <Logger><{}>Sinon.mock();
+    mockLogger.debug = Sinon.stub();
+    mockLogger.info = Sinon.stub();
+    mockLogger.error = Sinon.stub();
+    mockLogger.trace = Sinon.stub();
     util = new rewiredImp(mockLogger);
   });
 
@@ -90,7 +91,7 @@ describe("lib util", () => {
       processMajor = 123;
       processMinor = 456;
       processPatch = 789;
-      (<{node: string}><{}>mockVersions).node = "123.456.789";
+      (<{ node: string }><{}>mockVersions).node = "123.456.789";
 
       mockLogInfo = Sinon.stub(console, "info");
       mockLogError = Sinon.stub(console, "error");
@@ -177,7 +178,7 @@ describe("lib util", () => {
     it("should call load with supplied type", () => {
       // arrange
       let mockLoad = Sinon.stub();
-      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
+      mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
       let mockGetPluginConfig = Sinon.stub();
@@ -194,7 +195,7 @@ describe("lib util", () => {
     it("should call load with supplied pluginName", () => {
       // arrange
       let mockLoad = Sinon.stub();
-      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
+      mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
       let mockGetPluginConfig = Sinon.stub();
@@ -211,7 +212,7 @@ describe("lib util", () => {
     it("should call load with supplied fileSpec", () => {
       // arrange
       let mockLoad = Sinon.stub();
-      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
+      mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
       let mockGetPluginConfig = Sinon.stub();
@@ -228,7 +229,7 @@ describe("lib util", () => {
     it("should call load with isConfiguration false", () => {
       // arrange
       let mockLoad = Sinon.stub();
-      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => <Plugin>{}});
+      mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
       let mockGetPluginConfig = Sinon.stub();
@@ -246,7 +247,7 @@ describe("lib util", () => {
       // arrange
       let expected = {name: "qux"};
       let mockLoad = Sinon.stub();
-      mockLoad.returns(<{createPlugin: () => Plugin}> { createPlugin: () => expected });
+      mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => expected});
       util.load = mockLoad;
 
       let mockGetPluginConfig = Sinon.stub();
@@ -318,7 +319,7 @@ describe("lib util", () => {
       // arrange
       let expected = <PluginConfig> {name: "qux"};
       let mockLoad = Sinon.stub();
-      mockLoad.returns(<{PluginConfig: PluginConfig}> { PluginConfig: expected});
+      mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: expected});
       util.load = mockLoad;
 
       // act
@@ -397,7 +398,9 @@ describe("lib util", () => {
 
     it("should catch syntax error in config and log error", () => {
       // arrange
-      let mockJoin = function() {throw new SyntaxError("foo"); };
+      let mockJoin = () => {
+        throw new SyntaxError("foo");
+      };
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
@@ -409,7 +412,9 @@ describe("lib util", () => {
 
     it("should catch other errors in load and log error as 'not found'", () => {
       // arrange
-      let mockJoin = function() {throw new Error("foo"); };
+      let mockJoin = () => {
+        throw new Error("foo");
+      };
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
       util.closestMatch = Sinon.stub();
@@ -423,13 +428,15 @@ describe("lib util", () => {
 
     it("should catch other errors in load suggest closest plugin name", () => {
       // arrange
-      let mockJoin = function() {throw new Error("foo"); };
+      let mockJoin = () => {
+        throw new Error("foo");
+      };
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
       let mockClosestMatch = Sinon.stub();
       util.closestMatch = mockClosestMatch;
 
-        // act
+      // act
       revertPath(() => util.load("foo", "bar", "baz", false));
 
       // assert

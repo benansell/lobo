@@ -13,25 +13,25 @@ import {LoboConfig, PluginReporter, PluginTestFramework, ProgressReport, TestRep
 let expect = chai.expect;
 chai.use(SinonChai);
 
-describe("lib runner", function() {
+describe("lib runner", () => {
   let RewiredRunner = rewire("../../../lib/runner");
   let runner: RunnerImp;
   let mockLogger: Logger;
-  let mockReject: any;
-  let mockResolve: any;
+  let mockReject: (error: Error) => void;
+  let mockResolve: () => void;
   let mockReporter: Reporter;
 
   beforeEach(() => {
     let rewiredImp = RewiredRunner.__get__("RunnerImp");
     mockLogger = <Logger> {};
-    mockLogger.debug = <any> Sinon.spy();
-    mockLogger.info = <any> Sinon.spy();
-    mockLogger.trace = <any> Sinon.spy();
+    mockLogger.debug = Sinon.spy();
+    mockLogger.info = Sinon.spy();
+    mockLogger.trace = Sinon.spy();
     mockReporter = <Reporter> {};
     runner = new rewiredImp(mockLogger, mockReporter);
 
-    mockReject = <any> Sinon.spy();
-    mockResolve = <any> Sinon.spy();
+    mockReject = Sinon.spy();
+    mockResolve = Sinon.spy();
   });
 
   describe("createRunner", () => {
@@ -47,14 +47,14 @@ describe("lib runner", function() {
   describe("loadElmTestApp", () => {
     it("should the loaded elm test app", () => {
       // act
-      let actual = runner.loadElmTestApp('./runner');
+      let actual = runner.loadElmTestApp("./runner");
 
       // assert
       expect(actual).to.exist;
     });
 
     it("should throw an error when the elm test app is not found", () => {
-      expect(() => runner.loadElmTestApp('./foo')).to.throw("Elm program not found");
+      expect(() => runner.loadElmTestApp("./foo")).to.throw("Elm program not found");
     });
   });
 
@@ -75,7 +75,7 @@ describe("lib runner", function() {
       // arrange
       let expected = new Error("foo");
       mockReporter.init = () => {
-        throw expected
+        throw expected;
       };
 
       // act
@@ -105,7 +105,7 @@ describe("lib runner", function() {
       // arrange
       let expected = new Error("foo");
       mockReporter.update = () => {
-        throw expected
+        throw expected;
       };
 
       // act
@@ -124,7 +124,7 @@ describe("lib runner", function() {
       (<SinonStub>mockReporter.finish).returns({
         then: func => {
           func();
-          return {'catch': Sinon.stub()};
+          return {"catch": Sinon.stub()};
         }
       });
       let expected = <TestReportRoot> {runType: "NORMAL"};
@@ -143,7 +143,7 @@ describe("lib runner", function() {
       (<SinonStub>mockReporter.finish).returns({
         then: func => {
           func();
-          return {'catch': Sinon.stub()};
+          return {"catch": Sinon.stub()};
         }
       });
       let expected = <TestReportRoot> {runType: "NORMAL"};
@@ -161,7 +161,7 @@ describe("lib runner", function() {
       mockReporter.finish = Sinon.stub();
       (<SinonStub>mockReporter.finish).returns({
         then: () => {
-          return {'catch': func => func()};
+          return {"catch": func => func()};
         }
       });
       let expected = <TestReportRoot> {runType: "NORMAL"};
@@ -236,7 +236,7 @@ describe("lib runner", function() {
       (<SinonStub>mockReporter.finish).returns({
         then: func => {
           func();
-          return {'catch': Sinon.stub()};
+          return {"catch": Sinon.stub()};
         }
       });
 

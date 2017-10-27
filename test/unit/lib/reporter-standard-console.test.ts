@@ -37,8 +37,8 @@ describe("lib reporter-standard-console", () => {
     };
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: () => "",
-      formatNotRun: Sinon.stub(),
       formatFailure: Sinon.stub(),
+      formatNotRun: Sinon.stub(),
       formatUpdate: Sinon.stub()
     };
     mockLogger = {log: Sinon.spy()};
@@ -274,7 +274,7 @@ describe("lib reporter-standard-console", () => {
 
     it("should not log the skipped count when it is non-zero and framework is 'elm-test'", () => {
       // arrange
-      revertFramework = RewiredPlugin.__set__({program: {framework: 'elm-test'}});
+      revertFramework = RewiredPlugin.__set__({program: {framework: "elm-test"}});
 
       // act
       reporter.logSummary(<TestRunSummary>{skippedCount: 123}, <TestRunFailState>{});
@@ -317,7 +317,7 @@ describe("lib reporter-standard-console", () => {
 
     it("should not log the only count when it is non-zero and framework is 'elm-test'", () => {
       // arrange
-      revertFramework = RewiredPlugin.__set__({program: {framework: 'elm-test'}});
+      revertFramework = RewiredPlugin.__set__({program: {framework: "elm-test"}});
 
       // act
       reporter.logSummary(<TestRunSummary>{onlyCount: 123}, <TestRunFailState>{});

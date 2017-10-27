@@ -466,7 +466,7 @@ describe("lib reporter", () => {
   describe("calculateOutcome", () => {
     it("should return outcome with 'PARTIAL' prefix for a non 'NORMAL' test run", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "FOCUS", failedCount: 1}, <TestRunFailState> {});
+      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 1, runType: "FOCUS"}, <TestRunFailState> {});
 
       // assert
       expect(actual).to.match(/PARTIAL /);
@@ -490,10 +490,8 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN FAILED' for a 'NORMAL' test run when failedCount is zero and only isFailure is true", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {
-        runType: "NORMAL",
-        failedCount: 0
-      }, <TestRunFailState> {only: {isFailure: true}, skip: {}, todo: {}});
+      let actual = reporter.calculateOutcome(<TestRunSummary> { failedCount: 0, runType: "NORMAL" },
+                                             <TestRunFailState> {only: {isFailure: true}, skip: {}, todo: {}});
 
       // assert
       expect(actual).to.equal("TEST RUN FAILED");
@@ -501,7 +499,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN FAILED' for a 'NORMAL' test run when failedCount is zero and skip isFailure is true", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 0}, <TestRunFailState> {
+      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {isFailure: true},
         todo: {}
@@ -513,7 +511,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN FAILED' for a 'NORMAL' test run when failedCount is zero and todo isFailure is true", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 0}, <TestRunFailState> {
+      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {},
         todo: {isFailure: true}
@@ -525,7 +523,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN INCONCLUSIVE' for a 'NORMAL' test run when failedCount is zero and there is a skipped test", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 0}, <TestRunFailState> {
+      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {exists: true},
         todo: {}
@@ -537,7 +535,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN INCONCLUSIVE' for a 'NORMAL' test run when failedCount is zero and there is a todo test", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 0}, <TestRunFailState> {
+      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {},
         todo: {exists: true}
@@ -549,7 +547,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN PASSED' for a 'NORMAL' test run when failedCount is zero and all tests ran", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 0}, <TestRunFailState> {
+      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {},
         todo: {}

@@ -20,8 +20,8 @@ describe("lib elm-package-helper", () => {
 
   beforeEach(() => {
     let rewiredImp = RewiredHelper.__get__("ElmPackageHelperImp");
-    mockLogger = <any> Sinon.stub();
-    mockLogger.debug = <any> Sinon.stub();
+    mockLogger = <Logger><{}>Sinon.stub();
+    mockLogger.debug = Sinon.stub();
     helper = new rewiredImp(mockLogger);
   });
 
@@ -62,7 +62,7 @@ describe("lib elm-package-helper", () => {
 
     beforeEach(() => {
       mockRead = Sinon.stub();
-      revertRead = RewiredHelper.__set__({fs: {readFileSync: mockRead}})
+      revertRead = RewiredHelper.__set__({fs: {readFileSync: mockRead}});
     });
 
     afterEach(() => {
@@ -109,7 +109,7 @@ describe("lib elm-package-helper", () => {
 
     beforeEach(() => {
       mockWrite = Sinon.stub();
-      revertWrite = RewiredHelper.__set__({fs: {writeFileSync: mockWrite}})
+      revertWrite = RewiredHelper.__set__({fs: {writeFileSync: mockWrite}});
     });
 
     afterEach(() => {

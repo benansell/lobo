@@ -33,7 +33,7 @@ describe("lib test-result-decorator-text", () => {
     it("should set onlyStyle to failed style when failOnOnly is true", () => {
       // arrange
       let revert = RewiredDecorator.__with__({program: {failOnOnly: true}});
-      
+
       // act
       let actual: Function = undefined;
       revert(() => actual = new rewiredImp().only);
@@ -142,11 +142,11 @@ describe("lib test-result-decorator-text", () => {
       expect(actual).to.equal("┌");
     });
   });
-  
+
   describe("diff", () => {
     it("should return value unaltered", () => {
       // act
-      let actual  = decorator.diff("foo");
+      let actual = decorator.diff("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -156,7 +156,7 @@ describe("lib test-result-decorator-text", () => {
   describe("expect", () => {
     it("should return value unaltered", () => {
       // act
-      let actual  = decorator.expect("foo");
+      let actual = decorator.expect("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -166,7 +166,7 @@ describe("lib test-result-decorator-text", () => {
   describe("failed", () => {
     it("should return value unaltered", () => {
       // act
-      let actual  = decorator.failed("foo");
+      let actual = decorator.failed("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -176,7 +176,7 @@ describe("lib test-result-decorator-text", () => {
   describe("line", () => {
     it("should return value unaltered", () => {
       // act
-      let actual  = decorator.line("foo");
+      let actual = decorator.line("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -186,7 +186,7 @@ describe("lib test-result-decorator-text", () => {
   describe("given", () => {
     it("should return value unaltered", () => {
       // act
-      let actual  = decorator.given("foo");
+      let actual = decorator.given("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -196,7 +196,7 @@ describe("lib test-result-decorator-text", () => {
   describe("inconclusive", () => {
     it("should return value unaltered", () => {
       // act
-      let actual  = decorator.inconclusive("foo");
+      let actual = decorator.inconclusive("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -206,7 +206,7 @@ describe("lib test-result-decorator-text", () => {
   describe("passed", () => {
     it("should return value unaltered", () => {
       // act
-      let actual  = decorator.passed("foo");
+      let actual = decorator.passed("foo");
 
       // assert
       expect(actual).to.equal("foo");
