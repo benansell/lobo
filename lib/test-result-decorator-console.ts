@@ -18,6 +18,10 @@ export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator
     return "•";
   }
 
+  public debugLog(value: string): string {
+    return chalk.cyan(value);
+  }
+
   public diff(value: string): string {
     return chalk.red(value);
   }
@@ -44,6 +48,10 @@ export class TestResultDecoratorConsoleImp implements plugin.TestResultDecorator
 
   public passed(value: string): string {
     return chalk.green(value);
+  }
+
+  public rightArrow(): string {
+    return "→";
   }
 
   public verticalBarEnd(): string {

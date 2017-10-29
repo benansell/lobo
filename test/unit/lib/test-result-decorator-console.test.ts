@@ -15,11 +15,13 @@ describe("lib test-result-decorator-console", () => {
   let RewiredDecorator = rewire("../../../lib/test-result-decorator-console");
   let rewiredImp;
   let decorator: TestResultDecoratorConsoleImp;
+  let mockCyanStyle: SinonStub;
   let mockRedStyle: SinonStub;
   let mockGreenStyle: SinonStub;
   let mockYellowStyle: SinonStub;
 
   beforeEach(() => {
+    mockCyanStyle = Sinon.stub();
     mockRedStyle = Sinon.stub();
     mockGreenStyle = Sinon.stub();
     mockYellowStyle = Sinon.stub();
@@ -27,6 +29,7 @@ describe("lib test-result-decorator-console", () => {
     RewiredDecorator.__set__({
       chalk_1: {
         "default": {
+          cyan: mockCyanStyle,
           green: mockGreenStyle,
           red: mockRedStyle,
           yellow: mockYellowStyle
@@ -132,6 +135,16 @@ describe("lib test-result-decorator-console", () => {
     });
   });
 
+  describe("rightArrow", () => {
+    it("should be →", () => {
+      // act
+      let actual = decorator.rightArrow();
+
+      // assert
+      expect(actual).to.equal("→");
+    });
+  });
+
   describe("verticalBarEnd", () => {
     it("should be └", () => {
       // act
@@ -159,6 +172,19 @@ describe("lib test-result-decorator-console", () => {
 
       // assert
       expect(actual).to.equal("┌");
+    });
+  });
+
+  describe("debugLog", () => {
+    it("should return value styled with cyan", () => {
+      // arrange
+      mockCyanStyle.callsFake(x => x + "bar");
+
+      // act
+      let actual = decorator.debugLog("foo");
+
+      // assert
+      expect(actual).to.equal("foobar");
     });
   });
 

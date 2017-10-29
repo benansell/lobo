@@ -113,6 +113,16 @@ describe("lib test-result-decorator-text", () => {
     });
   });
 
+  describe("rightArrow", () => {
+    it("should be →", () => {
+      // act
+      let actual = decorator.rightArrow();
+
+      // assert
+      expect(actual).to.equal("→");
+    });
+  });
+
   describe("verticalBarEnd", () => {
     it("should be └", () => {
       // act
@@ -140,6 +150,16 @@ describe("lib test-result-decorator-text", () => {
 
       // assert
       expect(actual).to.equal("┌");
+    });
+  });
+
+  describe("debugLog", () => {
+    it("should return value unaltered", () => {
+      // act
+      let actual = decorator.debugLog("foo");
+
+      // assert
+      expect(actual).to.equal("foo");
     });
   });
 

@@ -152,6 +152,7 @@ export interface TestReportTodoLeaf extends TestReportNode, TestReportTimed {
 
 export interface TestResultDecorator {
   bulletPoint(): string;
+  debugLog(value: string): string;
   diff(value: string): string;
   expect(value: string): string;
   failed(value: string): string;
@@ -160,6 +161,7 @@ export interface TestResultDecorator {
   inconclusive(value: string): string;
   only(value: string): string;
   passed(value: string): string;
+  rightArrow(): string;
   skip(value: string): string;
   todo(value: string): string;
   verticalBarEnd(): string;
