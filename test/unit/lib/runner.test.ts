@@ -6,12 +6,13 @@ import rewire = require("rewire");
 import * as SinonChai from "sinon-chai";
 import {SinonStub} from "sinon";
 import {Logger} from "../../../lib/logger";
-import {createRunner, Runner, RunnerImp} from "../../../lib/runner";
+import {createRunner, NodeProcessStdout, NodeProcessWrite, Runner, RunnerImp} from "../../../lib/runner";
 import {Reporter} from "../../../lib/reporter";
 import {LoboConfig, PluginReporter, PluginTestFramework, ProgressReport, TestReportRoot} from "../../../lib/plugin";
 
 let expect = chai.expect;
 chai.use(SinonChai);
+chai.use(require("chai-things"));
 
 describe("lib runner", () => {
   let RewiredRunner = rewire("../../../lib/runner");
@@ -20,18 +21,27 @@ describe("lib runner", () => {
   let mockReject: (error: Error) => void;
   let mockResolve: () => void;
   let mockReporter: Reporter;
+  let mockStdout: NodeProcessStdout;
+  let originalWrite: NodeProcessWrite;
 
   beforeEach(() => {
+    originalWrite = process.stdout.write;
     let rewiredImp = RewiredRunner.__get__("RunnerImp");
     mockLogger = <Logger> {};
     mockLogger.debug = Sinon.spy();
     mockLogger.info = Sinon.spy();
     mockLogger.trace = Sinon.spy();
+    mockStdout = <NodeProcessStdout> {};
+    mockStdout.write = Sinon.spy();
     mockReporter = <Reporter> {};
     runner = new rewiredImp(mockLogger, mockReporter);
 
     mockReject = Sinon.spy();
     mockResolve = Sinon.spy();
+  });
+
+  afterEach(() => {
+    (<NodeProcessStdout>process.stdout).write = originalWrite;
   });
 
   describe("createRunner", () => {
@@ -64,7 +74,7 @@ describe("lib runner", () => {
       mockReporter.init = Sinon.spy();
 
       // act
-      let actual = RunnerImp.makeTestRunBegin(mockLogger, mockReporter, mockReject);
+      let actual = RunnerImp.makeTestRunBegin(mockStdout, mockLogger, mockReporter, mockReject);
       actual(123);
 
       // assert
@@ -79,11 +89,52 @@ describe("lib runner", () => {
       };
 
       // act
-      let actual = RunnerImp.makeTestRunBegin(mockLogger, mockReporter, mockReject);
+      let actual = RunnerImp.makeTestRunBegin(mockStdout, mockLogger, mockReporter, mockReject);
       actual(123);
 
       // assert
       expect(mockReject).to.have.been.calledWith(expected);
+    });
+
+    it("should set the originalNodeProcessWrite to value of stdout.write", () => {
+      // arrange
+      mockReporter.init = Sinon.spy();
+      let mockWrite = Sinon.spy();
+      mockStdout.write = mockWrite;
+
+      // act
+      let actual = RunnerImp.makeTestRunBegin(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(123);
+
+      // assert
+      expect(RunnerImp.originalNodeProcessWrite).to.equal(mockWrite);
+    });
+
+    it("should set stdout.write to RunnerImp.testRunStdOutWrite", () => {
+      // arrange
+      mockReporter.init = Sinon.spy();
+      let mockWrite = Sinon.spy();
+      mockStdout.write = mockWrite;
+
+      // act
+      let actual = RunnerImp.makeTestRunBegin(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(123);
+
+      // assert
+      expect(mockStdout.write).to.equal(RunnerImp.testRunStdOutWrite);
+    });
+
+    it("should initialize the debugLogMessage list to an empty array", () => {
+      // arrange
+      mockReporter.init = Sinon.spy();
+      RunnerImp.debugLogMessages = ["foo"];
+
+      // act
+      let actual = RunnerImp.makeTestRunBegin(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(123);
+
+      // assert
+      expect(RunnerImp.debugLogMessages).to.be.empty;
     });
   });
 
@@ -94,11 +145,26 @@ describe("lib runner", () => {
       let expected = <ProgressReport> {reason: "foobar"};
 
       // act
-      let actual = RunnerImp.makeTestRunProgress(mockLogger, mockReporter, mockReject);
+      let actual = RunnerImp.makeTestRunProgress(mockStdout, mockLogger, mockReporter, mockReject);
       actual(expected);
 
       // assert
-      expect(mockReporter.update).to.have.been.calledWith(expected);
+      expect(mockReporter.update).to.have.been.calledWith(expected, Sinon.match.any);
+    });
+
+    it("should return a function that calls reporter.update with the accumulated Debug.log messages", () => {
+      // arrange
+      mockReporter.update = Sinon.spy();
+      let progressReport = <ProgressReport> {reason: "foobar"};
+      let expected = ["baz"];
+      RunnerImp.debugLogMessages = expected;
+
+      // act
+      let actual = RunnerImp.makeTestRunProgress(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(progressReport);
+
+      // assert
+      expect(mockReporter.update).to.have.been.calledWith(Sinon.match.any, expected);
     });
 
     it("should return a function that calls supplied reject when an error is thrown", () => {
@@ -109,11 +175,55 @@ describe("lib runner", () => {
       };
 
       // act
-      let actual = RunnerImp.makeTestRunProgress(mockLogger, mockReporter, mockReject);
+      let actual = RunnerImp.makeTestRunProgress(mockStdout, mockLogger, mockReporter, mockReject);
       actual(<ProgressReport> {});
 
       // assert
       expect(mockReject).to.have.been.calledWith(expected);
+    });
+
+    it("should return a function that restore stdout.write to the original value before calling reporter.update", () => {
+      // arrange
+      let original = Sinon.spy();
+      RunnerImp.originalNodeProcessWrite = original;
+
+      mockReporter.update = Sinon.stub();
+      (<SinonStub>mockReporter.update).callsFake(() => {
+        expect(mockStdout.write).to.equal(original);
+      });
+
+      // act
+      let actual = RunnerImp.makeTestRunProgress(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(<ProgressReport> {});
+
+      // assert -- see arrange
+    });
+
+    it("should return a function that leaves stdout.write set to testRunStdOutWrite after it has been called", () => {
+      // arrange
+      let original = Sinon.spy();
+      RunnerImp.originalNodeProcessWrite = original;
+      mockReporter.update = Sinon.stub();
+
+      // act
+      let actual = RunnerImp.makeTestRunProgress(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(<ProgressReport> {});
+
+      // assert
+      expect(mockStdout.write).to.equal(RunnerImp.testRunStdOutWrite);
+    });
+
+    it("should return a function that clears the debugLogMessages after it has been called", () => {
+      // arrange
+      RunnerImp.debugLogMessages = ["foo"];
+      mockReporter.update = Sinon.stub();
+
+      // act
+      let actual = RunnerImp.makeTestRunProgress(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(<ProgressReport> {});
+
+      // assert
+      expect(RunnerImp.debugLogMessages).to.be.empty;
     });
   });
 
@@ -130,7 +240,7 @@ describe("lib runner", () => {
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
       actual(expected);
 
       // assert
@@ -149,7 +259,7 @@ describe("lib runner", () => {
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
       actual(expected);
 
       // assert
@@ -167,11 +277,55 @@ describe("lib runner", () => {
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
       actual(expected);
 
       // assert
       expect(mockReject).to.have.been.calledWith();
+    });
+
+    it("should return a function that resets the stdout.write to the originalNodeProcessWrite value", () => {
+      // arrange
+      let original = Sinon.spy();
+      RunnerImp.originalNodeProcessWrite = original;
+      mockReporter.finish = Sinon.stub();
+      (<SinonStub>mockReporter.finish).returns({
+        then: func => {
+          func();
+          return {"catch": Sinon.stub()};
+        }
+      });
+
+      // act
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
+      actual(<TestReportRoot> {runType: "NORMAL"});
+
+      // assert
+      expect(mockStdout.write).to.equal(original);
+    });
+  });
+
+  describe("testRunStdOutWrite", () => {
+    it("should add supplied message to the debugLogMessages list", () => {
+      // arrange
+      RunnerImp.debugLogMessages = [];
+
+      // act
+      RunnerImp.testRunStdOutWrite("foo");
+
+      // assert
+      expect(RunnerImp.debugLogMessages).to.include.something.that.equals("foo");
+    });
+
+    it("should return true", () => {
+      // arrange
+      RunnerImp.debugLogMessages = [];
+
+      // act
+      let actual = RunnerImp.testRunStdOutWrite(undefined);
+
+      // assert
+      expect(actual).to.be.true;
     });
   });
 
