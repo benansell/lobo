@@ -7,12 +7,14 @@ import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createReporter, Reporter, ReporterImp} from "../../../lib/reporter";
 import {
-  PluginReporter, ProgressReport, RunArgs, TestReportNode, TestReportRoot, TestReportSuiteNode, TestRun, TestRunFailState,
+  PluginReporter, ProgressReport, RunArgs, TestReportFailedLeaf, TestReportNode, TestReportRoot, TestReportSuiteNode, TestRun,
+  TestRunFailState,
   TestRunSummary
 } from "../../../lib/plugin";
 
 let expect = chai.expect;
 chai.use(SinonChai);
+chai.use(require("chai-things"));
 
 describe("lib reporter", () => {
   let RewiredReporter = rewire("./../../../lib/reporter");
@@ -24,6 +26,7 @@ describe("lib reporter", () => {
     reporter = new rewiredImp();
     mockReporterPlugin = <PluginReporter> {finish: Sinon.stub(), init: Sinon.spy(), runArgs: Sinon.spy(), update: Sinon.spy()};
     reporter.configure(mockReporterPlugin);
+    reporter.testDebugLogMessages = [];
   });
 
   describe("createReporter", () => {
@@ -68,7 +71,7 @@ describe("lib reporter", () => {
       RewiredReporter.__set__({program: {quiet: true}});
 
       // act
-      reporter.update(<ProgressReport> {resultType: "PASSED"});
+      reporter.update(<ProgressReport> {resultType: "PASSED"}, []);
 
       // assert
       expect(mockReporterPlugin.update).not.to.have.been.called;
@@ -79,10 +82,22 @@ describe("lib reporter", () => {
       RewiredReporter.__set__({program: {quiet: false}});
 
       // act
-      reporter.update(<ProgressReport> {resultType: "PASSED"});
+      reporter.update(<ProgressReport> {resultType: "PASSED"}, []);
 
       // assert
       expect(mockReporterPlugin.update).to.have.been.called;
+    });
+
+    it("should add the supplied debugLogMessages to the testDebugLogMessages list with the result id", () => {
+      // arrange
+      RewiredReporter.__set__({program: {quiet: false}});
+      let messages = ["foo"];
+
+      // act
+      reporter.update(<ProgressReport> {id: 123, resultType: "PASSED"}, messages);
+
+      // assert
+      expect(reporter.testDebugLogMessages).to.include.something.that.deep.equals({id: 123, debugLogMessages: messages});
     });
   });
 
@@ -323,9 +338,24 @@ describe("lib reporter", () => {
       expect(expected.failures).to.include.something.deep.equal({labels: ["foo"], result: result});
     });
 
+    it("should update the summary failures when results contains the failed result with log messages", () => {
+      // arrange
+      let summary = <TestRunSummary> {failedCount: 0, failures: []};
+      reporter.toLoggedResult = Sinon.stub();
+      let expected = <TestReportFailedLeaf>{resultType: "FAILED", logMessages: ["bar"]};
+      (<SinonStub>reporter.toLoggedResult).returns(expected);
+      let result = <TestReportNode>{resultType: "FAILED"};
+
+      // act
+      reporter.processTestResults([result], summary, ["foo"]);
+
+      // assert
+      expect(summary.failures).to.include.something.deep.equal({labels: ["foo"], result: expected});
+    });
+
     it("should update the summary onlyCount when results contains an ignored result", () => {
       // arrange
-      let expected = <TestRunSummary> {onlyCount: 0};
+      let expected = <TestRunSummary> {onlyCount: 0, successes: []};
 
       // act
       reporter.processTestResults([<TestReportNode>{resultType: "IGNORED"}], expected, []);
@@ -336,13 +366,28 @@ describe("lib reporter", () => {
 
     it("should update the summary passedCount when results contains an passed result", () => {
       // arrange
-      let expected = <TestRunSummary> {passedCount: 0};
+      let expected = <TestRunSummary> {passedCount: 0, successes: []};
 
       // act
       reporter.processTestResults([<TestReportNode>{resultType: "PASSED"}], expected, []);
 
       // assert
       expect(expected.passedCount).to.equal(1);
+    });
+
+    it("should update the summary successes when results contains the passed result with log messages", () => {
+      // arrange
+      let summary = <TestRunSummary> {passedCount: 0, successes: []};
+      reporter.toLoggedResult = Sinon.stub();
+      let expected = <TestReportFailedLeaf>{resultType: "PASSED", logMessages: ["bar"]};
+      (<SinonStub>reporter.toLoggedResult).returns(expected);
+      let result = <TestReportNode>{resultType: "PASSED"};
+
+      // act
+      reporter.processTestResults([result], summary, ["foo"]);
+
+      // assert
+      expect(summary.successes).to.include.something.deep.equal({labels: ["foo"], result: expected});
     });
 
     it("should update the summary skippedCount when results contains a skipped result", () => {
@@ -388,7 +433,7 @@ describe("lib reporter", () => {
       reporter.processTestResults([result], expected, ["foo"]);
 
       // assert
-      expect(expected.todo).to.include.something.deep.equal({labels: ["foo"], result: result});
+      expect(expected.todo).to.include.something.that.deep.equal({labels: ["foo"], result: result});
     });
 
     it("should update the summary with child results and the labels containing the parent", () => {
@@ -401,7 +446,44 @@ describe("lib reporter", () => {
       reporter.processTestResults([result], expected, ["foo"]);
 
       // assert
-      expect(expected.failures).to.include.something.deep.equal({labels: ["foo", "bar"], result: childResult});
+      expect(expected.failures).to.include.something.that.deep.equal({labels: ["foo", "bar"], result: childResult});
+    });
+  });
+
+  describe("toLoggedResult", () => {
+    it("should return a result with an empty array of logMessages when no log messages are found", () => {
+      // act
+      let actual = reporter.toLoggedResult(<TestReportFailedLeaf> {});
+
+      // assert
+      expect(actual.logMessages).to.be.empty;
+    });
+
+    it("should return a result with the test log messages for the id", () => {
+      // arrange
+      reporter.testDebugLogMessages.push({id: 1, debugLogMessages: ["foo"]});
+      reporter.testDebugLogMessages.push({id: 2, debugLogMessages: ["bar"]});
+      reporter.testDebugLogMessages.push({id: 3, debugLogMessages: ["baz"]});
+
+      // act
+      let actual = reporter.toLoggedResult(<TestReportFailedLeaf> {id: 2});
+
+      // assert
+      expect(actual.logMessages).to.deep.equal(["bar"]);
+    });
+
+    it("should return a result with all the test log messages when the id is not unique", () => {
+      // arrange
+      reporter.testDebugLogMessages.push({id: 1, debugLogMessages: ["foo"]});
+      reporter.testDebugLogMessages.push({id: 2, debugLogMessages: ["bar"]});
+      reporter.testDebugLogMessages.push({id: 3, debugLogMessages: ["baz"]});
+      reporter.testDebugLogMessages.push({id: 2, debugLogMessages: ["qux"]});
+
+      // act
+      let actual = reporter.toLoggedResult(<TestReportFailedLeaf> {id: 2});
+
+      // assert
+      expect(actual.logMessages).to.deep.equal(["bar", "qux"]);
     });
   });
 

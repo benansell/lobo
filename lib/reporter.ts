@@ -18,6 +18,7 @@ interface PartialTestRunSummary {
   skippedCount: number;
   startDateTime: Date | undefined;
   success: boolean;
+  successes: plugin.TestRunLeaf<plugin.TestReportPassedLeaf>[];
   todo: plugin.TestRunLeaf<plugin.TestReportTodoLeaf>[];
   todoCount: number;
 }
@@ -27,10 +28,17 @@ export interface Reporter {
   finish(rawResults: plugin.TestReportRoot): Bluebird<void>;
   init(testCount: number): void;
   runArgs(args: plugin.RunArgs): void;
-  update(result: plugin.ProgressReport): void;
+  update(result: plugin.ProgressReport, debugLogMessages: string[]): void;
+}
+
+export interface TestDebugLogMessages {
+  id: number;
+  debugLogMessages: string[];
 }
 
 export class ReporterImp implements Reporter {
+  public testDebugLogMessages: TestDebugLogMessages[];
+
   private reporterPlugin: plugin.PluginReporter;
 
   public configure(reporterPlugin: plugin.PluginReporter): void {
@@ -43,9 +51,12 @@ export class ReporterImp implements Reporter {
 
   public init(testCount: number): void {
     this.reporterPlugin.init(testCount);
+    this.testDebugLogMessages = [];
   }
 
-  public update(result: plugin.ProgressReport): void {
+  public update(result: plugin.ProgressReport, debugLogMessages: string[]): void {
+    this.testDebugLogMessages.push({id: result.id, debugLogMessages: debugLogMessages});
+
     if (program.quiet) {
       return;
     }
@@ -80,6 +91,7 @@ export class ReporterImp implements Reporter {
       skippedCount: 0,
       startDateTime: undefined,
       success: false,
+      successes: [],
       todo: [],
       todoCount: 0
     };
@@ -125,13 +137,16 @@ export class ReporterImp implements Reporter {
       switch (r.resultType) {
         case "FAILED":
           summary.failedCount += 1;
-          summary.failures.push({labels: _.clone(labels), result: <plugin.TestReportFailedLeaf> r});
+          let failedResult = this.toLoggedResult(<plugin.TestReportFailedLeaf>r);
+          summary.failures.push({labels: _.clone(labels), result: failedResult});
           break;
         case "IGNORED":
           summary.onlyCount += 1;
           break;
         case "PASSED":
           summary.passedCount += 1;
+          let passedResult = this.toLoggedResult(<plugin.TestReportPassedLeaf>r);
+          summary.successes.push({labels: _.clone(labels), result: passedResult});
           break;
         case "SKIPPED":
           summary.skippedCount += 1;
@@ -148,6 +163,20 @@ export class ReporterImp implements Reporter {
           this.processTestResults((<plugin.TestReportSuiteNode> r).results, summary, newLabels);
       }
     });
+  }
+
+  public toLoggedResult<T extends plugin.TestReportFailedLeaf | plugin.TestReportPassedLeaf>(r: T): T {
+    let logMessages = this.testDebugLogMessages.filter(x => x.id === r.id);
+
+    if (logMessages.length === 0) {
+      (<{logMessages: string[]}>r).logMessages = [];
+
+      return r;
+    }
+
+    (<{logMessages: string[]}>r).logMessages = logMessages.map(x => x.debugLogMessages).reduce((acc, x) => acc.concat(x));
+
+    return r;
   }
 
   public toTestRunState(flag: boolean | undefined, exists: boolean): plugin.TestRunState {
