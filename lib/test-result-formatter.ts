@@ -6,7 +6,8 @@ import * as os from "os";
 
 export interface TestResultFormatter {
   defaultIndentation(): string;
-  formatFailure(report: plugin.TestReportFailedLeaf, padding: string, maxLength?: number): string;
+  formatDebugLogMessages(report: plugin.TestReportLogged, padding: string): string;
+  formatFailure(report: plugin.TestReportFailedLeaf, padding: string, maxLength: number): string;
   formatNotRun(report: plugin.TestReportSkippedLeaf, padding: string): string;
   formatUpdate(report: plugin.ProgressReport): string;
 }
@@ -29,6 +30,22 @@ export class TestResultFormatterImp implements TestResultFormatter {
     return "  ";
   }
 
+  public formatDebugLogMessages(report: plugin.TestReportLogged, padding: string): string {
+    if (!report.logMessages || report.logMessages.length === 0) {
+      return "";
+    }
+
+    let output: string = "";
+
+    if (report.logMessages && report.logMessages.length > 0) {
+      _.forEach(report.logMessages, (logMessage: string) => {
+        output += `${padding}${this.decorator.rightArrow()} ${this.decorator.debugLog(logMessage)}${os.EOL}`;
+      });
+    }
+
+    return output + os.EOL;
+  }
+
   public formatFailure(report: plugin.TestReportFailedLeaf, padding: string, maxLength: number): string {
     let lines: string[] = [];
 
@@ -41,7 +58,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
         lines.push(`${os.EOL}${this.decorator.line(givenMessage)}${os.EOL}`);
       }
 
-      let message = this.formatFailureMessage(resultMessage.message, maxLength!);
+      let message = this.formatFailureMessage(resultMessage.message, maxLength);
       lines.push(this.formatMessage(message, padding));
     });
 
@@ -52,6 +69,10 @@ export class TestResultFormatterImp implements TestResultFormatter {
       .replace(new RegExp(TestResultFormatterImp.verticalBarStart, "g"), this.decorator.verticalBarStart())
       .replace(new RegExp(TestResultFormatterImp.verticalBarMiddle, "g"), this.decorator.verticalBarMiddle())
       .replace(new RegExp(TestResultFormatterImp.verticalBarEnd, "g"), this.decorator.verticalBarEnd());
+
+    if (report.logMessages && report.logMessages.length > 0) {
+      return output;
+    }
 
     return output + os.EOL;
   }

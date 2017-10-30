@@ -6,7 +6,7 @@ import rewire = require("rewire");
 import * as SinonChai from "sinon-chai";
 import {SinonStub} from "sinon";
 import {Logger} from "../../../lib/logger";
-import {createRunner, NodeProcessStdout, NodeProcessWrite, Runner, RunnerImp} from "../../../lib/runner";
+import {createRunner, NodeProcessStdout, Runner, RunnerImp} from "../../../lib/runner";
 import {Reporter} from "../../../lib/reporter";
 import {LoboConfig, PluginReporter, PluginTestFramework, ProgressReport, TestReportRoot} from "../../../lib/plugin";
 
@@ -22,10 +22,10 @@ describe("lib runner", () => {
   let mockResolve: () => void;
   let mockReporter: Reporter;
   let mockStdout: NodeProcessStdout;
-  let originalWrite: NodeProcessWrite;
+  let revertRunner;
 
   beforeEach(() => {
-    originalWrite = process.stdout.write;
+    revertRunner = RewiredRunner.__set__({process: {stdout: { write: Sinon.spy()}} });
     let rewiredImp = RewiredRunner.__get__("RunnerImp");
     mockLogger = <Logger> {};
     mockLogger.debug = Sinon.spy();
@@ -41,7 +41,7 @@ describe("lib runner", () => {
   });
 
   afterEach(() => {
-    (<NodeProcessStdout>process.stdout).write = originalWrite;
+    revertRunner();
   });
 
   describe("createRunner", () => {
