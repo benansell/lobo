@@ -1,6 +1,6 @@
 module TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 
-import Json.Encode exposing (Value, encode, float, list, null, object, string)
+import Json.Encode exposing (Value, encode, float, int, list, null, object, string)
 import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRunType(Focusing, Normal, Skipping))
 import Time exposing (Time)
 
@@ -146,7 +146,8 @@ toProgressMessage testReport =
 encodeProgressMessage : String -> TestId -> Value
 encodeProgressMessage resultType id =
     object
-    [ ( "label", string id.current.label )
+    [ ( "id", int id.current.uniqueId)
+    , ( "label", string id.current.label )
     , ( "resultType", string resultType )
     ]
 
@@ -591,7 +592,8 @@ encodeTestReportNode reportTree =
 encodeFailedLeaf : FailedLeaf -> Value
 encodeFailedLeaf leaf =
     object
-        [ ( "label", string leaf.label )
+        [ ( "id", int leaf.id)
+        , ( "label", string leaf.label )
         , ( "resultType", string resultType.failed )
         , ( "resultMessages", list (List.map encodeFailureMessage leaf.messages) )
         , ( "startTime", float leaf.startTime )
@@ -602,7 +604,8 @@ encodeFailedLeaf leaf =
 encodeIgnoredLeaf : IgnoredLeaf -> Value
 encodeIgnoredLeaf leaf =
     object
-        [ ( "label", string leaf.label )
+        [ ( "id", int leaf.id)
+        , ( "label", string leaf.label )
         , ( "resultType", string resultType.ignored )
         ]
 
@@ -610,7 +613,8 @@ encodeIgnoredLeaf leaf =
 encodePassedLeaf : PassedLeaf -> Value
 encodePassedLeaf leaf =
     object
-        [ ( "label", string leaf.label )
+        [ ( "id", int leaf.id)
+        , ( "label", string leaf.label )
         , ( "resultType", string resultType.passed )
         , ( "startTime", float leaf.startTime )
         , ( "endTime", float leaf.endTime )
@@ -620,7 +624,8 @@ encodePassedLeaf leaf =
 encodeSkippedLeaf : SkippedLeaf -> Value
 encodeSkippedLeaf leaf =
     object
-        [ ( "label", string leaf.label )
+        [ ( "id", int leaf.id)
+        , ( "label", string leaf.label )
         , ( "resultType", string resultType.skipped )
         , ( "reason", string leaf.reason )
         ]
@@ -629,7 +634,8 @@ encodeSkippedLeaf leaf =
 encodeRootNode : Value -> SuiteNode -> Value
 encodeRootNode config node =
     object
-        [ ( "runType", string <| toRunType node.runType )
+        [ ( "id", int node.id)
+        , ( "runType", string <| toRunType node.runType )
         , ( "config", config )
         , ( "runResults", encodeTestReportNodeList node.reports )
         , ( "startTime", encodeMaybeTime node.startTime )
@@ -640,7 +646,8 @@ encodeRootNode config node =
 encodeSuiteNode : SuiteNode -> Value
 encodeSuiteNode node =
     object
-        [ ( "label", string node.label )
+        [ ( "id", int node.id)
+        , ( "label", string node.label )
         , ( "results", encodeTestReportNodeList node.reports )
         , ( "startTime", encodeMaybeTime node.startTime )
         , ( "endTime", encodeMaybeTime node.endTime )
@@ -650,7 +657,8 @@ encodeSuiteNode node =
 encodeTodoLeaf : TodoLeaf -> Value
 encodeTodoLeaf leaf =
     object
-        [ ( "label", string leaf.label )
+        [ ( "id", int leaf.id)
+        , ( "label", string leaf.label )
         , ( "resultType", string resultType.todo )
         ]
 
