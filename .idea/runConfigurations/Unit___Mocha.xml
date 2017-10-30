@@ -6,7 +6,7 @@
     <pass-parent-env>true</pass-parent-env>
     <envs />
     <ui>tdd</ui>
-    <extra-mocha-options>--compilers ts:ts-node/register</extra-mocha-options>
+    <extra-mocha-options>--require ts-node/register</extra-mocha-options>
     <test-kind>PATTERN</test-kind>
     <test-pattern>**/*.test.ts</test-pattern>
     <method />
