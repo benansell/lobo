@@ -37,11 +37,9 @@ export class TestResultFormatterImp implements TestResultFormatter {
 
     let output: string = "";
 
-    if (report.logMessages && report.logMessages.length > 0) {
-      _.forEach(report.logMessages, (logMessage: string) => {
-        output += `${padding}${this.decorator.rightArrow()} ${this.decorator.debugLog(logMessage)}${os.EOL}`;
-      });
-    }
+    _.forEach(report.logMessages, (logMessage: string) => {
+      output += `${padding}${this.decorator.rightArrow()} ${this.decorator.debugLog(logMessage)}${os.EOL}`;
+    });
 
     return output + os.EOL;
   }

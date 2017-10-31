@@ -115,7 +115,15 @@ describe("lib test-result-formatter", () => {
       expect(actual).to.match(/\n\n$/);
     });
 
-    it("should return empty when there are no log messages", () => {
+    it("should return empty when logMessages is undefined", () => {
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: undefined}, "?");
+
+      // assert
+      expect(actual).to.equal("");
+    });
+
+    it("should return empty when logMessages is empty", () => {
       // act
       let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: []}, "?");
 
