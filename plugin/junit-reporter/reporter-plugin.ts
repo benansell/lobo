@@ -10,6 +10,7 @@ import {createTestResultDecoratorHtml} from "../../lib/test-result-decorator-htm
 import {createTestResultDecoratorText} from "../../lib/test-result-decorator-text";
 import {createTestResultFormatter, TestResultFormatter} from "../../lib/test-result-formatter";
 import {createReporterStandardConsole, ReporterStandardConsole} from "../../lib/reporter-standard-console";
+import {TestReportLogged} from "../../lib/plugin";
 
 type JUnitFormat = "console" | "html";
 
@@ -208,25 +209,53 @@ export class JUnitReporter implements plugin.PluginReporter {
       + ` classname="${parentLabel}">`);
 
     writeLine(`${padding}${this.paddingUnit}<failure>`);
-
-    if (this.junitFormat === "html") {
-      this.writeFailureAsHtml(writeLine, leaf, padding);
-    } else {
-      this.writeFailureAsText(writeLine, leaf, padding);
-    }
-
+    let failureMessage = this.toFailureLogMessage(leaf);
+    this.writeMessage(writeLine, failureMessage, padding);
     writeLine(`${padding}${this.paddingUnit}</failure>`);
+    this.writeDebugLogMessage(writeLine, leaf, padding);
     writeLine(`${padding}</testcase>`);
   }
 
-  public writeFailureAsText(writeLine: WriteLine, leaf: plugin.TestReportFailedLeaf, padding: string): void {
-    let message = this.textFormatter.formatFailure(leaf, "", this.diffMaxLength);
-    writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}${message}`);
+  public writeMessage(writeLine: WriteLine, message: string, padding: string): void {
+    if (this.junitFormat === "html") {
+      this.writeAsHtml(writeLine, message, padding);
+    } else {
+      this.writeAsText(writeLine, message);
+    }
   }
 
-  public writeFailureAsHtml(writeLine: WriteLine, leaf: plugin.TestReportFailedLeaf, padding: string): void {
-    let message = this.htmlFormatter.formatFailure(leaf, "", this.diffMaxLength);
+  public writeDebugLogMessage(writeLine: WriteLine, leaf: TestReportLogged, padding: string): void {
+    if (!leaf.logMessages || leaf.logMessages.length === 0) {
+      return;
+    }
 
+    writeLine(`${padding}${this.paddingUnit}<system-out>`);
+    let debugLogMessages = this.toDebugLogMessage(leaf);
+    this.writeMessage(writeLine, debugLogMessages, padding);
+    writeLine(`${padding}${this.paddingUnit}</system-out>`);
+  }
+
+  public toDebugLogMessage(leaf: plugin.TestReportLogged): string {
+    if (this.junitFormat === "html") {
+      return this.htmlFormatter.formatDebugLogMessages(leaf, "");
+    }
+
+    return this.textFormatter.formatDebugLogMessages(leaf, "");
+  }
+
+  public toFailureLogMessage(leaf: plugin.TestReportFailedLeaf): string {
+    if (this.junitFormat === "html") {
+      return this.htmlFormatter.formatFailure(<plugin.TestReportFailedLeaf> leaf, "", this.diffMaxLength);
+    }
+
+    return this.textFormatter.formatFailure(<plugin.TestReportFailedLeaf> leaf, "", this.diffMaxLength);
+  }
+
+  public writeAsText(writeLine: WriteLine, message: string): void {
+    writeLine(message);
+  }
+
+  public writeAsHtml(writeLine: WriteLine, message: string, padding: string): void {
     writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}<![CDATA[`);
     writeLine(`${padding}${this.paddingUnit}${this.paddingUnit}${this.paddingUnit}<pre style="overflow:auto">`);
     writeLine(`<code style="display:inline-block; line-height:1">${message}`);
@@ -244,6 +273,7 @@ export class JUnitReporter implements plugin.PluginReporter {
   public writePassed(writeLine: WriteLine, parentLabel: string, leaf: plugin.TestReportPassedLeaf, padding: string): void {
     writeLine(`${padding}<testcase name="${leaf.label}" time="${JUnitReporter.getDurationSecondsFrom(leaf)}" `
       + `classname="${parentLabel}">`);
+    this.writeDebugLogMessage(writeLine, leaf, padding);
     writeLine(`${padding}</testcase>`);
   }
 

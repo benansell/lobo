@@ -7,7 +7,8 @@ import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createPlugin, JUnitReporter, MeasuredNode} from "../../../../plugin/junit-reporter/reporter-plugin";
 import {
-  PluginReporter, ProgressReport, RunArgs, TestReportFailedLeaf, TestReportIgnoredLeaf, TestReportNode, TestReportPassedLeaf,
+  PluginReporter, ProgressReport, RunArgs, TestReportFailedLeaf, TestReportIgnoredLeaf, TestReportLogged, TestReportNode,
+  TestReportPassedLeaf,
   TestReportSkippedLeaf,
   TestReportSuiteNode, TestReportTodoLeaf,
   TestRun,
@@ -43,9 +44,9 @@ describe("plugin junit-reporter reporter-plugin", () => {
       runArgs: Sinon.stub(),
       update: Sinon.stub()
     };
-    mockConsoleFormatter = <TestResultFormatter><{}>{formatUpdate: Sinon.stub()};
-    mockHtmlFormatter = <TestResultFormatter><{}>{formatFailure: Sinon.stub()};
-    mockTextFormatter = <TestResultFormatter><{}>{formatFailure: Sinon.stub()};
+    mockConsoleFormatter = <TestResultFormatter><{}>{formatDebugLogMessages: Sinon.stub(), formatUpdate: Sinon.stub()};
+    mockHtmlFormatter = <TestResultFormatter><{}>{formatDebugLogMessages: Sinon.stub(), formatFailure: Sinon.stub()};
+    mockTextFormatter = <TestResultFormatter><{}>{formatDebugLogMessages: Sinon.stub(), formatFailure: Sinon.stub()};
     mockWriteLine = Sinon.stub();
     reporter = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
   });
@@ -855,34 +856,18 @@ describe("plugin junit-reporter reporter-plugin", () => {
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<failure>/));
     });
 
-    it("should call writeFailureAsHtml with failure node when junitFormat is html", () => {
+    it("should call writeMessage with failure message", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
-      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
-      rep.writeFailureAsHtml = Sinon.spy();
-      let expected = <TestReportFailedLeaf> {label: "bar"};
+      reporter.writeMessage = Sinon.spy();
+      let expected = "baz";
+      reporter.toFailureLogMessage = Sinon.stub();
+      (<SinonStub>reporter.toFailureLogMessage).returns(expected);
 
       // act
-      rep.writeFailure(mockWriteLine, "foo", expected, "::");
+      reporter.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
 
       // assert
-      expect(rep.writeFailureAsHtml).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
-    });
-
-    it("should call writeFailureAsText with failure node when junitFormat is html", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "text"}});
-      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
-      rep.writeFailureAsText = Sinon.spy();
-      let expected = <TestReportFailedLeaf> {label: "bar"};
-
-      // act
-      rep.writeFailure(mockWriteLine, "foo", expected, "::");
-
-      // assert
-      expect(rep.writeFailureAsText).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
+      expect(reporter.writeMessage).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
     });
 
     it("should call writeLine for the end failure node", () => {
@@ -892,96 +877,303 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/failure>/));
     });
-  });
 
-  describe("writeFailureAsText", () => {
-    it("should call formatFailure with the supplied leaf", () => {
+    it("should call writeDebugLogMessage with the supplied node", () => {
       // arrange
+      reporter.writeDebugLogMessage = Sinon.spy();
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
-      reporter.writeFailureAsText(mockWriteLine, expected, "::");
+      reporter.writeFailure(mockWriteLine, "foo", expected, "::");
 
       // assert
-      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
-    });
-
-    it("should call formatFailure with empty padding", () => {
-      // act
-      reporter.writeFailureAsText(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
-    });
-
-    it("should call formatFailure with diffMaxLength", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {diffMaxLength: 123}});
-      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
-
-      // act
-      rep.writeFailureAsText(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
-    });
-
-    it("should call writeLine with the message from textFormatter", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockTextFormatter.formatFailure = mockFormatFailure;
-
-      // act
-      reporter.writeFailureAsText(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/baz/));
+      expect(reporter.writeDebugLogMessage).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
     });
   });
 
-  describe("writeFailureAsHtml", () => {
-    it("should call formatFailure with the supplied leaf", () => {
+  describe("writeMessage", () => {
+    it("should call writeAsHtml with supplied writeLine when junitFormat is 'html'", () => {
       // arrange
-      let expected = <TestReportFailedLeaf> {label: "bar"};
-
-      // act
-      reporter.writeFailureAsHtml(mockWriteLine, expected, "::");
-
-      // assert
-      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
-    });
-
-    it("should call formatFailure with empty padding", () => {
-      // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
-
-      // assert
-      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
-    });
-
-    it("should call formatFailure with diffMaxLength", () => {
-      // arrange
-      RewiredPlugin.__set__({program: {diffMaxLength: 123}});
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
       let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      rep.writeAsHtml = Sinon.spy();
 
       // act
-      rep.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      rep.writeMessage(mockWriteLine, "foo", "::");
 
       // assert
-      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
+      expect(rep.writeAsHtml).to.have.been.calledWith(mockWriteLine, Sinon.match.any, Sinon.match.any);
     });
 
-    it("should call writeLine with the start of a cdata section", () => {
+    it("should call writeAsHtml with supplied message when junitFormat is 'html'", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      rep.writeAsHtml = Sinon.spy();
+
+      // act
+      rep.writeMessage(mockWriteLine, "foo", "::");
+
+      // assert
+      expect(rep.writeAsHtml).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any);
+    });
+
+    it("should call writeAsHtml with supplied padding when junitFormat is 'html'", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      rep.writeAsHtml = Sinon.spy();
+
+      // act
+      rep.writeMessage(mockWriteLine, "foo", "::");
+
+      // assert
+      expect(rep.writeAsHtml).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "::");
+    });
+
+    it("should call writeAsText with supplied writeLine when junitFormat is 'text'", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      rep.writeAsText = Sinon.spy();
+
+      // act
+      rep.writeMessage(mockWriteLine, "foo", "::");
+
+      // assert
+      expect(rep.writeAsText).to.have.been.calledWith(mockWriteLine, Sinon.match.any);
+    });
+
+    it("should call writeAsText with supplied message when junitFormat is 'text'", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      rep.writeAsText = Sinon.spy();
+
+      // act
+      rep.writeMessage(mockWriteLine, "foo", "::");
+
+      // assert
+      expect(rep.writeAsText).to.have.been.calledWith(Sinon.match.any, "foo");
+    });
+  });
+
+  describe("writeDebugLogMessage", () => {
+    it("should not call writeMessage when logMessages is undefined", () => {
+      // arrange
+      reporter.writeMessage = Sinon.spy();
+
+      // act
+      reporter.writeDebugLogMessage(mockWriteLine, <TestReportLogged> {logMessages: undefined}, "::");
+
+      // assert
+      expect(reporter.writeMessage).not.to.have.been.called;
+    });
+
+    it("should not call writeMessage when logMessages is empty", () => {
+      // arrange
+      reporter.writeMessage = Sinon.spy();
+
+      // act
+      reporter.writeDebugLogMessage(mockWriteLine, <TestReportLogged> {logMessages: []}, "::");
+
+      // assert
+      expect(reporter.writeMessage).not.to.have.been.called;
+    });
+
+    it("should call writeLine for the start system-out node", () => {
       // arrange
       let mockFormatFailure = Sinon.stub();
       mockFormatFailure.returns("baz");
       mockHtmlFormatter.formatFailure = mockFormatFailure;
 
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeDebugLogMessage(mockWriteLine, <TestReportLogged> {logMessages: ["foo"]}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<system-out>/));
+    });
+
+    it("should call writeMessage with debug log message returned from toDebugLogMessage", () => {
+      // arrange
+      reporter.writeMessage = Sinon.spy();
+      let expected = "bar";
+      reporter.toDebugLogMessage = Sinon.stub();
+      (<SinonStub>reporter.toDebugLogMessage).returns(expected);
+
+      // act
+      reporter.writeDebugLogMessage(mockWriteLine, <TestReportLogged> {logMessages: ["foo"]}, "::");
+
+      // assert
+      expect(reporter.writeMessage).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
+    });
+
+    it("should call writeLine for the end failure node", () => {
+      // act
+      reporter.writeDebugLogMessage(mockWriteLine, <TestReportLogged> {logMessages: ["foo"]}, "::");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/system-out>/));
+    });
+  });
+
+  describe("toDebugLogMessage", () => {
+    it("should call htmlFormatter.formatFailure with the supplied leaf when junitFormat is html", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let expected = <TestReportFailedLeaf> {label: "bar"};
+
+      // act
+      rep.toDebugLogMessage(expected);
+
+      // assert
+      expect(mockHtmlFormatter.formatDebugLogMessages).to.have.been.calledWith(expected, Sinon.match.any);
+    });
+
+    it("should call htmlFormatter.formatFailure with empty padding when junitFormat is html", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
+
+      // assert
+      expect(mockHtmlFormatter.formatDebugLogMessages).to.have.been.calledWith(Sinon.match.any, "");
+    });
+
+    it("should call textFormatter.formatFailure with the supplied leaf when junitFormat is text", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let expected = <TestReportFailedLeaf> {label: "bar"};
+
+      // act
+      rep.toDebugLogMessage(expected);
+
+      // assert
+      expect(mockTextFormatter.formatDebugLogMessages).to.have.been.calledWith(expected, Sinon.match.any);
+    });
+
+    it("should call textFormatter.formatFailure with empty padding when junitFormat is text", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
+
+      // assert
+      expect(mockTextFormatter.formatDebugLogMessages).to.have.been.calledWith(Sinon.match.any, "");
+    });
+  });
+
+  describe("toFailureLogMessage", () => {
+    it("should call htmlFormatter.formatFailure with the supplied leaf when junitFormat is html", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let expected = <TestReportFailedLeaf> {label: "bar"};
+
+      // act
+      rep.toFailureLogMessage(expected);
+
+      // assert
+      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call htmlFormatter.formatFailure with empty padding when junitFormat is html", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+
+      // assert
+      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
+    });
+
+    it("should call htmlFormatter.formatFailure with diffMaxLength when junitFormat is html", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {diffMaxLength: 123, junitFormat: "html"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+
+      // assert
+      expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
+    });
+
+    it("should call textFormatter.formatFailure with the supplied leaf when junitFormat is text", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let expected = <TestReportFailedLeaf> {label: "bar"};
+
+      // act
+      rep.toFailureLogMessage(expected);
+
+      // assert
+      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call textFormatter.formatFailure with empty padding when junitFormat is text", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+
+      // assert
+      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
+    });
+
+    it("should call textFormatter.formatFailure with diffMaxLength when junitFormat is text", () => {
+      // arrange
+      RewiredPlugin.__set__({program: {diffMaxLength: 123, junitFormat: "text"}});
+      let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+
+      // act
+      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+
+      // assert
+      expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
+    });
+  });
+
+  describe("writeFailureAsText", () => {
+    it("should call writeLine with the supplied message", () => {
+      // act
+      reporter.writeAsText(mockWriteLine, "baz");
+
+      // assert
+      expect(mockWriteLine).to.have.been.calledWith("baz");
+    });
+  });
+
+  describe("writeAsHtml", () => {
+    it("should call writeLine with the start of a cdata section", () => {
+      // act
+      reporter.writeAsHtml(mockWriteLine, "baz", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<!\[CDATA\[/));
@@ -989,20 +1181,15 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeLine for the end cdata section", () => {
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeAsHtml(mockWriteLine, "bar", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/]]>/));
     });
 
     it("should call writeLine with the message in a pre styled with overflow:auto", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockHtmlFormatter.formatFailure = mockFormatFailure;
-
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeAsHtml(mockWriteLine, "baz", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<pre style=".*overflow:auto.*">/));
@@ -1010,46 +1197,31 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeLine for the end pre node", () => {
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeAsHtml(mockWriteLine, "bar", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/pre>/));
     });
 
     it("should call writeLine with the message in a code styled with display:inline-block", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockHtmlFormatter.formatFailure = mockFormatFailure;
-
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeAsHtml(mockWriteLine, "baz", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*display:inline-block.*">/));
     });
 
     it("should call writeLine with the message in a code styled with line-height:1", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockHtmlFormatter.formatFailure = mockFormatFailure;
-
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeAsHtml(mockWriteLine, "baz", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*line-height:1.*">/));
     });
 
     it("should call writeLine with the message in a code block", () => {
-      // arrange
-      let mockFormatFailure = Sinon.stub();
-      mockFormatFailure.returns("baz");
-      mockHtmlFormatter.formatFailure = mockFormatFailure;
-
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeAsHtml(mockWriteLine, "baz", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<code style=".*">baz/));
@@ -1057,7 +1229,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeLine for the end code node", () => {
       // act
-      reporter.writeFailureAsHtml(mockWriteLine, <TestReportFailedLeaf> {label: "bar"}, "::");
+      reporter.writeAsHtml(mockWriteLine, "bar", "::");
 
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/code>/));
