@@ -37,6 +37,7 @@ describe("lib reporter-standard-console", () => {
     };
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: () => "",
+      formatDebugLogMessages: Sinon.stub(),
       formatFailure: Sinon.stub(),
       formatNotRun: Sinon.stub(),
       formatUpdate: Sinon.stub()
