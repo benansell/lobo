@@ -256,6 +256,7 @@ assertion it adds a visual hint for the source of the difference:
 </p>
  
 The following options are supported by the default reporter:
+* hideDebugMessages - prevent reporting of any test Debug.log messages
 * showSkip - report skipped tests and the reasons after the summary.
 This option is only available with elm-test-extra and is ignored when
 the quiet option is present
