@@ -27,7 +27,6 @@ describe("plugin junit-reporter reporter-plugin", () => {
   let reporter: JUnitReporter;
   let mockLogger: { log(message: string): void };
   let mockStandardConsole: ReporterStandardConsole;
-  let mockConsoleFormatter: TestResultFormatter;
   let mockHtmlFormatter: TestResultFormatter;
   let mockTextFormatter: TestResultFormatter;
   let mockCreateWriteStream: SinonStub;
@@ -44,11 +43,10 @@ describe("plugin junit-reporter reporter-plugin", () => {
       runArgs: Sinon.stub(),
       update: Sinon.stub()
     };
-    mockConsoleFormatter = <TestResultFormatter><{}>{formatDebugLogMessages: Sinon.stub(), formatUpdate: Sinon.stub()};
     mockHtmlFormatter = <TestResultFormatter><{}>{formatDebugLogMessages: Sinon.stub(), formatFailure: Sinon.stub()};
     mockTextFormatter = <TestResultFormatter><{}>{formatDebugLogMessages: Sinon.stub(), formatFailure: Sinon.stub()};
     mockWriteLine = Sinon.stub();
-    reporter = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+    reporter = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
   });
 
   describe("createPlugin", () => {
@@ -68,7 +66,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
 
       // act
-      let actual = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let actual = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       actual.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
 
       // assert
@@ -896,7 +894,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       rep.writeAsHtml = Sinon.spy();
 
       // act
@@ -910,7 +908,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       rep.writeAsHtml = Sinon.spy();
 
       // act
@@ -924,7 +922,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       rep.writeAsHtml = Sinon.spy();
 
       // act
@@ -938,7 +936,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       rep.writeAsText = Sinon.spy();
 
       // act
@@ -952,7 +950,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       rep.writeAsText = Sinon.spy();
 
       // act
@@ -1027,7 +1025,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
@@ -1041,7 +1039,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
       rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
@@ -1054,7 +1052,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
@@ -1068,7 +1066,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
       rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
@@ -1083,7 +1081,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
@@ -1097,7 +1095,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
       rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
@@ -1110,7 +1108,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {diffMaxLength: 123, junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
       rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
@@ -1123,7 +1121,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
@@ -1137,7 +1135,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
       rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
@@ -1150,7 +1148,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // arrange
       RewiredPlugin.__set__({program: {diffMaxLength: 123, junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockConsoleFormatter, mockHtmlFormatter, mockTextFormatter);
+      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
       rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
