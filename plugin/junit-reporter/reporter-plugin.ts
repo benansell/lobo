@@ -5,7 +5,6 @@ import * as fs from "fs";
 import * as os from "os";
 import * as plugin from "../../lib/plugin";
 import {WriteStream} from "fs";
-import {createTestResultDecoratorConsole} from "../../lib/test-result-decorator-console";
 import {createTestResultDecoratorHtml} from "../../lib/test-result-decorator-html";
 import {createTestResultDecoratorText} from "../../lib/test-result-decorator-text";
 import {createTestResultFormatter, TestResultFormatter} from "../../lib/test-result-formatter";
@@ -27,7 +26,6 @@ type WriteLine  = (line: string) => void;
 
 export class JUnitReporter implements plugin.PluginReporter {
 
-  private consoleFormatter: TestResultFormatter;
   private htmlFormatter: TestResultFormatter;
   private textFormatter: TestResultFormatter;
   private standardConsole: ReporterStandardConsole;
@@ -47,11 +45,10 @@ export class JUnitReporter implements plugin.PluginReporter {
   }
 
   constructor(logger: plugin.PluginReporterLogger, paddingUnit: string, standardConsole: ReporterStandardConsole,
-              consoleFormatter: TestResultFormatter, htmlFormatter: TestResultFormatter, textFormatter: TestResultFormatter) {
+              htmlFormatter: TestResultFormatter, textFormatter: TestResultFormatter) {
     this.logger = logger;
     this.paddingUnit = paddingUnit;
     this.standardConsole = standardConsole;
-    this.consoleFormatter = consoleFormatter;
     this.htmlFormatter = htmlFormatter;
     this.textFormatter = textFormatter;
 
@@ -325,9 +322,8 @@ export class JUnitReporter implements plugin.PluginReporter {
 }
 
 export function createPlugin(): plugin.PluginReporter {
-  let consoleFormatter = createTestResultFormatter(createTestResultDecoratorConsole());
   let htmlFormatter = createTestResultFormatter(createTestResultDecoratorHtml());
   let textFormatter = createTestResultFormatter(createTestResultDecoratorText());
 
-  return new JUnitReporter(console, "  ", createReporterStandardConsole(), consoleFormatter, htmlFormatter, textFormatter);
+  return new JUnitReporter(console, "  ", createReporterStandardConsole(), htmlFormatter, textFormatter);
 }
