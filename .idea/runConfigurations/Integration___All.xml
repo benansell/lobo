@@ -10,7 +10,7 @@
       <env name="noisyTestRun" value="true" />
     </envs>
     <ui>bdd</ui>
-    <extra-mocha-options>--compilers ts:ts-node/register --timeout 100000</extra-mocha-options>
+    <extra-mocha-options>--require ts-node/register --timeout 100000</extra-mocha-options>
     <test-kind>PATTERN</test-kind>
     <test-pattern>**/*.test.ts</test-pattern>
     <method />
