@@ -44,6 +44,7 @@ export class RunnerImp {
         stdout.write = RunnerImp.testRunStdOutWrite;
         RunnerImp.debugLogMessages = [];
       } catch (err) {
+        stdout.write = RunnerImp.originalNodeProcessWrite;
         reject(err);
       }
     };
@@ -59,6 +60,7 @@ export class RunnerImp {
         stdout.write = RunnerImp.testRunStdOutWrite;
         RunnerImp.debugLogMessages = [];
       } catch (err) {
+        stdout.write = RunnerImp.originalNodeProcessWrite;
         reject(err);
       }
     };
@@ -69,8 +71,12 @@ export class RunnerImp {
     return (rawResults: TestReportRoot) => {
       stdout.write = RunnerImp.originalNodeProcessWrite;
       logger.trace("Test run complete", rawResults);
-      let promise = reporter.finish(rawResults);
-      promise.then(() => resolve()).catch(err => reject(err));
+      reporter.finish(rawResults)
+        .then(() => resolve())
+        .catch((err) => {
+          stdout.write = RunnerImp.originalNodeProcessWrite;
+          reject(err);
+        });
     };
   }
 

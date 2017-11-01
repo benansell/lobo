@@ -96,6 +96,24 @@ describe("lib runner", () => {
       expect(mockReject).to.have.been.calledWith(expected);
     });
 
+    it("should return a function that set stdout.write to originalNodeProcessWrite when an error is thrown", () => {
+      // arrange
+      let expected = new Error("foo");
+      mockReporter.init = () => {
+        throw expected;
+      };
+      let mockWrite = Sinon.spy();
+      mockStdout.write = Sinon.spy();
+      RunnerImp.originalNodeProcessWrite = mockWrite;
+
+      // act
+      let actual = RunnerImp.makeTestRunBegin(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(123);
+
+      // assert
+      expect(mockStdout.write).to.equal(mockWrite);
+    });
+
     it("should set the originalNodeProcessWrite to value of stdout.write", () => {
       // arrange
       mockReporter.init = Sinon.spy();
@@ -180,6 +198,24 @@ describe("lib runner", () => {
 
       // assert
       expect(mockReject).to.have.been.calledWith(expected);
+    });
+
+    it("should return a function that set stdout.write to originalNodeProcessWrite when an error is thrown", () => {
+      // arrange
+      let expected = new Error("foo");
+      mockReporter.update = () => {
+        throw expected;
+      };
+      let mockWrite = Sinon.spy();
+      mockStdout.write = Sinon.spy();
+      RunnerImp.originalNodeProcessWrite = mockWrite;
+
+      // act
+      let actual = RunnerImp.makeTestRunProgress(mockStdout, mockLogger, mockReporter, mockReject);
+      actual(<ProgressReport> {});
+
+      // assert
+      expect(mockStdout.write).to.equal(mockWrite);
     });
 
     it("should return a function that restore stdout.write to the original value before calling reporter.update", () => {
@@ -282,6 +318,27 @@ describe("lib runner", () => {
 
       // assert
       expect(mockReject).to.have.been.calledWith();
+    });
+
+    it("should return a function that set stdout.write to originalNodeProcessWrite when an error is thrown", () => {
+      // arrange
+      mockReporter.finish = Sinon.stub();
+      (<SinonStub>mockReporter.finish).returns({
+        then: () => {
+          return {"catch": func => func()};
+        }
+      });
+      let expected = <TestReportRoot> {runType: "NORMAL"};
+      let mockWrite = Sinon.spy();
+      mockStdout.write = Sinon.spy();
+      RunnerImp.originalNodeProcessWrite = mockWrite;
+
+      // act
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
+      actual(expected);
+
+      // assert
+      expect(mockStdout.write).to.equal(mockWrite);
     });
 
     it("should return a function that resets the stdout.write to the originalNodeProcessWrite value", () => {
