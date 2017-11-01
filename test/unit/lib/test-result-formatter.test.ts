@@ -8,7 +8,7 @@ import * as SinonChai from "sinon-chai";
 import {createTestResultFormatter, TestResultFormatter, TestResultFormatterImp} from "../../../lib/test-result-formatter";
 import {Comparer} from "../../../lib/comparer";
 import {
-  FailureMessage, ProgressReport, ResultType, TestReportFailedLeaf, TestReportSkippedLeaf, TestResultDecorator
+  FailureMessage, ProgressReport, ResultType, TestReportFailedLeaf, TestReportLogged, TestReportSkippedLeaf, TestResultDecorator
 } from "../../../lib/plugin";
 
 let expect = chai.expect;
@@ -27,11 +27,13 @@ describe("lib test-result-formatter", () => {
     mockComparer = <Comparer> {diff: Sinon.stub()};
     mockDecorator = <TestResultDecorator><{}>{
       bulletPoint: Sinon.stub(),
+      debugLog: Sinon.stub(),
       diff: Sinon.stub(),
       expect: Sinon.stub(),
       failed: Sinon.stub(),
       given: Sinon.stub(),
       line: Sinon.stub(),
+      rightArrow: Sinon.stub(),
       skip: Sinon.stub(),
       todo: Sinon.stub(),
       verticalBarEnd: Sinon.stub(),
@@ -49,6 +51,84 @@ describe("lib test-result-formatter", () => {
 
       // assert
       expect(actual).to.exist;
+    });
+  });
+
+  describe("formatDebugLogMessages", () => {
+    it("should return the formatted log messages from the supplied log messages", () => {
+      // arrange
+      (<SinonStub>mockDecorator.debugLog).callsFake(x => x);
+      (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
+
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo", "bar"]}, "?");
+
+      // assert
+      expect(actual).to.match(/foo(\n|.)*bar/);
+    });
+
+    it("should return the message with supplied padding prefix", () => {
+      // arrange
+      (<SinonStub>mockDecorator.debugLog).callsFake(x => x);
+      (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
+
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
+
+      // assert
+      expect(actual).to.match(/^\?::/);
+    });
+
+    it("should return the message prefixed with decorator right arrow value", () => {
+      // arrange
+      (<SinonStub>mockDecorator.debugLog).callsFake(x => x);
+      (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
+
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
+
+      // assert
+      expect(actual).to.match(/:: foo/);
+    });
+
+    it("should return the message with debugLog styling applied by decorator", () => {
+      // arrange
+      (<SinonStub>mockDecorator.debugLog).callsFake(x => "-" + x + "-");
+      (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
+
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
+
+      // assert
+      expect(actual).to.match(/-foo-/);
+    });
+
+    it("should return the failure ending with 2 new lines when there are log messages", () => {
+      // arrange
+      (<SinonStub>mockDecorator.debugLog).callsFake(x => x);
+      (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
+
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: ["foo"]}, "?");
+
+      // assert
+      expect(actual).to.match(/\n\n$/);
+    });
+
+    it("should return empty when logMessages is undefined", () => {
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: undefined}, "?");
+
+      // assert
+      expect(actual).to.equal("");
+    });
+
+    it("should return empty when logMessages is empty", () => {
+      // act
+      let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: []}, "?");
+
+      // assert
+      expect(actual).to.equal("");
     });
   });
 
@@ -162,6 +242,35 @@ describe("lib test-result-formatter", () => {
       // assert
       expect(actual).not.to.match(/┌/);
       expect(actual).to.match(/::foo::/);
+    });
+
+    it("should return the failure ending with 2 new lines when there are no log messages", () => {
+      // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
+      (<SinonStub>mockDecorator.verticalBarStart).callsFake(() => "::");
+      let expected = <FailureMessage>{message: "┌foo┌"};
+      formatter.formatMessage = (x, y) => x;
+
+      // act
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {logMessages: [],  resultMessages: [expected]}, "?", 123);
+
+      // assert
+      expect(actual).to.match(/\n\n$/);
+    });
+
+    it("should return the failure not ending with 1 new line when there are log messages", () => {
+      // arrange
+      (<SinonStub>mockDecorator.expect).callsFake(x => x);
+      (<SinonStub>mockDecorator.verticalBarStart).callsFake(() => "::");
+      let expected = <FailureMessage>{message: "┌foo┌"};
+      formatter.formatMessage = (x, y) => x;
+
+      // act
+      let actual = formatter.formatFailure(<TestReportFailedLeaf> {logMessages: ["bar"], resultMessages: [expected]}, "?", 123);
+
+      // assert
+      expect(actual).not.to.match(/\n\n$/);
+      expect(actual).to.match(/\n$/);
     });
   });
 

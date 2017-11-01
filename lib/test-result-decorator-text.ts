@@ -17,6 +17,10 @@ export class TestResultDecoratorTextImp implements plugin.TestResultDecorator {
     return "•";
   }
 
+  public debugLog(value: string): string {
+    return value;
+  }
+
   public diff(value: string): string {
     return value;
   }
@@ -43,6 +47,10 @@ export class TestResultDecoratorTextImp implements plugin.TestResultDecorator {
 
   public passed(value: string): string {
     return value;
+  }
+
+  public rightArrow(): string {
+    return "→";
   }
 
   public verticalBarEnd(): string {

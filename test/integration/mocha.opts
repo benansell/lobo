@@ -1,6 +1,6 @@
---compilers ts:ts-node/register
 --full-trace
 --recursive **/*.test.ts
+--require ts-node/register
 --require source-map-support/register
 --timeout 100000
 

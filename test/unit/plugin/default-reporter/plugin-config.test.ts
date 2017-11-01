@@ -16,6 +16,14 @@ describe("plugin default-reporter plugin-config", () => {
   });
 
   describe("options", () => {
+    it("should have '--hideDebugMessages' option", () => {
+      // act'
+      let options = config.options;
+
+      // assert
+      expect(options).to.include.something.that.property("flags", "--hideDebugMessages");
+    });
+
     it("should have '--showSkip' option", () => {
       // act'
       let options = config.options;

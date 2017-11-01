@@ -36,16 +36,52 @@ describe("elm-test-simple", () => {
     });
   });
 
-  describe("fail", () => {
-    let testDirectory: string;
+  describe("debug", () => {
+    let testFile: string;
 
     beforeEach(() => {
-      testDirectory = "simple/fail/Tests.elm";
+      testFile = "simple/debug/Tests.elm";
+    });
+
+    it("should show Debug.log messages by default", () => {
+      // act
+      let result = runner.run(testContext, "elm-test", testFile);
+
+      // assert
+      let firstTestIndex = result.stdout.indexOf("1) failing Debug.log test");
+      let secondTestIndex = result.stdout.indexOf("2) passing Debug.log test");
+      let failureMessage = result.stdout.substring(firstTestIndex, secondTestIndex);
+      expect(failureMessage).to.have.string("→ Bar: \"Hello Bar\"");
+
+      failureMessage = result.stdout.substring(secondTestIndex, result.stdout.length - 1);
+      expect(failureMessage).to.have.string("→ Foo: \"Hello Foo\"");
+    });
+
+    it("should not show Debug.log messages when --hideDebugMessages is supplied", () => {
+      // act
+      let result = runner.run(testContext, "elm-test", testFile, "--hideDebugMessages");
+
+      // assert
+      let startIndex = result.stdout
+        .indexOf("================================================================================");
+      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+
+      expect(failureMessage).not.to.have.string("→ Bar: \"Hello Bar\"");
+      expect(failureMessage).not.to.have.string("2) passing Debug.log test");
+      expect(failureMessage).not.to.have.string("→ Foo: \"Hello Foo\"");
+    });
+  });
+
+  describe("fail", () => {
+    let testFile: string;
+
+    beforeEach(() => {
+      testFile = "simple/fail/Tests.elm";
     });
 
     it("should report failure", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDirectory);
+      let result = runner.run(testContext, "elm-test", testFile);
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -55,7 +91,7 @@ describe("elm-test-simple", () => {
 
     it("should update message to use ┌ └  instead of ╷ ╵", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDirectory);
+      let result = runner.run(testContext, "elm-test", testFile);
 
       // assert
       let startIndex = result.stdout
@@ -70,7 +106,7 @@ describe("elm-test-simple", () => {
 
     it("should update string equals to show diff hint", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDirectory);
+      let result = runner.run(testContext, "elm-test", testFile);
 
       // assert
       let startIndex = result.stdout
@@ -86,15 +122,15 @@ describe("elm-test-simple", () => {
   });
 
   describe("fuzz", () => {
-    let testDirectory: string;
+    let testFile: string;
 
     beforeEach(() => {
-      testDirectory = "simple/fuzz/Tests.elm";
+      testFile = "simple/fuzz/Tests.elm";
     });
 
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDirectory);
+      let result = runner.run(testContext, "elm-test", testFile);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -107,7 +143,7 @@ describe("elm-test-simple", () => {
       let expectedRunCount = 11;
 
       // act
-      let result = runner.run(testContext, "elm-test", testDirectory, "--runCount=" + expectedRunCount);
+      let result = runner.run(testContext, "elm-test", testFile, "--runCount=" + expectedRunCount);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -129,7 +165,7 @@ describe("elm-test-simple", () => {
       let initialSeed = 101;
 
       // act
-      let result = runner.run(testContext, "elm-test", testDirectory, "--seed=" + initialSeed);
+      let result = runner.run(testContext, "elm-test", testFile, "--seed=" + initialSeed);
 
       // assert
       reporterExpect(result).summaryPassed();

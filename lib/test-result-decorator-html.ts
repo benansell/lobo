@@ -17,6 +17,10 @@ export class TestResultDecoratorHtmlImp implements plugin.TestResultDecorator {
     return "&bullet;";
   }
 
+  public debugLog(value: string): string {
+    return `<span style="color:darkcyan">${value}</span>`;
+  }
+
   public diff(value: string): string {
     return `<span style="color:red">${value}</span>`;
   }
@@ -43,6 +47,10 @@ export class TestResultDecoratorHtmlImp implements plugin.TestResultDecorator {
 
   public passed(value: string): string {
     return `<span style="color:green">${value}</span>`;
+  }
+
+  public rightArrow(): string {
+    return "&rarr;";
   }
 
   public verticalBarEnd(): string {

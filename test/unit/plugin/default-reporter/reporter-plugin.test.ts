@@ -11,7 +11,7 @@ import {
   PluginReporter,
   ProgressReport,
   RunArgs,
-  TestReportFailedLeaf,
+  TestReportFailedLeaf, TestReportPassedLeaf,
   TestReportSkippedLeaf,
   TestReportTodoLeaf, TestResultDecorator,
   TestRun,
@@ -40,6 +40,7 @@ describe("plugin default-reporter reporter-plugin", () => {
     mockDecorator = <TestResultDecorator> {};
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: Sinon.stub(),
+      formatDebugLogMessages: Sinon.stub(),
       formatFailure: Sinon.stub(),
       formatNotRun: Sinon.stub(),
       formatUpdate: Sinon.stub()
@@ -144,6 +145,7 @@ describe("plugin default-reporter reporter-plugin", () => {
     it("should return a promise that calls standardConsole.finish", () => {
       // arrange
       let expected = <TestRun>{summary: {runType: "NORMAL"}};
+      reporter.logResults = Sinon.spy();
 
       // act
       let actual = reporter.finish(expected);
@@ -156,9 +158,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should return a promise that does not call logNonPassed when quiet is true", () => {
       // arrange
-      let expected = <TestRunSummary> {runType: "NORMAL"};
+      let expected = <TestRunSummary> {runType: "NORMAL", successes: []};
       let revert = RewiredPlugin.__with__({program: {quiet: true}});
-      reporter.logNonPassed = Sinon.spy();
+      reporter.logResults = Sinon.spy();
 
       // act
       let actual: Bluebird<Object> = undefined;
@@ -166,7 +168,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
       // assert
       actual.then(() => {
-        expect(reporter.logNonPassed).not.to.have.been.called;
+        expect(reporter.logResults).not.to.have.been.called;
       });
     });
 
@@ -174,7 +176,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let expected = <TestRunSummary> {runType: "NORMAL"};
       let revert = RewiredPlugin.__with__({program: {quiet: false}});
-      reporter.logNonPassed = Sinon.spy();
+      reporter.logResults = Sinon.spy();
 
       // act
       let actual: Bluebird<Object> = undefined;
@@ -182,7 +184,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
       // assert
       actual.then(() => {
-        expect(reporter.logNonPassed).to.have.been.calledWith(expected);
+        expect(reporter.logResults).to.have.been.calledWith(expected);
       });
     });
 
@@ -190,8 +192,8 @@ describe("plugin default-reporter reporter-plugin", () => {
       // arrange
       let expected = new Error("qux");
       let revert = RewiredPlugin.__with__({program: {quiet: false}});
-      reporter.logNonPassed = Sinon.stub();
-      (<SinonStub>reporter.logNonPassed).throws(expected);
+      reporter.logResults = Sinon.stub();
+      (<SinonStub>reporter.logResults).throws(expected);
 
       // act
       let actual: Bluebird<Object> = undefined;
@@ -265,17 +267,56 @@ describe("plugin default-reporter reporter-plugin", () => {
     });
   });
 
-  describe("logNonPassed", () => {
+  describe("logResults", () => {
     it("should log failed items", () => {
       // arrange
       reporter.logFailureMessage = Sinon.spy();
       let expected = <TestRunLeaf<TestReportFailedLeaf>> {labels: [], result: {label: "foo"}};
 
       // act
-      reporter.logNonPassed(<TestRunSummary>{failures: [expected]});
+      reporter.logResults(<TestRunSummary>{failures: [expected]});
 
       // assert
       expect(reporter.logFailureMessage).to.have.been.calledWith(expected);
+    });
+
+    it("should log passed items when hideDebugMessages is false and resultType is 'PASSED'", () => {
+      // arrange
+      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      reporter.logPassedMessage = Sinon.spy();
+      let expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: ["bar"]}};
+
+      // act
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], successes: [expected]}));
+
+      // assert
+      expect(reporter.logPassedMessage).to.have.been.calledWith(expected);
+    });
+
+    it("should not log passed items when hideDebugMessages is false and resultType is 'PASSED' and no log messages", () => {
+      // arrange
+      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      reporter.logPassedMessage = Sinon.spy();
+      let expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: []}};
+
+      // act
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], successes: [expected]}));
+
+      // assert
+      expect(reporter.logPassedMessage).not.to.have.been.called;
+    });
+
+    it("should not log passed items when hideDebugMessages is true and resultType is 'PASSED'", () => {
+      // arrange
+      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
+      reporter.logPassedMessage = Sinon.spy();
+      let expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: ["bar"]}};
+
+      // act
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], successes: [expected]}));
+
+      // assert
+      expect(reporter.logPassedMessage).not.to.have.been.called;
     });
 
     it("should not log skipped items when showSkip is false", () => {
@@ -285,7 +326,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], skipped: [expected]}));
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], skipped: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).not.to.have.been.called;
@@ -298,7 +339,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], skipped: [expected]}));
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], skipped: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).to.have.been.calledWith(expected);
@@ -311,7 +352,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "SKIPPED"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], skipped: [expected]}));
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], skipped: [expected]}));
 
       // assert
       expect(reporter.logNotRunMessage).to.have.been.calledWith(expected);
@@ -324,7 +365,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], todo: [expected]}));
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], todo: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).not.to.have.been.called;
@@ -337,7 +378,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], todo: [expected]}));
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], todo: [expected]}));
 
       // assert
       expect(reporter.logFailureMessage).to.have.been.calledWith(expected);
@@ -350,7 +391,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "TODO"}};
 
       // act
-      revert(() => reporter.logNonPassed(<TestRunSummary>{failures: [], todo: [expected]}));
+      revert(() => reporter.logResults(<TestRunSummary>{failures: [], todo: [expected]}));
 
       // assert
       expect(reporter.logNotRunMessage).to.have.been.calledWith(expected);
@@ -436,6 +477,56 @@ describe("plugin default-reporter reporter-plugin", () => {
 
       // assert
       expect(mockLogger.log).to.have.been.calledWith("bar");
+    });
+
+    it("should log the debug log message returned by formatDebugLogMessages when hideDebugMessages is false", () => {
+      // arrange
+      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
+
+      // act
+      revert(() => reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {labels: [], result: {label: "foo"}}));
+
+      // assert
+      expect(mockLogger.log).to.have.been.calledWith("bar");
+    });
+
+    it("should not log the debug log message returned by formatDebugLogMessages when hideDebugMessages is true", () => {
+      // arrange
+      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
+      (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
+
+      // act
+      revert(() => reporter.logFailureMessage(<TestRunLeaf<TestReportFailedLeaf>> {labels: [], result: {label: "foo"}}));
+
+      // assert
+      expect(mockLogger.log).not.to.have.been.calledWith("bar");
+    });
+  });
+
+  describe("logPassedMessage", () => {
+    it("should log the debug log message returned by formatDebugLogMessages when hideDebugMessages is false", () => {
+      // arrange
+      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
+
+      // act
+      revert(() => reporter.logPassedMessage(<TestRunLeaf<TestReportPassedLeaf>> {labels: [], result: {label: "foo"}}));
+
+      // assert
+      expect(mockLogger.log).to.have.been.calledWith("bar");
+    });
+
+    it("should not log the debug log message returned by formatDebugLogMessages when hideDebugMessages is true", () => {
+      // arrange
+      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
+      (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
+
+      // act
+      revert(() => reporter.logPassedMessage(<TestRunLeaf<TestReportPassedLeaf>> {labels: [], result: {label: "foo"}}));
+
+      // assert
+      expect(mockLogger.log).not.to.have.been.called;
     });
   });
 

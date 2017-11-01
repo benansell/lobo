@@ -9,6 +9,7 @@ import {createTestResultDecoratorConsole} from "../../lib/test-result-decorator-
 import {createReporterStandardConsole, ReporterStandardConsole} from "../../lib/reporter-standard-console";
 
 type LeafItem = plugin.TestRunLeaf<plugin.TestReportFailedLeaf>
+  | plugin.TestRunLeaf<plugin.TestReportPassedLeaf>
   | plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>
   | plugin.TestRunLeaf<plugin.TestReportTodoLeaf>;
 
@@ -78,7 +79,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     steps.push(() => new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
       try {
         if (!program.quiet) {
-          this.logNonPassed(results.summary);
+          this.logResults(results.summary);
           this.standardConsole.paddedLog("");
         }
 
@@ -112,8 +113,13 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     return prefix + suffix;
   }
 
-  public logNonPassed(summary: plugin.TestRunSummary): void {
+  public logResults(summary: plugin.TestRunSummary): void {
     let itemList: LeafItem[] = _.clone(summary.failures);
+
+    if (!program.hideDebugMessages) {
+      let passedWithLogs = _.filter(summary.successes, x => x.result.logMessages.length > 0);
+      itemList = itemList.concat(passedWithLogs);
+    }
 
     if (program.showSkip) {
       itemList = itemList.concat(summary.skipped);
@@ -128,24 +134,34 @@ export class DefaultReporterImp implements plugin.PluginReporter {
 
     for (let i = 0; i < sortedItemList.length; i++) {
       let item = sortedItemList[i];
+      let style: (value: string) => string;
 
-      let isNotRun = false;
-      let style = this.decorator.failed;
-
-      if (item.result.resultType === "SKIPPED") {
-        isNotRun = true;
-        style = this.decorator.skip;
-      } else if (item.result.resultType === "TODO") {
-        isNotRun = true;
-        style = this.decorator.todo;
+      switch (item.result.resultType) {
+        case "PASSED":
+          style = this.decorator.passed;
+          break;
+        case "SKIPPED":
+          style = this.decorator.skip;
+          break;
+        case "TODO":
+          style = this.decorator.todo;
+          break;
+        default: // "FAILED", "IGNORED"
+          style = this.decorator.failed;
       }
 
       context = this.logLabels(item.labels, item.result.label, i + 1, context, style);
 
-      if (isNotRun) {
-        this.logNotRunMessage(<plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>>item);
-      } else {
-        this.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>>item);
+      switch (item.result.resultType) {
+        case "PASSED":
+          this.logPassedMessage(<plugin.TestRunLeaf<plugin.TestReportPassedLeaf>>item);
+          break;
+        case "SKIPPED":
+        case "TODO":
+          this.logNotRunMessage(<plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>>item);
+          break;
+        default: // "FAILED", "IGNORED"
+          this.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>>item);
       }
     }
   }
@@ -185,11 +201,24 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>): void {
     let message = this.testResultFormatter.formatFailure(item.result, this.messagePrefixPadding, this.diffMaxLength);
     this.logger.log(message);
+
+    if (!program.hideDebugMessages) {
+      let debugMessage = this.testResultFormatter.formatDebugLogMessages(item.result, this.messagePrefixPadding);
+      this.logger.log(debugMessage);
+    }
   }
 
   public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>): void {
     let message = this.testResultFormatter.formatNotRun(item.result, this.messagePrefixPadding);
     this.logger.log(message);
+  }
+
+  public logPassedMessage(item: plugin.TestRunLeaf<plugin.TestReportPassedLeaf>): void {
+    if (!program.hideDebugMessages) {
+      this.logger.log("");
+      let debugMessage = this.testResultFormatter.formatDebugLogMessages(item.result, this.messagePrefixPadding);
+      this.logger.log(debugMessage);
+    }
   }
 }
 

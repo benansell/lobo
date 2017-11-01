@@ -98,8 +98,13 @@ export interface TestArgs {
 }
 
 export interface TestReportNode {
+  readonly id: number;
   readonly label: string;
   readonly resultType: ResultType;
+}
+
+export interface TestReportLogged {
+  readonly logMessages: string[];
 }
 
 export interface TestReportTimed {
@@ -113,14 +118,15 @@ export interface TestReportConfig {
   readonly runCount: number;
 }
 
-export interface TestReportFailedLeaf extends TestReportNode, TestReportTimed {
-  readonly resultMessages: FailureMessage[];
+export interface TestReportFailedLeaf extends TestReportNode, TestReportLogged, TestReportTimed {
+    readonly resultMessages: FailureMessage[];
 }
 
 export interface TestReportIgnoredLeaf extends TestReportNode {
 }
 
-export interface TestReportPassedLeaf extends TestReportNode, TestReportTimed {
+export interface TestReportPassedLeaf extends TestReportNode, TestReportLogged, TestReportTimed {
+  readonly logMessages: string[];
 }
 
 export interface TestReportSkippedLeaf extends TestReportNode {
@@ -146,6 +152,7 @@ export interface TestReportTodoLeaf extends TestReportNode, TestReportTimed {
 
 export interface TestResultDecorator {
   bulletPoint(): string;
+  debugLog(value: string): string;
   diff(value: string): string;
   expect(value: string): string;
   failed(value: string): string;
@@ -154,6 +161,7 @@ export interface TestResultDecorator {
   inconclusive(value: string): string;
   only(value: string): string;
   passed(value: string): string;
+  rightArrow(): string;
   skip(value: string): string;
   todo(value: string): string;
   verticalBarEnd(): string;
@@ -193,6 +201,7 @@ export interface TestRunSummary {
   readonly skippedCount: number;
   readonly startDateTime: Date | undefined;
   readonly success: boolean;
+  readonly successes: TestRunLeaf<TestReportPassedLeaf>[];
   readonly todo: TestRunLeaf<TestReportTodoLeaf>[];
   readonly todoCount: number;
 }

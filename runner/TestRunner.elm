@@ -133,10 +133,7 @@ update msg model =
                 next =
                     StartTest |> updateTime
             in
-                if model.runArgs.reportProgress then
-                    ( newModel, Cmd.batch [ progress (toProgressMessage testReport), next ] )
-                else
-                    ( newModel, next )
+                ( newModel, Cmd.batch [ progress (toProgressMessage testReport), next ] )
 
         Finished ->
             let

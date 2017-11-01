@@ -113,6 +113,16 @@ describe("lib test-result-decorator-html", () => {
     });
   });
 
+  describe("rightArrow", () => {
+    it("should be &rarr;", () => {
+      // act
+      let actual = decorator.rightArrow();
+
+      // assert
+      expect(actual).to.equal("&rarr;");
+    });
+  });
+
   describe("verticalBarEnd", () => {
     it("should be &boxur;", () => {
       // act
@@ -140,6 +150,16 @@ describe("lib test-result-decorator-html", () => {
 
       // assert
       expect(actual).to.equal("&boxdr;");
+    });
+  });
+
+  describe("debugLog", () => {
+    it("should return value styled with dark cyan span", () => {
+      // act
+      let actual = decorator.debugLog("foo");
+
+      // assert
+      expect(actual).to.equal("<span style=\"color:darkcyan\">foo</span>");
     });
   });
 

@@ -10,7 +10,7 @@
       <env name="noisyTestRun" value="true" />
     </envs>
     <ui>bdd</ui>
-    <extra-mocha-options>--compilers ts:ts-node/register --timeout 100000</extra-mocha-options>
+    <extra-mocha-options>--require ts-node/register --timeout 100000</extra-mocha-options>
     <test-kind>SUITE</test-kind>
     <test-file>$PROJECT_DIR$/test/integration/elm-test-extra/simple.test.ts</test-file>
     <test-names>
