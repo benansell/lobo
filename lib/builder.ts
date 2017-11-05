@@ -157,8 +157,8 @@ export class BuilderImp implements Builder {
     });
   }
 
-  public updateSourceDirectoriesAction(sourceDirectories: string[], testElmPackageDir: string, testElmPackage: ElmPackageJson)
-  : ElmPackageJson {
+  public updateSourceDirectoriesAction(sourceDirectories: string[], testElmPackageDir: string, testElmPackage: ElmPackageJson):
+  ElmPackageJson {
     testElmPackage.sourceDirectories = sourceDirectories;
     this.elmPackageHelper.write(testElmPackageDir, testElmPackage);
 
@@ -187,7 +187,7 @@ export class BuilderImp implements Builder {
 
       promptly.confirm(
         "The dependencies of the test elm-package.json need to be updated to contain:\n" +
-        diffString.join("\n") + "\n\nMay I add them to elm-package.json for you?" +
+        diffString.join("\n") + "\n\nMay I add them to elm-package.json for you--------?" +
         this.yOrN,
         {"default": "yes"}, (err, value) => {
           if (err) {
@@ -273,7 +273,7 @@ export class BuilderImp implements Builder {
 
   public isNotExistingDependency(dependencies: string[][], candidate: string[]): boolean {
     return !_.find(dependencies, x => {
-      return candidate[0] === x[0] && candidate[1] === x[1];
+      return x[0] === candidate[0] && !this.elmPackageHelper.isImprovedMinimumConstraint(x[1], candidate[1]);
     });
   }
 
