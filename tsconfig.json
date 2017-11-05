@@ -1,17 +1,14 @@
 {
   "compilerOptions": {
-    "alwaysStrict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
     "noImplicitReturns": true,
-    "noImplicitThis": true,
     "noResolve": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "strictNullChecks": true,
+    "strict": true,
     "target": "es5",
     "sourceMap": true
   },

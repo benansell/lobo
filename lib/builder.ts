@@ -90,14 +90,14 @@ export class BuilderImp implements Builder {
   }
 
   public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string, testDir: string): Bluebird<object> {
-    let steps: Array<(result?: ElmPackageCompare) => Bluebird<object>> = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
+    let steps: Array<(result: ElmPackageCompare) => Bluebird<object>> = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
       (result: ElmPackageCompare) =>
         this.updateSourceDirectories(config, baseElmPackageDir, result.base, testElmPackageDir, testDir, result.test),
       (result: ElmPackageCompare) => this.updateDependencies(config, result.base, testElmPackageDir, result.test)];
 
     let value: ElmPackageCompare;
 
-    return Bluebird.mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<object>) => item(value)
+    return Bluebird.mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<ElmPackageCompare>) => item(value)
       .then((result: ElmPackageCompare) => value = result));
   }
 
