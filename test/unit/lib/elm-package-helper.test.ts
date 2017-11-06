@@ -35,6 +35,81 @@ describe("lib elm-package-helper", () => {
     });
   });
 
+  describe("isImprovedMinimumConstraint", () => {
+    it("should return false when the dependency and the candidate constraints are the same", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("1.0.0 <= v < 2.0.0", "1.0.0 <= v < 2.0.0");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return false when the dependency is not a valid constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("foo", "1.0.0");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return false when the candidate is not a valid constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("1.0.0", "foo");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return false when the candidate is not an improved major constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("2.0.0", "1.0.0");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return false when the candidate is not an improved minor constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("1.1.0", "1.0.0");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return false when the candidate is not an improved patch constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("1.0.1", "1.0.0");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return true when the candidate is an improved major constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("1.0.0", "2.0.0");
+
+      // assert
+      expect(actual).to.be.true;
+    });
+
+    it("should return true when the candidate is an improved minor constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("1.0.0", "1.1.0");
+
+      // assert
+      expect(actual).to.be.true;
+    });
+
+    it("should return true when the candidate is an improved patch constraint", () => {
+      // act
+      let actual = helper.isImprovedMinimumConstraint("1.0.0", "1.0.1");
+
+      // assert
+      expect(actual).to.be.true;
+    });
+  });
+
+
   describe("path", () => {
     it("should return path starting in supplied directory", () => {
       // arrange

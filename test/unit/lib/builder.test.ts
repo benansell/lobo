@@ -36,7 +36,7 @@ describe("lib builder", () => {
     mockLogger.error = Sinon.spy();
     mockLogger.info = Sinon.spy();
     mockLogger.trace = Sinon.spy();
-    mockHelper = <ElmPackageHelper> {path: x => x, read: Sinon.stub(), write: Sinon.stub()};
+    mockHelper = <ElmPackageHelper> {isImprovedMinimumConstraint: Sinon.stub(), path: x => x, read: Sinon.stub(), write: Sinon.stub()};
     mockUtil = <Util> {};
     mockUtil.resolveDir = Sinon.spy();
     builder = new rewiredImp(mockHelper, mockLogger, mockUtil);
@@ -1560,6 +1560,28 @@ describe("lib builder", () => {
 
       // assert
       expect(actual).to.be.true;
+    });
+
+    it("should return true when the candidate is an improved constraint", () => {
+      // arrange
+      mockHelper.isImprovedMinimumConstraint = (x, y) => true;
+
+      // act
+      let actual = builder.isNotExistingDependency([["foo", "1.0.0"]], ["foo", "2.0.0"]);
+
+      // assert
+      expect(actual).to.be.true;
+    });
+
+    it("should return false when the candidate is not an improved constraint", () => {
+      // arrange
+      mockHelper.isImprovedMinimumConstraint = (x, y) => false;
+
+      // act
+      let actual = builder.isNotExistingDependency([["foo", "2.0.0"]], ["foo", "1.0.0"]);
+
+      // assert
+      expect(actual).to.be.false;
     });
   });
 

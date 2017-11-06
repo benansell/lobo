@@ -42,7 +42,9 @@ export interface PluginOption {
   readonly defaultValue?: PluginOptionValue;
   readonly description: string;
   readonly flags: string;
-  readonly parser?: ((arg1: PluginOptionValue, arg2?: PluginOptionValue) => PluginOptionValue) | RegExp;
+  readonly parser?: RegExp
+    | ((arg1: string) => PluginOptionValue)
+    | ((arg1: string, arg2: string) => PluginOptionValue);
 }
 
 export interface PluginReporter {

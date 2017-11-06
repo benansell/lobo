@@ -90,14 +90,14 @@ export class BuilderImp implements Builder {
   }
 
   public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string, testDir: string): Bluebird<object> {
-    let steps: Array<(result?: ElmPackageCompare) => Bluebird<object>> = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
+    let steps: Array<(result: ElmPackageCompare) => Bluebird<object>> = [() => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
       (result: ElmPackageCompare) =>
         this.updateSourceDirectories(config, baseElmPackageDir, result.base, testElmPackageDir, testDir, result.test),
       (result: ElmPackageCompare) => this.updateDependencies(config, result.base, testElmPackageDir, result.test)];
 
     let value: ElmPackageCompare;
 
-    return Bluebird.mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<object>) => item(value)
+    return Bluebird.mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<ElmPackageCompare>) => item(value)
       .then((result: ElmPackageCompare) => value = result));
   }
 
@@ -157,8 +157,8 @@ export class BuilderImp implements Builder {
     });
   }
 
-  public updateSourceDirectoriesAction(sourceDirectories: string[], testElmPackageDir: string, testElmPackage: ElmPackageJson)
-  : ElmPackageJson {
+  public updateSourceDirectoriesAction(sourceDirectories: string[], testElmPackageDir: string, testElmPackage: ElmPackageJson):
+  ElmPackageJson {
     testElmPackage.sourceDirectories = sourceDirectories;
     this.elmPackageHelper.write(testElmPackageDir, testElmPackage);
 
@@ -187,7 +187,7 @@ export class BuilderImp implements Builder {
 
       promptly.confirm(
         "The dependencies of the test elm-package.json need to be updated to contain:\n" +
-        diffString.join("\n") + "\n\nMay I add them to elm-package.json for you?" +
+        diffString.join("\n") + "\n\nMay I add them to elm-package.json for you--------?" +
         this.yOrN,
         {"default": "yes"}, (err, value) => {
           if (err) {
@@ -273,7 +273,7 @@ export class BuilderImp implements Builder {
 
   public isNotExistingDependency(dependencies: string[][], candidate: string[]): boolean {
     return !_.find(dependencies, x => {
-      return candidate[0] === x[0] && candidate[1] === x[1];
+      return x[0] === candidate[0] && !this.elmPackageHelper.isImprovedMinimumConstraint(x[1], candidate[1]);
     });
   }
 

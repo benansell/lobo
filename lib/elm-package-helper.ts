@@ -14,6 +14,7 @@ export interface ElmPackageJson {
 }
 
 export interface ElmPackageHelper {
+  isImprovedMinimumConstraint(dependency: string, candidate: string): boolean;
   path(elmPackageJsonDirectory: string): string;
   read(elmPackageJsonDirectory: string): ElmPackageJson | undefined;
   write(elmPackageJsonDirectory: string, elmPackage: ElmPackageJson): void;
@@ -25,6 +26,24 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
 
   constructor(logger: Logger) {
     this.logger = logger;
+  }
+
+  public isImprovedMinimumConstraint(dependency: string, candidate: string): boolean {
+    if (dependency === candidate) {
+      return false;
+    }
+
+    let versionRegex = /^(\d)\.(\d)\.(\d)/;
+    let dependencyLowerBound = versionRegex.exec(dependency);
+    let candidateLowerBound = versionRegex.exec(candidate);
+
+    if (!dependencyLowerBound || dependencyLowerBound.length !== 4 || !candidateLowerBound || candidateLowerBound.length !== 4) {
+      return false;
+    }
+
+    return dependencyLowerBound[1] < candidateLowerBound[1]
+      || dependencyLowerBound[2] < candidateLowerBound[2]
+      || dependencyLowerBound[3] < candidateLowerBound[3];
   }
 
   public path(elmPackageJsonDirectory: string): string {

@@ -1,6 +1,6 @@
 {
   "name": "lobo",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Elm test runner",
   "keywords": [
     "elm",
@@ -37,13 +37,13 @@
     "tmp": "^0.0.33"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.17",
+    "@types/bluebird": "^3.5.18",
     "@types/chai": "^4.0.3",
     "@types/chai-things": "0.0.32",
     "@types/chokidar": "^1.7.3",
     "@types/commander": "^2.11.0",
     "@types/fast-levenshtein": "0.0.1",
-    "@types/lodash": "^4.14.80",
+    "@types/lodash": "^4.14.81",
     "@types/mocha": "^2.2.44",
     "@types/node": "^8.0.47",
     "@types/promptly": "^1.1.28",
@@ -63,12 +63,12 @@
     "nyc": "^11.3.0",
     "rewire": "^2.5.2",
     "rimraf": "^2.6.2",
-    "sinon": "^4.0.2",
+    "sinon": "^4.1.1",
     "sinon-chai": "^2.14.0",
     "source-map-support": "^0.5.0",
     "ts-node": "^3.3.0",
     "tslint": "^5.8.0",
-    "typescript": "^2.5.3"
+    "typescript": "^2.6.1"
   },
   "nyc": {
     "exclude": [
