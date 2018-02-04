@@ -2,6 +2,7 @@ import * as Bluebird from "bluebird";
 import * as program from "commander";
 import * as _ from "lodash";
 import * as plugin from "./plugin";
+import * as defaultReporterPlugin from "../plugin/default-reporter/reporter-plugin";
 
 interface PartialTestRunSummary {
   config: plugin.TestReportConfig;
@@ -37,9 +38,13 @@ export interface TestDebugLogMessages {
 }
 
 export class ReporterImp implements Reporter {
-  public testDebugLogMessages: TestDebugLogMessages[];
+  public testDebugLogMessages: TestDebugLogMessages[] = [];
 
   private reporterPlugin: plugin.PluginReporter;
+
+  constructor(defaultReporter: plugin.PluginReporter) {
+      this.reporterPlugin = defaultReporter;
+  }
 
   public configure(reporterPlugin: plugin.PluginReporter): void {
     this.reporterPlugin = reporterPlugin;
@@ -208,5 +213,5 @@ export class ReporterImp implements Reporter {
 }
 
 export function createReporter(): Reporter {
-  return new ReporterImp();
+  return new ReporterImp(defaultReporterPlugin.createPlugin());
 }
