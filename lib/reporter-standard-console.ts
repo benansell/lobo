@@ -18,7 +18,7 @@ export interface ReporterStandardConsole {
 export class ReporterStandardConsoleImp implements ReporterStandardConsole {
 
   private headerStyle: Chalk = chalk.bold;
-  private initArgs: plugin.RunArgs;
+  private initArgs?: plugin.RunArgs;
   private logger: plugin.PluginReporterLogger;
   private decorator: plugin.TestResultDecorator;
   private testResultFormatter: TestResultFormatter;
