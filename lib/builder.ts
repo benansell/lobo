@@ -285,7 +285,7 @@ export class BuilderImp implements Builder {
 
   public runElmPackageInstall(config: LoboConfig, directory: string, prompt: boolean, resolve: Resolve, reject: Reject): void {
     if (config.noInstall) {
-      this.logger.info("Ignored running of elm-package due to configuration");
+      this.logger.info("Ignored running of elm-package install due to configuration");
       resolve();
       return;
     }
