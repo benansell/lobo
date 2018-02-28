@@ -57,14 +57,14 @@ describe("lib runner", () => {
   describe("loadElmTestApp", () => {
     it("should the loaded elm test app", () => {
       // act
-      let actual = runner.loadElmTestApp("./runner");
+      let actual = runner.loadElmTestApp("./runner", mockLogger);
 
       // assert
       expect(actual).to.exist;
     });
 
     it("should throw an error when the elm test app is not found", () => {
-      expect(() => runner.loadElmTestApp("./foo")).to.throw("Elm program not found");
+      expect(() => runner.loadElmTestApp("./foo", mockLogger)).to.throw("Failed to load test file");
     });
   });
 

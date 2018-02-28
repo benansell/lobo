@@ -26,6 +26,15 @@ export interface NodeProcessStdout {
   write: NodeProcessWrite;
 }
 
+export interface BrowserGlobal extends NodeJS.Global {
+  document: { // required by Dom & Navigation
+    location: object // required by Navigation
+  };
+  window: { // required by AnimationFrame & Navigation
+    navigator: object // required by Navigation
+  };
+}
+
 export class RunnerImp {
 
   public static originalNodeProcessWrite: NodeProcessWrite;
@@ -91,7 +100,7 @@ export class RunnerImp {
     this.reporter = reporter;
   }
 
-  public loadElmTestApp(testFile: string): ElmTestApp {
+  public loadElmTestApp(testFile: string, logger: Logger): ElmTestApp {
     let app: ElmTestApp;
 
     try {
@@ -99,7 +108,8 @@ export class RunnerImp {
       app = require(testFile);
       // tslint:enable:no-require-imports
     } catch (err) {
-      throw new Error("Elm program not found" + testFile);
+      logger.debug("Failed to require test file", err);
+      throw new Error("Failed to load test file" + testFile);
     }
 
     return app;
@@ -114,10 +124,10 @@ export class RunnerImp {
       logger.info("-----------------------------------[ TEST ]-------------------------------------");
 
       // add to the global scope browser global properties that are used by elm imports
-      (<{document: object}><{}>global).document = {}; // required by Dom
-      (<{window: object}><{}>global).window = {}; // required by AnimationFrame
+      (<BrowserGlobal>global).document = { location: {} };
+      (<BrowserGlobal>global).window = { navigator: {} };
 
-      let elmApp = this.loadElmTestApp(config.testFile);
+      let elmApp = this.loadElmTestApp(config.testFile, logger);
       let initArgs = config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
       config.reporter.runArgs(initArgs);

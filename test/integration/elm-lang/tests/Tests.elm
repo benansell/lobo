@@ -1,12 +1,30 @@
 module Tests exposing (all)
 
 import Expect exposing (pass)
-import Test exposing (Test, test)
 import ImportCheck
+import ImportNavigation
+import Test exposing (Test, describe, test)
 
 
 all : Test
 all =
-    test "passingTest" <|
+    describe "Tests"
+        [ testImportCheck
+        , testImportNavigation
+        ]
+
+
+testImportCheck : Test
+testImportCheck =
+    test "test import check" <|
         \() ->
-            Expect.pass
+            Expect.true "truthy" ImportCheck.truthy
+
+
+testImportNavigation : Test
+testImportNavigation =
+    test "test import navigation" <|
+        \() ->
+            ImportNavigation.update ImportNavigation.None {}
+                |> Tuple.second
+                |> Expect.equal Cmd.none
