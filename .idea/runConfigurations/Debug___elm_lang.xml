@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Debug - elm-lang" type="NodeJSConfigurationType" factoryName="Node.js" application-parameters="--framework=elm-test --prompt=no --testFile=Tests.elm --veryVerbose" node-parameters="-r ts-node/register" path-to-js-file="$PROJECT_DIR$/bin/lobo.ts" working-dir="$PROJECT_DIR$/test/integration/elm-lang">
+    <method />
+  </configuration>
+</component>

@@ -1,0 +1,21 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Integration - elm-lang" type="mocha-javascript-test-runner" factoryName="Mocha">
+    <node-interpreter>project</node-interpreter>
+    <node-options />
+    <working-directory>$PROJECT_DIR$/test/integration</working-directory>
+    <pass-parent-env>true</pass-parent-env>
+    <envs>
+      <env name="PATH" value="$USER_HOME$/.nvm/versions/node/v6.11.2/bin:/usr/bin:/usr/local/bin" />
+      <env name="disableClean" value="true" />
+      <env name="noisyTestRun" value="true" />
+    </envs>
+    <ui>bdd</ui>
+    <extra-mocha-options>--require ts-node/register --timeout 100000</extra-mocha-options>
+    <test-kind>SUITE</test-kind>
+    <test-file>$PROJECT_DIR$/test/integration/elm-lang/elm-lang.test.ts</test-file>
+    <test-names>
+      <name value="elm-lang" />
+    </test-names>
+    <method />
+  </configuration>
+</component>
