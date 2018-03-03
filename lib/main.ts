@@ -120,18 +120,18 @@ export class LoboImp implements Lobo {
     return Bluebird.mapSeries(stages, (item: () => Bluebird<object>) => {
       return item();
     }).then(() => {
-      this.logger.debug("launch success");
+      this.logger.debug("Test execution complete");
       if (program.watch) {
         this.done(config);
       }
     }).catch((err) => {
-      if (err instanceof ReferenceError) {
+      if (err instanceof ReferenceError || err instanceof TypeError) {
         this.handleUncaughtException(err, config);
         return;
       } else if (/Ran into a `Debug.crash` in module/.test(err)) {
         this.logger.error(err);
       } else {
-        this.logger.debug("launch failed", err);
+        this.logger.error("Error running the tests. ", err);
       }
 
       if (program.watch) {
@@ -406,7 +406,7 @@ export class LoboImp implements Lobo {
       errorString = error.toString();
     }
 
-    if (error instanceof ReferenceError) {
+    if (error instanceof ReferenceError || error instanceof TypeError) {
       if (config && config.testFile && error.stack && error.stack.match(new RegExp(config.testFile))) {
         if (/ElmTest.*Plugin\$findTests is not defined/.test(errorString)) {
           this.logger.error("Error running the tests. This is usually caused by an npm upgrade to lobo: ");
@@ -420,8 +420,13 @@ export class LoboImp implements Lobo {
           this.logger.info("");
           this.logger.error(errorString);
           this.logger.info("");
-          this.logger.error("Please raise an issue against lobo to request adding support for the elm-package that " +
-            "is referencing the above browser object");
+
+          if (program.veryVerbose || program.verbose) {
+            this.logger.error("Please raise an issue against lobo including the above messages to request adding support for the " +
+              "elm-package that caused this issue");
+          } else {
+            this.logger.error("Please rerun lobo with the --verbose option to see the cause of the error");
+          }
         }
       } else {
         this.logger.error("Unhandled exception", errorString);

@@ -31,7 +31,7 @@ describe("elm-lang", () => {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(2, 0);
+      reporterExpect(result).summaryCounts(3, 0);
       expect(result.code).to.equal(0);
     });
   });

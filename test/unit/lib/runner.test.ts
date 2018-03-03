@@ -64,7 +64,7 @@ describe("lib runner", () => {
     });
 
     it("should throw an error when the elm test app is not found", () => {
-      expect(() => runner.loadElmTestApp("./foo", mockLogger)).to.throw("Failed to load test file");
+      expect(() => runner.loadElmTestApp("./foo", mockLogger)).to.throw("Cannot find module './foo'");
     });
   });
 
