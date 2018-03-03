@@ -28,7 +28,11 @@ export interface NodeProcessStdout {
 
 export interface BrowserGlobal extends NodeJS.Global {
   document: { // required by Dom & Navigation
-    location: object // required by Navigation
+    location: { // required by Navigation & UrlParser
+      hash: string,
+      pathname: string,
+      search: string
+    }
   };
   window: { // required by AnimationFrame & Navigation
     navigator: object // required by Navigation
@@ -108,8 +112,8 @@ export class RunnerImp {
       app = require(testFile);
       // tslint:enable:no-require-imports
     } catch (err) {
-      logger.debug("Failed to require test file", err);
-      throw new Error("Failed to load test file" + testFile);
+      logger.debug("Failed to require test file", testFile);
+      throw err;
     }
 
     return app;
@@ -124,7 +128,7 @@ export class RunnerImp {
       logger.info("-----------------------------------[ TEST ]-------------------------------------");
 
       // add to the global scope browser global properties that are used by elm imports
-      (<BrowserGlobal>global).document = { location: {} };
+      (<BrowserGlobal>global).document = { location: { hash: "", pathname: "", search: "" } };
       (<BrowserGlobal>global).window = { navigator: {} };
 
       let elmApp = this.loadElmTestApp(config.testFile, logger);

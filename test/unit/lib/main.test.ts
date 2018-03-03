@@ -1616,6 +1616,62 @@ describe("lib main", () => {
         "caused by an elm package using objects that are found in the browser but not in a node process");
     });
 
+    it("should log unknown type error for missing browser objects correctly", () => {
+      // arrange
+      let error = new TypeError();
+      error.stack = "foo";
+      let config = <LoboConfig> {testFile: "foo"};
+
+      // act
+      lobo.handleUncaughtException(error, config);
+
+      // assert
+      expect(mockLogger.error).to.have.been.calledWith("Error running the tests. This is usually " +
+        "caused by an elm package using objects that are found in the browser but not in a node process");
+    });
+
+    it("should not ask for rerun with verbose option when verbose is set", () => {
+      // arrange
+      let error = new TypeError();
+      error.stack = "foo";
+      let config = <LoboConfig> {testFile: "foo"};
+      let revert = rewiredMain.__with__({program: {verbose: true}});
+
+      // act
+      revert(() => lobo.handleUncaughtException(error, config));
+
+      // assert
+      expect(mockLogger.error).to.have.been.not.calledWith("Please rerun lobo with the --verbose option to see the cause of the error");
+    });
+
+    it("should not ask for rerun with verbose option when veryVerbose is set", () => {
+      // arrange
+      let error = new TypeError();
+      error.stack = "foo";
+      let config = <LoboConfig> {testFile: "foo"};
+      let revert = rewiredMain.__with__({program: {veryVerbose: true}});
+
+      // act
+      revert(() => lobo.handleUncaughtException(error, config));
+
+      // assert
+      expect(mockLogger.error).to.have.been.not.calledWith("Please rerun lobo with the --verbose option to see the cause of the error");
+    });
+
+    it("should ask for rerun with verbose option when verbose is not set", () => {
+      // arrange
+      let error = new TypeError();
+      error.stack = "foo";
+      let config = <LoboConfig> {testFile: "foo"};
+      let revert = rewiredMain.__with__({program: {verbose: false}});
+
+      // act
+      revert(() => lobo.handleUncaughtException(error, config));
+
+      // assert
+      expect(mockLogger.error).to.have.been.calledWith("Please rerun lobo with the --verbose option to see the cause of the error");
+    });
+
     it("should not exit the process when there is an error and in watch mode", () => {
       // arrange
       let error = new Error();

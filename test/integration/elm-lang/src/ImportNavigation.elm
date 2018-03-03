@@ -9,6 +9,7 @@ module ImportNavigation exposing (..)
 
 import Html exposing (Html, div)
 import Navigation
+import UrlParser
 
 
 -- PROGRAM
@@ -29,12 +30,27 @@ main =
 
 
 type alias Model =
-    {}
+    { route : Maybe Route }
+
+
+type Route
+    = AppRoute
+
+
+routeParser : UrlParser.Parser (Route -> a) a
+routeParser =
+    UrlParser.s "foo"
+        |> UrlParser.map AppRoute
+
+
+parseLocation : Navigation.Location -> Maybe Route
+parseLocation location =
+    UrlParser.parsePath routeParser location
 
 
 init : Navigation.Location -> ( Model, Cmd Msg )
 init location =
-    ( {}, Cmd.none )
+    ( { route = parseLocation location }, Cmd.none )
 
 
 
