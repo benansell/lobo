@@ -240,9 +240,17 @@ export class ElmTokenizerImp implements ElmTokenizer {
       return undefined;
     }
 
+    let endIndex = equalsEndIndex;
+
     for (let index = equalsEndIndex; index < maxIndex - 1; index++) {
-      if (code[index] === "\n" && code[index + 1] !== " ") {
-        return { tokenType: tokenType, startIndex: startWordIndex, endIndex: index - 1, identifier: wordResult.word };
+      if (code[index] === "\n") {
+        if (code[index - 1] !== "\n" ) {
+          endIndex = index;
+        }
+
+        if (code[index + 1] !== "\n" && code[index + 1] !== " ") {
+          return {tokenType: tokenType, startIndex: startWordIndex, endIndex: endIndex, identifier: wordResult.word};
+        }
       }
     }
 
