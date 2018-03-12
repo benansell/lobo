@@ -137,7 +137,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
       if (next.word === "alias") {
         next = this.findNextWord(code, maxIndex, next.nextIndex + 1);
-        const typeAliasEndIndex = this.findChar(code, maxIndex, next.nextIndex + 1, "}");
+        const typeAliasEndIndex = this.findClose(code, maxIndex, next.nextIndex + 1, "{", "}");
 
         if (!typeAliasEndIndex) {
           this.logger.debug("Unable to tokenize type alias due to missing close bracket after index " + wordResult.nextIndex);
@@ -164,7 +164,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
       }
 
       if (next.word === "exposing") {
-        const exposingEndIndex = this.findChar(code, maxIndex, next.nextIndex + 1, ")");
+        const exposingEndIndex = this.findClose(code, maxIndex, next.nextIndex + 1, "(", ")");
 
         if (!exposingEndIndex) {
           this.logger.debug("Unable to tokenize import due to missing close bracket after index " + wordResult.nextIndex);
@@ -178,7 +178,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
     }
 
     if (wordResult.word === "module") {
-      const endIndex = this.findChar(code, maxIndex, wordResult.nextIndex, ")");
+      const endIndex = this.findClose(code, maxIndex, wordResult.nextIndex, "(", ")");
 
       if (!endIndex) {
         this.logger.debug("Unable to tokenize module due to missing close bracket after index " + wordResult.nextIndex);
@@ -197,6 +197,24 @@ export class ElmTokenizerImp implements ElmTokenizer {
     for (let index = startIndex; index < maxIndex; index++) {
       if (code[index] === searchChar) {
         return index;
+      }
+    }
+
+    return undefined;
+  }
+
+  public findClose(code: string, maxIndex: number, startIndex: number, open: string, close: string): number | undefined {
+    let contextCount: number = 0;
+
+    for (let index = startIndex; index < maxIndex; index++) {
+      if (code[index] === close) {
+        contextCount--;
+
+        if (contextCount === 0) {
+          return index;
+        }
+      } else if (code[index] === open) {
+        contextCount++;
       }
     }
 
