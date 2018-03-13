@@ -147,7 +147,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
         return { tokenType: "TypeAlias", startIndex: startWordIndex, endIndex: typeAliasEndIndex, identifier: next.word };
       }
 
-      return this.findUntilEndOfBlock(code, maxIndex, startWordIndex, next, "Type");
+      return this.findUntilEndOfBlock(code, maxIndex, startWordIndex, next, "Type", "=");
     }
 
     if (wordResult.word === "import") {
@@ -177,6 +177,26 @@ export class ElmTokenizerImp implements ElmTokenizer {
       return { tokenType: "Import", startIndex: startWordIndex, endIndex: endIndex, identifier: identifier };
     }
 
+    if (wordResult.word === "port") {
+      let next = this.findNextWord(code, maxIndex, wordResult.nextIndex + 1);
+
+      if (next.word === "module") {
+        return this.tokenizeWord(code, maxIndex, startWordIndex, next);
+      }
+
+      return this.findUntilEndOfBlock(code, maxIndex, startWordIndex, next, "Port", ":");
+    }
+
+    if (wordResult.word === "effect") {
+      let next = this.findNextWord(code, maxIndex, wordResult.nextIndex + 1);
+
+      if (next.word === "module") {
+        return this.tokenizeWord(code, maxIndex, startWordIndex, next);
+      }
+
+      return this.findUntilEndOfBlock(code, maxIndex, startWordIndex, next, "NamedFunction", "=");
+    }
+
     if (wordResult.word === "module") {
       const endIndex = this.findClose(code, maxIndex, wordResult.nextIndex, "(", ")");
 
@@ -190,7 +210,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
       return { tokenType: "Module", startIndex: startWordIndex, endIndex: endIndex, identifier: identifierResult.word };
     }
 
-    return this.findUntilEndOfBlock(code, maxIndex, startWordIndex, wordResult, "NamedFunction");
+    return this.findUntilEndOfBlock(code, maxIndex, startWordIndex, wordResult, "NamedFunction", "=");
   }
 
   public findChar(code: string, maxIndex: number, startIndex: number, searchChar: string): number | undefined {
@@ -231,21 +251,21 @@ export class ElmTokenizerImp implements ElmTokenizer {
     return { nextIndex: maxIndex, word: code.substring(startIndex, maxIndex) };
   }
 
-  public findUntilEndOfBlock(code: string, maxIndex: number, startWordIndex: number, wordResult: WordResult, tokenType: ElmTokenType)
-  : PartialElmToken | undefined {
-    const equalsEndIndex = this.findChar(code, maxIndex, wordResult.nextIndex, "=");
+  public findUntilEndOfBlock(code: string, maxIndex: number, startWordIndex: number, wordResult: WordResult, tokenType: ElmTokenType,
+                             searchAfterChar: string): PartialElmToken | undefined {
+    const searchAfterCharIndex = this.findChar(code, maxIndex, wordResult.nextIndex, searchAfterChar);
 
-    if (!equalsEndIndex) {
-      this.logger.debug(`Unable to tokenize ${tokenType} due to missing equals sign after index ${wordResult.nextIndex}`);
+    if (!searchAfterCharIndex) {
+      this.logger.debug(`Unable to tokenize ${tokenType} due to missing "${searchAfterChar}" sign after index ${wordResult.nextIndex}`);
       return undefined;
     }
 
-    let endIndex = equalsEndIndex;
+    let endIndex = searchAfterCharIndex;
 
-    for (let index = equalsEndIndex; index < maxIndex - 1; index++) {
+    for (let index = searchAfterCharIndex; index <= maxIndex; index++) {
       if (code[index] === "\n") {
         if (code[index - 1] !== "\n" ) {
-          endIndex = index;
+          endIndex = index - 1;
         }
 
         if (code[index + 1] !== "\n" && code[index + 1] !== " ") {
