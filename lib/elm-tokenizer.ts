@@ -92,7 +92,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
     let index = 0;
 
     while (index < codeHelper.maxIndex) {
-      const next = codeHelper.findNextWord(index);
+      const next = codeHelper.findNextWord(index, false);
 
       if (next.nextIndex === codeHelper.maxIndex) {
         return tokens;
@@ -113,38 +113,27 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeWord(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    if (wordResult.word === "") {
-      return { tokenType: "Whitespace", startIndex: startWordIndex, endIndex: wordResult.nextIndex, identifier: "" };
+    if (wordResult.word === " " || wordResult.word === "\n") {
+      return { tokenType: "Whitespace", startIndex: startWordIndex, endIndex: wordResult.nextIndex - 1, identifier: "" };
     }
 
-    if (wordResult.word === "{-") {
-      const endLineIndex = codeHelper.findClose( wordResult.nextIndex - 2, "{-", "-}", true);
+    if (codeHelper.isWordComment(wordResult.word)) {
+      let endCommentIndex = codeHelper.findEndComment(wordResult);
 
-      if (!endLineIndex) {
-        this.logger.debug("Unable to tokenize block comment due to missing close comment after index " + wordResult.nextIndex);
+      if (!endCommentIndex) {
+        this.logger.debug("Unable to tokenize comment due to missing end comment after index " + wordResult.nextIndex);
         return undefined;
       }
 
-      return { tokenType: "Comment", startIndex: startWordIndex, endIndex: endLineIndex + 1, identifier: "" };
-    }
-
-    if (wordResult.word[0] === "-" && wordResult.word[1] === "-") {
-      const endLineIndex = codeHelper.findChar( wordResult.nextIndex + 1 - wordResult.word.length, "\n", true);
-
-      if (!endLineIndex) {
-        this.logger.debug("Unable to tokenize line comment due to missing end of line after index " + wordResult.nextIndex);
-        return undefined;
-      }
-
-      return { tokenType: "Comment", startIndex: startWordIndex, endIndex: endLineIndex - 1, identifier: "" };
+      return { tokenType: "Comment", startIndex: startWordIndex, endIndex: endCommentIndex, identifier: "" };
     }
 
     if (wordResult.word === "type") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
+      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
 
       if (next.word === "alias") {
-        next = codeHelper.findNextWord( next.nextIndex + 1);
-        const typeAliasEndIndex = codeHelper.findClose(next.nextIndex + 1, "{", "}", false);
+        next = codeHelper.findNextWord( next.nextIndex + 1, false);
+        const typeAliasEndIndex = codeHelper.findClose(next.nextIndex, "{", "}");
 
         if (!typeAliasEndIndex) {
           this.logger.debug("Unable to tokenize type alias due to missing close bracket after index " + wordResult.nextIndex);
@@ -158,20 +147,20 @@ export class ElmTokenizerImp implements ElmTokenizer {
     }
 
     if (wordResult.word === "import") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
+      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
       let identifier = next.word;
       let endIndex = next.nextIndex - 1;
-      next = codeHelper.findNextWord(next.nextIndex + 1);
+      next = codeHelper.findNextWord(next.nextIndex + 1, false);
 
       if (next.word === "as") {
-        next = codeHelper.findNextWord(next.nextIndex + 1);
-        identifier = next.word;
+        next = codeHelper.findNextWord(next.nextIndex + 1, false);
+        identifier = `${identifier} as ${next.word}`;
         endIndex = next.nextIndex - 1;
-        next = codeHelper.findNextWord(next.nextIndex + 1);
+        next = codeHelper.findNextWord(next.nextIndex + 1, false);
       }
 
       if (next.word === "exposing") {
-        const exposingEndIndex = codeHelper.findClose(next.nextIndex + 1, "(", ")", false);
+        const exposingEndIndex = codeHelper.findClose(next.nextIndex + 1, "(", ")");
 
         if (!exposingEndIndex) {
           this.logger.debug("Unable to tokenize import due to missing close bracket after index " + wordResult.nextIndex);
@@ -185,7 +174,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
     }
 
     if (wordResult.word === "port") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
+      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
 
       if (next.word === "module") {
         return this.tokenizeWord(codeHelper, startWordIndex, next);
@@ -195,7 +184,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
     }
 
     if (wordResult.word === "effect") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
+      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
 
       if (next.word === "module") {
         return this.tokenizeWord(codeHelper, startWordIndex, next);
@@ -205,14 +194,14 @@ export class ElmTokenizerImp implements ElmTokenizer {
     }
 
     if (wordResult.word === "module") {
-      const endIndex = codeHelper.findClose( wordResult.nextIndex, "(", ")", false);
+      const endIndex = codeHelper.findClose(wordResult.nextIndex + 1, "(", ")");
 
       if (!endIndex) {
         this.logger.debug("Unable to tokenize module due to missing close bracket after index " + wordResult.nextIndex);
         return undefined;
       }
 
-      const identifierResult = codeHelper.findNextWord( wordResult.nextIndex + 1);
+      const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
 
       return { tokenType: "Module", startIndex: startWordIndex, endIndex: endIndex, identifier: identifierResult.word };
     }
@@ -222,7 +211,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
   public findUntilEndOfBlock(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult,
                              tokenType: ElmTokenType, searchAfterChar: string): PartialElmToken | undefined {
-    const searchAfterCharIndex = codeHelper.findChar(wordResult.nextIndex, searchAfterChar, false);
+    const searchAfterCharIndex = codeHelper.findChar(wordResult.nextIndex, searchAfterChar);
 
     if (!searchAfterCharIndex) {
       this.logger.debug(`Unable to tokenize ${tokenType} due to missing "${searchAfterChar}" sign after index ${wordResult.nextIndex}`);
