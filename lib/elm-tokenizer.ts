@@ -7,14 +7,17 @@ export interface CodeLocation {
   lineNumber: number;
 }
 
-export type ElmTokenType = "Comment"
-  | "Import"
-  | "Module"
-  | "NamedFunction"
-  | "Port"
-  | "Type"
-  | "TypeAlias"
-  | "Whitespace";
+export enum ElmTokenType {
+  Comment = 1,
+  Import,
+  Module,
+  Port,
+  Type,
+  TypeAlias,
+  TypedModuleFunction,
+  UntypedModuleFunction,
+  Whitespace
+}
 
 export interface ElmToken {
   code: string;
@@ -102,7 +105,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
       if (!partialToken) {
         return tokens;
-      } else if (partialToken.tokenType !== "Whitespace") {
+      } else if (partialToken.tokenType !== ElmTokenType.Whitespace) {
         tokens.push(this.convertToElmToken(codeHelper, lineMap, partialToken));
       }
 
@@ -114,7 +117,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
   public tokenizeWord(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
     if (wordResult.word === " " || wordResult.word === "\n") {
-      return { tokenType: "Whitespace", startIndex: startWordIndex, endIndex: wordResult.nextIndex - 1, identifier: "" };
+      return { tokenType: ElmTokenType.Whitespace, startIndex: startWordIndex, endIndex: wordResult.nextIndex - 1, identifier: "" };
     }
 
     if (codeHelper.isWordComment(wordResult.word)) {
@@ -125,7 +128,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
         return undefined;
       }
 
-      return { tokenType: "Comment", startIndex: startWordIndex, endIndex: endCommentIndex, identifier: "" };
+      return { tokenType: ElmTokenType.Comment, startIndex: startWordIndex, endIndex: endCommentIndex, identifier: "" };
     }
 
     if (wordResult.word === "type") {
@@ -140,10 +143,10 @@ export class ElmTokenizerImp implements ElmTokenizer {
           return undefined;
         }
 
-        return { tokenType: "TypeAlias", startIndex: startWordIndex, endIndex: typeAliasEndIndex, identifier: next.word };
+        return { tokenType: ElmTokenType.TypeAlias, startIndex: startWordIndex, endIndex: typeAliasEndIndex, identifier: next.word };
       }
 
-      return this.findUntilEndOfBlock(codeHelper, startWordIndex, next, "Type", "=");
+      return this.findUntilEndOfBlock(codeHelper, startWordIndex, next, ElmTokenType.Type, "=");
     }
 
     if (wordResult.word === "import") {
@@ -167,10 +170,10 @@ export class ElmTokenizerImp implements ElmTokenizer {
           return undefined;
         }
 
-        return { tokenType: "Import", startIndex: startWordIndex, endIndex: exposingEndIndex, identifier: identifier };
+        return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: exposingEndIndex, identifier: identifier };
       }
 
-      return { tokenType: "Import", startIndex: startWordIndex, endIndex: endIndex, identifier: identifier };
+      return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: endIndex, identifier: identifier };
     }
 
     if (wordResult.word === "port") {
@@ -180,7 +183,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
         return this.tokenizeWord(codeHelper, startWordIndex, next);
       }
 
-      return this.findUntilEndOfBlock(codeHelper, startWordIndex, next, "Port", ":");
+      return this.findUntilEndOfBlock(codeHelper, startWordIndex, next, ElmTokenType.Port, ":");
     }
 
     if (wordResult.word === "effect") {
@@ -190,7 +193,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
         return this.tokenizeWord(codeHelper, startWordIndex, next);
       }
 
-      return this.findUntilEndOfBlock(codeHelper, startWordIndex, next, "NamedFunction", "=");
+      return this.findModuleFunction(codeHelper, startWordIndex, wordResult);
     }
 
     if (wordResult.word === "module") {
@@ -203,10 +206,21 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
       const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
 
-      return { tokenType: "Module", startIndex: startWordIndex, endIndex: endIndex, identifier: identifierResult.word };
+      return { tokenType: ElmTokenType.Module, startIndex: startWordIndex, endIndex: endIndex, identifier: identifierResult.word };
     }
 
-    return this.findUntilEndOfBlock(codeHelper, startWordIndex, wordResult, "NamedFunction", "=");
+    return this.findModuleFunction(codeHelper, startWordIndex, wordResult);
+  }
+
+  public findModuleFunction(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+    let next =  codeHelper.findNextWord(wordResult.nextIndex + 1, true);
+    let tokenType: ElmTokenType = ElmTokenType.UntypedModuleFunction;
+
+    if (next.word === ":") {
+        tokenType = ElmTokenType.TypedModuleFunction;
+    }
+
+    return this.findUntilEndOfBlock(codeHelper, startWordIndex, wordResult, tokenType, "=");
   }
 
   public findUntilEndOfBlock(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult,

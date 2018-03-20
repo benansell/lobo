@@ -22,9 +22,8 @@ export interface ElmCodeHelper {
 export class ElmCodeHelperImp implements ElmCodeHelper {
 
   public readonly maxIndex: number;
-
-  private code: string;
-  private commentMap: CommentBlock[];
+  private readonly code: string;
+  private readonly commentMap: CommentBlock[];
 
   constructor(code: string) {
     this.code = code;
