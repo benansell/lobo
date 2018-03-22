@@ -35,7 +35,7 @@ export interface PartialElmToken {
 }
 
 export interface ElmTokenizer {
-  analyze(filePath: string): ElmToken[];
+  tokenize(filePath: string): ElmToken[];
 }
 
 export class ElmTokenizerImp implements ElmTokenizer {
@@ -44,14 +44,6 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
   constructor(logger: Logger) {
     this.logger = logger;
-  }
-
-  public analyze(filePath: string): ElmToken[] {
-    const code = fs.readFileSync(filePath, "utf8");
-    const lineMap = this.buildLineMap(code);
-    const codeHelper = createElmCodeHelper(code);
-
-    return this.tokenize(codeHelper, lineMap);
   }
 
   public buildLineMap(code: string): number[] {
@@ -90,7 +82,15 @@ export class ElmTokenizerImp implements ElmTokenizer {
     };
   }
 
-  public tokenize(codeHelper: ElmCodeHelper, lineMap: number[]): ElmToken[] {
+  public tokenize(filePath: string): ElmToken[] {
+    const code = fs.readFileSync(filePath, "utf8");
+    const lineMap = this.buildLineMap(code);
+    const codeHelper = createElmCodeHelper(code);
+
+    return this.tokenizeCode(codeHelper, lineMap);
+  }
+
+  public tokenizeCode(codeHelper: ElmCodeHelper, lineMap: number[]): ElmToken[] {
     const tokens: ElmToken[] = [];
     let index = 0;
 
@@ -117,114 +117,138 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
   public tokenizeWord(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
     if (wordResult.word === " " || wordResult.word === "\n") {
-      return { tokenType: ElmTokenType.Whitespace, startIndex: startWordIndex, endIndex: wordResult.nextIndex - 1, identifier: "" };
+      return this.tokenizeWhiteSpace(startWordIndex, wordResult);
     }
 
     if (codeHelper.isWordComment(wordResult.word)) {
-      let endCommentIndex = codeHelper.findEndComment(wordResult);
-
-      if (!endCommentIndex) {
-        this.logger.debug("Unable to tokenize comment due to missing end comment after index " + wordResult.nextIndex);
-        return undefined;
-      }
-
-      return { tokenType: ElmTokenType.Comment, startIndex: startWordIndex, endIndex: endCommentIndex, identifier: "" };
+      return this.tokenizeComment(codeHelper, startWordIndex, wordResult);
     }
 
     if (wordResult.word === "type") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
-
-      if (next.word === "alias") {
-        next = codeHelper.findNextWord( next.nextIndex + 1, false);
-        const typeAliasEndIndex = codeHelper.findClose(next.nextIndex, "{", "}");
-
-        if (!typeAliasEndIndex) {
-          this.logger.debug("Unable to tokenize type alias due to missing close bracket after index " + wordResult.nextIndex);
-          return undefined;
-        }
-
-        return { tokenType: ElmTokenType.TypeAlias, startIndex: startWordIndex, endIndex: typeAliasEndIndex, identifier: next.word };
-      }
-
-      return this.findUntilEndOfBlock(codeHelper, startWordIndex, next, ElmTokenType.Type, "=");
+      return this.tokenizeType(codeHelper, startWordIndex, wordResult);
     }
 
     if (wordResult.word === "import") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
-      let identifier = next.word;
-      let endIndex = next.nextIndex - 1;
-      next = codeHelper.findNextWord(next.nextIndex + 1, false);
-
-      if (next.word === "as") {
-        next = codeHelper.findNextWord(next.nextIndex + 1, false);
-        identifier = `${identifier} as ${next.word}`;
-        endIndex = next.nextIndex - 1;
-        next = codeHelper.findNextWord(next.nextIndex + 1, false);
-      }
-
-      if (next.word === "exposing") {
-        const exposingEndIndex = codeHelper.findClose(next.nextIndex + 1, "(", ")");
-
-        if (!exposingEndIndex) {
-          this.logger.debug("Unable to tokenize import due to missing close bracket after index " + wordResult.nextIndex);
-          return undefined;
-        }
-
-        return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: exposingEndIndex, identifier: identifier };
-      }
-
-      return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: endIndex, identifier: identifier };
+      return this.tokenizeImport(codeHelper, startWordIndex, wordResult);
     }
 
     if (wordResult.word === "port") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
-
-      if (next.word === "module") {
-        return this.tokenizeWord(codeHelper, startWordIndex, next);
-      }
-
-      return this.findUntilEndOfBlock(codeHelper, startWordIndex, next, ElmTokenType.Port, ":");
+      return this.tokenizePort(codeHelper, startWordIndex, wordResult);
     }
 
     if (wordResult.word === "effect") {
-      let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
-
-      if (next.word === "module") {
-        return this.tokenizeWord(codeHelper, startWordIndex, next);
-      }
-
-      return this.findModuleFunction(codeHelper, startWordIndex, wordResult);
+      return this.tokenizeEffect(codeHelper, startWordIndex, wordResult);
     }
 
     if (wordResult.word === "module") {
-      const endIndex = codeHelper.findClose(wordResult.nextIndex + 1, "(", ")");
-
-      if (!endIndex) {
-        this.logger.debug("Unable to tokenize module due to missing close bracket after index " + wordResult.nextIndex);
-        return undefined;
-      }
-
-      const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
-
-      return { tokenType: ElmTokenType.Module, startIndex: startWordIndex, endIndex: endIndex, identifier: identifierResult.word };
+      return this.tokenizeModule(codeHelper, startWordIndex, wordResult);
     }
 
-    return this.findModuleFunction(codeHelper, startWordIndex, wordResult);
+    return this.tokenizeFunction(codeHelper, startWordIndex, wordResult);
   }
 
-  public findModuleFunction(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+  public tokenizeComment(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+    const endCommentIndex = codeHelper.findEndComment(wordResult);
+
+    if (!endCommentIndex) {
+      this.logger.debug("Unable to tokenize comment due to missing end comment after index " + wordResult.nextIndex);
+      return undefined;
+    }
+
+    return {tokenType: ElmTokenType.Comment, startIndex: startWordIndex, endIndex: endCommentIndex, identifier: ""};
+  }
+
+  public tokenizeEffect(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+
+    if (next.word === "module") {
+      return this.tokenizeWord(codeHelper, startWordIndex, next);
+    }
+
+    return this.tokenizeFunction(codeHelper, startWordIndex, wordResult);
+  }
+
+  public tokenizeFunction(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
     let next =  codeHelper.findNextWord(wordResult.nextIndex + 1, true);
     let tokenType: ElmTokenType = ElmTokenType.UntypedModuleFunction;
 
     if (next.word === ":") {
-        tokenType = ElmTokenType.TypedModuleFunction;
+      tokenType = ElmTokenType.TypedModuleFunction;
     }
 
-    return this.findUntilEndOfBlock(codeHelper, startWordIndex, wordResult, tokenType, "=");
+    return this.tokenizeUntilEndOfBlock(codeHelper, startWordIndex, wordResult, tokenType, "=");
   }
 
-  public findUntilEndOfBlock(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult,
-                             tokenType: ElmTokenType, searchAfterChar: string): PartialElmToken | undefined {
+  public tokenizeImport(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+    let identifier = next.word;
+    let endIndex = next.nextIndex - 1;
+    next = codeHelper.findNextWord(next.nextIndex + 1, false);
+
+    if (next.word === "as") {
+      next = codeHelper.findNextWord(next.nextIndex + 1, false);
+      identifier = `${identifier} as ${next.word}`;
+      endIndex = next.nextIndex - 1;
+      next = codeHelper.findNextWord(next.nextIndex + 1, false);
+    }
+
+    if (next.word === "exposing") {
+      const exposingEndIndex = codeHelper.findClose(next.nextIndex + 1, "(", ")");
+
+      if (!exposingEndIndex) {
+        this.logger.debug("Unable to tokenize import due to missing close bracket after index " + wordResult.nextIndex);
+        return undefined;
+      }
+
+      return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: exposingEndIndex, identifier: identifier };
+    }
+
+    return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: endIndex, identifier: identifier };
+  }
+
+  public tokenizeModule(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+    const endIndex = codeHelper.findClose(wordResult.nextIndex + 1, "(", ")");
+
+    if (!endIndex) {
+      this.logger.debug("Unable to tokenize module due to missing close bracket after index " + wordResult.nextIndex);
+      return undefined;
+    }
+
+    const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+
+    return { tokenType: ElmTokenType.Module, startIndex: startWordIndex, endIndex: endIndex, identifier: identifierResult.word };
+  }
+
+  public tokenizePort(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+
+    if (next.word === "module") {
+      return this.tokenizeWord(codeHelper, startWordIndex, next);
+    }
+
+    return this.tokenizeUntilEndOfBlock(codeHelper, startWordIndex, next, ElmTokenType.Port, ":");
+  }
+
+  public tokenizeType(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
+    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+
+    if (next.word === "alias") {
+      next = codeHelper.findNextWord( next.nextIndex + 1, false);
+      const typeAliasEndIndex = codeHelper.findClose(next.nextIndex, "{", "}");
+
+      if (!typeAliasEndIndex) {
+        this.logger.debug("Unable to tokenize type alias due to missing close bracket after index " + wordResult.nextIndex);
+        return undefined;
+      }
+
+      return { tokenType: ElmTokenType.TypeAlias, startIndex: startWordIndex, endIndex: typeAliasEndIndex, identifier: next.word };
+    }
+
+    return this.tokenizeUntilEndOfBlock(codeHelper, startWordIndex, next, ElmTokenType.Type, "=");
+  }
+
+  public tokenizeUntilEndOfBlock(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult,
+                                 tokenType: ElmTokenType, searchAfterChar: string): PartialElmToken | undefined {
     const searchAfterCharIndex = codeHelper.findChar(wordResult.nextIndex, searchAfterChar);
 
     if (!searchAfterCharIndex) {
@@ -239,6 +263,10 @@ export class ElmTokenizerImp implements ElmTokenizer {
     }
 
     return { tokenType: tokenType, startIndex: startWordIndex, endIndex: blockResult.nextIndex, identifier: blockResult.word };
+  }
+
+  public tokenizeWhiteSpace(startWordIndex: number, wordResult: FindWordResult): PartialElmToken {
+    return {tokenType: ElmTokenType.Whitespace, startIndex: startWordIndex, endIndex: wordResult.nextIndex - 1, identifier: ""};
   }
 }
 
