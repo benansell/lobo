@@ -1,7 +1,7 @@
 import {createLogger, Logger} from "./logger";
 import {CodeLocation, createElmTokenizer, ElmToken, ElmTokenizer, ElmTokenType} from "./elm-tokenizer";
 import {createElmCodeHelper, ElmCodeHelper} from "./elm-code-helper";
-import {createElmTypeHelper, ElmTypeHelper, TypeInfo} from "./elm-type-helper";
+import {createElmTypeHelper, ElmTypeHelper, ElmTypeInfo} from "./elm-type-helper";
 
 export type ElmNode = ElmImportNode
   | ElmPortNode
@@ -31,32 +31,32 @@ export interface BaseElmNode {
 
 export interface ElmImportNode extends BaseElmNode {
   alias?: string;
-  exposing: TypeInfo[];
+  exposing: ElmTypeInfo[];
 }
 
 export interface ElmModuleNode extends BaseElmNode {
   children: ElmNode[];
   filePath: string;
-  exposing: TypeInfo[];
+  exposing: ElmTypeInfo[];
 }
 
 export interface ElmPortNode extends BaseElmNode {
 }
 
 export interface ElmTypeNode extends BaseElmNode {
-  dependencies: TypeInfo[];
+  dependencies: ElmTypeInfo[];
 }
 
 export interface ElmTypeAliasNode extends BaseElmNode {
 }
 
 export interface ElmTypedModuleFunctionNode extends BaseElmNode {
-  dependencies: TypeInfo[];
-  returnType: TypeInfo;
+  dependencies: ElmTypeInfo[];
+  returnType: ElmTypeInfo;
 }
 
 export interface ElmUntypedModuleFunctionNode extends BaseElmNode {
-  dependencies: TypeInfo[];
+  dependencies: ElmTypeInfo[];
 }
 
 export interface ImportName {
@@ -131,7 +131,7 @@ export class ElmParserImp implements ElmParser {
     }
 
     const typeHelper = createElmTypeHelper(moduleToken.identifier);
-    const firstPassResult = this.parseFirstPass(typeHelper, tokenLookup);
+    const firstPassResult = this.parseFirstPass(typeHelper, tokenLookup, moduleToken.identifier);
     const children = firstPassResult.complete;
     const secondPassResult = this.parseSecondPass(firstPassResult.partial, typeHelper);
     children.push(...secondPassResult);
@@ -139,10 +139,10 @@ export class ElmParserImp implements ElmParser {
     return this.toModuleNode(filePath, typeHelper, moduleToken, children);
   }
 
-  public parseFirstPass(typeHelper: ElmTypeHelper, tokenLookup: { [p: number]: ElmToken[] }): ElmNodeResultList {
+  public parseFirstPass(typeHelper: ElmTypeHelper, tokenLookup: { [p: number]: ElmToken[] }, moduleName: string): ElmNodeResultList {
     const tokenConverters: Array<[ElmTokenType, (token: ElmToken) => ElmNodeResult<ElmNode>]> = [];
     tokenConverters.push([ElmTokenType.Import, token => this.toImportNode(typeHelper, token)]);
-    tokenConverters.push([ElmTokenType.Type, token => this.toTypeNode(token, typeHelper)]);
+    tokenConverters.push([ElmTokenType.Type, token => this.toTypeNode(token, typeHelper, moduleName)]);
     tokenConverters.push([ElmTokenType.TypeAlias, token => this.toTypeAliasNode(token)]);
     tokenConverters.push([ElmTokenType.Port, token => this.toPortNode(token)]);
     tokenConverters.push([ElmTokenType.TypedModuleFunction, token => this.toTypedModuleFunctionNode(token, typeHelper)]);
@@ -174,7 +174,7 @@ export class ElmParserImp implements ElmParser {
 
       if (this.isTypedModuleFunctionNode(result.node) || this.isUntypedModuleFunctionNode(result.node)) {
         const node = result.node;
-        node.dependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name.length);
+        node.dependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name, result.node.name.length);
         complete.push(node);
       }
     }
@@ -192,36 +192,42 @@ export class ElmParserImp implements ElmParser {
     return {alias: identifier.substring(index + 4), name: identifier.substring(0, index)};
   }
 
-  public parseFunction(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, startIndex: number): TypeInfo[] {
+  public parseFunction(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, name: string, startIndex: number): ElmTypeInfo[] {
     const functionStartIndex = codeHelper.findChar(startIndex, "=");
 
     if (!functionStartIndex) {
       return [];
     }
 
+    const delimiters = [" ", "\n", "\"", ",", "=", "[", "]", "{", "}", "(", ")", "\\"];
     const keywords = ["if", "then", "else", "case", "of", "let", "in", "type", "module", "where", "import", "exposing", "as", "port"];
-    const types: TypeInfo[] = [];
-    let nextIndex = functionStartIndex;
+    const types: ElmTypeInfo[] = [];
+    let nextIndex = functionStartIndex + 1;
 
     while (nextIndex < codeHelper.maxIndex) {
-      const next = codeHelper.findNextWord(nextIndex, true);
-
-      if (next.word !== " " && next.word !== "\n" && keywords.indexOf(next.word) === -1) {
-         let typeInfo = typeHelper.resolveType(next.word);
-
-         if (typeInfo) {
-           types.push(typeInfo);
-         }
-      }
-
+      const next = codeHelper.findNextWord(nextIndex, true, delimiters);
       nextIndex = next.nextIndex;
+
+      if (next.word === "\"") {
+        const endStringIndex = codeHelper.findClose(next.nextIndex, "\"", "\"", false);
+
+        if (endStringIndex) {
+          nextIndex = endStringIndex + 1;
+        }
+      } else if (delimiters.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
+        let typeInfo = typeHelper.resolveNoDefaultModuleUpdate(next.word, name);
+
+        if (typeInfo && types.indexOf(typeInfo) === -1) {
+          types.push(typeInfo);
+        }
+      }
     }
 
     return types;
   }
 
   public parseReturnType(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, functionName: string, startIndex: number)
-  : TypeInfo | undefined {
+  : ElmTypeInfo | undefined {
     let nextIndex = startIndex;
     let lastType: string = "";
 
@@ -230,7 +236,7 @@ export class ElmParserImp implements ElmParser {
 
       if (next.word !== " " && next.word !== "\n") {
         if (next.word === functionName) {
-          return typeHelper.resolveType(lastType);
+          return typeHelper.resolve(lastType);
         }
 
         lastType = next.word;
@@ -244,14 +250,15 @@ export class ElmParserImp implements ElmParser {
     return undefined;
   }
 
-  public parseType(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, parentTypeName: string, startIndex: number): TypeInfo[] {
+  public parseType(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, moduleName: string, parentTypeName: string, startIndex: number)
+  : ElmTypeInfo[] {
     const typeListStartIndex = codeHelper.findChar(startIndex, "=");
 
     if (!typeListStartIndex) {
       return [];
     }
 
-    const types: TypeInfo[] = [];
+    const types: ElmTypeInfo[] = [];
 
     let nextIndex = typeListStartIndex + 1;
     let afterPipe: boolean = true;
@@ -263,7 +270,7 @@ export class ElmParserImp implements ElmParser {
         if (next.word === "|") {
           afterPipe = true;
         } else if (afterPipe) {
-          types.push(typeHelper.resolveType(next.word, parentTypeName));
+          types.push(typeHelper.resolve(next.word, parentTypeName, moduleName));
           afterPipe = false;
         }
       }
@@ -274,14 +281,15 @@ export class ElmParserImp implements ElmParser {
     return types;
   }
 
-  public parseTypeList(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, parentTypeName: string, startIndex: number): TypeInfo[] {
+  public parseTypeList(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, moduleName: string, parentTypeName: string | undefined,
+                       startIndex: number): ElmTypeInfo[] {
     const exposingStartIndex = codeHelper.findChar(startIndex, "(");
 
     if (!exposingStartIndex) {
       return [];
     }
 
-    const types: TypeInfo[] = [];
+    const types: ElmTypeInfo[] = [];
     let nextIndex = exposingStartIndex + 1;
     let currentParentTypeName = parentTypeName;
 
@@ -293,11 +301,11 @@ export class ElmParserImp implements ElmParser {
           currentParentTypeName = types[types.length - 1].name;
         } else if (next.word[0] === ")") {
           currentParentTypeName = parentTypeName;
-        } else if (next.word === "..") {
+        } else if (currentParentTypeName !== undefined && next.word === "..") {
           const allTypes = typeHelper.findAllChildTypes(currentParentTypeName);
           types.push(...allTypes);
         } else {
-          types.push(typeHelper.resolveType(next.word, currentParentTypeName));
+          types.push(typeHelper.resolve(next.word, currentParentTypeName, moduleName));
         }
       }
 
@@ -346,8 +354,9 @@ export class ElmParserImp implements ElmParser {
       startOffset += result.alias.length;
     }
 
+    typeHelper.addModule(result.name, result.alias);
     const codeHelper = createElmCodeHelper(token.code);
-    const exposing = this.parseTypeList(codeHelper, typeHelper, result.name, startOffset);
+    const exposing = this.parseTypeList(codeHelper, typeHelper, result.name, undefined, startOffset);
     let node = {...this.toBaseNode(token, result.name), alias: result.alias, exposing: exposing};
 
     return { codeHelper, node };
@@ -355,7 +364,7 @@ export class ElmParserImp implements ElmParser {
 
   public toModuleNode(filePath: string, typeHelper: ElmTypeHelper, token: ElmToken, children: ElmNode[]): ElmModuleNode {
     const codeHelper = createElmCodeHelper(token.code);
-    const exposing = this.parseTypeList(codeHelper, typeHelper, token.identifier, 8 + token.identifier.length);
+    const exposing = this.parseTypeList(codeHelper, typeHelper, token.identifier, undefined, 8 + token.identifier.length);
 
     return { ...this.toBaseNode(token, token.identifier), children: children, exposing: exposing, filePath: filePath };
   }
@@ -367,9 +376,9 @@ export class ElmParserImp implements ElmParser {
     return { codeHelper, node };
   }
 
-  public toTypeNode(token: ElmToken, typeHelper: ElmTypeHelper): ElmNodeResult<ElmTypeNode> {
+  public toTypeNode(token: ElmToken, typeHelper: ElmTypeHelper, moduleName: string): ElmNodeResult<ElmTypeNode> {
     const codeHelper = createElmCodeHelper(token.code);
-    const types = this.parseType(codeHelper, typeHelper, token.identifier, 8 + token.identifier.length);
+    const types = this.parseType(codeHelper, typeHelper, moduleName, token.identifier, 8 + token.identifier.length);
     let node: ElmTypeNode = {...this.toBaseNode(token, token.identifier), dependencies: types};
 
     return { codeHelper, node };
@@ -391,16 +400,16 @@ export class ElmParserImp implements ElmParser {
       return this.toUntypedModuleFunctionNode(token, typeHelper);
     }
 
-    const dependencies = this.parseFunction(codeHelper, typeHelper, token.identifier.length);
-    let node = {...this.toBaseNode(token, token.identifier), dependencies, returnType: returnType};
+    typeHelper.resolve(token.identifier);
+    let node = {...this.toBaseNode(token, token.identifier), dependencies: [], returnType: returnType};
 
     return { codeHelper, node };
   }
 
   public toUntypedModuleFunctionNode(token: ElmToken, typeHelper: ElmTypeHelper): ElmNodeResult<ElmUntypedModuleFunctionNode> {
     const codeHelper = createElmCodeHelper(token.code);
-    const dependencies = this.parseFunction(codeHelper, typeHelper, token.identifier.length);
-    let node: ElmUntypedModuleFunctionNode = { ...this.toBaseNode(token, token.identifier), dependencies };
+    typeHelper.resolve(token.identifier);
+    let node: ElmUntypedModuleFunctionNode = { ...this.toBaseNode(token, token.identifier), dependencies: [] };
 
     return { codeHelper, node };
   }

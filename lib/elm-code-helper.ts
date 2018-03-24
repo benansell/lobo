@@ -159,7 +159,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
       if (this.existsAt(index, close)) {
         contextCount--;
 
-        if (contextCount === 0) {
+        if (contextCount <= 0) {
           return index;
         }
       } else if (this.existsAt(index, open)) {
