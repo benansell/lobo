@@ -63,7 +63,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
     for (let i = 0; i < lineMap.length; i++) {
       if (lineMap[i] > index) {
-        return { columnNumber: index - previousLineLength + 1, lineNumber: i + 1 };
+        return { columnNumber: index - previousLineLength, lineNumber: i + 1 };
       }
 
       previousLineLength = lineMap[i];

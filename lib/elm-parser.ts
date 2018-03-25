@@ -10,6 +10,8 @@ export type ElmNode = ElmImportNode
   | ElmTypedModuleFunctionNode
   | ElmUntypedModuleFunctionNode;
 
+export type ElmFunctionNode = ElmTypedModuleFunctionNode | ElmUntypedModuleFunctionNode;
+
 export enum ElmNodeType {
   Import = 0,
   Module,
@@ -79,6 +81,10 @@ export interface ElmNodeResultList {
 }
 
 export interface ElmParser {
+  isFunctionNode(node: ElmNode): node is ElmFunctionNode;
+  isImportNode(node: ElmNode): node is ElmImportNode;
+  isTypedModuleFunctionNode(node: ElmNode): node is ElmTypedModuleFunctionNode;
+  isUntypedModuleFunctionNode(node: ElmNode): node is ElmUntypedModuleFunctionNode;
   parse(filePath: string): ElmModuleNode | undefined;
 }
 
@@ -105,6 +111,14 @@ export class ElmParserImp implements ElmParser {
       {});
 
     return tokenLookup;
+  }
+
+  public isFunctionNode(node: ElmNode): node is ElmFunctionNode {
+    return this.isTypedModuleFunctionNode(node) || this.isUntypedModuleFunctionNode(node);
+  }
+
+  public isImportNode(node: ElmNode): node is ElmImportNode {
+    return node.nodeType === ElmNodeType.Import;
   }
 
   public isTypedModuleFunctionNode(node: ElmNode): node is ElmTypedModuleFunctionNode {
@@ -157,8 +171,11 @@ export class ElmParserImp implements ElmParser {
       if (tokens) {
         for (const token of tokens) {
           const result = converter(token);
-          complete.push(result.node);
-          partial.push(result);
+          if (token.tokenType === ElmTokenType.TypedModuleFunction || token.tokenType === ElmTokenType.UntypedModuleFunction) {
+            partial.push(result);
+          } else {
+            complete.push(result.node);
+          }
         }
       }
     }
@@ -172,7 +189,7 @@ export class ElmParserImp implements ElmParser {
     for (let j = 0; j < partial.length; j++) {
       const result = partial[j];
 
-      if (this.isTypedModuleFunctionNode(result.node) || this.isUntypedModuleFunctionNode(result.node)) {
+      if (this.isFunctionNode(result.node)) {
         const node = result.node;
         node.dependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name, result.node.name.length);
         complete.push(node);
@@ -215,7 +232,7 @@ export class ElmParserImp implements ElmParser {
           nextIndex = endStringIndex + 1;
         }
       } else if (delimiters.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
-        let typeInfo = typeHelper.resolveNoDefaultModuleUpdate(next.word, name);
+        let typeInfo = typeHelper.resolveExcludingDefaultModule(next.word, name);
 
         if (typeInfo && types.indexOf(typeInfo) === -1) {
           types.push(typeInfo);
