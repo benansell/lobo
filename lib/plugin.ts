@@ -29,6 +29,7 @@ export interface PluginConfig {
 
 export interface PluginTestFramework {
   initArgs(): RunArgs;
+  moduleName(): string;
 }
 
 export interface PluginTestFrameworkConfig extends PluginConfig {
