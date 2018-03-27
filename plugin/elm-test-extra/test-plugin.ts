@@ -13,6 +13,10 @@ export class ElmTestExtraPlugin implements PluginTestFramework {
       seed: program.seed ? program.seed : ElmTestExtraPlugin.generateInitialSeed()
     };
   }
+
+  public moduleName(): string {
+    return "ElmTest.Extra";
+  }
 }
 
 export function createPlugin(): ElmTestExtraPlugin {
