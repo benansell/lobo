@@ -8,6 +8,8 @@ import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createElmPackageHelper, ElmPackageHelper, ElmPackageHelperImp, ElmPackageJson} from "../../../lib/elm-package-helper";
 import {Logger} from "../../../lib/logger";
+import {Util} from "../../../lib/util";
+import {SinonStub} from "sinon";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -17,12 +19,16 @@ describe("lib elm-package-helper", () => {
   let RewiredHelper = rewire("../../../lib/elm-package-helper");
   let helper: ElmPackageHelperImp;
   let mockLogger: Logger;
+  let mockRead: SinonStub;
+  let mockUtil: Util;
 
   beforeEach(() => {
     let rewiredImp = RewiredHelper.__get__("ElmPackageHelperImp");
     mockLogger = <Logger><{}>Sinon.stub();
     mockLogger.debug = Sinon.stub();
-    helper = new rewiredImp(mockLogger);
+    mockRead = Sinon.stub();
+    mockUtil = <Util><{}> { read: mockRead };
+    helper = new rewiredImp(mockLogger, mockUtil);
   });
 
   describe("createElmPackageHelper", () => {
@@ -132,19 +138,18 @@ describe("lib elm-package-helper", () => {
   });
 
   describe("read", () => {
-    let revertRead: () => void;
-    let mockRead;
-
-    beforeEach(() => {
-      mockRead = Sinon.stub();
-      revertRead = RewiredHelper.__set__({fs: {readFileSync: mockRead}});
-    });
-
-    afterEach(() => {
-      revertRead();
-    });
-
     it("should be undefined when elm-package.json does not exist", () => {
+      // act
+      let actual = helper.read("/foo");
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should be undefined when json is invalid", () => {
+      // arrange
+      mockRead.returns("<xml />");
+
       // act
       let actual = helper.read("/foo");
 

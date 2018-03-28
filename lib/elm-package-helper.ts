@@ -3,6 +3,7 @@ import * as path from "path";
 import * as _ from "lodash";
 
 import {createLogger, Logger} from "./logger";
+import {createUtil, Util} from "./util";
 
 export interface Dependencies {
   [index: string]: string;
@@ -23,9 +24,11 @@ export interface ElmPackageHelper {
 export class ElmPackageHelperImp implements ElmPackageHelper {
 
   private logger: Logger;
+  private util: Util;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, util: Util) {
     this.logger = logger;
+    this.util = util;
   }
 
   public isImprovedMinimumConstraint(dependency: string, candidate: string): boolean {
@@ -53,7 +56,12 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
   public read(elmPackageJsonDirectory: string): ElmPackageJson | undefined {
     try {
       let packagePath = this.path(elmPackageJsonDirectory);
-      let raw = fs.readFileSync(packagePath);
+      let raw = this.util.read(packagePath);
+
+      if (!raw) {
+        return undefined;
+      }
+
       let json = JSON.parse(raw.toString());
       json.sourceDirectories = json["source-directories"];
       delete json["source-directories"];
@@ -75,5 +83,5 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
 }
 
 export function createElmPackageHelper(): ElmPackageHelper {
-  return new ElmPackageHelperImp(createLogger());
+  return new ElmPackageHelperImp(createLogger(), createUtil());
 }

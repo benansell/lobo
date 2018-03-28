@@ -10,10 +10,12 @@ export interface Util {
   availablePlugins(fileSpec: RegExp | string): string[];
   checkNodeVersion(major: number, minor: number, patch: number): void;
   closestMatch(name: string, items: string[]): string;
+  findFiles(directoryPath: string, fileType: string): string[];
   getPlugin<T>(type: string, pluginName: string, fileSpec: string): T;
   getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T;
   isInteger(value: number): boolean;
   padRight(value: string, length: number, spacer?: string): string;
+  read(filePath: string): string | undefined;
   resolveDir(...dirs: string[]): string;
   unsafeLoad<T>(filePath: string): T;
 }
@@ -65,6 +67,19 @@ export class UtilImp implements Util {
 
   public closestMatch(name: string, items: string[]): string {
     return <string> _.minBy(items, (i: string) => levenshtein.get(name, i));
+  }
+
+  public findFiles(directoryPath: string, fileType: string): string[] {
+    if (fs.lstatSync(directoryPath).isDirectory()) {
+      const fileArray = fs.readdirSync(directoryPath).map(f => this.findFiles(path.join(directoryPath, f), fileType));
+      return Array.prototype.concat(...fileArray);
+    } else {
+      if (directoryPath.indexOf(fileType) === directoryPath.length - fileType.length) {
+        return [directoryPath];
+      } else {
+        return [];
+      }
+    }
   }
 
   public getPlugin<T>(type: string, pluginName: string, fileSpec: string): T {
@@ -120,6 +135,19 @@ export class UtilImp implements Util {
 
       process.exit(1);
       return <T> {};
+    }
+  }
+
+  public read(filePath: string): string | undefined {
+    try {
+      if (!fs.existsSync(filePath)) {
+        return undefined;
+      }
+
+      return fs.readFileSync(filePath, "utf8");
+    } catch (err) {
+      this.logger.debug(err);
+      return undefined;
     }
   }
 

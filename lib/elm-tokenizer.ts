@@ -1,6 +1,6 @@
-import * as fs from "fs";
 import {createLogger, Logger} from "./logger";
 import {createElmCodeHelper, ElmCodeHelper, FindWordResult} from "./elm-code-helper";
+import {createUtil, Util} from "./util";
 
 export interface CodeLocation {
   columnNumber: number;
@@ -41,9 +41,11 @@ export interface ElmTokenizer {
 export class ElmTokenizerImp implements ElmTokenizer {
 
   private logger: Logger;
+  private util: Util;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, util: Util) {
     this.logger = logger;
+    this.util = util;
   }
 
   public buildLineMap(code: string): number[] {
@@ -83,7 +85,12 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenize(filePath: string): ElmToken[] {
-    const code = fs.readFileSync(filePath, "utf8");
+    const code = this.util.read(filePath);
+
+    if (!code) {
+      return [];
+    }
+
     const lineMap = this.buildLineMap(code);
     const codeHelper = createElmCodeHelper(code);
 
@@ -271,5 +278,5 @@ export class ElmTokenizerImp implements ElmTokenizer {
 }
 
 export function createElmTokenizer(): ElmTokenizer {
-  return new ElmTokenizerImp(createLogger());
+  return new ElmTokenizerImp(createLogger(), createUtil());
 }
