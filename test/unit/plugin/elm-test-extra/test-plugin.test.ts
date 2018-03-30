@@ -72,4 +72,14 @@ describe("plugin elm-test-extra test-plugin", () => {
       expect(first.seed).not.to.equal(second.seed);
     });
   });
+
+  describe("moduleName", () => {
+    it("should return 'Test'", () => {
+      // act
+      let actual = plugin.moduleName();
+
+      // assert
+      expect(actual).to.equal("ElmTest.Extra");
+    });
+  });
 });
