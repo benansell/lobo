@@ -267,6 +267,6 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
   }
 }
 
-export function createElmCodeHelper(code: string): ElmCodeHelper {
+export function makeElmCodeHelper(code: string): ElmCodeHelper {
   return new ElmCodeHelperImp(code);
 }

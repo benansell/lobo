@@ -1,5 +1,5 @@
 import {createLogger, Logger} from "./logger";
-import {createElmCodeHelper, ElmCodeHelper, FindWordResult} from "./elm-code-helper";
+import {makeElmCodeHelper, ElmCodeHelper, FindWordResult} from "./elm-code-helper";
 import {createUtil, Util} from "./util";
 
 export interface CodeLocation {
@@ -40,12 +40,14 @@ export interface ElmTokenizer {
 
 export class ElmTokenizerImp implements ElmTokenizer {
 
+  private makeElmCodeHelper: (code: string) => ElmCodeHelper;
   private logger: Logger;
   private util: Util;
 
-  constructor(logger: Logger, util: Util) {
+  constructor(logger: Logger, util: Util, makeCodeHelper: (code: string) => ElmCodeHelper) {
     this.logger = logger;
     this.util = util;
+    this.makeElmCodeHelper = makeCodeHelper;
   }
 
   public buildLineMap(code: string): number[] {
@@ -61,17 +63,17 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public convertIndexToLocation(lineMap: number[], index: number): CodeLocation {
-    let previousLineLength = 0;
+    let previousLength = lineMap.length === 0 ? 1 : 0;
 
     for (let i = 0; i < lineMap.length; i++) {
       if (lineMap[i] > index) {
-        return { columnNumber: index - previousLineLength, lineNumber: i + 1 };
+        return { columnNumber: index - previousLength, lineNumber: i + 1 };
       }
 
-      previousLineLength = lineMap[i];
+      previousLength = lineMap[i];
     }
 
-    return { columnNumber: index - lineMap[lineMap.length - 2] + 1, lineNumber: lineMap.length + 1 };
+    return { columnNumber: index - previousLength, lineNumber: lineMap.length + 1 };
   }
 
   public convertToElmToken(codeHelper: ElmCodeHelper, lineMap: number[], partialToken: PartialElmToken): ElmToken {
@@ -84,15 +86,25 @@ export class ElmTokenizerImp implements ElmTokenizer {
     };
   }
 
-  public tokenize(filePath: string): ElmToken[] {
+  public read(filePath: string): string | undefined {
     const code = this.util.read(filePath);
+
+    if (!code) {
+      return undefined;
+    }
+
+    return code.replace(/\r/g, "");
+  }
+
+  public tokenize(filePath: string): ElmToken[] {
+    const code = this.read(filePath);
 
     if (!code) {
       return [];
     }
 
     const lineMap = this.buildLineMap(code);
-    const codeHelper = createElmCodeHelper(code);
+    const codeHelper = this.makeElmCodeHelper(code);
 
     return this.tokenizeCode(codeHelper, lineMap);
   }
@@ -104,7 +116,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
     while (index < codeHelper.maxIndex) {
       const next = codeHelper.findNextWord(index, false);
 
-      if (next.nextIndex === codeHelper.maxIndex) {
+      if (next.nextIndex >= codeHelper.maxIndex) {
         return tokens;
       }
 
@@ -278,5 +290,5 @@ export class ElmTokenizerImp implements ElmTokenizer {
 }
 
 export function createElmTokenizer(): ElmTokenizer {
-  return new ElmTokenizerImp(createLogger(), createUtil());
+  return new ElmTokenizerImp(createLogger(), createUtil(), makeElmCodeHelper);
 }
