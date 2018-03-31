@@ -40,9 +40,9 @@ export interface ElmTokenizer {
 
 export class ElmTokenizerImp implements ElmTokenizer {
 
-  private makeElmCodeHelper: (code: string) => ElmCodeHelper;
-  private logger: Logger;
-  private util: Util;
+  private readonly makeElmCodeHelper: (code: string) => ElmCodeHelper;
+  private readonly logger: Logger;
+  private readonly util: Util;
 
   constructor(logger: Logger, util: Util, makeCodeHelper: (code: string) => ElmCodeHelper) {
     this.logger = logger;
@@ -136,7 +136,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
 
   public tokenizeWord(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
     if (wordResult.word === " " || wordResult.word === "\n") {
-      return this.tokenizeWhiteSpace(startWordIndex, wordResult);
+      return this.tokenizeWhitespace(startWordIndex, wordResult);
     }
 
     if (codeHelper.isWordComment(wordResult.word)) {
@@ -199,10 +199,10 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeImport(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
-    let identifier = next.word;
-    let endIndex = next.nextIndex - 1;
-    next = codeHelper.findNextWord(next.nextIndex + 1, false);
+    let identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+    let identifier = identifierResult.word;
+    let endIndex = identifierResult.nextIndex - 1;
+    let next = codeHelper.findNextWord(identifierResult.nextIndex + 1, false);
 
     if (next.word === "as") {
       next = codeHelper.findNextWord(next.nextIndex + 1, false);
@@ -219,7 +219,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
         return undefined;
       }
 
-      return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: exposingEndIndex, identifier: identifier };
+      endIndex = exposingEndIndex;
     }
 
     return { tokenType: ElmTokenType.Import, startIndex: startWordIndex, endIndex: endIndex, identifier: identifier };
@@ -284,7 +284,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
     return { tokenType: tokenType, startIndex: startWordIndex, endIndex: blockResult.nextIndex, identifier: blockResult.word };
   }
 
-  public tokenizeWhiteSpace(startWordIndex: number, wordResult: FindWordResult): PartialElmToken {
+  public tokenizeWhitespace(startWordIndex: number, wordResult: FindWordResult): PartialElmToken {
     return {tokenType: ElmTokenType.Whitespace, startIndex: startWordIndex, endIndex: wordResult.nextIndex - 1, identifier: ""};
   }
 }
