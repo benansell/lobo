@@ -28,17 +28,17 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
   constructor(code: string) {
     this.code = code;
     this.maxIndex = code.length - 1;
-    this.commentMap = this.buildCommentMap(this.code, this.maxIndex);
+    this.commentMap = this.buildCommentMap(this.code);
   }
 
-  public buildCommentMap(code: string, maxIndex: number): CommentBlock[] {
+  public buildCommentMap(code: string): CommentBlock[] {
     const commentMap: CommentBlock[] = [];
     let from: number | undefined;
     let fromLine: number | undefined;
     let blockCount: number = 0;
 
-    for (let i = 0; i <= maxIndex - 1; i++) {
-      if (code[i] === "{" && code[i + 1] === "-" ) {
+    for (let i = 0; i <= code.length; i++) {
+      if (code[i] === "{" && code[i + 1] === "-") {
         if (from === undefined) {
           from = i;
         }
@@ -57,6 +57,12 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
         commentMap.push({fromIndex: fromLine, toIndex: i - 1});
         fromLine = undefined;
       }
+    }
+
+    if (from !== undefined) {
+      commentMap.push({fromIndex: from, toIndex: code.length - 1});
+    } else if (fromLine !== undefined) {
+      commentMap.push({fromIndex: fromLine, toIndex: code.length - 1});
     }
 
     return commentMap;
@@ -138,7 +144,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
 
   public findChar(startIndex: number, searchChar: string, includeComments: boolean = false): number | undefined {
     let isMatch: (index: number) => number | undefined = (index) => {
-      if (this.existsAt(index, searchChar) ) {
+      if (this.existsAt(index, searchChar)) {
         return index;
       } else {
         return undefined;
@@ -153,7 +159,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
   }
 
   public findClose(startIndex: number, open: string, close: string, includeComments: boolean = false)
-  : number | undefined {
+    : number | undefined {
     let contextCount: number = 0;
     let isMatch: (index: number) => number | undefined = (index) => {
       if (this.existsAt(index, close)) {
@@ -176,21 +182,21 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
     return this.findExcludingComments(startIndex, isMatch);
   }
 
-  public findEndComment(wordResult: FindWordResult): number | undefined {
+  public findEndComment(wordResult: FindWordResult): number {
     if (wordResult.word[0] === "{" && wordResult.word[1] === "-") {
-      const endBlockIndex = this.findClose( wordResult.nextIndex - wordResult.word.length - 1, "{-", "-}", true);
+      const endBlockIndex = this.findClose(wordResult.nextIndex - wordResult.word.length - 1, "{-", "-}", true);
 
       if (!endBlockIndex) {
-        return undefined;
+        return this.maxIndex;
       }
 
       return endBlockIndex + 1;
     }
 
-    const endLineIndex = this.findChar( wordResult.nextIndex, "\n", true);
+    const endLineIndex = this.findChar(wordResult.nextIndex, "\n", true);
 
     if (!endLineIndex) {
-      return undefined;
+      return this.maxIndex;
     }
 
     return endLineIndex - 1;
@@ -200,10 +206,12 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
     let isMatch: (index: number) => FindWordResult | undefined = (index) => {
       if (this.exists(index, delimiters) >= 0) {
         if (startIndex === index) {
-          return {nextIndex: index + 1, word: this.code.substring(startIndex, index + 1)};
+          return {nextIndex: index + 1, word: this.codeBetween(startIndex, index)};
         } else {
-          return {nextIndex: index, word: this.code.substring(startIndex, index)};
+          return {nextIndex: index, word: this.codeBetween(startIndex, index - 1)};
         }
+      } else if (index === this.maxIndex) {
+        return {nextIndex: index + 1, word: this.codeBetween(startIndex, index)};
       }
 
       return undefined;
@@ -217,19 +225,23 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
       if (result && this.isWordComment(result.word)) {
         const endIndex = this.findEndComment(result);
 
-        if (endIndex) {
-          return this.findNextWord(endIndex + 1, skipComments, delimiters);
-        }
+        return this.findNextWord(endIndex + 1, skipComments, delimiters);
       }
     } else {
-      result = this.findExcludingComments(startIndex, isMatch);
+      result = this.findIncludingComments(startIndex, isMatch);
+
+      if (result && this.isWordComment(result.word)) {
+        const endIndex = this.findEndComment(result);
+
+        return {nextIndex: endIndex + 1, word: this.codeBetween(startIndex, endIndex)};
+      }
     }
 
     if (result) {
       return result;
     }
 
-    return { nextIndex: this.maxIndex, word: this.code.substring(startIndex, this.maxIndex + 1) };
+    return {nextIndex: this.maxIndex + 1, word: this.codeBetween(startIndex, this.maxIndex)};
   }
 
   public findUntilEndOfBlock(startIndex: number, wordResult: FindWordResult): FindWordResult | undefined {
@@ -237,12 +249,12 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
     let endIndex = startIndex;
     let isMatch: (index: number) => FindWordResult | undefined = (index) => {
       if (this.code[index] === "\n") {
-        if (this.code[index - 1] !== "\n" ) {
+        if (this.code[index - 1] !== "\n") {
           endIndex = index - 1;
         }
 
         if (this.code[index + 1] !== "\n" && this.code[index + 1] !== " ") {
-          return { nextIndex: endIndex, word: wordResult.word };
+          return {nextIndex: endIndex, word: wordResult.word};
         }
       }
 
@@ -255,7 +267,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
       return result;
     }
 
-    return { nextIndex: this.maxIndex, word: wordResult.word };
+    return {nextIndex: this.maxIndex, word: wordResult.word};
   }
 
   public isWordComment(word: string): boolean {
