@@ -188,6 +188,6 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
   }
 }
 
-export function createElmTypeHelper(name: string): ElmTypeHelper {
+export function makeElmTypeHelper(name: string): ElmTypeHelper {
   return new ElmTypeHelperImp(name);
 }

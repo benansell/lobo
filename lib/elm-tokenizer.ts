@@ -169,16 +169,15 @@ export class ElmTokenizerImp implements ElmTokenizer {
   public tokenizeComment(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
     const endCommentIndex = codeHelper.findEndComment(wordResult);
 
-    if (!endCommentIndex) {
+    if (endCommentIndex === codeHelper.maxIndex) {
       this.logger.debug("Unable to tokenize comment due to missing end comment after index " + wordResult.nextIndex);
-      return undefined;
     }
 
     return {tokenType: ElmTokenType.Comment, startIndex: startWordIndex, endIndex: endCommentIndex, identifier: ""};
   }
 
   public tokenizeEffect(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+    let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
 
     if (next.word === "module") {
       return this.tokenizeWord(codeHelper, startWordIndex, next);
@@ -188,7 +187,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeFunction(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next =  codeHelper.findNextWord(wordResult.nextIndex + 1, true);
+    let next =  codeHelper.findNextWord(wordResult.nextIndex + 1);
     let tokenType: ElmTokenType = ElmTokenType.UntypedModuleFunction;
 
     if (next.word === ":") {
@@ -199,16 +198,16 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeImport(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+    let identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1);
     let identifier = identifierResult.word;
     let endIndex = identifierResult.nextIndex - 1;
-    let next = codeHelper.findNextWord(identifierResult.nextIndex + 1, false);
+    let next = codeHelper.findNextWord(identifierResult.nextIndex + 1);
 
     if (next.word === "as") {
-      next = codeHelper.findNextWord(next.nextIndex + 1, false);
+      next = codeHelper.findNextWord(next.nextIndex + 1);
       identifier = `${identifier} as ${next.word}`;
       endIndex = next.nextIndex - 1;
-      next = codeHelper.findNextWord(next.nextIndex + 1, false);
+      next = codeHelper.findNextWord(next.nextIndex + 1);
     }
 
     if (next.word === "exposing") {
@@ -233,13 +232,13 @@ export class ElmTokenizerImp implements ElmTokenizer {
       return undefined;
     }
 
-    const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+    const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1);
 
     return { tokenType: ElmTokenType.Module, startIndex: startWordIndex, endIndex: endIndex, identifier: identifierResult.word };
   }
 
   public tokenizePort(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+    let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
 
     if (next.word === "module") {
       return this.tokenizeWord(codeHelper, startWordIndex, next);
@@ -249,10 +248,10 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeType(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next = codeHelper.findNextWord(wordResult.nextIndex + 1, false);
+    let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
 
     if (next.word === "alias") {
-      next = codeHelper.findNextWord( next.nextIndex + 1, false);
+      next = codeHelper.findNextWord( next.nextIndex + 1);
       const typeAliasEndIndex = codeHelper.findClose(next.nextIndex, "{", "}");
 
       if (!typeAliasEndIndex) {

@@ -1,23 +1,60 @@
 "use strict";
 
 import * as chai from "chai";
-import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
-import {createElmTypeHelper, ElmTypeHelper, ElmTypeHelperImp} from "../../../lib/elm-type-helper";
-import {ElmCodeHelperImp, FindWordResult} from "../../../lib/elm-code-helper";
+import {makeElmTypeHelper, ElmTypeHelper, ElmTypeHelperImp} from "../../../lib/elm-type-helper";
 
 let expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib elm-type-helper", () => {
 
-  describe("createElmTypeHelper", () => {
+  describe("makeElmTypeHelper", () => {
     it("should return elm type helper", () => {
       // act
-      let actual: ElmTypeHelper = createElmTypeHelper("foo");
+      let actual: ElmTypeHelper = makeElmTypeHelper("foo");
 
       // assert
       expect(actual).to.exist;
+    });
+  });
+
+  describe("addModule", () => {
+    it("should add a module with the supplied name", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+
+      // act
+      typeHelper.addModule("bar", undefined);
+      let actual = typeHelper.resolveExistingModule("bar");
+
+      // assert
+      expect(actual).to.deep.equal({name: "bar", exposing: [], alias: undefined});
+    });
+
+    it("should add a module with the supplied alias", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+
+      // act
+      typeHelper.addModule("bar", "baz");
+      let actual = typeHelper.resolveExistingModule("bar");
+
+      // assert
+      expect(actual).to.deep.equal({name: "bar", exposing: [], alias: "baz"});
+    });
+
+    it("should add a module with the supplied types", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      let expected = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
+
+      // act
+      typeHelper.addModule("bar", undefined, expected);
+      let actual = typeHelper.resolveExistingModule("bar");
+
+      // assert
+      expect(actual).to.deep.equal({name: "bar", exposing: expected, alias: undefined});
     });
   });
 
