@@ -1,7 +1,7 @@
 "use strict";
 
 import * as chai from "chai";
-import {makeElmCodeHelper, ElmCodeHelper, ElmCodeHelperImp} from "../../../lib/elm-code-helper";
+import {makeElmCodeHelper, ElmCodeHelper, ElmCodeHelperImp, FindWordResult} from "../../../lib/elm-code-helper";
 
 let expect = chai.expect;
 
@@ -725,4 +725,101 @@ describe("lib elm-code-helper", () => {
       expect(actual).to.deep.equal({nextIndex: 3, word: ""});
     });
   });
+
+  describe("findUntilEndOfBlock", () => {
+    it("should return word result up to end of the block when new line is not followed by a space", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp(" foo\nbar");
+      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+
+      // act
+      let actual = codeHelper.findUntilEndOfBlock(0, wordResult);
+
+      // assert
+      expect(actual).to.deep.equal({nextIndex: 3, word: "foo"});
+    });
+
+    it("should return word result up to end of the block when new line is followed by a space", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp(" foo\n bar");
+      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+
+      // act
+      let actual = codeHelper.findUntilEndOfBlock(0, wordResult);
+
+      // assert
+      expect(actual).to.deep.equal({nextIndex: 8, word: "foo"});
+    });
+
+    it("should return word result up to end of the block", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp(" foo\n bar\n\nbaz");
+      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+
+      // act
+      let actual = codeHelper.findUntilEndOfBlock(0, wordResult);
+
+      // assert
+      expect(actual).to.deep.equal({nextIndex: 8, word: "foo"});
+    });
+
+    it("should return word result up to end of file when there is no end to the block", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp(" foo\n bar\n baz");
+      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+
+      // act
+      let actual = codeHelper.findUntilEndOfBlock(0, wordResult);
+
+      // assert
+      expect(actual).to.deep.equal({nextIndex: 13, word: "foo"});
+    });
+  });
+
+  describe("isWordComment", () => {
+    it("should return false when the supplied word is longer 2 characters", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp("");
+
+      // act
+      let actual = codeHelper.isWordComment("foo");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return false when the supplied word is 2 characters and not a comment", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp("");
+
+      // act
+      let actual = codeHelper.isWordComment("fo");
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return true when the supplied word is '--", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp("");
+
+      // act
+      let actual = codeHelper.isWordComment("--");
+
+      // assert
+      expect(actual).to.be.true;
+    });
+
+    it("should return true when the supplied word is '{-", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp("");
+
+      // act
+      let actual = codeHelper.isWordComment("{-");
+
+      // assert
+      expect(actual).to.be.true;
+    });
+  });
+
 });

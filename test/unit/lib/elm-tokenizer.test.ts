@@ -522,22 +522,22 @@ describe("lib elm-tokenizer", () => {
   });
 
   describe("tokenizeComment", () => {
-    it("should return undefined when the code helper cannot find the end of the comment", () => {
+    it("should return comment token when the code helper cannot find the end of the comment", () => {
       // arrange
       let mockCodeHelper = <ElmCodeHelper> {};
-      mockCodeHelper.findEndComment = () => undefined;
+      mockCodeHelper.findEndComment = () => 456;
       let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
       let actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
 
       // assert
-      expect(actual).to.be.undefined;
+      expect(actual.tokenType).to.equal(ElmTokenType.Comment);
     });
 
     it("should return comment token with token type of comment when the code helper finds the end of the comment", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      let mockCodeHelper = <ElmCodeHelper> {maxIndex: 456};
       mockCodeHelper.findEndComment = () => 456;
       let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
