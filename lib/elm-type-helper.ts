@@ -24,7 +24,7 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
 
   constructor(name: string) {
     this.defaultModuleName = name;
-    this.modules = [];
+    this.modules = [{alias: undefined, exposing: [], name}];
     this.addDefaultImports();
   }
 
