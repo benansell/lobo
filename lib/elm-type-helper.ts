@@ -12,7 +12,7 @@ export interface ElmTypeInfo {
 
 export interface ElmTypeHelper {
   addModule(name: string, alias: string | undefined): void;
-  findAllChildTypes(parentTypeName: string): ElmTypeInfo[];
+  findAllChildTypes(moduleName: string, parentTypeName: string | undefined): ElmTypeInfo[];
   resolve(name: string, parentTypeName?: string, moduleName?: string): ElmTypeInfo;
   resolveExcludingDefaultModule(name: string, parentTypeName?: string): ElmTypeInfo | undefined;
 }
@@ -69,14 +69,26 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
     this.modules.push({name, alias, exposing});
   }
 
-  public findAllChildTypes(name: string): ElmTypeInfo[] {
-    for (const m of this.modules) {
-      if (m.name === name || m.alias === name) {
-        return m.exposing;
+  public findAllChildTypes(moduleName: string, parentTypeName: string | undefined): ElmTypeInfo[] {
+    const module = this.resolveExistingModule(moduleName);
+
+    if (!module) {
+      return [];
+    }
+
+    if (!parentTypeName) {
+      return module.exposing;
+    }
+
+    const types: ElmTypeInfo[] = [];
+
+    for (const t of module.exposing) {
+      if (t.parentTypeName === parentTypeName) {
+        types.push(t);
       }
     }
 
-    return [];
+    return types;
   }
 
   public findExposedType(name: string): ElmTypeInfo | undefined {

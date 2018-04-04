@@ -64,36 +64,50 @@ describe("lib elm-type-helper", () => {
       let typeHelper = new ElmTypeHelperImp("foo");
 
       // act
-      let actual = typeHelper.findAllChildTypes("bar");
+      let actual = typeHelper.findAllChildTypes("bar", undefined);
 
       // assert
       expect(actual).to.deep.equal([]);
     });
 
-    it("should return child types when the supplied name matches a known module name", () => {
+    it("should return all child types when the supplied name matches a known module name and parent type is undefined", () => {
       // arrange
       let typeHelper = new ElmTypeHelperImp("foo");
       let expected = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
       typeHelper.addModule("bar", undefined, expected);
 
       // act
-      let actual = typeHelper.findAllChildTypes("bar");
+      let actual = typeHelper.findAllChildTypes("bar", undefined);
 
       // assert
       expect(actual).to.deep.equal(expected);
     });
 
-    it("should return child types when the supplied name matches a known module alias", () => {
+    it("should return all child types when the supplied name matches a known module alias and parent type is undefined", () => {
       // arrange
       let typeHelper = new ElmTypeHelperImp("foo");
       let expected = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
       typeHelper.addModule("bar", "baz", expected);
 
       // act
-      let actual = typeHelper.findAllChildTypes("baz");
+      let actual = typeHelper.findAllChildTypes("baz", undefined);
 
       // assert
       expect(actual).to.deep.equal(expected);
+    });
+
+    it("should return child types of parent type when the supplied name matches a known module alias and parent type is supplied", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      let expected = [{name: "abc", moduleName: "bar", parentTypeName: "qux"}, {name: "def", moduleName: "bar"}];
+      typeHelper.addModule("bar", "baz", expected);
+
+      // act
+      let actual = typeHelper.findAllChildTypes("baz", "qux");
+
+      // assert
+      expect(actual.length).to.equal(1);
+      expect(actual[0]).to.deep.equal(expected[0]);
     });
   });
 
