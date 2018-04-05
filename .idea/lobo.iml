@@ -9,6 +9,12 @@
       <excludeFolder url="file://$MODULE_DIR$/elm-stuff" />
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/test-result" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-lang/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-lang/tests/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test-extra/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test-extra/tests/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test/tests/elm-stuff" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
     </content>
     <orderEntry type="inheritedJdk" />
