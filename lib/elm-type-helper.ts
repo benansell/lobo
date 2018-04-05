@@ -29,14 +29,19 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
   }
 
   public addDefaultImports(): void {
+    // types not declared in Basics but assumed to exist
+    const unlistedTypes = [{name: "Bool", values: ["False", "True"]}, "Float", "Int"];
+
     // ref: http://package.elm-lang.org/packages/elm-lang/core/latest/
-    this.addDefaultModule("Basics", undefined, [
+    let basicsExposing = [
       "==", "/=", "<", ">", "<=", " >=", " max", "min", {name: "Order", values: ["LT", "EQ", "GT"]}, "compare", "not", "&&", "||",
       "xor", "+", "-", "*", "/", "^", "//", "rem", "%", "negate", "abs", "sqrt", "clamp", "logBase", "e", "pi", "cos", "sin", "tan",
       "acos", "asin", "atan", "atan2", "round", "floor", "ceiling", "truncate", "toFloat", "degrees", "radians", "turns", "toPolar",
       "fromPolar", "isNaN", "isInfinite", "toString", "++", "identity", "always", "<|", "|>", "<<", ">>", "flip", "curry", "uncurry",
       "Never", "never"
-    ]);
+    ];
+    basicsExposing.push(...unlistedTypes);
+    this.addDefaultModule("Basics", undefined, basicsExposing);
     this.addDefaultModule("List", undefined, ["List", "::"]);
     this.addDefaultModule("Maybe", undefined, [{name: "Maybe", values: ["Just", "Nothing"]}]);
     this.addDefaultModule("Result", undefined, [{name: "Result", values: ["Ok", "Err"]}]);

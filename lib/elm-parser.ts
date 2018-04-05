@@ -1,7 +1,7 @@
 import {createLogger, Logger} from "./logger";
 import {CodeLocation, createElmTokenizer, ElmToken, ElmTokenizer, ElmTokenType} from "./elm-tokenizer";
-import {createElmCodeHelper, ElmCodeHelper} from "./elm-code-helper";
-import {createElmTypeHelper, ElmTypeHelper, ElmTypeInfo} from "./elm-type-helper";
+import {makeElmCodeHelper, ElmCodeHelper} from "./elm-code-helper";
+import {makeElmTypeHelper, ElmTypeHelper, ElmTypeInfo} from "./elm-type-helper";
 
 export type ElmNode = ElmImportNode
   | ElmPortNode
@@ -90,12 +90,17 @@ export interface ElmParser {
 
 export class ElmParserImp implements ElmParser {
 
-  private elmTokenizer: ElmTokenizer;
-  private logger: Logger;
+  private readonly elmTokenizer: ElmTokenizer;
+  private readonly logger: Logger;
+  private readonly makeElmCodeHelper: (code: string) => ElmCodeHelper;
+  private readonly makeElmTypeHelper: (moduleName: string) => ElmTypeHelper;
 
-  constructor(elmTokenizer: ElmTokenizer, logger: Logger) {
+  constructor(elmTokenizer: ElmTokenizer, logger: Logger,
+              makeCodeHelper: (code: string) => ElmCodeHelper, makeTypeHelper: (moduleName: string) => ElmTypeHelper) {
     this.elmTokenizer = elmTokenizer;
     this.logger = logger;
+    this.makeElmCodeHelper = makeCodeHelper;
+    this.makeElmTypeHelper = makeTypeHelper;
   }
 
   public convertToLookup(tokens: ElmToken[]): TokenLookup {
@@ -137,17 +142,16 @@ export class ElmParserImp implements ElmParser {
   }
 
   public parseTokens(filePath: string, tokenLookup: TokenLookup): ElmModuleNode | undefined {
-    const moduleToken = tokenLookup[ElmTokenType.Module][0];
-
-    if (!moduleToken) {
-      this.logger.debug("Unable to find module token");
+    if (!tokenLookup[ElmTokenType.Module] || tokenLookup[ElmTokenType.Module].length === 0) {
+      this.logger.debug("Unable to find module token in" + filePath);
       return undefined;
     }
 
-    const typeHelper = createElmTypeHelper(moduleToken.identifier);
+    const moduleToken = tokenLookup[ElmTokenType.Module][0];
+    const typeHelper = this.makeElmTypeHelper(moduleToken.identifier);
     const firstPassResult = this.parseFirstPass(typeHelper, tokenLookup, moduleToken.identifier);
     const children = firstPassResult.complete;
-    const secondPassResult = this.parseSecondPass(firstPassResult.partial, typeHelper);
+    const secondPassResult = this.parseSecondPass(typeHelper, firstPassResult.partial);
     children.push(...secondPassResult);
 
     return this.toModuleNode(filePath, typeHelper, moduleToken, children);
@@ -156,11 +160,11 @@ export class ElmParserImp implements ElmParser {
   public parseFirstPass(typeHelper: ElmTypeHelper, tokenLookup: { [p: number]: ElmToken[] }, moduleName: string): ElmNodeResultList {
     const tokenConverters: Array<[ElmTokenType, (token: ElmToken) => ElmNodeResult<ElmNode>]> = [];
     tokenConverters.push([ElmTokenType.Import, token => this.toImportNode(typeHelper, token)]);
-    tokenConverters.push([ElmTokenType.Type, token => this.toTypeNode(token, typeHelper, moduleName)]);
+    tokenConverters.push([ElmTokenType.Type, token => this.toTypeNode(typeHelper, moduleName, token)]);
     tokenConverters.push([ElmTokenType.TypeAlias, token => this.toTypeAliasNode(token)]);
     tokenConverters.push([ElmTokenType.Port, token => this.toPortNode(token)]);
-    tokenConverters.push([ElmTokenType.TypedModuleFunction, token => this.toTypedModuleFunctionNode(token, typeHelper)]);
-    tokenConverters.push([ElmTokenType.UntypedModuleFunction, token => this.toUntypedModuleFunctionNode(token, typeHelper)]);
+    tokenConverters.push([ElmTokenType.TypedModuleFunction, token => this.toTypedModuleFunctionNode(typeHelper, token)]);
+    tokenConverters.push([ElmTokenType.UntypedModuleFunction, token => this.toUntypedModuleFunctionNode(typeHelper, token)]);
 
     const complete: ElmNode[] = [];
     const partial: ElmNodeResult<ElmNode>[] = [];
@@ -183,7 +187,7 @@ export class ElmParserImp implements ElmParser {
     return {complete, partial};
   }
 
-  public parseSecondPass(partial: ElmNodeResult<ElmNode>[], typeHelper: ElmTypeHelper): ElmNode[] {
+  public parseSecondPass(typeHelper: ElmTypeHelper, partial: ElmNodeResult<ElmNode>[]): ElmNode[] {
     let complete: ElmNode[] = [];
 
     for (let j = 0; j < partial.length; j++) {
@@ -244,19 +248,25 @@ export class ElmParserImp implements ElmParser {
   }
 
   public parseReturnType(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, functionName: string, startIndex: number)
-  : ElmTypeInfo | undefined {
+    : ElmTypeInfo | undefined {
     let nextIndex = startIndex;
-    let lastType: string = "";
+    let returnType: string = "";
+    let previousWord: string = "";
 
     while (nextIndex < codeHelper.maxIndex) {
-      const next = codeHelper.findNextWord(nextIndex, true);
+      const next = codeHelper.findNextWord(nextIndex, true, [" ", "\n", ":"]);
 
       if (next.word !== " " && next.word !== "\n") {
-        if (next.word === functionName) {
-          return typeHelper.resolve(lastType);
+        if (previousWord === ":") {
+          returnType = next.word;
         }
+        if (previousWord === "\n" && next.word === functionName) {
+          return typeHelper.resolve(returnType);
+        }
+      }
 
-        lastType = next.word;
+      if (next.word !== " ") {
+        previousWord = next.word;
       }
 
       nextIndex = next.nextIndex;
@@ -268,7 +278,7 @@ export class ElmParserImp implements ElmParser {
   }
 
   public parseType(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, moduleName: string, parentTypeName: string, startIndex: number)
-  : ElmTypeInfo[] {
+    : ElmTypeInfo[] {
     const typeListStartIndex = codeHelper.findChar(startIndex, "=");
 
     if (!typeListStartIndex) {
@@ -276,11 +286,10 @@ export class ElmParserImp implements ElmParser {
     }
 
     const types: ElmTypeInfo[] = [];
-
     let nextIndex = typeListStartIndex + 1;
     let afterPipe: boolean = true;
 
-    while (nextIndex < codeHelper.maxIndex) {
+    while (nextIndex <= codeHelper.maxIndex) {
       const next = codeHelper.findNextWord(nextIndex, true);
 
       if (next.word !== " " && next.word !== "\n") {
@@ -298,8 +307,7 @@ export class ElmParserImp implements ElmParser {
     return types;
   }
 
-  public parseTypeList(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, moduleName: string, parentTypeName: string | undefined,
-                       startIndex: number): ElmTypeInfo[] {
+  public parseTypeList(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, moduleName: string, startIndex: number): ElmTypeInfo[] {
     const exposingStartIndex = codeHelper.findChar(startIndex, "(");
 
     if (!exposingStartIndex) {
@@ -308,18 +316,18 @@ export class ElmParserImp implements ElmParser {
 
     const types: ElmTypeInfo[] = [];
     let nextIndex = exposingStartIndex + 1;
-    let currentParentTypeName = parentTypeName;
+    let currentParentTypeName = undefined;
 
     while (nextIndex < codeHelper.maxIndex) {
-      let next = codeHelper.findNextWord(nextIndex, true, [" ", "\n", ",", ")"]);
+      let next = codeHelper.findNextWord(nextIndex, true, [" ", "\n", ",", "(", ")"]);
 
       if (next.word !== " " && next.word !== "\n" && next.word !== ",") {
         if (next.word === "(") {
           currentParentTypeName = types[types.length - 1].name;
         } else if (next.word[0] === ")") {
-          currentParentTypeName = parentTypeName;
+          currentParentTypeName = undefined;
         } else if (currentParentTypeName !== undefined && next.word === "..") {
-          const allTypes = typeHelper.findAllChildTypes(currentParentTypeName);
+          const allTypes = typeHelper.findAllChildTypes(moduleName, currentParentTypeName);
           types.push(...allTypes);
         } else {
           types.push(typeHelper.resolve(next.word, currentParentTypeName, moduleName));
@@ -372,66 +380,66 @@ export class ElmParserImp implements ElmParser {
     }
 
     typeHelper.addModule(result.name, result.alias);
-    const codeHelper = createElmCodeHelper(token.code);
-    const exposing = this.parseTypeList(codeHelper, typeHelper, result.name, undefined, startOffset);
+    const codeHelper = this.makeElmCodeHelper(token.code);
+    const exposing = this.parseTypeList(codeHelper, typeHelper, result.name, startOffset);
     let node = {...this.toBaseNode(token, result.name), alias: result.alias, exposing: exposing};
 
-    return { codeHelper, node };
+    return {codeHelper, node};
   }
 
   public toModuleNode(filePath: string, typeHelper: ElmTypeHelper, token: ElmToken, children: ElmNode[]): ElmModuleNode {
-    const codeHelper = createElmCodeHelper(token.code);
-    const exposing = this.parseTypeList(codeHelper, typeHelper, token.identifier, undefined, 8 + token.identifier.length);
+    const codeHelper = this.makeElmCodeHelper(token.code);
+    const exposing = this.parseTypeList(codeHelper, typeHelper, token.identifier, 8 + token.identifier.length);
 
-    return { ...this.toBaseNode(token, token.identifier), children: children, exposing: exposing, filePath: filePath };
+    return {...this.toBaseNode(token, token.identifier), children: children, exposing: exposing, filePath: filePath};
   }
 
   public toPortNode(token: ElmToken): ElmNodeResult<ElmPortNode> {
-    const codeHelper = createElmCodeHelper(token.code);
-    const node = { ...this.toBaseNode(token, token.identifier) };
+    const codeHelper = this.makeElmCodeHelper(token.code);
+    const node = {...this.toBaseNode(token, token.identifier)};
 
-    return { codeHelper, node };
+    return {codeHelper, node};
   }
 
-  public toTypeNode(token: ElmToken, typeHelper: ElmTypeHelper, moduleName: string): ElmNodeResult<ElmTypeNode> {
-    const codeHelper = createElmCodeHelper(token.code);
-    const types = this.parseType(codeHelper, typeHelper, moduleName, token.identifier, 8 + token.identifier.length);
+  public toTypeNode(typeHelper: ElmTypeHelper, moduleName: string, token: ElmToken): ElmNodeResult<ElmTypeNode> {
+    const codeHelper = this.makeElmCodeHelper(token.code);
+    const types = this.parseType(codeHelper, typeHelper, moduleName, token.identifier, 5 + token.identifier.length);
     let node: ElmTypeNode = {...this.toBaseNode(token, token.identifier), dependencies: types};
 
-    return { codeHelper, node };
+    return {codeHelper, node};
   }
 
   public toTypeAliasNode(token: ElmToken): ElmNodeResult<ElmTypeAliasNode> {
-    const codeHelper = createElmCodeHelper(token.code);
-    const node: ElmTypeAliasNode = { ...this.toBaseNode(token, token.identifier) };
+    const codeHelper = this.makeElmCodeHelper(token.code);
+    const node: ElmTypeAliasNode = {...this.toBaseNode(token, token.identifier)};
 
-    return { codeHelper, node };
+    return {codeHelper, node};
   }
 
-  public toTypedModuleFunctionNode(token: ElmToken, typeHelper: ElmTypeHelper)
-  : ElmNodeResult<ElmTypedModuleFunctionNode> | ElmNodeResult<ElmUntypedModuleFunctionNode> {
-    const codeHelper = createElmCodeHelper(token.code);
-    const returnType = this.parseReturnType(codeHelper, typeHelper, token.identifier, token.identifier.length + 1);
+  public toTypedModuleFunctionNode(typeHelper: ElmTypeHelper, token: ElmToken)
+    : ElmNodeResult<ElmTypedModuleFunctionNode> | ElmNodeResult<ElmUntypedModuleFunctionNode> {
+    const codeHelper = this.makeElmCodeHelper(token.code);
+    const returnType = this.parseReturnType(codeHelper, typeHelper, token.identifier, token.identifier.length);
 
     if (!returnType) {
-      return this.toUntypedModuleFunctionNode(token, typeHelper);
+      return this.toUntypedModuleFunctionNode(typeHelper, token);
     }
 
     typeHelper.resolve(token.identifier);
     let node = {...this.toBaseNode(token, token.identifier), dependencies: [], returnType: returnType};
 
-    return { codeHelper, node };
+    return {codeHelper, node};
   }
 
-  public toUntypedModuleFunctionNode(token: ElmToken, typeHelper: ElmTypeHelper): ElmNodeResult<ElmUntypedModuleFunctionNode> {
-    const codeHelper = createElmCodeHelper(token.code);
+  public toUntypedModuleFunctionNode(typeHelper: ElmTypeHelper, token: ElmToken): ElmNodeResult<ElmUntypedModuleFunctionNode> {
+    const codeHelper = this.makeElmCodeHelper(token.code);
     typeHelper.resolve(token.identifier);
-    let node: ElmUntypedModuleFunctionNode = { ...this.toBaseNode(token, token.identifier), dependencies: [] };
+    let node: ElmUntypedModuleFunctionNode = {...this.toBaseNode(token, token.identifier), dependencies: []};
 
-    return { codeHelper, node };
+    return {codeHelper, node};
   }
 }
 
 export function createElmParser(): ElmParser {
-  return new ElmParserImp(createElmTokenizer(), createLogger());
+  return new ElmParserImp(createElmTokenizer(), createLogger(), makeElmCodeHelper, makeElmTypeHelper);
 }
