@@ -645,6 +645,18 @@ describe("lib elm-parser", () => {
       expect(actual).to.be.undefined;
     });
 
+    it("should return undefined when there is no semicolon after the function name is repeated on the next line", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo\nfoo");
+      let typeHelper = makeElmTypeHelper("bar");
+
+      // act
+      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
     it("should return undefined when there is a semicolon after the function name and no repeat of function name", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo : baz");
@@ -1188,6 +1200,22 @@ describe("lib elm-parser", () => {
 
       // assert
       expect(mockMakeElmCodeHelper.alwaysReturned(actual.codeHelper)).to.be.true;
+    });
+
+    it("should return an untyped module function node for the supplied token when the return type cannot be determined", () => {
+      // arrange
+      let code = "foo\nfoo = 123";
+      let dependencies = [];
+      let start = {columnNumber: 12, lineNumber: 34};
+      let end = {columnNumber: 56, lineNumber: 78};
+      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      let typeHelper = makeElmTypeHelper("abc");
+
+      // act
+      let actual = parserImp.toTypedModuleFunctionNode(typeHelper, token);
+
+      // assert
+      expect(actual.node).to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, dependencies});
     });
 
     it("should return an typed module function node for the supplied token", () => {

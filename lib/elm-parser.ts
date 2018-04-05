@@ -260,7 +260,8 @@ export class ElmParserImp implements ElmParser {
         if (previousWord === ":") {
           returnType = next.word;
         }
-        if (previousWord === "\n" && next.word === functionName) {
+
+        if (returnType !== "" && previousWord === "\n" && next.word === functionName) {
           return typeHelper.resolve(returnType);
         }
       }
@@ -422,6 +423,7 @@ export class ElmParserImp implements ElmParser {
     const returnType = this.parseReturnType(codeHelper, typeHelper, token.identifier, token.identifier.length);
 
     if (!returnType) {
+      token.tokenType = ElmTokenType.UntypedModuleFunction;
       return this.toUntypedModuleFunctionNode(typeHelper, token);
     }
 
