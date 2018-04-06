@@ -163,7 +163,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logResults = Sinon.spy();
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
 
       // assert
@@ -179,7 +179,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       reporter.logResults = Sinon.spy();
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
 
       // assert
@@ -196,7 +196,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       (<SinonStub>reporter.logResults).throws(expected);
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: {}}));
 
       // assert

@@ -13,7 +13,7 @@ export interface ElmCodeHelper {
   codeBetween(startIndex: number, endIndex: number): string;
   findChar(startIndex: number, searchChar: string, includeComments?: boolean): number | undefined;
   findClose(startIndex: number, open: string, close: string, includeComments?: boolean): number | undefined;
-  findEndComment(wordResult: FindWordResult): number | undefined;
+  findEndComment(wordResult: FindWordResult): number;
   findNextWord(startIndex: number, skipComments?: boolean, delimiters?: string[]): FindWordResult;
   findUntilEndOfBlock(startIndex: number, wordResult: FindWordResult): FindWordResult | undefined;
   isWordComment(word: string): boolean;

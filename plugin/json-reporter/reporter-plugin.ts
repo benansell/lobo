@@ -40,8 +40,8 @@ export class JsonReporter implements plugin.PluginReporter {
     this.logger.log(JSON.stringify(result));
   }
 
-  public finish(results: plugin.TestRun): Bluebird<object> {
-    return new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+  public finish(results: plugin.TestRun): Bluebird<void> {
+    return new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       let toFile: boolean = program.reportFile !== undefined && program.reportFile !== null && program.reportFile.length > 0;
       let data = this.toString(results, toFile);
 

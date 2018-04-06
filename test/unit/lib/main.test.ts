@@ -7,6 +7,7 @@ import * as Sinon from "sinon";
 import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createLobo, Lobo, LoboImp} from "../../../lib/main";
+import {Analyzer} from "../../../lib/analyzer";
 import {Builder} from "../../../lib/builder";
 import {ElmPackageHelper} from "../../../lib/elm-package-helper";
 import {Logger} from "../../../lib/logger";
@@ -25,6 +26,8 @@ describe("lib main", () => {
   let rewiredMain = rewire("../../../lib/main");
   let rewiredImp;
   let lobo: LoboImp;
+  let mockAnalyzer: Analyzer;
+  let mockBuild: Sinon.SinonStub;
   let mockBuilder: Builder;
   let mockExit: () => void;
   let mockHelper: ElmPackageHelper;
@@ -38,7 +41,9 @@ describe("lib main", () => {
     mockExit = Sinon.stub();
     revertExit = rewiredMain.__set__({process: {exit: mockExit}});
     rewiredImp = rewiredMain.__get__("LoboImp");
-    mockBuilder = <Builder> {build: Sinon.stub()};
+    mockAnalyzer = <Analyzer> {analyze: Sinon.stub()};
+    mockBuild = Sinon.stub();
+    mockBuilder = <Builder> {build: mockBuild};
     mockHelper = <ElmPackageHelper><{}> {read: Sinon.stub()};
     mockLogger = <Logger> {
       debug: Sinon.stub(), error: Sinon.stub(), info: Sinon.stub(),
@@ -55,7 +60,7 @@ describe("lib main", () => {
       unsafeLoad: Sinon.stub()
     };
 
-    lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
+    lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
   });
 
   afterEach(() => {
@@ -161,7 +166,7 @@ describe("lib main", () => {
   });
 
   describe("launch", () => {
-    it("should call builder.build with the config", () => {
+    it("should call builder.build with the context", () => {
       // arrange
       let expected = <LoboConfig> {};
 
@@ -170,7 +175,7 @@ describe("lib main", () => {
 
       // assert
       actual.then(() => {
-        expect(mockBuilder.build).to.have.been.calledWith(expected, Sinon.match.any);
+        expect(mockBuilder.build).to.have.been.calledWith(Sinon.match(x => x.config === expected), Sinon.match.any);
       });
     });
 
@@ -198,7 +203,7 @@ describe("lib main", () => {
 
       // assert
       actual.then(() => {
-        expect(mockRunner.run).to.have.been.calledWith(expected);
+        expect(mockRunner.run).to.have.been.calledWith(Sinon.match(x => x.config === expected));
       });
     });
 
@@ -302,7 +307,7 @@ describe("lib main", () => {
     it("should call launch when waiting is true", () => {
       // arrange
       let expected = <LoboConfig> {};
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, true);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, true);
       lobo.launch = Sinon.spy();
 
       // act
@@ -315,7 +320,7 @@ describe("lib main", () => {
     it("should not call launch when waiting is false", () => {
       // arrange
       let expected = <LoboConfig> {};
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -411,7 +416,7 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -432,7 +437,7 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, true, true, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, true, true, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -453,7 +458,7 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, true, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, true, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -1147,7 +1152,7 @@ describe("lib main", () => {
     it("should log an error with the specified test file when the specified test file cannot be found in the test directory", () => {
       // arrange
       let revert = rewiredMain.__with__({
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
+        path: {basename: () => "base", dirname: () => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
         program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
         shelljs: {test: () => false}
       });
@@ -1162,7 +1167,7 @@ describe("lib main", () => {
     it("should log an error with the specified test directory when the specified test file cannot be found in the test directory", () => {
       // arrange
       let revert = rewiredMain.__with__({
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
+        path: {basename: () => "base", dirname: () => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
         program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
         shelljs: {test: () => false}
       });
@@ -1177,7 +1182,7 @@ describe("lib main", () => {
     it("should call process.exit with an exitCode of 1 when the Tests.elm file cannot be found in the test directory", () => {
       // arrange
       let revert = rewiredMain.__with__({
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
+        path: {basename: () => "base", dirname: () => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
         program: {compiler: "foo", testDirectory: "bar", testFile: "baz-Tests.elm"},
         shelljs: {test: () => false}
       });

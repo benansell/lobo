@@ -225,7 +225,7 @@ describe("plugin json-reporter reporter-plugin", () => {
       (<SinonStub>reporter.toString).returns("bar");
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
 
       // assert
@@ -244,7 +244,7 @@ describe("plugin json-reporter reporter-plugin", () => {
       (<SinonStub>reporter.toString).returns("baz");
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
 
       // assert
@@ -263,7 +263,7 @@ describe("plugin json-reporter reporter-plugin", () => {
       (<SinonStub>reporter.toString).returns("baz");
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: expected}));
 
       // assert
@@ -282,7 +282,7 @@ describe("plugin json-reporter reporter-plugin", () => {
       (<SinonStub>reporter.toString).returns("baz");
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: {}}));
 
       // assert

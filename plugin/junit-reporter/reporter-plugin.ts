@@ -145,8 +145,8 @@ export class JUnitReporter implements plugin.PluginReporter {
     this.standardConsole.update(result);
   }
 
-  public finish(results: plugin.TestRun): Bluebird<object> {
-    let steps: Array<() => Bluebird<object>> = [];
+  public finish(results: plugin.TestRun): Bluebird<void> {
+    let steps: Array<() => Bluebird<void>> = [];
     steps.push(() => this.standardConsole.finish(results));
 
     steps.push(() => {
@@ -155,7 +155,8 @@ export class JUnitReporter implements plugin.PluginReporter {
       return this.write(program.reportFile, measuredRoot);
     });
 
-    return Bluebird.mapSeries(steps, (item: () => Bluebird<object>) => item());
+    return Bluebird.mapSeries(steps, (item: () => Bluebird<void>) => item())
+      .return();
   }
 
   public writeResult(writeLine: WriteLine, measuredRoot: MeasuredNode): void {
@@ -299,8 +300,8 @@ export class JUnitReporter implements plugin.PluginReporter {
     writeLine(`${padding}</testcase>`);
   }
 
-  public write(reportPath: string, measuredRoot: MeasuredNode): Bluebird<object> {
-    return new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+  public write(reportPath: string, measuredRoot: MeasuredNode): Bluebird<void> {
+    return new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       try {
         let stream = fs.createWriteStream(reportPath);
         let writeLine = this.createLineWriter(stream);

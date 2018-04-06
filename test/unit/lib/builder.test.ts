@@ -6,7 +6,7 @@ import * as Sinon from "sinon";
 import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
 import {Builder, BuilderImp, createBuilder} from "../../../lib/builder";
-import {Dependencies, LoboConfig, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
+import {Dependencies, ExecutionContext, LoboConfig, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
 import {Logger} from "../../../lib/logger";
 import {ElmPackageHelper, ElmPackageJson} from "../../../lib/elm-package-helper";
 import * as Bluebird from "bluebird";
@@ -63,13 +63,14 @@ describe("lib builder", () => {
     it("should not call ensureElmPackageExists when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -80,13 +81,14 @@ describe("lib builder", () => {
     it("should not call syncTestElmPackage when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -97,13 +99,14 @@ describe("lib builder", () => {
     it("should call installDependencies when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -114,13 +117,14 @@ describe("lib builder", () => {
     it("should call make when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: true};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -131,13 +135,14 @@ describe("lib builder", () => {
     it("should call ensureElmPackageExists with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -148,13 +153,14 @@ describe("lib builder", () => {
     it("should call ensureElmPackageExists with the base directory of '.' and location 'current'", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.stub();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -165,13 +171,14 @@ describe("lib builder", () => {
     it("should call ensureElmPackageExists with the supplied test directory and location of 'test", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -182,13 +189,14 @@ describe("lib builder", () => {
     it("should call syncTestElmPackage with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -199,13 +207,14 @@ describe("lib builder", () => {
     it("should call syncTestElmPackage with a base directory of '.'", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -216,13 +225,14 @@ describe("lib builder", () => {
     it("should call syncTestElmPackage with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -233,13 +243,14 @@ describe("lib builder", () => {
     it("should call syncTestElmPackage with the supplied test file directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz/Tests.elm");
+      let actual = builder.build(context, "bar", "baz/Tests.elm");
 
       // assert
       actual.then(() => {
@@ -250,13 +261,14 @@ describe("lib builder", () => {
     it("should call installDependencies with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -267,13 +279,14 @@ describe("lib builder", () => {
     it("should call installDependencies with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -284,13 +297,14 @@ describe("lib builder", () => {
     it("should call make with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -301,13 +315,14 @@ describe("lib builder", () => {
     it("should call make with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {testFile: "foo", noUpdate: false};
+      let context = <ExecutionContext> {config};
       builder.ensureElmPackageExists = Sinon.stub();
       builder.syncTestElmPackage = Sinon.stub();
       builder.installDependencies = Sinon.stub();
       builder.make = Sinon.spy();
 
       // act
-      let actual = builder.build(config, "bar", "baz");
+      let actual = builder.build(context, "bar", "baz");
 
       // assert
       actual.then(() => {
@@ -333,7 +348,7 @@ describe("lib builder", () => {
       let config = <LoboConfig> {testFile: "foo", prompt: false};
 
       // act
-      let actual: Bluebird<object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = builder.ensureElmPackageExists(config, "foo", "bar"));
 
       // assert

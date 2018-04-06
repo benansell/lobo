@@ -107,7 +107,7 @@ describe("lib reporter", () => {
       let expected = <TestReportRoot>{runType: "NORMAL"};
       reporter.processResults = Sinon.stub();
       (<SinonStub>reporter.processResults).returns(<TestRun>{summary: {}});
-      (<SinonStub>mockReporterPlugin.finish).returns({then: Sinon.stub()});
+      (<SinonStub>mockReporterPlugin.finish).returns({then: Sinon.stub(), return: Sinon.stub()});
 
       // act
       reporter.finish(expected);

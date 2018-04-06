@@ -359,7 +359,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       (<SinonStub>reporter.write).resolves();
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: {runType: "NORMAL"}}));
 
       // assert
@@ -378,7 +378,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       (<SinonStub>reporter.write).resolves();
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: {}}));
 
       // assert

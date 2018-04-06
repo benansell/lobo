@@ -8,7 +8,7 @@ import {SinonStub} from "sinon";
 import {Logger} from "../../../lib/logger";
 import {createRunner, NodeProcessStdout, Runner, RunnerImp} from "../../../lib/runner";
 import {Reporter} from "../../../lib/reporter";
-import {LoboConfig, PluginReporter, PluginTestFramework, ProgressReport, TestReportRoot} from "../../../lib/plugin";
+import {ExecutionContext, LoboConfig, PluginReporter, PluginTestFramework, ProgressReport, TestReportRoot} from "../../../lib/plugin";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -266,6 +266,7 @@ describe("lib runner", () => {
   describe("makeTestRunComplete", () => {
     it("should return a function that calls reporter.finish with the supplied results", () => {
       // arrange
+      let context = <ExecutionContext> {config: {}};
       mockReporter.finish = Sinon.stub();
       (<SinonStub>mockReporter.finish).returns({
         then: func => {
@@ -276,7 +277,7 @@ describe("lib runner", () => {
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, context, mockReporter, mockResolve, mockReject);
       actual(expected);
 
       // assert
@@ -285,6 +286,7 @@ describe("lib runner", () => {
 
     it("should return a function that calls resolve when reporter.finish is true", () => {
       // arrange
+      let context = <ExecutionContext> {config: {}};
       mockReporter.finish = Sinon.stub();
       (<SinonStub>mockReporter.finish).returns({
         then: func => {
@@ -295,7 +297,7 @@ describe("lib runner", () => {
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, context, mockReporter, mockResolve, mockReject);
       actual(expected);
 
       // assert
@@ -304,6 +306,7 @@ describe("lib runner", () => {
 
     it("should return a function that calls reject when reporter.finish throws error", () => {
       // arrange
+      let context = <ExecutionContext> {config: {}};
       mockReporter.finish = Sinon.stub();
       (<SinonStub>mockReporter.finish).returns({
         then: () => {
@@ -313,7 +316,7 @@ describe("lib runner", () => {
       let expected = <TestReportRoot> {runType: "NORMAL"};
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, context, mockReporter, mockResolve, mockReject);
       actual(expected);
 
       // assert
@@ -322,6 +325,7 @@ describe("lib runner", () => {
 
     it("should return a function that set stdout.write to originalNodeProcessWrite when an error is thrown", () => {
       // arrange
+      let context = <ExecutionContext> {config: {}};
       mockReporter.finish = Sinon.stub();
       (<SinonStub>mockReporter.finish).returns({
         then: () => {
@@ -334,7 +338,7 @@ describe("lib runner", () => {
       RunnerImp.originalNodeProcessWrite = mockWrite;
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, context, mockReporter, mockResolve, mockReject);
       actual(expected);
 
       // assert
@@ -343,6 +347,7 @@ describe("lib runner", () => {
 
     it("should return a function that resets the stdout.write to the originalNodeProcessWrite value", () => {
       // arrange
+      let context = <ExecutionContext> {config: {}};
       let original = Sinon.spy();
       RunnerImp.originalNodeProcessWrite = original;
       mockReporter.finish = Sinon.stub();
@@ -354,7 +359,7 @@ describe("lib runner", () => {
       });
 
       // act
-      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, mockReporter, mockResolve, mockReject);
+      let actual = RunnerImp.makeTestRunComplete(mockStdout, mockLogger, context, mockReporter, mockResolve, mockReject);
       actual(<TestReportRoot> {runType: "NORMAL"});
 
       // assert
@@ -422,8 +427,12 @@ describe("lib runner", () => {
     });
 
     it("should return a promise to run the tests", () => {
+      // arrange
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let context = <ExecutionContext> {config};
+
       // act
-      let actual = runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});
+      let actual = runner.run(context);
 
       // assert
       expect(actual.isResolved()).to.be.false;
@@ -431,6 +440,8 @@ describe("lib runner", () => {
 
     it("should return a promise to is completed when the test run is complete", () => {
       // arrange
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let context = <ExecutionContext> {config};
       let complete = undefined;
       let end = (x) => complete = x;
       let worker = Sinon.stub();
@@ -452,7 +463,7 @@ describe("lib runner", () => {
       });
 
       // act
-      let actual = runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});
+      let actual = runner.run(context);
       complete(<TestReportRoot>{});
 
       // assert
@@ -460,40 +471,59 @@ describe("lib runner", () => {
     });
 
     it("should load the elm test app", () => {
+      // arrange
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let context = <ExecutionContext> {config};
+
       // act
-      runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});
+      runner.run(context);
 
       // assert
       expect(runner.loadElmTestApp).to.have.been.calledWith("./foo");
     });
 
     it("should subscribe to begin", () => {
+      // arrange
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let context = <ExecutionContext> {config};
+
       // act
-      runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});
+      runner.run(context);
 
       // assert
       expect(mockBegin).to.have.been.called;
     });
 
     it("should subscribe to end", () => {
+      // arrange
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let context = <ExecutionContext> {config};
+
       // act
-      runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});
+      runner.run(context);
 
       // assert
       expect(mockBegin).to.have.been.called;
     });
 
     it("should subscribe to progress", () => {
+      // arrange
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let context = <ExecutionContext> {config};
+
       // act
-      runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework});
+      runner.run(context);
 
       // assert
       expect(mockBegin).to.have.been.called;
     });
 
     it("should call runTests with the supplied reportProgress value", () => {
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework, reportProgress: true};
+      let context = <ExecutionContext> {config};
+
       // act
-      runner.run(<LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework, reportProgress: true});
+      runner.run(context);
 
       // assert
       expect(mockRunTests).to.have.been.calledWith({reportProgress: true});

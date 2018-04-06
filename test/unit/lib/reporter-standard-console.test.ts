@@ -99,7 +99,7 @@ describe("lib reporter-standard-console", () => {
       let summary = <TestRunSummary> {passedCount: 123};
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: summary}));
 
       // assert
@@ -115,7 +115,7 @@ describe("lib reporter-standard-console", () => {
       let failState = <TestRunFailState> {only: {exists: true}};
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{failState: failState}));
 
       // assert
@@ -130,7 +130,7 @@ describe("lib reporter-standard-console", () => {
       let summary = <TestRunSummary> {passedCount: 123};
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: summary}));
 
       // assert
@@ -145,7 +145,7 @@ describe("lib reporter-standard-console", () => {
       let failState = <TestRunFailState> {only: {exists: true}};
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: summary, failState: failState}));
 
       // assert
@@ -160,7 +160,7 @@ describe("lib reporter-standard-console", () => {
       (<SinonStub>reporter.logSummary).throws(expected);
 
       // act
-      let actual: Bluebird<Object> = undefined;
+      let actual: Bluebird<void> = undefined;
       revert(() => actual = reporter.finish(<TestRun>{summary: {}}));
 
       // assert

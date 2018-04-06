@@ -12,6 +12,7 @@ import {createLogger, Logger} from "./logger";
 import {createRunner, Runner} from "./runner";
 import {createUtil, Util} from "./util";
 import {
+  ExecutionContext,
   LoboConfig, PluginConfig, PluginReporter, PluginReporterWithConfig, PluginTestFrameworkConfig,
   PluginTestFrameworkWithConfig
 } from "./plugin";
@@ -111,22 +112,23 @@ export class LoboImp implements Lobo {
   public launch(partialConfig: PartialLoboConfig): Bluebird<void> {
     partialConfig.testFile = LoboImp.generateTestFileName();
     let config = <LoboConfig> partialConfig;
+    let context = <ExecutionContext> { config: <LoboConfig> partialConfig, testAnalysis: [] };
 
     let stages = [
-      () => this.builder.build(config, program.testDirectory, program.testFile),
-      () => this.runner.run(config)
+      (resultContext: ExecutionContext) => this.builder.build(resultContext, testDirectory, program.testFile),
+      (resultContext: ExecutionContext) => this.runner.run(resultContext)
     ];
 
-    return Bluebird.mapSeries(stages, (item: () => Bluebird<object>) => {
-      return item();
+    return Bluebird.mapSeries(stages, (item: (context: ExecutionContext) => Bluebird<ExecutionContext>) => {
+      return item(context);
     }).then(() => {
       this.logger.debug("Test execution complete");
       if (program.watch) {
-        this.done(config);
+        this.done(context.config);
       }
     }).catch((err) => {
       if (err instanceof ReferenceError || err instanceof TypeError) {
-        this.handleUncaughtException(err, config);
+        this.handleUncaughtException(err, context.config);
         return;
       } else if (/Ran into a `Debug.crash` in module/.test(err)) {
         this.logger.error(err);
@@ -135,7 +137,7 @@ export class LoboImp implements Lobo {
       }
 
       if (program.watch) {
-        this.done(config);
+        this.done(context.config);
       } else {
         process.exit(1);
       }

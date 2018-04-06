@@ -1,7 +1,25 @@
 import * as Bluebird from "bluebird";
 
+export interface AnalyzedModule {
+  filePath: string;
+  name: string | undefined;
+  tests: AnalyzedTest[];
+}
+
+export interface AnalyzedTest {
+  exposed: boolean;
+  columnNumber: number;
+  lineNumber: number;
+  name: string;
+}
+
 export interface Dependencies {
   [index: string]: string;
+}
+
+export interface ExecutionContext {
+  config: LoboConfig;
+  testAnalysis: AnalyzedModule[];
 }
 
 export interface FailureMessage {
@@ -50,7 +68,7 @@ export interface PluginOption {
 
 export interface PluginReporter {
   init(testCount: number): void;
-  finish(results: TestRun): Bluebird<object>;
+  finish(results: TestRun): Bluebird<void>;
   runArgs(args: RunArgs): void;
   update(result: ProgressReport): void;
 }
@@ -76,7 +94,7 @@ export type ProgressReport =
 
 export type Reject = (reason?: Error) => void;
 
-export type Resolve = (data?: object) => void;
+export type Resolve<T> = (data?: T) => void;
 
 export type ResultType =
   "FAILED"

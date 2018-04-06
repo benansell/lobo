@@ -72,11 +72,11 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     this.standardConsole.update(result);
   }
 
-  public finish(results: plugin.TestRun): Bluebird<object> {
-    let steps: Array<() => Bluebird<object>> = [];
+  public finish(results: plugin.TestRun): Bluebird<void> {
+    let steps: Array<() => Bluebird<void>> = [];
     steps.push(() => this.standardConsole.finish(results));
 
-    steps.push(() => new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+    steps.push(() => new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       try {
         if (!program.quiet) {
           this.logResults(results.summary);
@@ -89,7 +89,8 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       }
     }));
 
-    return Bluebird.mapSeries(steps, (item: () => Bluebird<object>) => item());
+    return Bluebird.mapSeries(steps, (item: () => Bluebird<void>) => item())
+      .return();
   }
 
   public sortItemsByLabel(items: LeafItem[]): LeafItem[] {
