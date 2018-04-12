@@ -4,11 +4,13 @@ import * as chai from "chai";
 import rewire = require("rewire");
 import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
-import {createElmParser, ElmNode, ElmNodeResult, ElmNodeType, ElmParser, ElmParserImp} from "../../../lib/elm-parser";
+import {createElmParser, ElmNodeResult, ElmParser, ElmParserImp} from "../../../lib/elm-parser";
 import {ElmToken, ElmTokenizer, ElmTokenType} from "../../../lib/elm-tokenizer";
 import {Logger} from "../../../lib/logger";
 import {ElmTypeHelper, makeElmTypeHelper} from "../../../lib/elm-type-helper";
 import {ElmCodeHelper, makeElmCodeHelper} from "../../../lib/elm-code-helper";
+import {ElmNode, ElmNodeType} from "../../../lib/plugin";
+import {createElmNodeHelper, ElmNodeHelper} from "../../../lib/elm-node-helper";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -17,6 +19,7 @@ describe("lib elm-parser", () => {
   let RewiredParser = rewire("../../../lib/elm-parser");
   let parserImp: ElmParserImp;
   let mockLogger: Logger;
+  let mockNodeHelper: ElmNodeHelper;
   let mockTokenizer: ElmTokenizer;
   let mockTokenize: Sinon.SinonStub;
   let mockMakeElmCodeHelper: Sinon.SinonSpy;
@@ -26,12 +29,13 @@ describe("lib elm-parser", () => {
     let rewiredImp = RewiredParser.__get__("ElmParserImp");
     mockLogger = <Logger> {};
     mockLogger.debug = Sinon.spy();
+    mockNodeHelper = createElmNodeHelper();
     mockTokenizer = <ElmTokenizer> {};
     mockTokenize = Sinon.stub();
     mockTokenizer.tokenize = mockTokenize;
     mockMakeElmCodeHelper = Sinon.spy(makeElmCodeHelper);
     mockMakeElmTypeHelper = Sinon.stub();
-    parserImp = new rewiredImp(mockTokenizer, mockLogger, mockMakeElmCodeHelper, mockMakeElmTypeHelper);
+    parserImp = new rewiredImp(mockNodeHelper, mockTokenizer, mockLogger, mockMakeElmCodeHelper, mockMakeElmTypeHelper);
   });
 
   describe("createElmParser", () => {
@@ -64,122 +68,6 @@ describe("lib elm-parser", () => {
     });
   });
 
-  describe("isFunctionNode", () => {
-    it("should return false when the node is not a function node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.Import;
-
-      // act
-      let actual = parserImp.isFunctionNode(node);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-
-    it("should return true when the node is a typed module function node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.TypedModuleFunction;
-
-      // act
-      let actual = parserImp.isFunctionNode(node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when the node is an untyped module function node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.UntypedModuleFunction;
-
-      // act
-      let actual = parserImp.isFunctionNode(node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-  });
-
-  describe("isImportNode", () => {
-    it("should return false when the node is not an import node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.Unknown;
-
-      // act
-      let actual = parserImp.isImportNode(node);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-
-    it("should return true when the node is an import node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.Import;
-
-      // act
-      let actual = parserImp.isImportNode(node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-  });
-
-  describe("isTypedModuleFunctionNode", () => {
-    it("should return false when the node is not a typed module function node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.Unknown;
-
-      // act
-      let actual = parserImp.isTypedModuleFunctionNode(node);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-
-    it("should return true when the node is a typed module function node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.TypedModuleFunction;
-
-      // act
-      let actual = parserImp.isTypedModuleFunctionNode(node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-  });
-
-  describe("isUntypedModuleFunctionNode", () => {
-    it("should return false when the node is not an untyped module function node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.Unknown;
-
-      // act
-      let actual = parserImp.isUntypedModuleFunctionNode(node);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-
-    it("should return true when the node is an untyped module function node", () => {
-      // arrange
-      let node = <ElmNode> {};
-      node.nodeType = ElmNodeType.UntypedModuleFunction;
-
-      // act
-      let actual = parserImp.isUntypedModuleFunctionNode(node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-  });
-
   describe("parse", () => {
     it("should call ElmTokenizer.tokenize with the supplied file path", () => {
       // arrange
@@ -207,11 +95,27 @@ describe("lib elm-parser", () => {
       expect(mockConvertToLookup).to.have.been.calledWith(expected);
     });
 
-    it("should call parseTokens with the lookup returned from convertToLookup", () => {
+    it("should return undefined when there are no module tokens", () => {
       // arrange
-      mockTokenize.returns([{identifier: "foo", tokenType: ElmTokenType.Comment}]);
+      mockTokenize.returns([{identifier: "foo", tokenType: ElmTokenType.Module}]);
       let mockConvertToLookup = Sinon.mock();
       let expected = {};
+      mockConvertToLookup.returns(expected);
+      parserImp.convertToLookup = mockConvertToLookup;
+
+      // act
+      let actual = parserImp.parse( "foo");
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should call parseTokens with the lookup returned from convertToLookup", () => {
+      // arrange
+      mockTokenize.returns([{identifier: "foo", tokenType: ElmTokenType.Module}]);
+      let mockConvertToLookup = Sinon.mock();
+      let expected = {};
+      expected[ElmTokenType.Module] = {};
       mockConvertToLookup.returns(expected);
       parserImp.convertToLookup = mockConvertToLookup;
       parserImp.parseTokens = Sinon.spy();
@@ -220,19 +124,11 @@ describe("lib elm-parser", () => {
       parserImp.parse("foo");
 
       // assert
-      expect(parserImp.parseTokens).to.have.been.calledWith("foo", expected);
+      expect(parserImp.parseTokens).to.have.been.calledWith(expected);
     });
   });
 
   describe("parseTokens", () => {
-    it("should return undefined when there are no module tokens", () => {
-      // act
-      let actual = parserImp.parseTokens("foo", {});
-
-      // assert
-      expect(actual).to.be.undefined;
-    });
-
     it("should return module node when module token exists", () => {
       // arrange
       let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
@@ -240,12 +136,11 @@ describe("lib elm-parser", () => {
       tokenLookup[ElmTokenType.Module] = [moduleToken];
 
       // act
-      let actual = parserImp.parseTokens("foo", tokenLookup);
+      let actual = parserImp.parseTokens(tokenLookup);
 
       // assert
       expect(actual.nodeType).to.equal(ElmNodeType.Module);
       expect(actual.name).to.equal("bar");
-      expect(actual.filePath).to.equal("foo");
     });
 
     it("should call makeElmTypeHelper with the module token identifier", () => {
@@ -255,7 +150,7 @@ describe("lib elm-parser", () => {
       tokenLookup[ElmTokenType.Module] = [moduleToken];
 
       // act
-      parserImp.parseTokens("foo", tokenLookup);
+      parserImp.parseTokens(tokenLookup);
 
       // assert
       expect(mockMakeElmTypeHelper).to.have.been.calledWith("bar");
@@ -273,7 +168,7 @@ describe("lib elm-parser", () => {
       parserImp.parseFirstPass = mockParseFirstPass;
 
       // act
-      parserImp.parseTokens("foo", tokenLookup);
+      parserImp.parseTokens(tokenLookup);
 
       // assert
       expect(mockParseFirstPass).to.have.been.calledWith(typeHelper, tokenLookup, "bar");
@@ -294,7 +189,7 @@ describe("lib elm-parser", () => {
       parserImp.parseSecondPass = mockParseSecondPass;
 
       // act
-      parserImp.parseTokens("foo", tokenLookup);
+      parserImp.parseTokens(tokenLookup);
 
       // assert
       expect(mockParseSecondPass).to.have.been.calledWith(typeHelper, expected);
@@ -1053,10 +948,10 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toModuleNode("baz", typeHelper, token, children);
+      let actual = parserImp.toModuleNode(typeHelper, token, children);
 
       // assert
-      expect(actual).to.deep.equal({filePath: "baz", code, end, start, name: "Foo", nodeType: ElmNodeType.Module, children, exposing});
+      expect(actual).to.deep.equal({code, end, start, name: "Foo", nodeType: ElmNodeType.Module, children, exposing});
     });
 
     it("should return an module node with the supplied children for the supplied token", () => {
@@ -1070,10 +965,10 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toModuleNode("baz", typeHelper, token, children);
+      let actual = parserImp.toModuleNode(typeHelper, token, children);
 
       // assert
-      expect(actual).to.deep.equal({filePath: "baz", code, end, start, name: "Foo", nodeType: ElmNodeType.Module, children, exposing});
+      expect(actual).to.deep.equal({code, end, start, name: "Foo", nodeType: ElmNodeType.Module, children, exposing});
     });
   });
 

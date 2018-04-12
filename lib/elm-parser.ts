@@ -1,65 +1,17 @@
 import {createLogger, Logger} from "./logger";
-import {CodeLocation, createElmTokenizer, ElmToken, ElmTokenizer, ElmTokenType} from "./elm-tokenizer";
+import {createElmTokenizer, ElmToken, ElmTokenizer, ElmTokenType} from "./elm-tokenizer";
 import {makeElmCodeHelper, ElmCodeHelper} from "./elm-code-helper";
-import {makeElmTypeHelper, ElmTypeHelper, ElmTypeInfo} from "./elm-type-helper";
-
-export type ElmNode = ElmImportNode
-  | ElmPortNode
-  | ElmTypeNode
-  | ElmTypeAliasNode
-  | ElmTypedModuleFunctionNode
-  | ElmUntypedModuleFunctionNode;
-
-export type ElmFunctionNode = ElmTypedModuleFunctionNode | ElmUntypedModuleFunctionNode;
-
-export enum ElmNodeType {
-  Import = 0,
-  Module,
-  Port,
-  Type,
-  TypeAlias,
-  TypedModuleFunction,
-  UntypedModuleFunction,
-  Unknown
-}
-
-export interface BaseElmNode {
-  code: string;
-  end: CodeLocation;
-  name: string;
-  nodeType: ElmNodeType;
-  start: CodeLocation;
-}
-
-export interface ElmImportNode extends BaseElmNode {
-  alias?: string;
-  exposing: ElmTypeInfo[];
-}
-
-export interface ElmModuleNode extends BaseElmNode {
-  children: ElmNode[];
-  filePath: string;
-  exposing: ElmTypeInfo[];
-}
-
-export interface ElmPortNode extends BaseElmNode {
-}
-
-export interface ElmTypeNode extends BaseElmNode {
-  dependencies: ElmTypeInfo[];
-}
-
-export interface ElmTypeAliasNode extends BaseElmNode {
-}
-
-export interface ElmTypedModuleFunctionNode extends BaseElmNode {
-  dependencies: ElmTypeInfo[];
-  returnType: ElmTypeInfo;
-}
-
-export interface ElmUntypedModuleFunctionNode extends BaseElmNode {
-  dependencies: ElmTypeInfo[];
-}
+import {makeElmTypeHelper, ElmTypeHelper} from "./elm-type-helper";
+import {
+  BaseElmNode,
+  ElmImportNode,
+  ElmModuleNode,
+  ElmNode,
+  ElmNodeType, ElmPortNode, ElmTypeAliasNode,
+  ElmTypedModuleFunctionNode, ElmTypeInfo, ElmTypeNode,
+  ElmUntypedModuleFunctionNode
+} from "./plugin";
+import {createElmNodeHelper, ElmNodeHelper} from "./elm-node-helper";
 
 export interface ImportName {
   alias?: string;
@@ -81,22 +33,20 @@ export interface ElmNodeResultList {
 }
 
 export interface ElmParser {
-  isFunctionNode(node: ElmNode): node is ElmFunctionNode;
-  isImportNode(node: ElmNode): node is ElmImportNode;
-  isTypedModuleFunctionNode(node: ElmNode): node is ElmTypedModuleFunctionNode;
-  isUntypedModuleFunctionNode(node: ElmNode): node is ElmUntypedModuleFunctionNode;
   parse(filePath: string): ElmModuleNode | undefined;
 }
 
 export class ElmParserImp implements ElmParser {
 
+  private readonly elmNodeHelper: ElmNodeHelper;
   private readonly elmTokenizer: ElmTokenizer;
   private readonly logger: Logger;
   private readonly makeElmCodeHelper: (code: string) => ElmCodeHelper;
   private readonly makeElmTypeHelper: (moduleName: string) => ElmTypeHelper;
 
-  constructor(elmTokenizer: ElmTokenizer, logger: Logger,
+  constructor(elmNodeHelper: ElmNodeHelper, elmTokenizer: ElmTokenizer, logger: Logger,
               makeCodeHelper: (code: string) => ElmCodeHelper, makeTypeHelper: (moduleName: string) => ElmTypeHelper) {
+    this.elmNodeHelper = elmNodeHelper;
     this.elmTokenizer = elmTokenizer;
     this.logger = logger;
     this.makeElmCodeHelper = makeCodeHelper;
@@ -118,35 +68,19 @@ export class ElmParserImp implements ElmParser {
     return tokenLookup;
   }
 
-  public isFunctionNode(node: ElmNode): node is ElmFunctionNode {
-    return this.isTypedModuleFunctionNode(node) || this.isUntypedModuleFunctionNode(node);
-  }
-
-  public isImportNode(node: ElmNode): node is ElmImportNode {
-    return node.nodeType === ElmNodeType.Import;
-  }
-
-  public isTypedModuleFunctionNode(node: ElmNode): node is ElmTypedModuleFunctionNode {
-    return node.nodeType === ElmNodeType.TypedModuleFunction;
-  }
-
-  public isUntypedModuleFunctionNode(node: ElmNode): node is ElmUntypedModuleFunctionNode {
-    return node.nodeType === ElmNodeType.UntypedModuleFunction;
-  }
-
   public parse(filePath: string): ElmModuleNode | undefined {
     const tokens = this.elmTokenizer.tokenize(filePath);
     const tokenLookup = this.convertToLookup(tokens);
 
-    return this.parseTokens(filePath, tokenLookup);
-  }
-
-  public parseTokens(filePath: string, tokenLookup: TokenLookup): ElmModuleNode | undefined {
     if (!tokenLookup[ElmTokenType.Module] || tokenLookup[ElmTokenType.Module].length === 0) {
       this.logger.debug("Unable to find module token in" + filePath);
       return undefined;
     }
 
+    return this.parseTokens(tokenLookup);
+  }
+
+  public parseTokens(tokenLookup: TokenLookup): ElmModuleNode | undefined {
     const moduleToken = tokenLookup[ElmTokenType.Module][0];
     const typeHelper = this.makeElmTypeHelper(moduleToken.identifier);
     const firstPassResult = this.parseFirstPass(typeHelper, tokenLookup, moduleToken.identifier);
@@ -154,7 +88,7 @@ export class ElmParserImp implements ElmParser {
     const secondPassResult = this.parseSecondPass(typeHelper, firstPassResult.partial);
     children.push(...secondPassResult);
 
-    return this.toModuleNode(filePath, typeHelper, moduleToken, children);
+    return this.toModuleNode(typeHelper, moduleToken, children);
   }
 
   public parseFirstPass(typeHelper: ElmTypeHelper, tokenLookup: { [p: number]: ElmToken[] }, moduleName: string): ElmNodeResultList {
@@ -193,7 +127,7 @@ export class ElmParserImp implements ElmParser {
     for (let j = 0; j < partial.length; j++) {
       const result = partial[j];
 
-      if (this.isFunctionNode(result.node)) {
+      if (this.elmNodeHelper.isFunctionNode(result.node)) {
         const node = result.node;
         node.dependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name, result.node.name.length);
         complete.push(node);
@@ -388,11 +322,11 @@ export class ElmParserImp implements ElmParser {
     return {codeHelper, node};
   }
 
-  public toModuleNode(filePath: string, typeHelper: ElmTypeHelper, token: ElmToken, children: ElmNode[]): ElmModuleNode {
+  public toModuleNode(typeHelper: ElmTypeHelper, token: ElmToken, children: ElmNode[]): ElmModuleNode {
     const codeHelper = this.makeElmCodeHelper(token.code);
     const exposing = this.parseTypeList(codeHelper, typeHelper, token.identifier, 8 + token.identifier.length);
 
-    return {...this.toBaseNode(token, token.identifier), children: children, exposing: exposing, filePath: filePath};
+    return {...this.toBaseNode(token, token.identifier), children: children, exposing: exposing};
   }
 
   public toPortNode(token: ElmToken): ElmNodeResult<ElmPortNode> {
@@ -443,5 +377,5 @@ export class ElmParserImp implements ElmParser {
 }
 
 export function createElmParser(): ElmParser {
-  return new ElmParserImp(createElmTokenizer(), createLogger(), makeElmCodeHelper, makeElmTypeHelper);
+  return new ElmParserImp(createElmNodeHelper(), createElmTokenizer(), createLogger(), makeElmCodeHelper, makeElmTypeHelper);
 }
