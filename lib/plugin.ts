@@ -1,25 +1,96 @@
 import * as Bluebird from "bluebird";
 
-export interface AnalyzedModule {
-  filePath: string;
-  name: string | undefined;
-  tests: AnalyzedTest[];
-}
-
-export interface AnalyzedTest {
-  exposed: boolean;
+export interface CodeLocation {
   columnNumber: number;
   lineNumber: number;
-  name: string;
 }
 
 export interface Dependencies {
   [index: string]: string;
 }
 
+export interface ElmCodeLookup {
+  [key: string]: ElmCodeInfo;
+}
+
+export interface ElmCodeInfo {
+  fileName: string;
+  filePath: string;
+  isMainTestFile: boolean;
+  isTestFile: boolean;
+  lastModified: Date;
+  moduleNode: ElmModuleNode | undefined;
+}
+
+export type ElmNode = ElmImportNode
+  | ElmPortNode
+  | ElmTypeNode
+  | ElmTypeAliasNode
+  | ElmTypedModuleFunctionNode
+  | ElmUntypedModuleFunctionNode;
+
+export type ElmFunctionNode = ElmTypedModuleFunctionNode | ElmUntypedModuleFunctionNode;
+
+export enum ElmNodeType {
+  Import = 0,
+  Module,
+  Port,
+  Type,
+  TypeAlias,
+  TypedModuleFunction,
+  UntypedModuleFunction,
+  Unknown
+}
+
+export interface BaseElmNode {
+  code: string;
+  end: CodeLocation;
+  name: string;
+  nodeType: ElmNodeType;
+  start: CodeLocation;
+}
+
+export interface ElmImportNode extends BaseElmNode {
+  alias?: string;
+  exposing: ElmTypeInfo[];
+}
+
+export interface ElmModuleNode extends BaseElmNode {
+  children: ElmNode[];
+  exposing: ElmTypeInfo[];
+}
+
+export interface ElmPortNode extends BaseElmNode {
+}
+
+export interface ElmTypeNode extends BaseElmNode {
+  dependencies: ElmTypeInfo[];
+}
+
+export interface ElmTypeAliasNode extends BaseElmNode {
+}
+
+export interface ElmTypedModuleFunctionNode extends BaseElmNode {
+  dependencies: ElmTypeInfo[];
+  returnType: ElmTypeInfo;
+}
+
+export interface ElmUntypedModuleFunctionNode extends BaseElmNode {
+  dependencies: ElmTypeInfo[];
+}
+
+export interface ElmTypeInfo {
+  name: string;
+  parentTypeName?: string;
+  moduleName: string;
+}
+
 export interface ExecutionContext {
+  buildOutputFilePath: string;
+  codeLookup: ElmCodeLookup;
   config: LoboConfig;
-  testAnalysis: AnalyzedModule[];
+  testDirectory: string;
+  testFile: string;
 }
 
 export interface FailureMessage {
@@ -29,13 +100,13 @@ export interface FailureMessage {
 
 export interface LoboConfig {
   readonly compiler: string;
+  readonly loboDirectory: string;
   readonly noInstall: boolean;
   readonly noUpdate: boolean;
   readonly noWarn: boolean;
   readonly prompt: boolean;
   readonly reportProgress: boolean;
   readonly reporter: PluginReporter;
-  readonly testFile: string;
   readonly testFramework: PluginTestFrameworkWithConfig;
   readonly testMainElm: string;
 }

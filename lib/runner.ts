@@ -132,7 +132,7 @@ export class RunnerImp {
       (<BrowserGlobal>global).document = { location: { hash: "", pathname: "", search: "" } };
       (<BrowserGlobal>global).window = { navigator: {} };
 
-      let elmApp = this.loadElmTestApp(context.config.testFile, logger);
+      let elmApp = this.loadElmTestApp(context.buildOutputFilePath, logger);
       let initArgs = context.config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
       context.config.reporter.runArgs(initArgs);

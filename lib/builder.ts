@@ -24,7 +24,7 @@ interface ElmPackageCompare {
 
 
 export interface Builder {
-  build(context: ExecutionContext, testDirectory: string, testFile: string): Bluebird<ExecutionContext>;
+  build(context: ExecutionContext): Bluebird<ExecutionContext>;
 }
 
 export class BuilderImp implements Builder {
@@ -40,12 +40,12 @@ export class BuilderImp implements Builder {
     this.util = util;
   }
 
-  public build(context: ExecutionContext, testDirectory: string, testFile: string): Bluebird<ExecutionContext> {
+  public build(context: ExecutionContext): Bluebird<ExecutionContext> {
     this.logger.info("-----------------------------------[ BUILD ]------------------------------------");
 
     let baseElmPackageDir = ".";
-    let testElmPackageDir = testDirectory;
-    let testDir = path.dirname(testFile);
+    let testElmPackageDir = context.testDirectory;
+    let testDir = path.dirname(context.testFile);
     let steps: Array<() => Bluebird<void>> = [];
 
     if (context.config.noUpdate) {
@@ -58,8 +58,8 @@ export class BuilderImp implements Builder {
     }
 
     steps = steps.concat([
-      () => this.installDependencies(context.config, testDirectory),
-      () => this.make(context.config, testDirectory, testFile)
+      () => this.installDependencies(context.config, context.testDirectory),
+      () => this.make(context.config, context.buildOutputFilePath, context.testDirectory, context.testFile)
     ]);
 
     return Bluebird.mapSeries(steps, (item: () => Bluebird<ExecutionContext>) => item())
@@ -103,8 +103,9 @@ export class BuilderImp implements Builder {
 
     let value: ElmPackageCompare;
 
-    return Bluebird.mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<ElmPackageCompare>) => item(value)
-      .then((result: ElmPackageCompare) => value = result))
+    return Bluebird
+      .mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<ElmPackageCompare>) => item(value)
+        .then((result: ElmPackageCompare) => value = result))
       .return();
   }
 
@@ -322,7 +323,7 @@ export class BuilderImp implements Builder {
     }
   }
 
-  public make(config: LoboConfig, testDirectory: string, testFile: string): Bluebird<void> {
+  public make(config: LoboConfig, buildOutputFilePath: string, testDirectory: string, testFile: string): Bluebird<void> {
     return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
       let pluginDirectory = path.resolve(__dirname, "..", "plugin");
       let testStuffMainElm = path.join(pluginDirectory, config.testFramework.config.name, config.testMainElm);
@@ -336,7 +337,7 @@ export class BuilderImp implements Builder {
         command += " " + testFile;
       }
 
-      command += ` ${testStuffMainElm} --output=${config.testFile}`;
+      command += ` ${testStuffMainElm} --output=${buildOutputFilePath}`;
 
       if (!config.prompt) {
         command += " --yes";

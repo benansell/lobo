@@ -1,13 +1,9 @@
+import {ElmTypeInfo} from "./plugin";
+
 export interface ElmModuleTypeInfo {
   alias?: string;
   exposing: ElmTypeInfo[];
   name: string;
-}
-
-export interface ElmTypeInfo {
-  name: string;
-  parentTypeName?: string;
-  moduleName: string;
 }
 
 export interface ElmTypeHelper {

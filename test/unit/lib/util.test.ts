@@ -23,7 +23,6 @@ describe("lib util", () => {
   let mockExit: SinonStub;
   let mockExists: SinonStub;
   let mockLstat: SinonStub;
-  let mockReadDirSync: SinonStub;
   let mockReadFileSync: SinonStub;
   let mockRealPath: SinonStub;
   let mockRelativePath: SinonStub;
@@ -35,7 +34,6 @@ describe("lib util", () => {
     mockExit = Sinon.stub();
     mockExists = Sinon.stub();
     mockLstat = Sinon.stub();
-    mockReadDirSync = Sinon.stub();
     mockReadFileSync = Sinon.stub();
     mockRealPath = Sinon.stub();
     mockRelativePath = Sinon.stub();
@@ -44,7 +42,7 @@ describe("lib util", () => {
 
     RewiredUtil.__set__({
       fs: {existsSync: mockExists, lstatSync: mockLstat, readFileSync: mockReadFileSync,
-        readdirSync: mockReadDirSync, realpathSync: mockRealPath},
+        realpathSync: mockRealPath},
       path: {dirname: mockDirName, relative: mockRelativePath, resolve: mockResolvePath},
       process: {exit: mockExit, versions: mockVersions}
     });
@@ -178,71 +176,6 @@ describe("lib util", () => {
       // assert
       expect(actual).to.equal("bar");
     });
-  });
-
-  describe("findFiles", () => {
-    it("should return empty list when the supplied item is not a matching file", () => {
-      // arrange
-      let mockStats = <Stats> {};
-      mockStats.isDirectory = () => false;
-      mockLstat.returns(mockStats);
-
-      // act
-      let actual = util.findFiles("foo.exe", ".txt");
-
-      // assert
-      expect(actual.length).to.equal(0);
-    });
-
-    it("should return only the supplied item when it is a matching file", () => {
-      // arrange
-      let mockStats = <Stats> {};
-      mockStats.isDirectory = () => false;
-      mockLstat.returns(mockStats);
-
-      // act
-      let actual = util.findFiles("foo.txt", ".txt");
-
-      // assert
-      expect(actual).to.deep.equal(["foo.txt"]);
-    });
-
-    it("should return matching files in the supplied directory", () => {
-      // arrange
-      let mockJoin = (x, y) => x + "/" + y;
-      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
-
-      mockLstat.onFirstCall().returns({isDirectory: () => true});
-      mockLstat.returns({isDirectory: () => false});
-      mockReadDirSync.onFirstCall().returns(["foo.txt", "bar.exe", "baz.txt"]);
-
-      // act
-      let actual: string[] = [];
-      revertPath(() => actual = util.findFiles("abc", ".txt"));
-
-      // assert
-      expect(actual).to.deep.equal(["abc/foo.txt", "abc/baz.txt"]);
-    });
-
-    it("should return matching files recursively in the supplied directory", () => {
-      // arrange
-      let mockJoin = (x, y) => x + "/" + y;
-      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
-
-      mockLstat.onFirstCall().returns({isDirectory: () => true});
-      mockLstat.onSecondCall().returns({isDirectory: () => true});
-      mockLstat.returns({isDirectory: () => false});
-      mockReadDirSync.onFirstCall().returns(["foo", "bar.exe", "baz.txt"]);
-      mockReadDirSync.onSecondCall().returns(["qux.txt"]);
-
-      // act
-      let actual: string[];
-      revertPath(() => actual = util.findFiles("abc", ".txt"));
-
-      // assert
-      expect(actual).to.deep.equal(["abc/foo/qux.txt", "abc/baz.txt"]);
-    });
-
   });
 
   describe("getPlugin", () => {

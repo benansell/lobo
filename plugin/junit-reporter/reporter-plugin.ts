@@ -30,9 +30,9 @@ export class JUnitReporter implements plugin.PluginReporter {
   private textFormatter: TestResultFormatter;
   private standardConsole: ReporterStandardConsole;
   private logger: plugin.PluginReporterLogger;
-  private diffMaxLength: number;
-  private junitFormat: JUnitFormat;
-  private paddingUnit: string;
+  private readonly diffMaxLength: number;
+  private readonly junitFormat: JUnitFormat;
+  private readonly paddingUnit: string;
 
   public static getDurationSecondsFrom(node: {startTime?: number, endTime?: number}): number {
     if (!node || !node.startTime || !node.endTime) {

@@ -428,7 +428,7 @@ describe("lib runner", () => {
 
     it("should return a promise to run the tests", () => {
       // arrange
-      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework};
       let context = <ExecutionContext> {config};
 
       // act
@@ -440,7 +440,7 @@ describe("lib runner", () => {
 
     it("should return a promise to is completed when the test run is complete", () => {
       // arrange
-      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework};
       let context = <ExecutionContext> {config};
       let complete = undefined;
       let end = (x) => complete = x;
@@ -472,19 +472,19 @@ describe("lib runner", () => {
 
     it("should load the elm test app", () => {
       // arrange
-      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
-      let context = <ExecutionContext> {config};
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework};
+      let context = <ExecutionContext> {config, buildOutputFilePath: "./foo", testFile: "bar"};
 
       // act
       runner.run(context);
 
       // assert
-      expect(runner.loadElmTestApp).to.have.been.calledWith("./foo");
+      expect(runner.loadElmTestApp).to.have.been.calledWith("./foo", Sinon.match.any);
     });
 
     it("should subscribe to begin", () => {
       // arrange
-      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework};
       let context = <ExecutionContext> {config};
 
       // act
@@ -496,7 +496,7 @@ describe("lib runner", () => {
 
     it("should subscribe to end", () => {
       // arrange
-      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework};
       let context = <ExecutionContext> {config};
 
       // act
@@ -508,7 +508,7 @@ describe("lib runner", () => {
 
     it("should subscribe to progress", () => {
       // arrange
-      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework};
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework};
       let context = <ExecutionContext> {config};
 
       // act
@@ -519,7 +519,7 @@ describe("lib runner", () => {
     });
 
     it("should call runTests with the supplied reportProgress value", () => {
-      let config = <LoboConfig> {reporter: mockPluginReporter, testFile: "./foo", testFramework: mockFramework, reportProgress: true};
+      let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework, reportProgress: true};
       let context = <ExecutionContext> {config};
 
       // act

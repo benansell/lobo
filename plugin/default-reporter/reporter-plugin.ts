@@ -22,8 +22,8 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   private testResultFormatter: TestResultFormatter;
   private util: Util;
   private labelStyle: Chalk = chalk.dim;
-  private messagePrefixPadding: string;
-  private diffMaxLength: number;
+  private readonly messagePrefixPadding: string;
+  private readonly diffMaxLength: number;
 
   public static calculateMaxLabelLength(items: LeafItem[]): number {
     let maxLabelLength = 0;

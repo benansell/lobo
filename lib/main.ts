@@ -17,16 +17,19 @@ import {
   PluginTestFrameworkWithConfig
 } from "./plugin";
 import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
+import {Analyzer, createAnalyzer} from "./analyzer";
+import {createTestSuiteGenerator, TestSuiteGenerator} from "./test-suite-generator";
+import {createOutputDirectoryManager, OutputDirectoryManager} from "./output-directory-manager";
 
 interface PartialLoboConfig {
   compiler: string | undefined;
+  loboDirectory: string | undefined;
   noInstall: boolean | undefined;
   noUpdate: boolean | undefined;
   noWarn: boolean | undefined;
   prompt: boolean | undefined;
   reportProgress: boolean | undefined;
   reporter: PluginReporter | undefined;
-  testFile: string | undefined;
   testFramework: PluginTestFrameworkWithConfig | undefined;
   testMainElm: string;
 }
@@ -42,7 +45,7 @@ interface PluginTypeDetail {
 
 export interface Lobo {
   execute(): void;
-  handleUncaughtException(error: Error, config?: PartialLoboConfig): void;
+  handleUncaughtException(error: Error): void;
 }
 
 export class LoboImp implements Lobo {
@@ -58,27 +61,28 @@ export class LoboImp implements Lobo {
     }
   };
 
-  private builder: Builder;
+  private readonly analyzer: Analyzer;
+  private readonly builder: Builder;
   private busy: boolean;
-  private elmPackageHelper: ElmPackageHelper;
-  private logger: Logger;
+  private readonly elmPackageHelper: ElmPackageHelper;
+  private readonly outputDirectoryManager: OutputDirectoryManager;
+  private readonly logger: Logger;
   private ready: boolean;
-  private runner: Runner;
-  private util: Util;
+  private readonly runner: Runner;
+  private readonly testSuiteGenerator: TestSuiteGenerator;
+  private readonly util: Util;
   private waiting: boolean;
 
-  public static generateTestFileName(): string {
-    let tmpFile = tmp.fileSync({prefix: "lobo-test-", postfix: ".js"});
-
-    return tmpFile.name;
-  }
-
-  constructor(builder: Builder, elmPackageHelper: ElmPackageHelper, logger: Logger, runner: Runner, util: Util,
+  constructor(analyzer: Analyzer, builder: Builder, elmPackageHelper: ElmPackageHelper, logger: Logger,
+              outputDirectoryManager: OutputDirectoryManager, runner: Runner, testSuiteGenerator: TestSuiteGenerator, util: Util,
               busy: boolean, ready: boolean, waiting: boolean) {
+    this.analyzer = analyzer;
     this.builder = builder;
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
+    this.outputDirectoryManager = outputDirectoryManager;
     this.runner = runner;
+    this.testSuiteGenerator = testSuiteGenerator;
     this.util = util;
 
     this.busy = busy;
@@ -109,39 +113,55 @@ export class LoboImp implements Lobo {
     }
   }
 
-  public launch(partialConfig: PartialLoboConfig): Bluebird<void> {
-    partialConfig.testFile = LoboImp.generateTestFileName();
-    let config = <LoboConfig> partialConfig;
-    let context = <ExecutionContext> { config: <LoboConfig> partialConfig, testAnalysis: [] };
-
+  public launchStages(initialContext: ExecutionContext): Bluebird<void> {
     let stages = [
-      (resultContext: ExecutionContext) => this.builder.build(resultContext, testDirectory, program.testFile),
-      (resultContext: ExecutionContext) => this.runner.run(resultContext)
+      (context: ExecutionContext) => this.outputDirectoryManager.sync(context),
+      (context: ExecutionContext) => this.testSuiteGenerator.generate(context),
+      (context: ExecutionContext) => this.builder.build(context),
+      (context: ExecutionContext) => this.analyzer.analyze(context),
+      (context: ExecutionContext) => this.runner.run(context)
     ];
 
-    return Bluebird.mapSeries(stages, (item: (context: ExecutionContext) => Bluebird<ExecutionContext>) => {
-      return item(context);
-    }).then(() => {
-      this.logger.debug("Test execution complete");
-      if (program.watch) {
-        this.done(context.config);
-      }
-    }).catch((err) => {
-      if (err instanceof ReferenceError || err instanceof TypeError) {
-        this.handleUncaughtException(err, context.config);
-        return;
-      } else if (/Ran into a `Debug.crash` in module/.test(err)) {
-        this.logger.error(err);
-      } else {
-        this.logger.error("Error running the tests. ", err);
-      }
+    let value: ExecutionContext = initialContext;
 
-      if (program.watch) {
-        this.done(context.config);
-      } else {
-        process.exit(1);
-      }
-    });
+    return Bluebird
+      .mapSeries(stages, (item: (context: ExecutionContext) => Bluebird<ExecutionContext>) => item(value)
+        .then((result: ExecutionContext) => value = result))
+      .return();
+  }
+
+  public launch(partialConfig: PartialLoboConfig): Bluebird<void> {
+    let context: ExecutionContext = <ExecutionContext> {
+      codeLookup: {},
+      config: <LoboConfig> partialConfig,
+      testDirectory: program.testDirectory,
+      testFile: program.testFile
+    };
+
+    return this.launchStages(context)
+      .then(
+        () => {
+          this.logger.debug("Test execution complete");
+          if (program.watch) {
+            this.done(partialConfig);
+          }
+        })
+      .catch((err) => {
+        if (err instanceof ReferenceError || err instanceof TypeError) {
+          this.handleUncaughtException(err, context);
+          return;
+        } else if (/Ran into a `Debug.crash` in module/.test(err)) {
+          this.logger.error(err);
+        } else {
+          this.logger.error("Error running the tests. ", err);
+        }
+
+        if (program.watch) {
+          this.done(partialConfig);
+        } else {
+          process.exit(1);
+        }
+      });
   }
 
   public done(config: PartialLoboConfig): void {
@@ -199,6 +219,7 @@ export class LoboImp implements Lobo {
   public configure(): PartialLoboConfig {
     let packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
     let config: PartialLoboConfig = <PartialLoboConfig> {
+      loboDirectory: "./lobo",
       testMainElm: "UnitTest.elm"
     };
 
@@ -401,7 +422,7 @@ export class LoboImp implements Lobo {
     return config;
   }
 
-  public handleUncaughtException(error: Error, config?: PartialLoboConfig): void {
+  public handleUncaughtException(error: Error, context?: ExecutionContext): void {
     let errorString: string = "";
 
     if (error) {
@@ -409,7 +430,7 @@ export class LoboImp implements Lobo {
     }
 
     if (error instanceof ReferenceError || error instanceof TypeError) {
-      if (config && config.testFile && error.stack && error.stack.match(new RegExp(config.testFile))) {
+      if (context && context.buildOutputFilePath && error.stack && error.stack.match(new RegExp(context.buildOutputFilePath))) {
         if (/ElmTest.*Plugin\$findTests is not defined/.test(errorString)) {
           this.logger.error("Error running the tests. This is usually caused by an npm upgrade to lobo: ");
           this.logger.info("");
@@ -445,8 +466,8 @@ export class LoboImp implements Lobo {
       }
     }
 
-    if (config && program.watch) {
-      this.done(config);
+    if (context && context.config && program.watch) {
+      this.done(context.config);
       return;
     }
 
@@ -459,5 +480,6 @@ export function createLobo(returnFake: boolean = false): Lobo {
     return <Lobo> { execute: () => { /* do nothing */ } };
   }
 
-  return new LoboImp(createBuilder(), createElmPackageHelper(), createLogger(), createRunner(), createUtil(), false, false, false);
+  return new LoboImp(createAnalyzer(), createBuilder(), createElmPackageHelper(), createLogger(), createOutputDirectoryManager(),
+                     createRunner(), createTestSuiteGenerator(), createUtil(), false, false, false);
 }

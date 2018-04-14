@@ -1,11 +1,7 @@
 import {createLogger, Logger} from "./logger";
 import {makeElmCodeHelper, ElmCodeHelper, FindWordResult} from "./elm-code-helper";
 import {createUtil, Util} from "./util";
-
-export interface CodeLocation {
-  columnNumber: number;
-  lineNumber: number;
-}
+import {CodeLocation} from "./plugin";
 
 export enum ElmTokenType {
   Comment = 1,
