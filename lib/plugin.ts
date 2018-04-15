@@ -91,6 +91,7 @@ export interface ExecutionContext {
   config: LoboConfig;
   testDirectory: string;
   testFile: string;
+  testSuiteOutputFilePath: string;
 }
 
 export interface FailureMessage {

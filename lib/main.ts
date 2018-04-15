@@ -219,7 +219,7 @@ export class LoboImp implements Lobo {
   public configure(): PartialLoboConfig {
     let packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
     let config: PartialLoboConfig = <PartialLoboConfig> {
-      loboDirectory: "./lobo",
+      loboDirectory: "./.lobo",
       testMainElm: "UnitTest.elm"
     };
 
