@@ -119,7 +119,8 @@ export interface PluginConfig {
 
 export interface PluginTestFramework {
   initArgs(): RunArgs;
-  moduleName(): string;
+  pluginElmModuleName(): string;
+  testFrameworkElmModuleName(): string;
 }
 
 export interface PluginTestFrameworkConfig extends PluginConfig {
@@ -184,6 +185,7 @@ export type RunType =
   "FOCUS"
   | "NORMAL"
   | "SKIP";
+
 
 export interface TestArgs {
   readonly seed: number;

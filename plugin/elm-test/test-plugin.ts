@@ -14,7 +14,11 @@ export class ElmTestPlugin implements PluginTestFramework {
     };
   }
 
-  public moduleName(): string {
+  public pluginElmModuleName(): string {
+    return "ElmTestPlugin";
+  }
+
+  public testFrameworkElmModuleName(): string {
     return "Test";
   }
 }

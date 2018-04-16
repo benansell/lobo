@@ -73,10 +73,20 @@ describe("plugin elm-test-extra test-plugin", () => {
     });
   });
 
-  describe("moduleName", () => {
-    it("should return 'Test'", () => {
+  describe("pluginElmModuleName", () => {
+    it("should return 'ElmTestExtraPlugin'", () => {
       // act
-      let actual = plugin.moduleName();
+      let actual = plugin.pluginElmModuleName();
+
+      // assert
+      expect(actual).to.equal("ElmTestExtraPlugin");
+    });
+  });
+
+  describe("testFrameworkElmModuleName", () => {
+    it("should return 'ElmTestTest.Extra'", () => {
+      // act
+      let actual = plugin.testFrameworkElmModuleName();
 
       // assert
       expect(actual).to.equal("ElmTest.Extra");
