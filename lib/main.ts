@@ -20,6 +20,7 @@ import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
 import {Analyzer, createAnalyzer} from "./analyzer";
 import {createTestSuiteGenerator, TestSuiteGenerator} from "./test-suite-generator";
 import {createOutputDirectoryManager, OutputDirectoryManager} from "./output-directory-manager";
+import {createDependencyManager, DependencyManager} from "./dependency-manager";
 
 interface PartialLoboConfig {
   compiler: string | undefined;
@@ -64,6 +65,7 @@ export class LoboImp implements Lobo {
   private readonly analyzer: Analyzer;
   private readonly builder: Builder;
   private busy: boolean;
+  private readonly dependencyManager: DependencyManager;
   private readonly elmPackageHelper: ElmPackageHelper;
   private readonly outputDirectoryManager: OutputDirectoryManager;
   private readonly logger: Logger;
@@ -73,11 +75,12 @@ export class LoboImp implements Lobo {
   private readonly util: Util;
   private waiting: boolean;
 
-  constructor(analyzer: Analyzer, builder: Builder, elmPackageHelper: ElmPackageHelper, logger: Logger,
-              outputDirectoryManager: OutputDirectoryManager, runner: Runner, testSuiteGenerator: TestSuiteGenerator, util: Util,
-              busy: boolean, ready: boolean, waiting: boolean) {
+  constructor(analyzer: Analyzer, builder: Builder, dependencyManager: DependencyManager, elmPackageHelper: ElmPackageHelper,
+              logger: Logger, outputDirectoryManager: OutputDirectoryManager, runner: Runner, testSuiteGenerator: TestSuiteGenerator,
+              util: Util, busy: boolean, ready: boolean, waiting: boolean) {
     this.analyzer = analyzer;
     this.builder = builder;
+    this.dependencyManager = dependencyManager;
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
     this.outputDirectoryManager = outputDirectoryManager;
@@ -114,11 +117,20 @@ export class LoboImp implements Lobo {
   }
 
   public launchStages(initialContext: ExecutionContext): Bluebird<void> {
+    let logStage = (context: ExecutionContext, stage: string) =>  {
+        this.logger.info(`-----------------------------------${stage}------------------------------------`);
+
+        return Bluebird.resolve(context);
+     };
+
     let stages = [
+      (context: ExecutionContext) => logStage(context, "[ BUILD ]"),
+      (context: ExecutionContext) => this.dependencyManager.sync(context),
       (context: ExecutionContext) => this.outputDirectoryManager.sync(context),
       (context: ExecutionContext) => this.testSuiteGenerator.generate(context),
       (context: ExecutionContext) => this.builder.build(context),
       (context: ExecutionContext) => this.analyzer.analyze(context),
+      (context: ExecutionContext) => logStage(context, "[ TEST ]-"),
       (context: ExecutionContext) => this.runner.run(context)
     ];
 
@@ -480,6 +492,7 @@ export function createLobo(returnFake: boolean = false): Lobo {
     return <Lobo> { execute: () => { /* do nothing */ } };
   }
 
-  return new LoboImp(createAnalyzer(), createBuilder(), createElmPackageHelper(), createLogger(), createOutputDirectoryManager(),
-                     createRunner(), createTestSuiteGenerator(), createUtil(), false, false, false);
+  return new LoboImp(createAnalyzer(), createBuilder(), createDependencyManager(), createElmPackageHelper(), createLogger(),
+                     createOutputDirectoryManager(), createRunner(), createTestSuiteGenerator(), createUtil(),
+                     false, false, false);
 }

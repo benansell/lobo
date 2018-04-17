@@ -20,6 +20,7 @@ import {
 } from "../../../lib/plugin";
 import {TestSuiteGenerator} from "../../../lib/test-suite-generator";
 import {OutputDirectoryManager} from "../../../lib/output-directory-manager";
+import {DependencyManager} from "../../../lib/dependency-manager";
 
 
 let expect = chai.expect;
@@ -33,11 +34,13 @@ describe("lib main", () => {
   let mockAnalyzer: Analyzer;
   let mockBuild: Sinon.SinonStub;
   let mockBuilder: Builder;
+  let mockDependencyManager: DependencyManager;
   let mockExit: () => void;
   let mockHelper: ElmPackageHelper;
   let mockLogger: Logger;
   let mockRun: Sinon.SinonStub;
   let mockRunner: Runner;
+  let mockSyncDependencies: Sinon.SinonStub;
   let mockOutputDirectorySync: Sinon.SinonStub;
   let mockOutputDirectoryManager: OutputDirectoryManager;
   let mockTestSuiteGenerate: Sinon.SinonStub;
@@ -54,6 +57,8 @@ describe("lib main", () => {
     mockAnalyzer = <Analyzer> {analyze: mockAnalyze};
     mockBuild = Sinon.stub();
     mockBuilder = <Builder> {build: mockBuild};
+    mockSyncDependencies = Sinon.stub();
+    mockDependencyManager = <DependencyManager> {sync: mockSyncDependencies};
     mockHelper = <ElmPackageHelper><{}> {read: Sinon.stub()};
     mockLogger = <Logger> {
       debug: Sinon.stub(), error: Sinon.stub(), info: Sinon.stub(),
@@ -75,7 +80,7 @@ describe("lib main", () => {
       unsafeLoad: Sinon.stub()
     };
 
-    lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockOutputDirectoryManager, mockRunner,
+    lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockHelper, mockLogger, mockOutputDirectoryManager, mockRunner,
                           mockTestSuiteGenerator, mockUtil, false, false, false);
   });
 
@@ -168,6 +173,7 @@ describe("lib main", () => {
     it("should call builder.build with the context from test suite generator", () => {
       // arrange
       let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({config: {}});
       mockOutputDirectorySync.resolves({config: {}});
       mockTestSuiteGenerate.resolves({config: {}});
       mockBuild.resolves(expected);
@@ -185,6 +191,7 @@ describe("lib main", () => {
 
     it("should call builder.build with the test directory", () => {
       // arrange
+      mockSyncDependencies.resolves({config: {}});
       mockOutputDirectorySync.resolves({config: {}});
       mockTestSuiteGenerate.resolves({config: {}, testDirectory: "foo"});
       mockBuild.resolves({config: {}});
@@ -203,6 +210,7 @@ describe("lib main", () => {
     it("should call runner.run with the context from analyze", () => {
       // arrange
       let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({config: {}});
       mockOutputDirectorySync.resolves({config: {}});
       mockTestSuiteGenerate.resolves({config: {}});
       mockBuild.resolves({config: {}});
@@ -353,8 +361,8 @@ describe("lib main", () => {
     it("should call launch when waiting is true", () => {
       // arrange
       let expected = <LoboConfig> {};
-      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockOutputDirectoryManager, mockRunner,
-                            mockTestSuiteGenerator, mockUtil, false, false, true);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockHelper, mockLogger, mockOutputDirectoryManager,
+                            mockRunner, mockTestSuiteGenerator, mockUtil, false, false, true);
       lobo.launch = Sinon.spy();
 
       // act
@@ -367,8 +375,8 @@ describe("lib main", () => {
     it("should not call launch when waiting is false", () => {
       // arrange
       let expected = <LoboConfig> {};
-      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockOutputDirectoryManager, mockRunner,
-                            mockTestSuiteGenerator, mockUtil, false, false, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockHelper, mockLogger, mockOutputDirectoryManager,
+                            mockRunner, mockTestSuiteGenerator, mockUtil, false, false, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -464,8 +472,8 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockOutputDirectoryManager, mockRunner,
-                            mockTestSuiteGenerator, mockUtil, false, false, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockHelper, mockLogger, mockOutputDirectoryManager,
+                            mockRunner, mockTestSuiteGenerator, mockUtil, false, false, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -486,8 +494,8 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockOutputDirectoryManager, mockRunner,
-                            mockTestSuiteGenerator, mockUtil, true, true, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockHelper, mockLogger, mockOutputDirectoryManager,
+                            mockRunner, mockTestSuiteGenerator, mockUtil, true, true, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -508,8 +516,8 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockHelper, mockLogger, mockOutputDirectoryManager, mockRunner,
-                            mockTestSuiteGenerator, mockUtil, false, true, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockHelper, mockLogger, mockOutputDirectoryManager,
+                            mockRunner, mockTestSuiteGenerator, mockUtil, false, true, false);
       lobo.launch = Sinon.spy();
 
       // act

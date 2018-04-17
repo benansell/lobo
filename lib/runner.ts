@@ -126,8 +126,6 @@ export class RunnerImp {
     let reporter = this.reporter;
 
     return new Bluebird((resolve: Resolve<ExecutionContext>, reject: Reject) => {
-      logger.info("-----------------------------------[ TEST ]-------------------------------------");
-
       // add to the global scope browser global properties that are used by elm imports
       (<BrowserGlobal>global).document = { location: { hash: "", pathname: "", search: "" } };
       (<BrowserGlobal>global).window = { navigator: {} };
