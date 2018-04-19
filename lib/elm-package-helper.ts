@@ -15,16 +15,15 @@ export interface ElmPackageJson {
   sourceDirectories: string[];
 }
 
+export type UpdateCallback<T> = (diff: T, updateAction: () => ElmPackageJson) => void;
+
 export interface ElmPackageHelper {
-  isImprovedMinimumConstraint(dependency: string, candidate: string): boolean;
-  isNotExistingDependency(dependencies: string[][], candidate: string[]): boolean;
-  mergeDependencies(baseElmPackage: ElmPackageJson, testElmPackage: ElmPackageJson, testFramework: PluginTestFrameworkWithConfig)
-    : string[][];
-  mergeSourceDirectories(baseElmPackage: ElmPackageJson, baseElmPackageDir: string, testElmPackage: ElmPackageJson,
-                         testElmPackageDir: string, testDir: string): string[];
   path(elmPackageJsonDirectory: string): string;
   read(elmPackageJsonDirectory: string): ElmPackageJson | undefined;
-  write(elmPackageJsonDirectory: string, elmPackage: ElmPackageJson): void;
+  updateDependencies(testFramework: PluginTestFrameworkWithConfig, baseElmPackage: ElmPackageJson,
+                     testElmPackageDir: string, testElmPackage: ElmPackageJson, callback: UpdateCallback<string[][]>): void;
+  updateSourceDirectories(baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string, testDir: string,
+                          testElmPackage: ElmPackageJson, extraDirectories: string[], callback: UpdateCallback<string[]>): void;
 }
 
 export class ElmPackageHelperImp implements ElmPackageHelper {
@@ -99,7 +98,7 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
   }
 
   public mergeSourceDirectories(baseElmPackage: ElmPackageJson, baseElmPackageDir: string, testElmPackage: ElmPackageJson,
-                                testElmPackageDir: string, testDir: string): string[] {
+                                testElmPackageDir: string, testDir: string, extraDirectories: string[]): string[] {
     let sourceDirs: string[] = _.clone(testElmPackage.sourceDirectories);
 
     if (!sourceDirs) {
@@ -115,6 +114,11 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
     }
 
     sourceDirs = this.addSourceDirectories(baseElmPackage.sourceDirectories, baseElmPackageDir, testElmPackageDir, sourceDirs);
+
+    if (extraDirectories.length > 0) {
+      let dirPath = path.join(__dirname, "..");
+      sourceDirs = this.addSourceDirectories(extraDirectories, dirPath, testElmPackageDir, sourceDirs);
+    }
 
     return sourceDirs;
   }
@@ -141,6 +145,38 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
       this.logger.debug(err);
       return undefined;
     }
+  }
+
+  public updateDependencies(testFramework: PluginTestFrameworkWithConfig, baseElmPackage: ElmPackageJson,
+                            testElmPackageDir: string, testElmPackage: ElmPackageJson, callback: UpdateCallback<string[][]>): void {
+      let dependencies = this.mergeDependencies(baseElmPackage, testElmPackage, testFramework);
+      let existing = _.toPairs(testElmPackage.dependencies);
+      let diff = _.filter(dependencies, base => this.isNotExistingDependency(existing, base));
+      callback(diff, ()  => this.updateDependenciesAction(dependencies, testElmPackageDir, testElmPackage));
+  }
+
+  public updateDependenciesAction(dependencies: string[][], testElmPackageDir: string, testElmPackage: ElmPackageJson): ElmPackageJson {
+    let sortedDependencies: string[][] = _.sortBy(dependencies, (kp: string[]) => kp[0]);
+    testElmPackage.dependencies = _.fromPairs(sortedDependencies);
+    this.write(testElmPackageDir, testElmPackage);
+
+    return testElmPackage;
+  }
+
+  public updateSourceDirectories(baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string, testDir: string,
+                                 testElmPackage: ElmPackageJson, extraDirectories: string[], callback: UpdateCallback<string[]>): void {
+      let sourceDirectories = this.mergeSourceDirectories(baseElmPackage, baseElmPackageDir, testElmPackage, testElmPackageDir, testDir,
+                                                          extraDirectories);
+      let diff = _.difference(sourceDirectories, testElmPackage.sourceDirectories);
+      callback(diff, ()  => this.updateSourceDirectoriesAction(sourceDirectories, testElmPackageDir, testElmPackage));
+  }
+
+  public updateSourceDirectoriesAction(sourceDirectories: string[], testElmPackageDir: string, testElmPackage: ElmPackageJson):
+    ElmPackageJson {
+    testElmPackage.sourceDirectories = sourceDirectories;
+    this.write(testElmPackageDir, testElmPackage);
+
+    return testElmPackage;
   }
 
   public write(elmPackageJsonDirectory: string, elmPackage: ElmPackageJson): void {

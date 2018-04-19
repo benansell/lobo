@@ -6,7 +6,7 @@ import * as shelljs from "shelljs";
 import * as childProcess from "child_process";
 import * as promptly from "promptly";
 import {createLogger, Logger} from "./logger";
-import {Dependencies, ExecutionContext, LoboConfig, Reject, Resolve} from "./plugin";
+import {Dependencies, ExecutionContext, LoboConfig, PluginTestFrameworkWithConfig, Reject, Resolve} from "./plugin";
 import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
 
 interface ElmPackageJson {
@@ -14,9 +14,9 @@ interface ElmPackageJson {
   sourceDirectories: string[];
 }
 
-interface ElmPackageCompare {
+export interface ElmPackageCompare {
   readonly base: ElmPackageJson;
-  readonly test: ElmPackageJson;
+  readonly target: ElmPackageJson;
 }
 
 export interface DependencyManager {
@@ -89,8 +89,9 @@ export class DependencyManagerImp implements DependencyManager {
     let steps = <Array<(result: ElmPackageCompare) => Bluebird<ElmPackageCompare>>> [
       () => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
       (result: ElmPackageCompare) =>
-        this.updateSourceDirectories(config, baseElmPackageDir, result.base, testElmPackageDir, testDir, result.test),
-      (result: ElmPackageCompare) => this.updateDependencies(config, result.base, testElmPackageDir, result.test)];
+        this.updateSourceDirectories(config.prompt, baseElmPackageDir, result.base, testElmPackageDir, testDir, result.target),
+      (result: ElmPackageCompare) =>
+        this.updateDependencies(config.prompt, config.testFramework, result.base, testElmPackageDir, result.target)];
 
     let value: ElmPackageCompare;
 
@@ -116,97 +117,83 @@ export class DependencyManagerImp implements DependencyManager {
         reject();
       }
 
-      resolve(<ElmPackageCompare> {base: baseElmPackage, test: testElmPackage});
+      resolve(<ElmPackageCompare> {base: baseElmPackage, target: testElmPackage});
     });
   }
 
-  public updateSourceDirectories(config: LoboConfig, baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
+  public updateSourceDirectories(prompt: boolean, baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
                                  testDir: string, testElmPackage: ElmPackageJson): Bluebird<ElmPackageCompare> {
     return new Bluebird<ElmPackageCompare>((resolve: Resolve<ElmPackageCompare>, reject: Reject) => {
-      let sourceDirectories = this.elmPackageHelper.mergeSourceDirectories(baseElmPackage, baseElmPackageDir, testElmPackage,
-                                                                           testElmPackageDir, testDir);
-      let diff = _.difference(sourceDirectories, testElmPackage.sourceDirectories);
 
-      if (diff.length === 0) {
-        resolve({base: baseElmPackage, test: testElmPackage});
-        return;
-      }
+      const callback = (diff: string[], updateAction: () => ElmPackageJson) => {
+        if (diff.length === 0) {
+          resolve({base: baseElmPackage, target: testElmPackage});
+          return;
+        }
 
-      if (!config.prompt) {
-        testElmPackage = this.updateSourceDirectoriesAction(sourceDirectories, testElmPackageDir, testElmPackage);
-        resolve({base: baseElmPackage, test: testElmPackage});
-        return;
-      }
+        if (!prompt) {
+          testElmPackage = updateAction();
+          resolve({base: baseElmPackage, target: testElmPackage});
+          return;
+        }
 
-      promptly.confirm(
-        "The source-directories of the test elm-package.json needs to be updated to " +
-        "contain:\n" + diff.join("\n") + "\n\nMay I add them to elm-package.json for you?" +
-        this.yOrN,
-        {"default": "yes"},
-        (err, value) => {
-          if (err) {
-            reject(err);
-          } else if (value && value.toString() === "true") {
-            testElmPackage = this.updateSourceDirectoriesAction(sourceDirectories, testElmPackageDir, testElmPackage);
-            resolve({base: baseElmPackage, test: testElmPackage});
-          } else {
-            reject();
-          }
-        });
+        promptly.confirm(
+          "The source-directories of the test elm-package.json needs to be updated to " +
+          "contain:\n" + diff.join("\n") + "\n\nMay I add them to elm-package.json for you?" +
+          this.yOrN,
+          {"default": "yes"},
+          (err, value) => {
+            if (err) {
+              reject(err);
+            } else if (value && value.toString() === "true") {
+              testElmPackage = updateAction();
+              resolve({base: baseElmPackage, target: testElmPackage});
+            } else {
+              reject();
+            }
+          });
+      };
+
+      this.elmPackageHelper
+        .updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir, testDir, testElmPackage, [], callback);
     });
   }
 
-  public updateSourceDirectoriesAction(sourceDirectories: string[], testElmPackageDir: string, testElmPackage: ElmPackageJson):
-    ElmPackageJson {
-    testElmPackage.sourceDirectories = sourceDirectories;
-    this.elmPackageHelper.write(testElmPackageDir, testElmPackage);
-
-    return testElmPackage;
-  }
-
-  public updateDependencies(config: LoboConfig, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                            testElmPackage: ElmPackageJson): Bluebird<ElmPackageCompare> {
+  public updateDependencies(prompt: boolean, testFramework: PluginTestFrameworkWithConfig, baseElmPackage: ElmPackageJson,
+                            testElmPackageDir: string, testElmPackage: ElmPackageJson): Bluebird<ElmPackageCompare> {
     return new Bluebird<ElmPackageCompare>((resolve: Resolve<ElmPackageCompare>, reject: Reject) => {
-      let dependencies = this.elmPackageHelper.mergeDependencies(baseElmPackage, testElmPackage, config.testFramework);
-      let existing = _.toPairs(testElmPackage.dependencies);
-      let diff = _.filter(dependencies, base => this.elmPackageHelper.isNotExistingDependency(existing, base));
+      let callback = (diff: string[][], updateAction: () => ElmPackageJson) => {
+        if (diff.length === 0) {
+          resolve({base: baseElmPackage, target: testElmPackage});
+          return;
+        }
 
-      if (diff.length === 0) {
-        resolve({base: baseElmPackage, test: testElmPackage});
-        return;
-      }
+        let diffString = _.map(diff, kp => kp[0] + ": " + kp[1]);
 
-      let diffString = _.map(diff, kp => kp[0] + ": " + kp[1]);
+        if (!prompt) {
+          testElmPackage = updateAction();
+          resolve({base: baseElmPackage, target: testElmPackage});
+          return;
+        }
 
-      if (!config.prompt) {
-        testElmPackage = this.updateDependenciesAction(dependencies, testElmPackageDir, testElmPackage);
-        resolve({base: baseElmPackage, test: testElmPackage});
-        return;
-      }
+        promptly.confirm(
+          "The dependencies of the test elm-package.json need to be updated to contain:\n" +
+          diffString.join("\n") + "\n\nMay I add them to elm-package.json for you--------?" +
+          this.yOrN,
+          {"default": "yes"}, (err, value) => {
+            if (err) {
+              reject(err);
+            } else if (value && value.toString() === "true") {
+              testElmPackage = updateAction();
+              resolve({base: baseElmPackage, target: testElmPackage});
+            } else {
+              reject();
+            }
+          });
+      };
 
-      promptly.confirm(
-        "The dependencies of the test elm-package.json need to be updated to contain:\n" +
-        diffString.join("\n") + "\n\nMay I add them to elm-package.json for you--------?" +
-        this.yOrN,
-        {"default": "yes"}, (err, value) => {
-          if (err) {
-            reject(err);
-          } else if (value && value.toString() === "true") {
-            testElmPackage = this.updateDependenciesAction(dependencies, testElmPackageDir, testElmPackage);
-            resolve({base: baseElmPackage, test: testElmPackage});
-          } else {
-            reject();
-          }
-        });
+      this.elmPackageHelper.updateDependencies(testFramework, baseElmPackage, testElmPackageDir, testElmPackage, callback);
     });
-  }
-
-  public updateDependenciesAction(dependencies: string[][], testElmPackageDir: string, testElmPackage: ElmPackageJson): ElmPackageJson {
-    let sortedDependencies: string[][] = _.sortBy(dependencies, (kp: string[]) => kp[0]);
-    testElmPackage.dependencies = _.fromPairs(sortedDependencies);
-    this.elmPackageHelper.write(testElmPackageDir, testElmPackage);
-
-    return testElmPackage;
   }
 
   public installDependencies(config: LoboConfig, testDirectory: string): Bluebird<void> {
