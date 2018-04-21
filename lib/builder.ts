@@ -18,25 +18,20 @@ export class BuilderImp implements Builder {
   }
 
   public build(context: ExecutionContext): Bluebird<ExecutionContext> {
-    return this.make(context.config, context.buildOutputFilePath, context.testDirectory, context.testFile)
+    return this.make(context.config, context.testSuiteOutputFilePath, context.buildOutputFilePath)
       .then(() => context);
   }
 
-  public make(config: LoboConfig, buildOutputFilePath: string, testDirectory: string, testFile: string): Bluebird<void> {
+  public make(config: LoboConfig, testSuiteOutputFilePath: string, buildOutputFilePath: string)
+    : Bluebird<void> {
     return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
-      let pluginDirectory = path.resolve(__dirname, "..", "plugin");
-      let testStuffMainElm = path.join(pluginDirectory, config.testFramework.config.name, config.testMainElm);
       let command = "elm-make";
 
       if (config.compiler) {
         command = path.join(config.compiler, command);
       }
 
-      if (testFile !== "Tests.elm") {
-        command += " " + testFile;
-      }
-
-      command += ` ${testStuffMainElm} --output=${buildOutputFilePath}`;
+      command += ` ${testSuiteOutputFilePath} --output=${buildOutputFilePath}`;
 
       if (!config.prompt) {
         command += " --yes";
@@ -48,7 +43,7 @@ export class BuilderImp implements Builder {
 
       try {
         // run as child process using current process stdio so that colored output is returned
-        let options = {cwd: testDirectory, stdio: [process.stdin, process.stdout, process.stderr]};
+        let options = {cwd: config.loboDirectory, stdio: [process.stdin, process.stdout, process.stderr]};
         this.logger.trace(command);
         childProcess.execSync(command, options);
         resolve();

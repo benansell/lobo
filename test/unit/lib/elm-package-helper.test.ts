@@ -268,7 +268,7 @@ describe("lib elm-package-helper", () => {
   describe("mergeSourceDirectories", () => {
     it("should return array with current dir only when no other dirs are specified", () => {
       // act
-      let actual = helper.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, "testDir", ".");
+      let actual = helper.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, "testDir", ".", []);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -277,7 +277,7 @@ describe("lib elm-package-helper", () => {
 
     it("should return array with current dir and test file dir when no other dirs are specified", () => {
       // act
-      let actual = helper.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, "testDir", "foo");
+      let actual = helper.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, "testDir", "foo", []);
 
       // assert
       expect(actual.length).to.equal(2);
@@ -288,7 +288,7 @@ describe("lib elm-package-helper", () => {
     it("should return array with current dir only when no other dirs are specified other than the test source directories", () => {
       // act
       let actual = helper
-        .mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, "testDir", ".");
+        .mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, "testDir", ".", []);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -301,7 +301,7 @@ describe("lib elm-package-helper", () => {
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux");
+      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", []);
 
       // assert
       expect(actual).to.include(".");
@@ -313,7 +313,7 @@ describe("lib elm-package-helper", () => {
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux");
+      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", []);
 
       // assert
       expect(actual).to.include("test");
@@ -326,10 +326,24 @@ describe("lib elm-package-helper", () => {
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux");
+      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", []);
 
       // assert
       expect(actual).to.include("../sourceDir/source");
+    });
+
+    it("should return array with extra directories relative to parent dir", () => {
+      // arrange
+      mockUtil.resolveDir = (...dirs) => dirs.join();
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let extraDir = ["foo"];
+
+      // act
+      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", extraDir);
+
+      // assert
+      expect(actual).to.include("../foo");
     });
   });
 
@@ -397,6 +411,359 @@ describe("lib elm-package-helper", () => {
       expect(actual["source-directories"]).not.to.exist;
       expect(actual.sourceDirectories.length).to.equal(1);
       expect(actual.sourceDirectories).to.include("foo");
+    });
+  });
+
+  describe("updateSourceDirectories", () => {
+    it("should call mergeSourceDirectories with the specified base package json", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, [], callback);
+
+      // assert
+      expect(helper.mergeSourceDirectories)
+          .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call mergeSourceDirectories with the specified base directory", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectories( "bar", sourcePackageJson, "baz", "qux", testPackageJson, [], callback);
+
+      // assert
+      expect(helper.mergeSourceDirectories)
+          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call mergeSourceDirectories with the specified test package json", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, [], callback);
+
+      // assert
+      expect(helper.mergeSourceDirectories)
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call mergeSourceDirectories with the specified main test directory", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, [], callback);
+
+      // assert
+      expect(helper.mergeSourceDirectories)
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call mergeSourceDirectories with the specified test file directory", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, [], callback);
+
+      // assert
+      expect(helper.mergeSourceDirectories)
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "qux", Sinon.match.any);
+    });
+
+    it("should call mergeSourceDirectories with the specified extraDirectories", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, ["foo"], callback);
+
+      // assert
+      expect(helper.mergeSourceDirectories)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, ["foo"]);
+    });
+
+    it("should call supplied callback with the source directory diff", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.stub();
+      (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo", "test"]);
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, ["foo"], callback);
+
+      // assert
+      expect(callback)
+        .to.have.been.calledWith(["foo"], Sinon.match.any);
+    });
+
+    it("should call supplied callback with a function that calls updateDependenciesAction with the merged source directories", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = (diff, updateAction) => updateAction();
+      helper.updateSourceDirectoriesAction = Sinon.spy();
+      helper.mergeSourceDirectories = Sinon.stub();
+      (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo"]);
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, ["foo"], callback);
+
+      // assert
+      expect(helper.updateSourceDirectoriesAction)
+        .to.have.been.calledWith(["foo"], Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call supplied callback with a function that calls updateDependenciesAction with the testElmPackageDir", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = (diff, updateAction) => updateAction();
+      helper.updateSourceDirectoriesAction = Sinon.spy();
+      helper.mergeSourceDirectories = Sinon.stub();
+      (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo"]);
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, ["foo"], callback);
+
+      // assert
+      expect(helper.updateSourceDirectoriesAction)
+        .to.have.been.calledWith(Sinon.match.any, "baz", Sinon.match.any);
+    });
+
+    it("should call supplied callback with a function that calls updateDependenciesAction with the testElmPackage", () => {
+      // arrange
+      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
+      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let callback = (diff, updateAction) => updateAction();
+      helper.updateSourceDirectoriesAction = Sinon.spy();
+      helper.mergeSourceDirectories = Sinon.stub();
+      (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo"]);
+
+      // act
+      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", "qux", testPackageJson, ["foo"], callback);
+
+      // assert
+      expect(helper.updateSourceDirectoriesAction)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testPackageJson);
+    });
+  });
+
+  describe("updateSourceDirectoriesAction", () => {
+    it("should update the package json sourceDirectories with the supplied value", () => {
+      // arrange
+      let expected = ["foo"];
+      helper.write = Sinon.stub();
+
+      // act
+      let actual = helper.updateSourceDirectoriesAction(expected, "bar", <ElmPackageJson>{});
+
+      // assert
+      expect(actual.sourceDirectories).to.equal(expected);
+    });
+
+    it("should write the updated package json to the supplied directory", () => {
+      // arrange
+      helper.write = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectoriesAction(["foo"], "bar", <ElmPackageJson>{});
+
+      // assert
+      expect(helper.write).to.have.been.calledWith("bar", Sinon.match.any);
+    });
+
+    it("should write the updated package json to the supplied directory", () => {
+      // arrange
+      let expected = ["foo"];
+      helper.write = Sinon.spy();
+
+      // act
+      helper.updateSourceDirectoriesAction(expected, "bar", <ElmPackageJson>{});
+
+      // assert
+      expect(helper.write).to.have.been.calledWith(Sinon.match.any, {sourceDirectories: expected});
+    });
+  });
+
+  describe("updateDependencies", () => {
+    it("should call mergeDependencies with the specified base package json", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
+      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let callback = Sinon.stub();
+      helper.mergeDependencies = Sinon.spy();
+
+      // act
+      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+
+      // assert
+      expect(helper.mergeDependencies)
+          .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call mergeDependencies with the specified test package json", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
+      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let callback = Sinon.stub();
+      helper.mergeDependencies = Sinon.spy();
+
+      // act
+      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+
+      // assert
+      expect(helper.mergeDependencies)
+          .to.have.been.calledWith(Sinon.match.any, testPackageJson, Sinon.match.any);
+    });
+
+    it("should call mergeDependencies with the specified testFramework", () => {
+      // arrange
+      let testFramework: PluginTestFrameworkWithConfig = {
+        config: {dependencies: <Dependencies> {foo: "bar"}, sourceDirectories: [], name: "baz", options: []},
+        initArgs: Sinon.stub(),
+        pluginElmModuleName: Sinon.stub(),
+        testFrameworkElmModuleName: Sinon.stub()
+      };
+      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
+      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let callback = Sinon.stub();
+      helper.mergeDependencies = Sinon.spy();
+
+      // act
+      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+
+      // assert
+      expect(helper.mergeDependencies)
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testFramework);
+    });
+
+    it("should call supplied callback with the dependency diff", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
+      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let callback = Sinon.stub();
+      helper.mergeDependencies = Sinon.stub();
+      (<Sinon.SinonStub>helper.mergeDependencies).returns(["foo"]);
+
+      // act
+      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+
+      // assert
+      expect(callback).to.have.been.calledWith(["foo"], Sinon.match.any);
+    });
+
+    it("should call supplied callback with an update action that calls updateDependenciesAction with the merged dependencies", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
+      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let callback = (diff, updateAction) => updateAction();
+      helper.updateDependenciesAction = Sinon.spy();
+      helper.mergeDependencies = Sinon.stub();
+      (<Sinon.SinonStub>helper.mergeDependencies).returns(["foo"]);
+
+      // act
+      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+
+      // assert
+      expect(helper.updateDependenciesAction).to.have.been.calledWith(["foo"], Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call supplied callback with an update action that calls updateDependenciesAction with the testElmPackageDir", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
+      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let callback = (diff, updateAction) => updateAction();
+      helper.updateDependenciesAction = Sinon.spy();
+      helper.mergeDependencies = Sinon.stub();
+
+      // act
+      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+
+      // assert
+      expect(helper.updateDependenciesAction).to.have.been.calledWith( Sinon.match.any, "baz", Sinon.match.any);
+    });
+
+    it("should call supplied callback with an update action that calls updateDependenciesAction with the testElmPackage", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
+      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let callback = (diff, updateAction) => updateAction();
+      helper.updateDependenciesAction = Sinon.spy();
+      helper.mergeDependencies = Sinon.stub();
+
+      // act
+      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+
+      // assert
+      expect(helper.updateDependenciesAction).to.have.been.calledWith( Sinon.match.any, Sinon.match.any, testPackageJson);
+    });
+  });
+
+  describe("updateDependenciesAction", () => {
+    it("should update the package json dependencies with the supplied value", () => {
+      // arrange
+      let expected = [["foo", "bar"]];
+      helper.write = Sinon.stub();
+
+      // act
+      let actual = helper.updateDependenciesAction(expected, "baz", <ElmPackageJson>{});
+
+      // assert
+      expect(actual.dependencies).to.deep.equal({foo: "bar"});
+    });
+
+    it("should write the updated package json to the supplied directory", () => {
+      // arrange
+      helper.write = Sinon.spy();
+
+      // act
+      helper.updateDependenciesAction([["foo", "bar"]], "baz", <ElmPackageJson>{});
+
+      // assert
+      expect(helper.write).to.have.been.calledWith("baz", Sinon.match.any);
+    });
+
+    it("should write the updated package json to the supplied directory", () => {
+      // arrange
+      let expected = [["foo", "baz"]];
+      helper.write = Sinon.spy();
+
+      // act
+      helper.updateDependenciesAction(expected, "baz", <ElmPackageJson>{});
+
+      // assert
+      expect(helper.write).to.have.been.calledWith(Sinon.match.any, Sinon.match(value => value.dependencies.foo = "bar"));
     });
   });
 

@@ -150,6 +150,8 @@ export class LoboImp implements Lobo {
       testFile: program.testFile
     };
 
+    context.testSuiteOutputFilePath = path.resolve(context.config.loboDirectory, context.config.testMainElm);
+
     return this.launchStages(context)
       .then(
         () => {

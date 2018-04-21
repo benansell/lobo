@@ -48,7 +48,7 @@ describe("lib builder", () => {
     it("should call make with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config};
       let mockMake = Sinon.stub();
       builder.make = mockMake;
       mockMake.resolves();
@@ -58,14 +58,31 @@ describe("lib builder", () => {
 
       // assert
       return actual.then(() => {
-        expect(builder.make).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        expect(builder.make).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
+      });
+    });
+
+    it("should call make with the supplied testSuiteOutputFilePath", () => {
+      // arrange
+      let config = <LoboConfig> {noUpdate: false};
+      let context = <ExecutionContext> {config, buildOutputFilePath: "foo", testSuiteOutputFilePath: "bar"};
+      let mockMake = Sinon.stub();
+      builder.make = mockMake;
+      mockMake.resolves();
+
+      // act
+      let actual = builder.build(context);
+
+      // assert
+      return actual.then(() => {
+        expect(builder.make).to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any);
       });
     });
 
     it("should call make with the supplied buildOutputFilePath", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, buildOutputFilePath: "foo", testSuiteOutputFilePath: "bar"};
       let mockMake = Sinon.stub();
       builder.make = mockMake;
       mockMake.resolves();
@@ -75,41 +92,7 @@ describe("lib builder", () => {
 
       // assert
       return actual.then(() => {
-        expect(builder.make).to.have.been.calledWith(config, Sinon.match.any);
-      });
-    });
-
-    it("should call make with the supplied test directory", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, buildOutputFilePath: "foo", testDirectory: "bar", testFile: "baz"};
-      let mockMake = Sinon.stub();
-      builder.make = mockMake;
-      mockMake.resolves();
-
-      // act
-      let actual = builder.build(context);
-
-      // assert
-      return actual.then(() => {
-        expect(builder.make).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call make with the supplied test file", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, buildOutputFilePath: "foo", testDirectory: "bar", testFile: "baz"};
-      let mockMake = Sinon.stub();
-      builder.make = mockMake;
-      mockMake.resolves();
-
-      // act
-      let actual = builder.build(context);
-
-      // assert
-      return actual.then(() => {
-        expect(builder.make).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz");
+        expect(builder.make).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "foo");
       });
     });
   });
@@ -134,12 +117,12 @@ describe("lib builder", () => {
 
     it("should call elm-make to build the tests", () => {
       // arrange
-      let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      let config = <LoboConfig> {compiler: "abc"};
       mockPathResolve.callsFake(() => "def");
       mockJoin.callsFake((...args) => args.join("/"));
 
       // act
-      let actual = builder.make(config, "bar", "baz", "qux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -147,57 +130,27 @@ describe("lib builder", () => {
       });
     });
 
-    it("should call elm-make with the qualified path to testMainElm file from the config", () => {
+    it("should call elm-make with the supplied testSuiteOutputFilePath", () => {
       // arrange
-      let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      let config = <LoboConfig> {compiler: "abc"};
       mockPathResolve.callsFake(() => "def");
       mockJoin.callsFake((...args) => args.join("-"));
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match(/elm-make.* def-foo-bar/), Sinon.match.any);
-      });
-    });
-
-    it("should call elm-make with the relative path to testFile", () => {
-      // arrange
-      let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
-      mockPathResolve.callsFake(() => "def");
-      mockJoin.callsFake((...args) => args.join("-"));
-
-      // act
-      let actual = builder.make(config, "baz", "qux", "quux");
-
-      // assert
-      return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match(/elm-make quux/), Sinon.match.any);
-      });
-    });
-
-    it("should not call elm-make with the relative path to testFile when it is 'Tests.elm'", () => {
-      // arrange
-      let config = <LoboConfig> {compiler: "abc", testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
-      mockPathResolve.callsFake(() => "def");
-      mockJoin.callsFake((...args) => args.join("-"));
-
-      // act
-      let actual = builder.make(config, "baz", "Tests.elm", "qux");
-
-      // assert
-      return actual.finally(() => {
-        expect(mockExec).not.to.have.been.calledWith(Sinon.match(/Tests.elm/), Sinon.match.any);
+        expect(mockExec).to.have.been.calledWith(Sinon.match(/elm-make.* bar/), Sinon.match.any);
       });
     });
 
     it("should call elm-make to build the tests to the specified output file path", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      let config = <LoboConfig> {compiler: "abc"};
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -207,10 +160,10 @@ describe("lib builder", () => {
 
     it("should call elm-make to build the tests without --yes when prompt is true", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", prompt: true};
+      let config = <LoboConfig> {prompt: true};
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -220,10 +173,10 @@ describe("lib builder", () => {
 
     it("should call elm-make to build the tests with --yes when prompt is false", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", prompt: false};
+      let config = <LoboConfig> {prompt: false};
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -233,10 +186,10 @@ describe("lib builder", () => {
 
     it("should call elm-make to build the tests without --warn when noWarn is true", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", noWarn: true};
+      let config = <LoboConfig> {noWarn: true};
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -246,10 +199,10 @@ describe("lib builder", () => {
 
     it("should call elm-make to build the tests with --warn when noWarn is false", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", noWarn: false};
+      let config = <LoboConfig> {noWarn: false};
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -257,25 +210,25 @@ describe("lib builder", () => {
       });
     });
 
-    it("should call elm-make to build the tests with cwd as supplied directory", () => {
+    it("should call elm-make to build the tests with cwd as lobo directory", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar", noWarn: false};
+      let config = <LoboConfig> {loboDirectory: "foo", noWarn: false};
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "qux"));
+        expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "foo"));
       });
     });
 
     it("should call resolve when there are no elm-make build errors", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      let config = <LoboConfig> {};
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
@@ -285,12 +238,12 @@ describe("lib builder", () => {
 
     it("should catch any elm-make build errors and call the specified reject with the error", () => {
       // arrange
-      let config = <LoboConfig> {testFramework: {config: {name: "foo"}}, testMainElm: "bar"};
+      let config = <LoboConfig> {};
       let expected = new Error();
       mockExec.throws(expected);
 
       // act
-      let actual = builder.make(config, "baz", "qux", "quux");
+      let actual = builder.make(config, "bar", "baz");
 
       // assert
       actual.catch((err) => {

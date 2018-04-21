@@ -238,7 +238,7 @@ describe("lib main", () => {
 
       // act
       let actual: Bluebird<void> = undefined;
-      revert(() => actual = lobo.launch(<LoboConfig>{}));
+      revert(() => actual = lobo.launch(<LoboConfig>{loboDirectory: "foo", testMainElm: "bar"}));
 
       // assert
       return actual.then(() => {
@@ -248,7 +248,7 @@ describe("lib main", () => {
 
     it("should call done with the config when watch is true", () => {
       // arrange
-      let expected = <LoboConfig> {};
+      let expected = <LoboConfig> {loboDirectory: "foo", testMainElm: "bar"};
       let revert = rewiredMain.__with__({program: {watch: true}});
       lobo.done = Sinon.spy();
       let mockLaunchStages = Sinon.stub();
@@ -278,7 +278,7 @@ describe("lib main", () => {
 
       it("should call done with the config when an error is thrown and watch is true", () => {
         // arrange
-        let expected = <LoboConfig> {};
+        let expected = <LoboConfig> {loboDirectory: "foo", testMainElm: "bar"};
         lobo.done = Sinon.spy();
         let mockLaunchStages = Sinon.stub();
         mockLaunchStages.rejects(new Error());
@@ -313,7 +313,7 @@ describe("lib main", () => {
         lobo.launchStages = mockLaunchStages;
 
         // act
-        let actual = lobo.launch(<LoboConfig> {});
+        let actual = lobo.launch(<LoboConfig> {loboDirectory: "foo", testMainElm: "bar"});
 
         // assert
         return actual.then(() => {
@@ -331,7 +331,7 @@ describe("lib main", () => {
       lobo.launchStages = mockLaunchStages;
 
       // act
-      let actual = lobo.launch(<LoboConfig>{});
+      let actual = lobo.launch(<LoboConfig>{loboDirectory: "foo", testMainElm: "bar"});
 
       // assert
       return actual.then(() => {
@@ -348,7 +348,7 @@ describe("lib main", () => {
       lobo.launchStages = mockLaunchStages;
 
       // act
-      let actual = lobo.launch(<LoboConfig>{});
+      let actual = lobo.launch(<LoboConfig>{loboDirectory: "foo", testMainElm: "bar"});
 
       // assert
       return actual.then(() => {
