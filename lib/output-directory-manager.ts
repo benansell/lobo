@@ -27,16 +27,16 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     }
 
     const loboDirectoryElmStuff = path.resolve(loboDirectory, "elm-stuff");
+    const testElmStuffDirectory = path.resolve(testDirectory, "elm-stuff");
 
-    if (!fs.existsSync(loboDirectoryElmStuff)) {
-      const testElmStuffDirectory = path.resolve(testDirectory, "elm-stuff");
+    if (fs.existsSync(testElmStuffDirectory) && !fs.existsSync(loboDirectoryElmStuff)) {
       shelljs.ln("-s", testElmStuffDirectory, loboDirectoryElmStuff);
     }
 
     const loboDirectoryElmPackage = path.resolve(loboDirectory, "elm-package.json");
+    const testElmPackage = path.resolve(testDirectory, "elm-package.json");
 
-    if (!fs.existsSync(loboDirectoryElmPackage)) {
-      const testElmPackage = path.resolve(testDirectory, "elm-package.json");
+    if (fs.existsSync(testElmPackage) && !fs.existsSync(loboDirectoryElmPackage)) {
       shelljs.cp(testElmPackage, loboDirectoryElmPackage);
 
       return true;
@@ -82,9 +82,6 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
       throw new Error("Unable to read the lobo test elm-package.json file.");
     }
 
-    // let dirPath = path.join(__dirname, "..");
-    // sourceDirs = this.addSourceDirectories(, dirPath, testElmPackageDir, sourceDirs);
-
     if (loboElmPackageIsCopy) {
       target.sourceDirectories = [];
     }
@@ -100,7 +97,7 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
         return;
       }
 
-      testElmPackage = updateAction();
+      updateAction();
     };
 
     this.elmPackageHelper.updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir, testDir,
