@@ -343,7 +343,7 @@ describe("lib elm-package-helper", () => {
       let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "testDir", "qux", extraDir);
 
       // assert
-      expect(actual).to.include("../foo");
+      expect(actual).to.include.something.that.match(/\.\.\/foo$/);
     });
   });
 
