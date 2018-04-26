@@ -68,10 +68,10 @@ describe("lib reporter", () => {
   describe("update", () => {
     it("should report nothing when program.quiet is true", () => {
       // arrange
-      RewiredReporter.__set__({program: {quiet: true}});
+      let revertProgram = RewiredReporter.__with__({program: {quiet: true}});
 
       // act
-      reporter.update(<ProgressReport> {resultType: "PASSED"}, []);
+      revertProgram(() => reporter.update(<ProgressReport> {resultType: "PASSED"}, []));
 
       // assert
       expect(mockReporterPlugin.update).not.to.have.been.called;
@@ -79,10 +79,10 @@ describe("lib reporter", () => {
 
     it("should call reporter.update when program.quiet is false", () => {
       // arrange
-      RewiredReporter.__set__({program: {quiet: false}});
+      let revertProgram = RewiredReporter.__with__({program: {quiet: false}});
 
       // act
-      reporter.update(<ProgressReport> {resultType: "PASSED"}, []);
+      revertProgram(() => reporter.update(<ProgressReport> {resultType: "PASSED"}, []));
 
       // assert
       expect(mockReporterPlugin.update).to.have.been.called;
@@ -90,11 +90,11 @@ describe("lib reporter", () => {
 
     it("should add the supplied debugLogMessages to the testDebugLogMessages list with the result id", () => {
       // arrange
-      RewiredReporter.__set__({program: {quiet: false}});
+      let revertProgram = RewiredReporter.__with__({program: {quiet: false}});
       let messages = ["foo"];
 
       // act
-      reporter.update(<ProgressReport> {id: 123, resultType: "PASSED"}, messages);
+      revertProgram(() => reporter.update(<ProgressReport> {id: 123, resultType: "PASSED"}, messages));
 
       // assert
       expect(reporter.testDebugLogMessages).to.include.something.that.deep.equals({id: 123, debugLogMessages: messages});

@@ -19,6 +19,7 @@ describe("lib test-result-decorator-console", () => {
   let mockRedStyle: SinonStub;
   let mockGreenStyle: SinonStub;
   let mockYellowStyle: SinonStub;
+  let revert: () => void;
 
   beforeEach(() => {
     mockCyanStyle = Sinon.stub();
@@ -26,7 +27,7 @@ describe("lib test-result-decorator-console", () => {
     mockGreenStyle = Sinon.stub();
     mockYellowStyle = Sinon.stub();
 
-    RewiredDecorator.__set__({
+    revert = RewiredDecorator.__set__({
       chalk_1: {
         "default": {
           cyan: mockCyanStyle,
@@ -39,6 +40,10 @@ describe("lib test-result-decorator-console", () => {
 
     rewiredImp = RewiredDecorator.__get__("TestResultDecoratorConsoleImp");
     decorator = new rewiredImp();
+  });
+
+  afterEach(() => {
+    revert();
   });
 
   describe("createTestResultDecoratorConsole", () => {

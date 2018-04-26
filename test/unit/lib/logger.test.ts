@@ -262,10 +262,11 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          RewiredLogger.__set__({program: {veryVerbose: true}});
+          let revertVeryVerbose = RewiredLogger.__with__({program: {veryVerbose: true}});
 
           // act
-          let actual = logger.showLogMessage(test.level);
+          let actual: boolean = undefined;
+          revertVeryVerbose(() => actual = logger.showLogMessage(test.level));
 
           // assert
           expect(actual).to.equal(test.expected);
@@ -283,10 +284,11 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          RewiredLogger.__set__({program: {verbose: true}});
+          let revertVerbose = RewiredLogger.__with__({program: {verbose: true}});
 
           // act
-          let actual = logger.showLogMessage(test.level);
+          let actual: boolean = undefined;
+          revertVerbose(() => actual = logger.showLogMessage(test.level));
 
           // assert
           expect(actual).to.equal(test.expected);
@@ -304,10 +306,11 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          RewiredLogger.__set__({program: {normal: true}});
+          let revertNormal = RewiredLogger.__with__({program: {normal: true}});
 
           // act
-          let actual = logger.showLogMessage(test.level);
+          let actual: boolean = undefined;
+          revertNormal(() => actual = logger.showLogMessage(test.level));
 
           // assert
           expect(actual).to.equal(test.expected);
@@ -325,10 +328,11 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          RewiredLogger.__set__({program: {quiet: true}});
+          let revertQuiet = RewiredLogger.__with__({program: {quiet: true}});
 
           // act
-          let actual = logger.showLogMessage(test.level);
+          let actual: boolean = undefined;
+          revertQuiet(() => actual = logger.showLogMessage(test.level));
 
           // assert
           expect(actual).to.equal(test.expected);

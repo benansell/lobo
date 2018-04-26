@@ -22,6 +22,7 @@ import {TestResultFormatter} from "../../../../lib/test-result-formatter";
 import {Util} from "../../../../lib/util";
 import {Chalk} from "chalk";
 import {ReporterStandardConsole} from "../../../../lib/reporter-standard-console";
+import * as plugin from "../../../../lib/plugin";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -70,12 +71,12 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("constructor", () => {
     it("should set diffMaxLength to default of 80 columns when stdout is undefined", () => {
       // arrange
-      RewiredPlugin.__set__({process: {stdout: undefined}});
+      let revertStdOut = RewiredPlugin.__with__({process: {stdout: undefined}});
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
       let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
-      actual.logFailureMessage({});
+      revertStdOut(() => actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {}));
 
       // assert
       expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 80);
@@ -83,12 +84,12 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should set diffMaxLength with default of 80 columns when stdout.columns is undefined", () => {
       // arrange
-      RewiredPlugin.__set__({process: {stdout: {columns: undefined}}});
+      let revertStdOutColumns = RewiredPlugin.__with__({process: {stdout: {columns: undefined}}});
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
       let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
-      actual.logFailureMessage({});
+      revertStdOutColumns(() => actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {}));
 
       // assert
       expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any,  80);
@@ -96,12 +97,14 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should set diffMaxLength with std.columns minus message prefix padding length when stdout.columns exists", () => {
       // arrange
-      RewiredPlugin.__set__({process: {stdout: {columns: 10}}});
+      let revertStdOutColumns = RewiredPlugin.__with__({process: {stdout: {columns: 10}}});
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
-      let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
-      actual.logFailureMessage({});
+      revertStdOutColumns(() => {
+        let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
+        actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {})
+      });
 
       // assert
       expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any,  6);

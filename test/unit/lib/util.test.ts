@@ -28,6 +28,7 @@ describe("lib util", () => {
   let mockRelativePath: SinonStub;
   let mockResolvePath: SinonStub;
   let mockVersions: SinonStub;
+  let revert: () => void;
 
   beforeEach(() => {
     mockDirName = Sinon.stub();
@@ -40,7 +41,7 @@ describe("lib util", () => {
     mockResolvePath = Sinon.stub();
     mockVersions = Sinon.stub();
 
-    RewiredUtil.__set__({
+    revert = RewiredUtil.__set__({
       fs: {existsSync: mockExists, lstatSync: mockLstat, readFileSync: mockReadFileSync,
         realpathSync: mockRealPath},
       path: {dirname: mockDirName, relative: mockRelativePath, resolve: mockResolvePath},
@@ -54,6 +55,10 @@ describe("lib util", () => {
     mockLogger.error = Sinon.stub();
     mockLogger.trace = Sinon.stub();
     util = new rewiredImp(mockLogger);
+  });
+
+  afterEach(() => {
+    revert();
   });
 
   describe("createUtil", () => {
