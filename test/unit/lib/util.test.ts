@@ -76,11 +76,11 @@ describe("lib util", () => {
       // arrange
       let mockFind = Sinon.stub();
       mockFind.returns(["plugin/1/foo.js", "plugin/2/foobar.js"]);
-      let revert = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
+      let revertShellJs = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
 
       // act
       let actual: string[] = undefined;
-      revert(() => actual = util.availablePlugins("foo"));
+      revertShellJs(() => actual = util.availablePlugins("foo"));
 
       // assert
       expect(actual.length).to.equal(2);

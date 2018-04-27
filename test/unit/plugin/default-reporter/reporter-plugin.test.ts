@@ -75,8 +75,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
-      let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
-      revertStdOut(() => actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {}));
+      revertStdOut(() => {
+        let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
+        actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {});
+      });
 
       // assert
       expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 80);
@@ -88,8 +90,10 @@ describe("plugin default-reporter reporter-plugin", () => {
       let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
-      let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
-      revertStdOutColumns(() => actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {}));
+      revertStdOutColumns(() => {
+        let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
+        actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {});
+      });
 
       // assert
       expect(mockFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any,  80);
@@ -103,7 +107,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       // act
       revertStdOutColumns(() => {
         let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
-        actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {})
+        actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {});
       });
 
       // assert
