@@ -59,11 +59,11 @@ describe("lib test-result-decorator-console", () => {
   describe("ctor", () => {
     it("should set onlyStyle to failed style when failOnOnly is true", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnOnly: true}});
+      let revertProgram = RewiredDecorator.__with__({program: {failOnOnly: true}});
 
       // act
       let actual: Function = undefined;
-      revert(() => actual = new rewiredImp().only);
+      revertProgram(() => actual = new rewiredImp().only);
 
       // assert
 
@@ -72,11 +72,11 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set onlyStyle to inconclusive style when failOnOnly is false", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnOnly: false}});
+      let revertProgram = RewiredDecorator.__with__({program: {failOnOnly: false}});
 
       // act
       let actual: Function = undefined;
-      revert(() => actual = new rewiredImp().only);
+      revertProgram(() => actual = new rewiredImp().only);
 
       // assert
       expect(actual).to.equal(decorator.inconclusive);
@@ -84,11 +84,11 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set skipStyle to failed style when failOnSkip is true", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnSkip: true}});
+      let revertProgram = RewiredDecorator.__with__({program: {failOnSkip: true}});
 
       // act
       let actual: Function = undefined;
-      revert(() => actual = new rewiredImp().skip);
+      revertProgram(() => actual = new rewiredImp().skip);
 
       // assert
       expect(actual).to.equal(decorator.failed);
@@ -96,11 +96,11 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set skipStyle to inconclusive style when failOnSkip is false", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnSkip: false}});
+      let revertProgram = RewiredDecorator.__with__({program: {failOnSkip: false}});
 
       // act
       let actual: Function = undefined;
-      revert(() => actual = new rewiredImp().skip);
+      revertProgram(() => actual = new rewiredImp().skip);
 
       // assert
       expect(actual).to.equal(decorator.inconclusive);
@@ -108,11 +108,11 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set todoStyle to failed style when failOnTodo is true", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnTodo: true}});
+      let revertProgram = RewiredDecorator.__with__({program: {failOnTodo: true}});
 
       // act
       let actual: Function = undefined;
-      revert(() => actual = new rewiredImp().todo);
+      revertProgram(() => actual = new rewiredImp().todo);
 
       // assert
       expect(actual).to.equal(decorator.failed);
@@ -120,10 +120,10 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set todoStyle to inconclusive style when failOnTodo is false", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnTodo: false}});
+      let revertProgram = RewiredDecorator.__with__({program: {failOnTodo: false}});
 
       let actual: Function = undefined;
-      revert(() => actual = new rewiredImp().todo);
+      revertProgram(() => actual = new rewiredImp().todo);
 
       // assert
       expect(actual).to.equal(decorator.inconclusive);
