@@ -123,7 +123,7 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     const lines: string[] = ["module UnitTest exposing (main)", ""];
     lines.push("import Json.Decode exposing (Value)");
     lines.push("import TestRunner as Runner");
-    lines.push(`import ${config.testFramework.pluginElmModuleName()} as ElmTest`);
+    lines.push(`import ${config.testFramework.pluginElmModuleName()} as TestPlugin`);
     lines.push(`import ${config.testFramework.testFrameworkElmModuleName()} exposing (Test, describe)`);
 
     testModuleNodes.forEach((tm) => {
@@ -134,40 +134,81 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
 
     lines.push("");
     lines.push("");
-    lines.push("main : Program Value (Runner.Model ElmTest.TestArgs ElmTest.TestRunner) Runner.Msg");
+    lines.push("main : Program Value (Runner.Model TestPlugin.TestArgs TestPlugin.TestRunner) Runner.Msg");
     lines.push("main =");
     lines.push(indent + "Runner.run plugin");
     lines.push("");
     lines.push("");
-    lines.push("plugin : Runner.Plugin ElmTest.TestArgs ElmTest.TestRunner");
+    lines.push("plugin : Runner.Plugin TestPlugin.TestArgs TestPlugin.TestRunner");
     lines.push("plugin =");
-    lines.push(indent + "{ findTests = ElmTest.findTests all");
-    lines.push(indent + ", runTest = ElmTest.runTest");
-    lines.push(indent + ", toArgs = ElmTest.toArgs");
+    lines.push(indent + "{ findTests = TestPlugin.findTests all");
+    lines.push(indent + ", runTest = TestPlugin.runTest");
+    lines.push(indent + ", toArgs = TestPlugin.toArgs");
     lines.push(indent + "}");
 
+    const rootTestSuite = this.generateTestSuiteRoot(indent, testModuleNodes);
+    lines.push(...rootTestSuite);
+
+    for (let i = 0; i < testModuleNodes.length; i++) {
+      const tm = testModuleNodes[i];
+      const testModuleLines = this.generateTestSuiteForModule(indent, tm);
+      lines.push(...testModuleLines);
+    }
+
+    return lines.join(os.EOL);
+  }
+
+  public generateTestSuiteRoot(indent: string, testModuleNodes: TestModuleNode[]): string[] {
+    const lines: string[] = [];
     lines.push("");
     lines.push("");
     lines.push("all : Test");
     lines.push("all =");
-    lines.push(indent + "describe \"Tests\"");
+    lines.push(indent + "describe \"Unit Tests\"");
 
-    const firstTestIndent = indent + indent + "[ ";
-    const restTestIndent = indent + indent + ", ";
+    if (testModuleNodes.length === 0) {
+      lines.push(`${indent}${indent}[]`);
+    } else {
+      const firstTestIndent = indent + indent + "[ ";
+      const restTestIndent = indent + indent + ", ";
 
-    for (let i = 0; i < testModuleNodes.length; i++) {
-      const tm = testModuleNodes[i];
-
-      for (let j = 0; j < tm.tests.length; j++) {
-        const t = tm.tests[j];
-        let prefix = j === 0 ? firstTestIndent : restTestIndent;
-        lines.push(`${prefix}${tm.moduleNode.name}.${t.name}`);
+      for (let i = 0; i < testModuleNodes.length; i++) {
+        const tm = testModuleNodes[i];
+        let prefix = i === 0 ? firstTestIndent : restTestIndent;
+        lines.push(`${prefix}all${this.toSuiteName(tm)}`);
       }
+
+      lines.push(indent + indent + "]");
     }
 
-    lines.push(indent + indent + "]");
+    return lines;
+  }
 
-    return lines.join(os.EOL);
+  public generateTestSuiteForModule(indent: string, testModuleNode: TestModuleNode): string[] {
+    const lines: string[] = [];
+    const alias = this.toSuiteName(testModuleNode);
+    lines.push("");
+    lines.push("");
+    lines.push("all" + alias + " : Test");
+    lines.push("all" + alias + " =");
+    lines.push(`${indent}describe "${testModuleNode.moduleNode.name}"`);
+
+    if (testModuleNode.tests.length === 0) {
+      lines.push(`${indent}${indent}[]`);
+    } else {
+      const firstTestIndent = indent + indent + "[ ";
+      const restTestIndent = indent + indent + ", ";
+
+      for (let j = 0; j < testModuleNode.tests.length; j++) {
+        const t = testModuleNode.tests[j];
+        let prefix = j === 0 ? firstTestIndent : restTestIndent;
+        lines.push(`${prefix}${testModuleNode.moduleNode.name}.${t.name}`);
+      }
+
+      lines.push(indent + indent + "]");
+    }
+
+    return lines;
   }
 
   public isTestFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
@@ -192,6 +233,10 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     }
 
     return false;
+  }
+
+  public toSuiteName(testModuleNode: TestModuleNode): string {
+    return testModuleNode.moduleNode.name.replace(/\./g, "");
   }
 }
 
