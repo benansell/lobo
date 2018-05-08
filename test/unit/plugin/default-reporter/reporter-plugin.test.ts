@@ -423,7 +423,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
-      reporter.logLabels(["foo", "bar"], "baz", 1, [], mockStyle);
+      reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, [], mockStyle);
 
       // assert
       expect(mockStandardConsole.paddedLog).to.have.been.calledWith("foo");
@@ -434,7 +434,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
-      reporter.logLabels(["foo", "bar"], "baz", 1, [], mockStyle);
+      reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, [], mockStyle);
 
       // assert
       expect(mockStandardConsole.paddedLog).to.have.been.calledWith(" bar");
@@ -445,7 +445,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
-      reporter.logLabels(["foo", "bar"], "baz", 1, ["foo"], mockStyle);
+      reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, ["ignored", "foo"], mockStyle);
 
       // assert
       expect(mockStandardConsole.paddedLog).not.to.have.been.calledWith("foo");
@@ -456,7 +456,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let mockStyle = <Chalk><{}> (x => x);
 
       // act
-      reporter.logLabels(["foo", "bar"], "baz", 1, [], mockStyle);
+      reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, [], mockStyle);
 
       // assert
       expect(mockStandardConsole.paddedLog).to.have.been.calledWith(Sinon.match(/[ ]{4}.*baz/));
@@ -467,7 +467,7 @@ describe("plugin default-reporter reporter-plugin", () => {
       let mockStyle = <Chalk><{}> (x => x);
 
       // act
-      reporter.logLabels(["foo", "bar"], "baz", 123, [], mockStyle);
+      reporter.logLabels(["ignored", "foo", "bar"], "baz", 123, [], mockStyle);
 
       // assert
       expect(mockStandardConsole.paddedLog).to.have.been.calledWith(Sinon.match(/.*123\) baz/));

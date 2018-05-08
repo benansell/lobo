@@ -182,7 +182,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       }
     }
 
-    for (let j = 0; j < labels.length; j++) {
+    for (let j = 1; j < labels.length; j++) {
       if (context[j] === labels[j]) {
         labelPad += " ";
         continue;
