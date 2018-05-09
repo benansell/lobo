@@ -48,6 +48,80 @@ describe("lib elm-parser", () => {
     });
   });
 
+  describe("buildElmTypeHelper", () => {
+    it("should call makeElmTypeHelper with the supplied module name", () => {
+      // arrange
+      let mockTypeHelperResolve = Sinon.stub();
+      mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
+
+      // act
+      parserImp.buildElmTypeHelper("foo", "bar");
+
+      // assert
+      expect(mockMakeElmTypeHelper).to.have.been.calledWith("foo");
+    });
+
+    it("should call makeElmTypeHelper.resolve for supplied test framework 'Test' type", () => {
+      // arrange
+      let mockTypeHelperResolve = Sinon.stub();
+      mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
+
+      // act
+      parserImp.buildElmTypeHelper("foo", "bar");
+
+      // assert
+      expect(mockTypeHelperResolve).to.have.been.calledWith("Test", undefined, "bar");
+    });
+
+    it("should call makeElmTypeHelper.resolve for supplied test framework 'concat' function", () => {
+      // arrange
+      let mockTypeHelperResolve = Sinon.stub();
+      mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
+
+      // act
+      parserImp.buildElmTypeHelper("foo", "bar");
+
+      // assert
+      expect(mockTypeHelperResolve).to.have.been.calledWith("concat", undefined, "bar");
+    });
+
+    it("should call makeElmTypeHelper.resolve for supplied test framework 'describe' function", () => {
+      // arrange
+      let mockTypeHelperResolve = Sinon.stub();
+      mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
+
+      // act
+      parserImp.buildElmTypeHelper("foo", "bar");
+
+      // assert
+      expect(mockTypeHelperResolve).to.have.been.calledWith("describe", undefined, "bar");
+    });
+
+    it("should call makeElmTypeHelper.resolve for supplied test framework 'fuzz' function", () => {
+      // arrange
+      let mockTypeHelperResolve = Sinon.stub();
+      mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
+
+      // act
+      parserImp.buildElmTypeHelper("foo", "bar");
+
+      // assert
+      expect(mockTypeHelperResolve).to.have.been.calledWith("fuzz", undefined, "bar");
+    });
+
+    it("should call makeElmTypeHelper.resolve for supplied test framework 'test' function", () => {
+      // arrange
+      let mockTypeHelperResolve = Sinon.stub();
+      mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
+
+      // act
+      parserImp.buildElmTypeHelper("foo", "bar");
+
+      // assert
+      expect(mockTypeHelperResolve).to.have.been.calledWith("test", undefined, "bar");
+    });
+  });
+
   describe("convertToLookup", () => {
     it("should return a lookup based on token type from the supplied tokens", () => {
       // arrange
@@ -74,7 +148,7 @@ describe("lib elm-parser", () => {
       mockTokenize.returns([]);
 
       // act
-      parserImp.parse("foo");
+      parserImp.parse("foo", "bar");
 
       // assert
       expect(mockTokenize).to.have.been.calledWith("foo");
@@ -89,7 +163,7 @@ describe("lib elm-parser", () => {
       parserImp.convertToLookup = mockConvertToLookup;
 
       // act
-      parserImp.parse("foo");
+      parserImp.parse("foo", "bar");
 
       // assert
       expect(mockConvertToLookup).to.have.been.calledWith(expected);
@@ -104,7 +178,7 @@ describe("lib elm-parser", () => {
       parserImp.convertToLookup = mockConvertToLookup;
 
       // act
-      let actual = parserImp.parse( "foo");
+      let actual = parserImp.parse( "foo", "bar");
 
       // assert
       expect(actual).to.be.undefined;
@@ -121,10 +195,27 @@ describe("lib elm-parser", () => {
       parserImp.parseTokens = Sinon.spy();
 
       // act
-      parserImp.parse("foo");
+      parserImp.parse("foo", "bar");
 
       // assert
-      expect(parserImp.parseTokens).to.have.been.calledWith(expected);
+      expect(parserImp.parseTokens).to.have.been.calledWith(expected, Sinon.match.any);
+    });
+
+    it("should call parseTokens with the testFrameworkElmModuleName", () => {
+      // arrange
+      mockTokenize.returns([{identifier: "foo", tokenType: ElmTokenType.Module}]);
+      let mockConvertToLookup = Sinon.mock();
+      let tokenLookup = {};
+      tokenLookup[ElmTokenType.Module] = {};
+      mockConvertToLookup.returns(tokenLookup);
+      parserImp.convertToLookup = mockConvertToLookup;
+      parserImp.parseTokens = Sinon.spy();
+
+      // act
+      parserImp.parse("foo", "bar");
+
+      // assert
+      expect(parserImp.parseTokens).to.have.been.calledWith(Sinon.match.any, "bar");
     });
   });
 
@@ -134,26 +225,48 @@ describe("lib elm-parser", () => {
       let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
       let tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
+      let mockBuildElmTypeHelper = Sinon.stub();
+      mockBuildElmTypeHelper.returns({});
+      parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
 
       // act
-      let actual = parserImp.parseTokens(tokenLookup);
+      let actual = parserImp.parseTokens(tokenLookup, "baz");
 
       // assert
       expect(actual.nodeType).to.equal(ElmNodeType.Module);
       expect(actual.name).to.equal("bar");
     });
 
-    it("should call makeElmTypeHelper with the module token identifier", () => {
+    it("should call buildElmTypeHelper with the module token identifier", () => {
       // arrange
       let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
       let tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
+      let mockBuildElmTypeHelper = Sinon.stub();
+      mockBuildElmTypeHelper.returns({});
+      parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
 
       // act
-      parserImp.parseTokens(tokenLookup);
+      parserImp.parseTokens(tokenLookup, "baz");
 
       // assert
-      expect(mockMakeElmTypeHelper).to.have.been.calledWith("bar");
+      expect(mockBuildElmTypeHelper).to.have.been.calledWith("bar", Sinon.match.any);
+    });
+
+    it("should call buildElmTypeHelper with the testFrameworkElmModuleName", () => {
+      // arrange
+      let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
+      let tokenLookup = {};
+      tokenLookup[ElmTokenType.Module] = [moduleToken];
+      let mockBuildElmTypeHelper = Sinon.stub();
+      mockBuildElmTypeHelper.returns({});
+      parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
+
+      // act
+      parserImp.parseTokens(tokenLookup, "baz");
+
+      // assert
+      expect(mockBuildElmTypeHelper).to.have.been.calledWith(Sinon.match.any, "baz");
     });
 
     it("should call parseFirstPass with the type helper and token lookup", () => {
@@ -162,13 +275,15 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
       let typeHelper = {};
-      mockMakeElmTypeHelper.returns(typeHelper);
+      let mockBuildElmTypeHelper = Sinon.stub();
+      mockBuildElmTypeHelper.returns(typeHelper);
+      parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
       let mockParseFirstPass = Sinon.mock();
       mockParseFirstPass.returns({complete: [], partial: []});
       parserImp.parseFirstPass = mockParseFirstPass;
 
       // act
-      parserImp.parseTokens(tokenLookup);
+      parserImp.parseTokens(tokenLookup, "baz");
 
       // assert
       expect(mockParseFirstPass).to.have.been.calledWith(typeHelper, tokenLookup, "bar");
@@ -180,7 +295,9 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
       let typeHelper = {};
-      mockMakeElmTypeHelper.returns(typeHelper);
+      let mockBuildElmTypeHelper = Sinon.stub();
+      mockBuildElmTypeHelper.returns(typeHelper);
+      parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
       let mockParseFirstPass = Sinon.mock();
       let expected = [{node: {name: "baz"}}];
       mockParseFirstPass.returns({complete: [], partial: expected});
@@ -189,7 +306,7 @@ describe("lib elm-parser", () => {
       parserImp.parseSecondPass = mockParseSecondPass;
 
       // act
-      parserImp.parseTokens(tokenLookup);
+      parserImp.parseTokens(tokenLookup, "baz");
 
       // assert
       expect(mockParseSecondPass).to.have.been.calledWith(typeHelper, expected);
@@ -203,7 +320,6 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.Import] = [token];
       let typeHelper = <ElmTypeHelper> {};
-      mockMakeElmTypeHelper.returns(typeHelper);
       let expected = {name: "baz"};
       let mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
@@ -222,7 +338,6 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.Type] = [token];
       let typeHelper = <ElmTypeHelper> {};
-      mockMakeElmTypeHelper.returns(typeHelper);
       let expected = {name: "baz"};
       let mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
@@ -241,7 +356,6 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.TypeAlias] = [token];
       let typeHelper = <ElmTypeHelper> {};
-      mockMakeElmTypeHelper.returns(typeHelper);
       let expected = {name: "baz"};
       let mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
@@ -260,7 +374,6 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.Port] = [token];
       let typeHelper = <ElmTypeHelper> {};
-      mockMakeElmTypeHelper.returns(typeHelper);
       let expected = {name: "baz"};
       let mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
@@ -279,7 +392,6 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.TypedModuleFunction] = [token];
       let typeHelper = <ElmTypeHelper> {};
-      mockMakeElmTypeHelper.returns(typeHelper);
       let expected = {name: "baz"};
       let mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
@@ -298,7 +410,6 @@ describe("lib elm-parser", () => {
       let tokenLookup = {};
       tokenLookup[ElmTokenType.UntypedModuleFunction] = [token];
       let typeHelper = <ElmTypeHelper> {};
-      mockMakeElmTypeHelper.returns(typeHelper);
       let expected = {name: "baz"};
       let mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
@@ -712,9 +823,26 @@ describe("lib elm-parser", () => {
 
     it("should return all types for list containing exposed type lists containing '..'", () => {
       // arrange
+      let codeHelper = makeElmCodeHelper("import Foo exposing (..)");
+      let typeHelper = makeElmTypeHelper("foo");
+      typeHelper.resolve("bar");
+      typeHelper.resolve("baz", "bar", "foo");
+      typeHelper.resolve("qux", "bar", "foo");
+
+      // act
+      let actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
+
+      // assert
+      expect(actual.length).to.equal(3);
+      expect(actual[0]).to.deep.equal({name: "bar", moduleName: "foo"});
+      expect(actual[1]).to.deep.equal({name: "baz", moduleName: "foo", parentTypeName: "bar"});
+      expect(actual[2]).to.deep.equal({name: "qux", moduleName: "foo", parentTypeName: "bar"});
+    });
+
+    it("should return all types for list containing exposed child type lists containing '..'", () => {
+      // arrange
       let codeHelper = makeElmCodeHelper("import Foo exposing (bar(..))");
       let typeHelper = makeElmTypeHelper("foo");
-      // typeHelper.resolve("bar");
       typeHelper.resolve("baz", "bar", "foo");
       typeHelper.resolve("qux", "bar", "foo");
 

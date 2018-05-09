@@ -702,10 +702,10 @@ describe("lib test-suite-generator", () => {
   });
 
   describe("isTestFunctionNode", () => {
-    it("should return false when node is not a test function node", () => {
+    it("should return false when node is not a test function node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {dependencies: [{moduleName: "foo", name: "expect"}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{moduleName: "foo", name: "expect"}]};
 
       // act
       let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
@@ -714,10 +714,22 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.be.false;
     });
 
-    it("should return true when node is not a test node", () => {
+    it("should return false when node is not a test node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {dependencies: [{moduleName: "foo", name: "test"}]};
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{moduleName: "foo", name: "test"}]};
+
+      // act
+      let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return true when node is not a test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{moduleName: "foo", name: "test"}]};
 
       // act
       let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
@@ -726,10 +738,22 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.be.true;
     });
 
-    it("should return true when node is not a fuzz test node", () => {
+    it("should return false when node is not a fuzz test node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {dependencies: [{moduleName: "foo", name: "fuzz"}]};
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{moduleName: "foo", name: "fuzz"}]};
+
+      // act
+      let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return true when node is not a fuzz test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{moduleName: "foo", name: "fuzz"}]};
 
       // act
       let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
@@ -740,10 +764,10 @@ describe("lib test-suite-generator", () => {
   });
 
   describe("isTestSuiteFunctionNode", () => {
-    it("should return false when node is not a test function node", () => {
+    it("should return false when node is not a test function node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {dependencies: [{moduleName: "foo", name: "expect"}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{moduleName: "foo", name: "expect"}]};
 
       // act
       let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
@@ -752,10 +776,22 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.be.false;
     });
 
-    it("should return true when node is not a describe node", () => {
+    it("should return false when node is not a describe node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {dependencies: [{moduleName: "foo", name: "describe"}]};
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{moduleName: "foo", name: "describe"}]};
+
+      // act
+      let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return true when node is not a describe node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{moduleName: "foo", name: "describe"}]};
 
       // act
       let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
@@ -764,10 +800,22 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.be.true;
     });
 
-    it("should return true when node is not a concat node", () => {
+    it("should return false when node is not a concat node with  arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {dependencies: [{moduleName: "foo", name: "concat"}]};
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{moduleName: "foo", name: "concat"}]};
+
+      // act
+      let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return true when node is not a concat node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{moduleName: "foo", name: "concat"}]};
 
       // act
       let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);

@@ -33,7 +33,7 @@ export interface ElmNodeResultList {
 }
 
 export interface ElmParser {
-  parse(filePath: string): ElmModuleNode | undefined;
+  parse(filePath: string, testFrameworkElmModuleName: string): ElmModuleNode | undefined;
 }
 
 export class ElmParserImp implements ElmParser {
@@ -53,6 +53,17 @@ export class ElmParserImp implements ElmParser {
     this.makeElmTypeHelper = makeTypeHelper;
   }
 
+  public buildElmTypeHelper(moduleName: string, testFrameworkElmModuleName: string): ElmTypeHelper {
+    const typeHelper = this.makeElmTypeHelper(moduleName);
+    typeHelper.resolve("Test", undefined, testFrameworkElmModuleName);
+    typeHelper.resolve("concat", undefined, testFrameworkElmModuleName);
+    typeHelper.resolve("describe", undefined, testFrameworkElmModuleName);
+    typeHelper.resolve("fuzz", undefined, testFrameworkElmModuleName);
+    typeHelper.resolve("test", undefined, testFrameworkElmModuleName);
+
+    return typeHelper;
+  }
+
   public convertToLookup(tokens: ElmToken[]): TokenLookup {
     const tokenLookup = tokens.reduce(
       (acc: TokenLookup, value: ElmToken) => {
@@ -68,7 +79,7 @@ export class ElmParserImp implements ElmParser {
     return tokenLookup;
   }
 
-  public parse(filePath: string): ElmModuleNode | undefined {
+  public parse(filePath: string, testFrameworkElmModuleName: string): ElmModuleNode | undefined {
     const tokens = this.elmTokenizer.tokenize(filePath);
     const tokenLookup = this.convertToLookup(tokens);
 
@@ -77,12 +88,12 @@ export class ElmParserImp implements ElmParser {
       return undefined;
     }
 
-    return this.parseTokens(tokenLookup);
+    return this.parseTokens(tokenLookup, testFrameworkElmModuleName);
   }
 
-  public parseTokens(tokenLookup: TokenLookup): ElmModuleNode | undefined {
+  public parseTokens(tokenLookup: TokenLookup, testFrameworkElmModuleName: string): ElmModuleNode | undefined {
     const moduleToken = tokenLookup[ElmTokenType.Module][0];
-    const typeHelper = this.makeElmTypeHelper(moduleToken.identifier);
+    const typeHelper = this.buildElmTypeHelper(moduleToken.identifier, testFrameworkElmModuleName);
     const firstPassResult = this.parseFirstPass(typeHelper, tokenLookup, moduleToken.identifier);
     const children = firstPassResult.complete;
     const secondPassResult = this.parseSecondPass(typeHelper, firstPassResult.partial);
@@ -261,7 +272,7 @@ export class ElmParserImp implements ElmParser {
           currentParentTypeName = types[types.length - 1].name;
         } else if (next.word[0] === ")") {
           currentParentTypeName = undefined;
-        } else if (currentParentTypeName !== undefined && next.word === "..") {
+        } else if (next.word === "..") {
           const allTypes = typeHelper.findAllChildTypes(moduleName, currentParentTypeName);
           types.push(...allTypes);
         } else {

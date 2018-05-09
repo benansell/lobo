@@ -67,7 +67,8 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
       .then(() => value);
   }
 
-  public syncElmCodeLookupWithFileChanges(codeLookup: ElmCodeLookup, fileList: FileInfo[], mainTestFile?: string): ElmCodeLookup {
+  public syncElmCodeLookupWithFileChanges(codeLookup: ElmCodeLookup, fileList: FileInfo[], testFrameworkElmModuleName: string,
+                                          mainTestFile?: string): ElmCodeLookup {
     const result: ElmCodeLookup = {};
 
     for (const fi of fileList) {
@@ -77,7 +78,7 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
         result[fi.filePath] = previousInfo;
       } else {
         const isMainTestFile = fi.filePath === mainTestFile;
-        const codeInfo = this.toElmCodeInfo(isMainTestFile, fi);
+        const codeInfo = this.toElmCodeInfo(testFrameworkElmModuleName, isMainTestFile, fi);
         result[fi.filePath] = codeInfo;
       }
     }
@@ -85,8 +86,8 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
     return result;
   }
 
-  public toElmCodeInfo(isMainTestFile: boolean, pathInfo: FileInfo): ElmCodeInfo {
-    let moduleNode = this.parser.parse(pathInfo.filePath);
+  public toElmCodeInfo(testFrameworkElmModuleName: string, isMainTestFile: boolean, pathInfo: FileInfo): ElmCodeInfo {
+    let moduleNode = this.parser.parse(pathInfo.filePath, testFrameworkElmModuleName);
     const fileName = path.basename(pathInfo.filePath);
     const lastModified = pathInfo.stats.mtime;
 
@@ -97,13 +98,14 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
     return new Bluebird((resolve: Resolve<ExecutionContext>, reject: Reject) => {
       try {
         let  mainTestFilePath: string | undefined;
+        let testFrameworkName = context.config.testFramework.testFrameworkElmModuleName();
 
         if (context.testFile) {
           mainTestFilePath = path.join(this.util.resolveDir(context.testDirectory), context.testFile);
         }
 
         const testFiles = this.findFiles(context.testDirectory, ".elm", true);
-        context.codeLookup = this.syncElmCodeLookupWithFileChanges(context.codeLookup, testFiles, mainTestFilePath);
+        context.codeLookup = this.syncElmCodeLookupWithFileChanges(context.codeLookup, testFiles, testFrameworkName, mainTestFilePath);
 
         resolve(context);
       } catch (err) {
