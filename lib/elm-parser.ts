@@ -158,6 +158,40 @@ export class ElmParserImp implements ElmParser {
     return {alias: identifier.substring(index + 4), name: identifier.substring(0, index)};
   }
 
+  public parseArguments(codeHelper: ElmCodeHelper, identifier: string, isTypedFunction: boolean): string[] {
+    const functionStartIndex = codeHelper.findChar(identifier.length, "=");
+
+    if (!functionStartIndex) {
+      return [];
+    }
+
+    const args: string[] = [];
+    const delimiters = [" ", "\n", "=", ",", "(", ")"];
+    let nextIndex = identifier.length + 1;
+    let beforeFunctionDeclaration = isTypedFunction;
+
+    while (nextIndex < functionStartIndex) {
+      let next = codeHelper.findNextWord(nextIndex, true, delimiters);
+
+      if (beforeFunctionDeclaration) {
+        if (next.word === identifier) {
+          beforeFunctionDeclaration = false;
+        }
+
+        nextIndex = next.nextIndex;
+        continue;
+      }
+
+      if (delimiters.indexOf(next.word) === -1) {
+        args.push(next.word);
+      }
+
+      nextIndex = next.nextIndex;
+    }
+
+    return args;
+  }
+
   public parseFunction(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, name: string, startIndex: number): ElmTypeInfo[] {
     const functionStartIndex = codeHelper.findChar(startIndex, "=");
 
@@ -372,16 +406,18 @@ export class ElmParserImp implements ElmParser {
       return this.toUntypedModuleFunctionNode(typeHelper, token);
     }
 
+    const args = this.parseArguments(codeHelper, token.identifier, true);
     typeHelper.resolve(token.identifier);
-    let node = {...this.toBaseNode(token, token.identifier), dependencies: [], returnType: returnType};
+    let node = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: [], returnType: returnType};
 
     return {codeHelper, node};
   }
 
   public toUntypedModuleFunctionNode(typeHelper: ElmTypeHelper, token: ElmToken): ElmNodeResult<ElmUntypedModuleFunctionNode> {
     const codeHelper = this.makeElmCodeHelper(token.code);
+    const args = this.parseArguments(codeHelper, token.identifier, false);
     typeHelper.resolve(token.identifier);
-    let node: ElmUntypedModuleFunctionNode = {...this.toBaseNode(token, token.identifier), dependencies: []};
+    let node: ElmUntypedModuleFunctionNode = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: []};
 
     return {codeHelper, node};
   }

@@ -71,11 +71,13 @@ export interface ElmTypeAliasNode extends BaseElmNode {
 }
 
 export interface ElmTypedModuleFunctionNode extends BaseElmNode {
+  arguments: string[];
   dependencies: ElmTypeInfo[];
   returnType: ElmTypeInfo;
 }
 
 export interface ElmUntypedModuleFunctionNode extends BaseElmNode {
+  arguments: string[];
   dependencies: ElmTypeInfo[];
 }
 

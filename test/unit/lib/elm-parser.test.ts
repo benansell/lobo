@@ -1217,6 +1217,9 @@ describe("lib elm-parser", () => {
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns([]);
+      parserImp.parseArguments = mockParseArguments;
 
       // act
       let actual = parserImp.toTypedModuleFunctionNode(typeHelper, token);
@@ -1228,40 +1231,50 @@ describe("lib elm-parser", () => {
     it("should return an untyped module function node for the supplied token when the return type cannot be determined", () => {
       // arrange
       let code = "foo\nfoo = 123";
+      let args = [];
       let dependencies = [];
       let start = {columnNumber: 12, lineNumber: 34};
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns([]);
+      parserImp.parseArguments = mockParseArguments;
 
       // act
       let actual = parserImp.toTypedModuleFunctionNode(typeHelper, token);
 
       // assert
-      expect(actual.node).to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, dependencies});
+      expect(actual.node)
+        .to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, arguments: args, dependencies});
     });
 
     it("should return an typed module function node for the supplied token", () => {
       // arrange
       let code = "foo: Int\nfoo = 123";
+      let args = [];
       let dependencies = [];
       let returnType = { name: "Int", moduleName: "Basics"};
       let start = {columnNumber: 12, lineNumber: 34};
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns([]);
+      parserImp.parseArguments = mockParseArguments;
       let nodeType = ElmNodeType.TypedModuleFunction;
 
       // act
       let actual = parserImp.toTypedModuleFunctionNode(typeHelper, token);
 
       // assert
-      expect(actual.node).to.deep.equal({code, end, start, name: "foo", returnType, nodeType, dependencies});
+      expect(actual.node).to.deep.equal({code, end, start, name: "foo", returnType, nodeType, arguments: args, dependencies});
     });
 
-    it("should return an typed module function node with no dependencies for known references for the supplied token", () => {
+    it("should return an typed module function node with arguments from parseArguments", () => {
       // arrange
       let code = "foo: Int\nfoo = bar 123 && baz 456";
+      let args = ["qux"];
       let dependencies = [];
       let returnType = { name: "Int", moduleName: "Basics"};
       let start = {columnNumber: 12, lineNumber: 34};
@@ -1270,13 +1283,41 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve("bar");
       typeHelper.resolve("baz");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns(args);
+      parserImp.parseArguments = mockParseArguments;
       let nodeType = ElmNodeType.TypedModuleFunction;
 
       // act
       let actual = parserImp.toTypedModuleFunctionNode(typeHelper, token);
 
       // assert
-      expect(actual.node).to.deep.equal({code, end, start, name: "foo", returnType, nodeType, dependencies});
+      expect(actual.node)
+        .to.deep.equal({code, end, start, name: "foo", returnType, nodeType, arguments: ["qux"], dependencies});
+    });
+
+    it("should return an typed module function node with no dependencies for known references for the supplied token", () => {
+      // arrange
+      let code = "foo: Int\nfoo = bar 123 && baz 456";
+      let args = [];
+      let dependencies = [];
+      let returnType = { name: "Int", moduleName: "Basics"};
+      let start = {columnNumber: 12, lineNumber: 34};
+      let end = {columnNumber: 56, lineNumber: 78};
+      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      let typeHelper = makeElmTypeHelper("abc");
+      typeHelper.resolve("bar");
+      typeHelper.resolve("baz");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns([]);
+      parserImp.parseArguments = mockParseArguments;
+      let nodeType = ElmNodeType.TypedModuleFunction;
+
+      // act
+      let actual = parserImp.toTypedModuleFunctionNode(typeHelper, token);
+
+      // assert
+      expect(actual.node).to.deep.equal({code, end, start, name: "foo", returnType, nodeType, arguments: args, dependencies});
     });
   });
 
@@ -1288,6 +1329,9 @@ describe("lib elm-parser", () => {
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns([]);
+      parserImp.parseArguments = mockParseArguments;
 
       // act
       let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, token);
@@ -1299,22 +1343,28 @@ describe("lib elm-parser", () => {
     it("should return an untyped module function node for the supplied token", () => {
       // arrange
       let code = "foo = 123";
+      let args = [];
       let dependencies = [];
       let start = {columnNumber: 12, lineNumber: 34};
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns([]);
+      parserImp.parseArguments = mockParseArguments;
 
       // act
       let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, token);
 
       // assert
-      expect(actual.node).to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, dependencies});
+      expect(actual.node)
+        .to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, arguments: args, dependencies});
     });
 
-    it("should return an untyped module function node with no dependencies for known references for the supplied token", () => {
+    it("should return an untyped module function node with args return from parseArguments", () => {
       // arrange
       let code = "foo = bar 123 && baz 456";
+      let args = ["qux"];
       let dependencies = [];
       let start = {columnNumber: 12, lineNumber: 34};
       let end = {columnNumber: 56, lineNumber: 78};
@@ -1322,12 +1372,39 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve("bar");
       typeHelper.resolve("baz");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns(args);
+      parserImp.parseArguments = mockParseArguments;
 
       // act
       let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, token);
 
       // assert
-      expect(actual.node).to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, dependencies});
+      expect(actual.node)
+        .to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, arguments: args, dependencies});
+    });
+
+    it("should return an untyped module function node with no dependencies for known references for the supplied token", () => {
+      // arrange
+      let code = "foo = bar 123 && baz 456";
+      let args = [];
+      let dependencies = [];
+      let start = {columnNumber: 12, lineNumber: 34};
+      let end = {columnNumber: 56, lineNumber: 78};
+      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      let typeHelper = makeElmTypeHelper("abc");
+      typeHelper.resolve("bar");
+      typeHelper.resolve("baz");
+      let mockParseArguments = Sinon.stub();
+      mockParseArguments.returns([]);
+      parserImp.parseArguments = mockParseArguments;
+
+      // act
+      let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, token);
+
+      // assert
+      expect(actual.node)
+        .to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.UntypedModuleFunction, arguments: args, dependencies});
     });
   });
 });
