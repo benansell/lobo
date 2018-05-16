@@ -3,7 +3,7 @@ import {createElmTokenizer, ElmToken, ElmTokenizer, ElmTokenType} from "./elm-to
 import {makeElmCodeHelper, ElmCodeHelper} from "./elm-code-helper";
 import {makeElmTypeHelper, ElmTypeHelper} from "./elm-type-helper";
 import {
-  BaseElmNode,
+  BaseElmNode, ElmFunctionDependency,
   ElmImportNode,
   ElmModuleNode,
   ElmNode,
@@ -192,20 +192,19 @@ export class ElmParserImp implements ElmParser {
     return args;
   }
 
-  public parseFunction(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, name: string, startIndex: number): ElmTypeInfo[] {
+  public parseFunction(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, name: string, startIndex: number): ElmFunctionDependency[] {
     const functionStartIndex = codeHelper.findChar(startIndex, "=");
 
     if (!functionStartIndex) {
       return [];
     }
 
-    const delimiters = [" ", "\n", "\"", ",", "=", "[", "]", "{", "}", "(", ")", "\\"];
     const keywords = ["if", "then", "else", "case", "of", "let", "in", "type", "module", "where", "import", "exposing", "as", "port"];
     const types: ElmTypeInfo[] = [];
     let nextIndex = functionStartIndex + 1;
 
     while (nextIndex < codeHelper.maxIndex) {
-      const next = codeHelper.findNextWord(nextIndex, true, delimiters);
+      const next = codeHelper.findNextWord(nextIndex, true, codeHelper.delimitersFunction);
       nextIndex = next.nextIndex;
 
       if (next.word === "\"") {
@@ -214,7 +213,7 @@ export class ElmParserImp implements ElmParser {
         if (endStringIndex) {
           nextIndex = endStringIndex + 1;
         }
-      } else if (delimiters.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
+      } else if (codeHelper.delimitersFunction.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
         let typeInfo = typeHelper.resolveExcludingDefaultModule(next.word, name);
 
         if (typeInfo && types.indexOf(typeInfo) === -1) {
@@ -299,7 +298,7 @@ export class ElmParserImp implements ElmParser {
     let currentParentTypeName = undefined;
 
     while (nextIndex < codeHelper.maxIndex) {
-      let next = codeHelper.findNextWord(nextIndex, true, [" ", "\n", ",", "(", ")"]);
+      let next = codeHelper.findNextWord(nextIndex, true, codeHelper.delimitersTypeList);
 
       if (next.word !== " " && next.word !== "\n" && next.word !== ",") {
         if (next.word === "(") {

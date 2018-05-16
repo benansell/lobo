@@ -9,6 +9,8 @@ export interface FindWordResult {
 }
 
 export interface ElmCodeHelper {
+  readonly delimitersFunction: string[];
+  readonly delimitersTypeList: string[];
   readonly maxIndex: number;
   codeBetween(startIndex: number, endIndex: number): string;
   findChar(startIndex: number, searchChar: string, includeComments?: boolean): number | undefined;
@@ -21,6 +23,8 @@ export interface ElmCodeHelper {
 
 export class ElmCodeHelperImp implements ElmCodeHelper {
 
+  public readonly delimitersFunction: string[] = [" ", "\n", "\"", ",", "=", "[", "]", "{", "}", "(", ")", "\\"];
+  public readonly delimitersTypeList: string[] = [" ", "\n", ",", "(", ")"];
   public readonly maxIndex: number;
   private readonly code: string;
   private readonly commentMap: CommentBlock[];
