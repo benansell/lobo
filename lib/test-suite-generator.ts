@@ -214,7 +214,9 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
   public isTestFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
     for (const importNode of testImportNodes) {
       for (const d of node.dependencies) {
-        if (node.arguments.length === 0 && d.moduleName === importNode.name && (d.name === "test" || d.name === "fuzz")) {
+        const ti = d.typeInfo;
+
+        if (node.arguments.length === 0 && ti.moduleName === importNode.name && (ti.name === "test" || ti.name === "fuzz")) {
           return true;
         }
       }
@@ -226,7 +228,9 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
   public isTestSuiteFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
     for (const importNode of testImportNodes) {
       for (const d of node.dependencies) {
-        if (node.arguments.length === 0 && d.moduleName === importNode.name && (d.name === "describe" || d.name === "concat")) {
+        const ti = d.typeInfo;
+
+        if (node.arguments.length === 0 && ti.moduleName === importNode.name && (ti.name === "describe" || ti.name === "concat")) {
           return true;
         }
       }

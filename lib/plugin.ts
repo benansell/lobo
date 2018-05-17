@@ -50,6 +50,11 @@ export interface BaseElmNode {
   start: CodeLocation;
 }
 
+export interface ElmFunctionDependency {
+  occurs: number;
+  typeInfo: ElmTypeInfo;
+}
+
 export interface ElmImportNode extends BaseElmNode {
   alias?: string;
   exposing: ElmTypeInfo[];
@@ -72,13 +77,13 @@ export interface ElmTypeAliasNode extends BaseElmNode {
 
 export interface ElmTypedModuleFunctionNode extends BaseElmNode {
   arguments: string[];
-  dependencies: ElmTypeInfo[];
+  dependencies: ElmFunctionDependency[];
   returnType: ElmTypeInfo;
 }
 
 export interface ElmUntypedModuleFunctionNode extends BaseElmNode {
   arguments: string[];
-  dependencies: ElmTypeInfo[];
+  dependencies: ElmFunctionDependency[];
 }
 
 export interface ElmTypeInfo {

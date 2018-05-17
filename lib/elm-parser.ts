@@ -200,7 +200,7 @@ export class ElmParserImp implements ElmParser {
     }
 
     const keywords = ["if", "then", "else", "case", "of", "let", "in", "type", "module", "where", "import", "exposing", "as", "port"];
-    const types: ElmTypeInfo[] = [];
+    const dependencies: ElmFunctionDependency[] = [];
     let nextIndex = functionStartIndex + 1;
 
     while (nextIndex < codeHelper.maxIndex) {
@@ -216,13 +216,25 @@ export class ElmParserImp implements ElmParser {
       } else if (codeHelper.delimitersFunction.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
         let typeInfo = typeHelper.resolveExcludingDefaultModule(next.word, name);
 
-        if (typeInfo && types.indexOf(typeInfo) === -1) {
-          types.push(typeInfo);
+        if (typeInfo) {
+          let dep: ElmFunctionDependency | undefined = undefined;
+
+          for (const d of dependencies) {
+            if (d.typeInfo === typeInfo) {
+              dep = d;
+            }
+          }
+
+          if (!dep) {
+            dependencies.push(<ElmFunctionDependency>{occurs: 1, typeInfo});
+          } else {
+            dep.occurs++;
+          }
         }
       }
     }
 
-    return types;
+    return dependencies;
   }
 
   public parseReturnType(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, functionName: string, startIndex: number)
