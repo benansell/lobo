@@ -161,12 +161,12 @@ export class ElmParserImp implements ElmParser {
   public parseArguments(codeHelper: ElmCodeHelper, identifier: string, isTypedFunction: boolean): string[] {
     const functionStartIndex = codeHelper.findChar(identifier.length, "=");
 
-    if (!functionStartIndex) {
+    if (functionStartIndex === undefined) {
       return [];
     }
 
     const args: string[] = [];
-    const delimiters = [" ", "\n", "=", ",", "(", ")"];
+    const delimiters = [" ", "\n", "=", ",", "(", ")", "{", "}"];
     let nextIndex = identifier.length + 1;
     let beforeFunctionDeclaration = isTypedFunction;
 

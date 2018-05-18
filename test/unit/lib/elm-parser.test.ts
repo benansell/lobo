@@ -500,6 +500,75 @@ describe("lib elm-parser", () => {
     });
   });
 
+  describe("parseArguments", () => {
+    it("should return an empty list when the code does not contain '='", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo bar");
+
+      // act
+      let actual = parserImp.parseArguments(codeHelper, "foo", true);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
+    it("should return an empty list when the code does not type declaration and isTypedFunction is true", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo bar =");
+
+      // act
+      let actual = parserImp.parseArguments(codeHelper, "foo", true);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
+    it("should return arguments list when the code does not have type declaration", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo bar baz =");
+
+      // act
+      let actual = parserImp.parseArguments(codeHelper, "foo", false);
+
+      // assert
+      expect(actual).to.deep.equal(["bar", "baz"]);
+    });
+
+    it("should return arguments list when the args are destructuring tuple args", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo (bar, baz) =");
+
+      // act
+      let actual = parserImp.parseArguments(codeHelper, "foo", false);
+
+      // assert
+      expect(actual).to.deep.equal(["bar", "baz"]);
+    });
+
+    it("should return arguments list when the args are destructuring object args", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo {bar, baz} =");
+
+      // act
+      let actual = parserImp.parseArguments(codeHelper, "foo", false);
+
+      // assert
+      expect(actual).to.deep.equal(["bar", "baz"]);
+    });
+
+    it("should return arguments list when the code does have type declaration", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo -> String -> String -> String\nfoo bar baz =");
+
+      // act
+      let actual = parserImp.parseArguments(codeHelper, "foo", true);
+
+      // assert
+      expect(actual).to.deep.equal(["bar", "baz"]);
+    });
+  });
+
+
   describe("parseFunction", () => {
     it("should return empty list when there is no '='", () => {
       // arrange
