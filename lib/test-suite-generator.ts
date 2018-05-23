@@ -60,7 +60,7 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
 
     for (const n of nodes) {
       if (this.elmNodeHelper.isFunctionNode(n)) {
-        if (this.isTestSuiteFunctionNode(testImportNodes, n) || this.isTestFunctionNode(testImportNodes, n)) {
+        if (this.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, n) || this.isTestFunctionNodeWithoutArguments(testImportNodes, n)) {
           result.push(n);
         }
       }
@@ -211,7 +211,7 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     return lines;
   }
 
-  public isTestFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
+  public isTestFunctionNodeWithoutArguments(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
     for (const importNode of testImportNodes) {
       for (const d of node.dependencies) {
         const ti = d.typeInfo;
@@ -225,7 +225,7 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     return false;
   }
 
-  public isTestSuiteFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
+  public isTestSuiteFunctionNodeWithoutArguments(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
     for (const importNode of testImportNodes) {
       for (const d of node.dependencies) {
         const ti = d.typeInfo;

@@ -73,7 +73,7 @@ describe("lib test-suite-generator", () => {
       mockTestFrameworkElmModuleName.returns("foo");
       let testFramework = <PluginTestFrameworkWithConfig> {};
       testFramework.testFrameworkElmModuleName = mockTestFrameworkElmModuleName;
-      let moduleNode = <ElmModuleNode> { children: [], exposing: []};
+      let moduleNode = <ElmModuleNode> {children: [], exposing: []};
       testSuiteGenerator.findTestImportNodes = Sinon.spy();
 
       // act
@@ -88,7 +88,7 @@ describe("lib test-suite-generator", () => {
       let expected = <ElmNode[]> [{nodeType: ElmNodeType.Import}];
       let testFramework = <PluginTestFrameworkWithConfig> {};
       testFramework.testFrameworkElmModuleName = () => "foo";
-      let moduleNode = <ElmModuleNode> { children: expected, exposing: []};
+      let moduleNode = <ElmModuleNode> {children: expected, exposing: []};
       testSuiteGenerator.findTestImportNodes = Sinon.spy();
 
       // act
@@ -103,7 +103,7 @@ describe("lib test-suite-generator", () => {
       let expected = <ElmNode[]> [{nodeType: ElmNodeType.Import}];
       let testFramework = <PluginTestFrameworkWithConfig> {};
       testFramework.testFrameworkElmModuleName = () => "foo";
-      let moduleNode = <ElmModuleNode> { children: expected, exposing: []};
+      let moduleNode = <ElmModuleNode> {children: expected, exposing: []};
       testSuiteGenerator.findTestImportNodes = Sinon.stub();
       testSuiteGenerator.findTestFunctions = Sinon.spy();
 
@@ -119,7 +119,7 @@ describe("lib test-suite-generator", () => {
       let expected = <ElmImportNode[]> [{nodeType: ElmNodeType.Import}];
       let testFramework = <PluginTestFrameworkWithConfig> {};
       testFramework.testFrameworkElmModuleName = () => "foo";
-      let moduleNode = <ElmModuleNode> { children: [], exposing: []};
+      let moduleNode = <ElmModuleNode> {children: [], exposing: []};
       let mockFindTestImportNodes = Sinon.stub();
       mockFindTestImportNodes.returns(expected);
       testSuiteGenerator.findTestImportNodes = mockFindTestImportNodes;
@@ -136,7 +136,7 @@ describe("lib test-suite-generator", () => {
       // arrange
       let testFramework = <PluginTestFrameworkWithConfig> {};
       testFramework.testFrameworkElmModuleName = () => "foo";
-      let moduleNode = <ElmModuleNode> { name: "Bar", children: [], exposing: []};
+      let moduleNode = <ElmModuleNode> {name: "Bar", children: [], exposing: []};
       let mockFindTestImportNodes = Sinon.stub();
       mockFindTestImportNodes.returns(<ElmImportNode[]> [{nodeType: ElmNodeType.Import}]);
       testSuiteGenerator.findTestImportNodes = mockFindTestImportNodes;
@@ -156,7 +156,7 @@ describe("lib test-suite-generator", () => {
       let expected = <ElmImportNode[]> [{name: "Baz"}];
       let testFramework = <PluginTestFrameworkWithConfig> {};
       testFramework.testFrameworkElmModuleName = () => "foo";
-      let moduleNode = <ElmModuleNode> { name: "Bar",  children: [], exposing: [{moduleName: "Bar", name: "Baz"}]};
+      let moduleNode = <ElmModuleNode> {name: "Bar", children: [], exposing: [{moduleName: "Bar", name: "Baz"}]};
       let mockFindTestImportNodes = Sinon.stub();
       mockFindTestImportNodes.returns(<ElmImportNode[]> [{nodeType: ElmNodeType.Import}]);
       testSuiteGenerator.findTestImportNodes = mockFindTestImportNodes;
@@ -176,7 +176,7 @@ describe("lib test-suite-generator", () => {
       let expected = <ElmImportNode[]> [{name: "Baz"}];
       let testFramework = <PluginTestFrameworkWithConfig> {};
       testFramework.testFrameworkElmModuleName = () => "foo";
-      let moduleNode = <ElmModuleNode> { name: "Bar",  children: [], exposing: [{moduleName: "Bar", name: "Baz"}]};
+      let moduleNode = <ElmModuleNode> {name: "Bar", children: [], exposing: [{moduleName: "Bar", name: "Baz"}]};
       let mockFindTestImportNodes = Sinon.stub();
       mockFindTestImportNodes.returns(<ElmImportNode[]> [{nodeType: ElmNodeType.Import}]);
       testSuiteGenerator.findTestImportNodes = mockFindTestImportNodes;
@@ -212,10 +212,10 @@ describe("lib test-suite-generator", () => {
       mockIsFunctionNode.returns(true);
       let mockIsTestSuiteFunctionNode = Sinon.stub();
       mockIsTestSuiteFunctionNode.returns(false);
-      testSuiteGenerator.isTestSuiteFunctionNode = mockIsTestSuiteFunctionNode;
+      testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments = mockIsTestSuiteFunctionNode;
       let mockIsTestFunctionNode = Sinon.stub();
       mockIsTestFunctionNode.returns(false);
-      testSuiteGenerator.isTestFunctionNode = mockIsTestFunctionNode;
+      testSuiteGenerator.isTestFunctionNodeWithoutArguments = mockIsTestFunctionNode;
 
       // act
       let actual = testSuiteGenerator.findTestFunctions(nodes, []);
@@ -232,10 +232,10 @@ describe("lib test-suite-generator", () => {
       let mockIsTestSuiteFunctionNode = Sinon.stub();
       mockIsTestSuiteFunctionNode.withArgs(Sinon.match.any, expected).returns(true);
       mockIsTestSuiteFunctionNode.returns(false);
-      testSuiteGenerator.isTestSuiteFunctionNode = mockIsTestSuiteFunctionNode;
+      testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments = mockIsTestSuiteFunctionNode;
       let mockIsTestFunctionNode = Sinon.stub();
       mockIsTestFunctionNode.returns(false);
-      testSuiteGenerator.isTestFunctionNode = mockIsTestFunctionNode;
+      testSuiteGenerator.isTestFunctionNodeWithoutArguments = mockIsTestFunctionNode;
 
       // act
       let actual = testSuiteGenerator.findTestFunctions(nodes, []);
@@ -251,11 +251,11 @@ describe("lib test-suite-generator", () => {
       mockIsFunctionNode.returns(true);
       let mockIsTestSuiteFunctionNode = Sinon.stub();
       mockIsTestSuiteFunctionNode.returns(false);
-      testSuiteGenerator.isTestSuiteFunctionNode = mockIsTestSuiteFunctionNode;
+      testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments = mockIsTestSuiteFunctionNode;
       let mockIsTestFunctionNode = Sinon.stub();
       mockIsTestFunctionNode.withArgs(Sinon.match.any, expected).returns(true);
       mockIsTestFunctionNode.returns(false);
-      testSuiteGenerator.isTestFunctionNode = mockIsTestFunctionNode;
+      testSuiteGenerator.isTestFunctionNodeWithoutArguments = mockIsTestFunctionNode;
 
       // act
       let actual = testSuiteGenerator.findTestFunctions(nodes, []);
@@ -309,7 +309,7 @@ describe("lib test-suite-generator", () => {
       // arrange
       let expected = {dependencies: []};
       let config = <LoboConfig><{}>{testFramework: expected};
-      let codeLookup = <ElmCodeLookup> { foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: false, moduleNode: {}}};
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: false, moduleNode: {}}};
       testSuiteGenerator.findExposedTests = Sinon.spy();
 
       // act
@@ -323,7 +323,7 @@ describe("lib test-suite-generator", () => {
       // arrange
       let expected = {dependencies: []};
       let config = <LoboConfig><{}>{testFramework: expected};
-      let codeLookup = <ElmCodeLookup> { foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: true, moduleNode: {}}};
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: true, moduleNode: {}}};
       testSuiteGenerator.findExposedTests = Sinon.spy();
 
       // act
@@ -337,7 +337,7 @@ describe("lib test-suite-generator", () => {
       // arrange
       let expected = {nodeType: ElmNodeType.Module};
       let config = <LoboConfig><{}>{testFramework: {}};
-      let codeLookup = <ElmCodeLookup> { foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: true, moduleNode: expected}};
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: true, moduleNode: expected}};
       testSuiteGenerator.findExposedTests = Sinon.spy();
 
       // act
@@ -350,7 +350,7 @@ describe("lib test-suite-generator", () => {
     it("should return an empty list when there are no test modules", () => {
       // arrange
       let config = <LoboConfig><{}>{testFramework: {}};
-      let codeLookup = <ElmCodeLookup> { foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: false, moduleNode: {}}};
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: false, moduleNode: {}}};
       testSuiteGenerator.findExposedTests = Sinon.stub();
 
       // act
@@ -510,7 +510,7 @@ describe("lib test-suite-generator", () => {
   describe("generateTestSuiteCode", () => {
     it("should return code with module definition", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
 
       // act
@@ -522,7 +522,7 @@ describe("lib test-suite-generator", () => {
 
     it("should return code with standard test imports", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
 
       // act
@@ -535,7 +535,7 @@ describe("lib test-suite-generator", () => {
 
     it("should return code with test framework imports", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
 
       // act
@@ -565,7 +565,7 @@ describe("lib test-suite-generator", () => {
 
     it("should return code with main function that calls Runner.run plugin", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
 
       // act
@@ -578,7 +578,7 @@ describe("lib test-suite-generator", () => {
 
     it("should return code with plugin function definition for findTests", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
 
       // act
@@ -591,7 +591,7 @@ describe("lib test-suite-generator", () => {
 
     it("should return code with plugin function definition for runTest", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
 
       // act
@@ -604,7 +604,7 @@ describe("lib test-suite-generator", () => {
 
     it("should return code with plugin function definition for toArgs", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
 
       // act
@@ -618,13 +618,13 @@ describe("lib test-suite-generator", () => {
 
   describe("generateTestSuiteRoot", () => {
     it("should return code with empty all test definition when there are no test module nodes", () => {
-     // act
+      // act
       let lines = testSuiteGenerator.generateTestSuiteRoot("    ", []);
 
       // assert
       const actual = lines.join("\n");
       expect(actual).to.match(/all : Test/);
-      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[\]/);
+      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[]/);
     });
 
     it("should return code with all test definition that uses suite name for module nodes", () => {
@@ -639,7 +639,7 @@ describe("lib test-suite-generator", () => {
       // assert
       const actual = lines.join("\n");
       expect(actual).to.match(/all : Test/);
-      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[ allFooBarBaz\n\s{8}\]/);
+      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[ allFooBarBaz\n\s{8}]/);
     });
 
     it("should return code with all test definition that contains all the test module nodes", () => {
@@ -655,7 +655,7 @@ describe("lib test-suite-generator", () => {
       // assert
       const actual = lines.join("\n");
       expect(actual).to.match(/all : Test/);
-      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[ allSuiteOne\n\s{8}, allSuiteTwo\n\s{8}\]/);
+      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[ allSuiteOne\n\s{8}, allSuiteTwo\n\s{8}]/);
     });
   });
 
@@ -670,7 +670,7 @@ describe("lib test-suite-generator", () => {
       // assert
       const actual = lines.join("\n");
       expect(actual).to.match(/allSuiteOne : Test/);
-      expect(actual).to.match(/allSuiteOne =\n\s{4}describe "SuiteOne"\n\s{8}\[\]/);
+      expect(actual).to.match(/allSuiteOne =\n\s{4}describe "SuiteOne"\n\s{8}\[]/);
     });
 
     it("should return code with all module test definition with suite name for module nodes", () => {
@@ -684,7 +684,7 @@ describe("lib test-suite-generator", () => {
       const actual = lines.join("\n");
       expect(actual).to.match(/allFooBarBaz : Test/);
       expect(actual)
-        .to.match(/allFooBarBaz =\n\s{4}describe "Foo.Bar.Baz"\n\s{8}\[ Foo\.Bar\.Baz\.TestOne\n\s{8}, Foo\.Bar\.Baz\.TestTwo\n\s{8}\]/);
+        .to.match(/allFooBarBaz =\n\s{4}describe "Foo.Bar.Baz"\n\s{8}\[ Foo\.Bar\.Baz\.TestOne\n\s{8}, Foo\.Bar\.Baz\.TestTwo\n\s{8}]/);
     });
 
     it("should return code with all module test definition that contains all the test module nodes", () => {
@@ -697,18 +697,18 @@ describe("lib test-suite-generator", () => {
       // assert
       const actual = lines.join("\n");
       expect(actual).to.match(/allSuiteOne : Test/);
-      expect(actual).to.match(/allSuiteOne =\n\s{4}describe "SuiteOne"\n\s{8}\[ SuiteOne\.TestOne\n\s{8}, SuiteOne\.TestTwo\n\s{8}\]/);
+      expect(actual).to.match(/allSuiteOne =\n\s{4}describe "SuiteOne"\n\s{8}\[ SuiteOne\.TestOne\n\s{8}, SuiteOne\.TestTwo\n\s{8}]/);
     });
   });
 
-  describe("isTestFunctionNode", () => {
+  describe("isTestFunctionNodeWithoutArguments", () => {
     it("should return false when node is not a test function node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "expect"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "expect"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.false;
@@ -717,10 +717,10 @@ describe("lib test-suite-generator", () => {
     it("should return false when node is not a test node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "test"}}]};
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "test"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.false;
@@ -729,10 +729,10 @@ describe("lib test-suite-generator", () => {
     it("should return true when node is not a test node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "test"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "test"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.true;
@@ -741,10 +741,10 @@ describe("lib test-suite-generator", () => {
     it("should return false when node is not a fuzz test node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "fuzz"}}]};
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "fuzz"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.false;
@@ -753,24 +753,24 @@ describe("lib test-suite-generator", () => {
     it("should return true when node is not a fuzz test node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "fuzz"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "fuzz"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.true;
     });
   });
 
-  describe("isTestSuiteFunctionNode", () => {
+  describe("isTestSuiteFunctionNodeWithoutArguments", () => {
     it("should return false when node is not a test function node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "expect"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "expect"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.false;
@@ -779,10 +779,10 @@ describe("lib test-suite-generator", () => {
     it("should return false when node is not a describe node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "describe"}}]};
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "describe"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.false;
@@ -791,22 +791,22 @@ describe("lib test-suite-generator", () => {
     it("should return true when node is not a describe node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "describe"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "describe"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.true;
     });
 
-    it("should return false when node is not a concat node with  arguments", () => {
+    it("should return false when node is not a concat node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "concat"}}]};
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "concat"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.false;
@@ -815,10 +815,10 @@ describe("lib test-suite-generator", () => {
     it("should return true when node is not a concat node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{ occurs: 1, typeInfo: {moduleName: "foo", name: "concat"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "concat"}}]};
 
       // act
-      let actual = testSuiteGenerator.isTestSuiteFunctionNode(testImportNodes, node);
+      let actual = testSuiteGenerator.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, node);
 
       // assert
       expect(actual).to.be.true;
@@ -842,5 +842,4 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.equal("FooBarBaz");
     });
   });
-
 });
