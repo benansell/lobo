@@ -212,6 +212,8 @@ export class ElmParserImp implements ElmParser {
 
         if (endStringIndex) {
           nextIndex = endStringIndex + 1;
+        } else {
+          nextIndex = codeHelper.maxIndex;
         }
       } else if (codeHelper.delimitersFunction.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
         let typeInfo = typeHelper.resolveExcludingDefaultModule(next.word, name);

@@ -131,7 +131,7 @@ describe("lib analyzer", () => {
       // assert
       return actual.catch((result: Error) => {
         expect(result instanceof Error).to.be.true;
-        expect(result.message).to.equal("Analysis Failed");
+        expect(result.message).to.equal("Analysis Issues Found");
       });
     });
   });
@@ -266,6 +266,21 @@ describe("lib analyzer", () => {
 
       // assert
       expect(mockPaddedLog).to.have.been.calledWith(" foo");
+    });
+
+    it("should not call padded log with the context when the functionNode.moduleName is the context", () => {
+      // arrange
+      let codeInfo = <ElmCodeInfo> {};
+      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      let style = Sinon.stub();
+      let mockPaddedLog = Sinon.stub();
+      analyzerImp.paddedLog = mockPaddedLog;
+
+      // act
+      analyzerImp.logLabels(codeInfo, functionNode, 123, "foo", style);
+
+      // assert
+      expect(mockPaddedLog).not.to.have.been.calledWith(" foo");
     });
 
     it("should call toNameAndStartLocation with the codeInfo.filePath", () => {

@@ -60,7 +60,8 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
 
     for (const n of nodes) {
       if (this.elmNodeHelper.isFunctionNode(n)) {
-        if (this.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, n) || this.isTestFunctionNodeWithoutArguments(testImportNodes, n)) {
+        if (this.isTestSuiteFunctionNodeWithoutArguments(testImportNodes, n)
+          || this.isTestFunctionNodeWithoutArguments(testImportNodes, n)) {
           result.push(n);
         }
       }

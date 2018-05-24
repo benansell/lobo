@@ -171,6 +171,46 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.deep.equal(expected);
     });
 
+    it("should not return test function nodes that are exposed from a different moduleName", () => {
+      // arrange
+      let expected = <ElmImportNode[]> [{name: "Baz"}];
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      testFramework.testFrameworkElmModuleName = () => "foo";
+      let moduleNode = <ElmModuleNode> {name: "Bar", children: [], exposing: [{moduleName: "Qux", name: "Baz"}]};
+      let mockFindTestImportNodes = Sinon.stub();
+      mockFindTestImportNodes.returns(<ElmImportNode[]> [{nodeType: ElmNodeType.Import}]);
+      testSuiteGenerator.findTestImportNodes = mockFindTestImportNodes;
+      let mockFindTestFunctions = Sinon.stub();
+      mockFindTestFunctions.returns(expected);
+      testSuiteGenerator.findTestFunctions = mockFindTestFunctions;
+
+      // act
+      let actual = testSuiteGenerator.findExposedTests(testFramework, moduleNode);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
+    it("should not return test function nodes that are not exposed", () => {
+      // arrange
+      let expected = <ElmImportNode[]> [{name: "Baz"}];
+      let testFramework = <PluginTestFrameworkWithConfig> {};
+      testFramework.testFrameworkElmModuleName = () => "foo";
+      let moduleNode = <ElmModuleNode> {name: "Bar", children: [], exposing: [{moduleName: "Bar", name: "Qux"}]};
+      let mockFindTestImportNodes = Sinon.stub();
+      mockFindTestImportNodes.returns(<ElmImportNode[]> [{nodeType: ElmNodeType.Import}]);
+      testSuiteGenerator.findTestImportNodes = mockFindTestImportNodes;
+      let mockFindTestFunctions = Sinon.stub();
+      mockFindTestFunctions.returns(expected);
+      testSuiteGenerator.findTestFunctions = mockFindTestFunctions;
+
+      // act
+      let actual = testSuiteGenerator.findExposedTests(testFramework, moduleNode);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
     it("should return test function nodes that are exposed", () => {
       // arrange
       let expected = <ElmImportNode[]> [{name: "Baz"}];
@@ -310,6 +350,21 @@ describe("lib test-suite-generator", () => {
       let expected = {dependencies: []};
       let config = <LoboConfig><{}>{testFramework: expected};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: false, moduleNode: {}}};
+      testSuiteGenerator.findExposedTests = Sinon.spy();
+
+      // act
+      testSuiteGenerator.findTestModuleNodes(config, codeLookup);
+
+      // assert
+      expect(testSuiteGenerator.findExposedTests).not.to.have.been.called;
+    });
+
+    it("should not call findExposedTests for codeInfo keys that are not own", () => {
+      // arrange
+      let expected = {dependencies: []};
+      let config = <LoboConfig><{}>{testFramework: expected};
+      let parentCodeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: true, moduleNode: {}}};
+      let codeLookup = Object.create(parentCodeLookup);
       testSuiteGenerator.findExposedTests = Sinon.spy();
 
       // act

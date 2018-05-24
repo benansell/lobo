@@ -25,7 +25,7 @@ export interface AnalyzedTestModuleNode {
   codeInfoKey: string;
   filePath: string;
   isMainTestFile: boolean;
-  moduleNode: ElmModuleNode;
+  moduleNode: ElmModuleNode | undefined;
   tests: AnalyzedTestFunctionNode[];
 }
 
@@ -139,7 +139,7 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
   public findAnalyzedFunctionNodeInModulesForDependency(nodes: AnalyzedTestModuleNode[], dependency: ElmTypeInfo)
     : AnalyzedFunctionDependency | undefined {
     for (const mn of nodes) {
-      if (dependency.moduleName !== mn.moduleNode.name) {
+      if (mn.moduleNode && dependency.moduleName !== mn.moduleNode.name) {
         continue;
       }
 

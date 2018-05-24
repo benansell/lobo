@@ -55,7 +55,7 @@ export class AnalyzerImp implements Analyzer {
       if (issueCount === 0) {
         resolve(context);
       } else {
-        reject(new Error("Analysis Failed"));
+        reject(new Error("Analysis Issues Found"));
       }
     });
   }
@@ -234,15 +234,12 @@ export class AnalyzerImp implements Analyzer {
         let nextIndex = 0;
         const codeHelper = makeElmCodeHelper(codeInfo.moduleNode.code);
         const issues: IssueLocation[] = [];
-        let index = -1;
 
         while (nextIndex < codeHelper.maxIndex) {
           const next = codeHelper.findNextWord(nextIndex, true, codeHelper.delimitersTypeList);
 
           if (next.word === functionNode.node.name) {
-            if (index === -1) {
-              issues.push({index: nextIndex, issue: functionNode.node.name});
-            }
+            issues.push({index: nextIndex, issue: functionNode.node.name});
           } else if (next.word === "..") {
             issues.push({index: nextIndex, issue: ".."});
           }
@@ -260,15 +257,12 @@ export class AnalyzerImp implements Analyzer {
       let nextIndex = 0;
       const codeHelper = makeElmCodeHelper(i.functionNode.node.code);
       const issues: IssueLocation[] = [];
-      let index = -1;
 
       while (nextIndex < codeHelper.maxIndex) {
         const next = codeHelper.findNextWord(nextIndex, true, codeHelper.delimitersFunction);
 
         if (next.word === functionNode.node.name) {
-          if (index === -1) {
-            issues.push({index: nextIndex, issue: functionNode.node.name});
-          }
+          issues.push({index: nextIndex, issue: functionNode.node.name});
         }
 
         nextIndex = next.nextIndex;

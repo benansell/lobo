@@ -424,6 +424,23 @@ describe("lib elm-parser", () => {
   });
 
   describe("parseSecondPass", () => {
+    it("should not call parseFunction when node is not a function node ", () => {
+      // arrange
+      let codeHelper = <ElmCodeHelper> {maxIndex: 123};
+      let node = {name: "foo", code: "abc", nodeType: ElmNodeType.Type};
+      let partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
+      let typeHelper = <ElmTypeHelper> {};
+      let mockParseFunction = Sinon.mock();
+      mockParseFunction.returns([]);
+      parserImp.parseFunction = mockParseFunction;
+
+      // act
+      parserImp.parseSecondPass(typeHelper, [partial]);
+
+      // assert
+      expect(mockParseFunction).not.to.have.been.called;
+    });
+
     it("should call parseFunction to find the function dependencies", () => {
       // arrange
       let codeHelper = <ElmCodeHelper> {maxIndex: 123};
@@ -619,6 +636,18 @@ describe("lib elm-parser", () => {
       expect(actual).to.deep.equal([]);
     });
 
+    it("should not return unknown types in the dependency type info when there is an '='", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo = baz");
+      let typeHelper = makeElmTypeHelper("bar");
+
+      // act
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
     it("should return multiple dependencies type info", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz qux quux");
@@ -707,6 +736,36 @@ describe("lib elm-parser", () => {
       expect(actual[0]).to.deep.equal({ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}});
       expect(actual[1]).to.deep.equal({ occurs: 1, typeInfo: {name: "qux", moduleName: "bar"}});
       expect(actual[2]).to.deep.equal({ occurs: 1, typeInfo: {name: "quux", moduleName: "bar"}});
+    });
+
+    it("should not return ignore contents of strings in dependencies", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo = baz \"qux\"");
+      let typeHelper = makeElmTypeHelper("bar");
+      typeHelper.resolve("baz");
+      typeHelper.resolve("qux");
+
+      // act
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+
+      // assert
+      expect(actual.length).to.equal(1);
+      expect(actual[0]).to.deep.equal({ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}});
+    });
+
+    it("should not return ignore everything after start of unterminated strings in dependencies", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo = baz \"qux");
+      let typeHelper = makeElmTypeHelper("bar");
+      typeHelper.resolve("baz");
+      typeHelper.resolve("qux");
+
+      // act
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+
+      // assert
+      expect(actual.length).to.equal(1);
+      expect(actual[0]).to.deep.equal({ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}});
     });
   });
 

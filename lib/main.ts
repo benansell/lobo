@@ -141,8 +141,8 @@ export class LoboImp implements Lobo {
       (context: ExecutionContext) => this.elmCodeLookupManager.sync(context),
       (context: ExecutionContext) => this.testSuiteGenerator.generate(context),
       (context: ExecutionContext) => this.builder.build(context),
-      (context: ExecutionContext) => this.analyzer.analyze(context),
       (context: ExecutionContext) => logStage(context, "[ TEST ]-"),
+      (context: ExecutionContext) => this.analyzer.analyze(context),
       (context: ExecutionContext) => this.runner.run(context)
     ];
 
@@ -169,6 +169,8 @@ export class LoboImp implements Lobo {
           return;
         } else if (/Ran into a `Debug.crash` in module/.test(err)) {
           this.logger.error(err);
+        } else if (/Analysis Issues Found/.test(err)) {
+          // don't print anything
         } else {
           this.logger.error("Error running the tests. ", err);
         }
