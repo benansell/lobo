@@ -140,7 +140,7 @@ export class ElmParserImp implements ElmParser {
 
       if (this.elmNodeHelper.isFunctionNode(result.node)) {
         const node = result.node;
-        node.dependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name, result.node.name.length);
+        node.dependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name.length);
         complete.push(node);
       }
     }
@@ -192,7 +192,7 @@ export class ElmParserImp implements ElmParser {
     return args;
   }
 
-  public parseFunction(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, name: string, startIndex: number): ElmFunctionDependency[] {
+  public parseFunction(codeHelper: ElmCodeHelper, typeHelper: ElmTypeHelper, startIndex: number): ElmFunctionDependency[] {
     const functionStartIndex = codeHelper.findChar(startIndex, "=");
 
     if (!functionStartIndex) {
@@ -216,21 +216,25 @@ export class ElmParserImp implements ElmParser {
           nextIndex = codeHelper.maxIndex;
         }
       } else if (codeHelper.delimitersFunction.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
-        let typeInfo = typeHelper.resolveExcludingDefaultModule(next.word, name);
+        let typeInfo = typeHelper.resolveExistingType(next.word);
 
         if (typeInfo) {
           let dep: ElmFunctionDependency | undefined = undefined;
 
           for (const d of dependencies) {
-            if (d.typeInfo === typeInfo) {
+            if (d.typeInfo.moduleName === typeInfo.moduleName
+              && d.typeInfo.parentTypeName === typeInfo.parentTypeName
+              && d.typeInfo.name === typeInfo.name) {
               dep = d;
             }
           }
 
+          const occursIndex = nextIndex - typeInfo.name.length;
+
           if (!dep) {
-            dependencies.push(<ElmFunctionDependency>{occurs: 1, typeInfo});
+            dependencies.push(<ElmFunctionDependency>{occurs: [occursIndex], typeInfo});
           } else {
-            dep.occurs++;
+            dep.occurs.push(occursIndex);
           }
         }
       }
@@ -382,6 +386,11 @@ export class ElmParserImp implements ElmParser {
 
   public toModuleNode(typeHelper: ElmTypeHelper, token: ElmToken, children: ElmNode[]): ElmModuleNode {
     const codeHelper = this.makeElmCodeHelper(token.code);
+
+    // todo: somehow the default module ends up with a list of 2 exposed types: Test and all ??? - why is Test added
+    // todo: resolve here should be limited to the current module and never pull in other types - elm does not allow reexports!!
+
+    // todo: wrong module is printed to console - complaining about grand child test - when it should be child test??
     const exposing = this.parseTypeList(codeHelper, typeHelper, token.identifier, 8 + token.identifier.length);
 
     return {...this.toBaseNode(token, token.identifier), children: children, exposing: exposing};

@@ -455,7 +455,7 @@ describe("lib elm-parser", () => {
       parserImp.parseSecondPass(typeHelper, [partial]);
 
       // assert
-      expect(mockParseFunction).to.have.been.calledWith(codeHelper, typeHelper, "foo", 3);
+      expect(mockParseFunction).to.have.been.calledWith(codeHelper, typeHelper, 3);
     });
 
     it("should return parsed typed module function from supplied partial node", () => {
@@ -593,7 +593,7 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -606,10 +606,10 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
-      expect(actual).to.deep.equal([{ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}}]);
+      expect(actual).to.deep.equal([{ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}}]);
     });
 
     it("should not return string in the dependency type info when there is an '='", () => {
@@ -618,7 +618,7 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -630,7 +630,7 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -642,7 +642,7 @@ describe("lib elm-parser", () => {
       let typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -657,28 +657,27 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("quux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(3);
-      expect(actual[0]).to.deep.equal({ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}});
-      expect(actual[1]).to.deep.equal({ occurs: 1, typeInfo: {name: "qux", moduleName: "bar"}});
-      expect(actual[2]).to.deep.equal({ occurs: 1, typeInfo: {name: "quux", moduleName: "bar"}});
+      expect(actual[0]).to.deep.equal({ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}});
+      expect(actual[1]).to.deep.equal({ occurs: [10], typeInfo: {name: "qux", moduleName: "bar"}});
+      expect(actual[2]).to.deep.equal({ occurs: [14], typeInfo: {name: "quux", moduleName: "bar"}});
     });
 
-    it("should return same that occurs twice dependency with occurs '2'", () => {
+    it("should return same that occurs twice dependency with occurs indexes 6 and 10", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz baz");
       let typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolve("baz");
-      typeHelper.resolve("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual[0]).to.deep.equal({ occurs: 2, typeInfo: {name: "baz", moduleName: "bar"}});
+      expect(actual[0]).to.deep.equal({ occurs: [6, 10], typeInfo: {name: "baz", moduleName: "bar"}});
     });
 
     it("should return the dependency type info when there surrounded by square brackets", () => {
@@ -688,10 +687,10 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
-      expect(actual).to.deep.equal([{ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}}]);
+      expect(actual).to.deep.equal([{ occurs: [7], typeInfo: {name: "baz", moduleName: "bar"}}]);
     });
 
     it("should return the dependency type info when there surrounded by round brackets", () => {
@@ -701,10 +700,10 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
-      expect(actual).to.deep.equal([{ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}}]);
+      expect(actual).to.deep.equal([{ occurs: [7], typeInfo: {name: "baz", moduleName: "bar"}}]);
     });
 
     it("should return the dependency type info when there surrounded by curly brackets", () => {
@@ -714,10 +713,10 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
-      expect(actual).to.deep.equal([{ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}}]);
+      expect(actual).to.deep.equal([{ occurs: [7], typeInfo: {name: "baz", moduleName: "bar"}}]);
     });
 
     it("should return the dependency type info when there separated by commas", () => {
@@ -729,13 +728,13 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("quux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(3);
-      expect(actual[0]).to.deep.equal({ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}});
-      expect(actual[1]).to.deep.equal({ occurs: 1, typeInfo: {name: "qux", moduleName: "bar"}});
-      expect(actual[2]).to.deep.equal({ occurs: 1, typeInfo: {name: "quux", moduleName: "bar"}});
+      expect(actual[0]).to.deep.equal({ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}});
+      expect(actual[1]).to.deep.equal({ occurs: [10], typeInfo: {name: "qux", moduleName: "bar"}});
+      expect(actual[2]).to.deep.equal({ occurs: [14], typeInfo: {name: "quux", moduleName: "bar"}});
     });
 
     it("should not return ignore contents of strings in dependencies", () => {
@@ -746,14 +745,14 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("qux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual[0]).to.deep.equal({ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}});
+      expect(actual[0]).to.deep.equal({ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}});
     });
 
-    it("should not return ignore everything after start of unterminated strings in dependencies", () => {
+    it("should ignore everything after start of unterminated strings in dependencies", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz \"qux");
       let typeHelper = makeElmTypeHelper("bar");
@@ -761,11 +760,11 @@ describe("lib elm-parser", () => {
       typeHelper.resolve("qux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, "foo", 3);
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual[0]).to.deep.equal({ occurs: 1, typeInfo: {name: "baz", moduleName: "bar"}});
+      expect(actual[0]).to.deep.equal({ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}});
     });
   });
 
@@ -968,7 +967,7 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("import Foo exposing (..)");
       let typeHelper = makeElmTypeHelper("foo");
-      typeHelper.resolve("bar");
+      typeHelper.resolve("bar", undefined, "foo");
       typeHelper.resolve("baz", "bar", "foo");
       typeHelper.resolve("qux", "bar", "foo");
 

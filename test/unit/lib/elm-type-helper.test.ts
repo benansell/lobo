@@ -219,55 +219,28 @@ describe("lib elm-type-helper", () => {
     });
   });
 
-  describe("resolveExcludingDefaultModule", () => {
-    it("should return type info when the type is a known type and parent type is undefined", () => {
+  describe("resolveExistingType", () => {
+    it("should return existing type when type name exists within the module", () => {
       // arrange
       let typeHelper = new ElmTypeHelperImp("foo");
-      let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
-      typeHelper.addModule("bar", undefined, types);
+      typeHelper.resolve("abc", undefined, "bar");
+      typeHelper.resolve("def", undefined, "bar");
 
       // act
-      let actual = typeHelper.resolveExcludingDefaultModule("def", undefined);
+      let actual = typeHelper.resolveExistingType("def", "bar");
 
       // assert
-      expect(actual).to.equal(types[1]);
+      expect(actual).to.deep.equal({name: "def", moduleName: "bar"});
     });
 
-    it("should return undefined when the type for an unknown type and parent type is undefined", () => {
+    it("should return undefined when type name does not exists within the module", () => {
       // arrange
       let typeHelper = new ElmTypeHelperImp("foo");
-      let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
-      typeHelper.addModule("bar", undefined, types);
+      typeHelper.resolve("abc", undefined, "bar");
+      typeHelper.resolve("def", undefined, "bar");
 
       // act
-      let actual = typeHelper.resolveExcludingDefaultModule("ghi", undefined);
-
-      // assert
-      expect(actual).to.be.undefined;
-    });
-
-    it("should return type info when the type is a known type and parent type is supplied", () => {
-      // arrange
-      let typeHelper = new ElmTypeHelperImp("foo");
-      let types = [{name: "abc", moduleName: "bar"}, {name: "ghi", parentTypeName: "def", moduleName: "bar"}];
-      typeHelper.addModule("bar", undefined, types);
-
-      // act
-      let actual = typeHelper.resolveExcludingDefaultModule("ghi", "def");
-
-      // assert
-      expect(actual).to.deep.equal({name: "ghi", moduleName: "bar", parentTypeName: "def"});
-    });
-
-    it("should return undefined when the type for an unknown type and parent type is from default module", () => {
-      // arrange
-      let typeHelper = new ElmTypeHelperImp("foo");
-      let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
-      typeHelper.addModule("bar", undefined, types);
-      typeHelper.resolve("123", "456", "foo");
-
-      // act
-      let actual = typeHelper.resolveExcludingDefaultModule("789", "456");
+      let actual = typeHelper.resolveExistingType("ghi", "bar");
 
       // assert
       expect(actual).to.be.undefined;
@@ -275,30 +248,43 @@ describe("lib elm-type-helper", () => {
   });
 
   describe("resolveModule", () => {
-    it("should return existing module when supplied type has a known module name", () => {
+    it("should return existing module when supplied module name is known", () => {
       // arrange
       let typeHelper = new ElmTypeHelperImp("foo");
       let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
       typeHelper.addModule("bar", undefined, types);
 
       // act
-      let actual = typeHelper.resolveModule({name: "ghi", moduleName: "bar"});
+      let actual = typeHelper.resolveModule("bar");
 
       // assert
       expect(actual).to.deep.equal({name: "bar", exposing: types, alias: undefined});
     });
 
-    it("should return new module containing supplied type when supplied type has an unknown module name", () => {
+    it("should return new module when supplied module name is unknown", () => {
       // arrange
       let typeHelper = new ElmTypeHelperImp("foo");
       let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
       typeHelper.addModule("bar", undefined, types);
 
       // act
-      let actual = typeHelper.resolveModule({name: "ghi", moduleName: "qux"});
+      let actual = typeHelper.resolveModule("qux");
 
       // assert
-      expect(actual).to.deep.equal({name: "qux", exposing: [{name: "ghi", moduleName: "qux"}], alias: undefined});
+      expect(actual).to.deep.equal({name: "qux", exposing: [], alias: undefined});
+    });
+
+    it("should return default module when supplied module name is undefined", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
+      typeHelper.addModule("bar", undefined, types);
+
+      // act
+      let actual = typeHelper.resolveModule(undefined);
+
+      // assert
+      expect(actual).to.deep.equal({name: "foo", exposing: [], alias: undefined});
     });
   });
 
@@ -352,34 +338,6 @@ describe("lib elm-type-helper", () => {
       // assert
       let types = [{name: "List", moduleName: "List"}, {name: "::", moduleName: "List"}];
       expect(actual).to.deep.equal({name: "List", exposing: types, alias: undefined});
-    });
-  });
-
-  describe("resolveType", () => {
-    it("should return existing type when type name exists within the module", () => {
-      // arrange
-      let typeHelper = new ElmTypeHelperImp("foo");
-      let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
-      let moduleInfo = {name: "bar", exposing: types};
-
-      // act
-      let actual = typeHelper.resolveType(moduleInfo, types[1]);
-
-      // assert
-      expect(actual).to.deep.equal(types[1]);
-    });
-
-    it("should return undefined when type name does not exists within the module", () => {
-      // arrange
-      let typeHelper = new ElmTypeHelperImp("foo");
-      let types = [{name: "abc", moduleName: "bar"}, {name: "def", moduleName: "bar"}];
-      let moduleInfo = {name: "bar", exposing: types};
-
-      // act
-      let actual = typeHelper.resolveType(moduleInfo, {name: "ghi", "moduleName": "bar"});
-
-      // assert
-      expect(actual).to.be.undefined;
     });
   });
 

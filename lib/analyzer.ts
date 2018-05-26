@@ -162,7 +162,7 @@ export class AnalyzerImp implements Analyzer {
 
     if (analysis.overExposedTestCount > 0) {
       this.logger.log(this.headerStyle("OVER EXPOSED TESTS"));
-      const message = "Please update the modules exposing list or test suites such that each test is exposed by a single route";
+      const message = "Please update the modules exposing list or test suites such that each test is exposed once by a single module";
       this.paddedLog(this.fixStyle(message));
       this.logger.log("");
       this.reportAnalysisDetailForIssue(codeLookup, analysis.overExposedTests, "OverExposed");
@@ -249,23 +249,15 @@ export class AnalyzerImp implements Analyzer {
 
         this.highlightIssues(codeInfo.moduleNode.code, issues);
       }
-
-      this.paddedLog(this.messagePrefixPadding + omitted);
     }
 
     for (const i of functionNode.isExposedIndirectlyBy) {
-      let nextIndex = 0;
-      const codeHelper = makeElmCodeHelper(i.functionNode.node.code);
+      const issueCodeInfo = codeLookup[i.codeInfoKey];
+      this.paddedLog("       " + this.failedStyle(this.toNameAndStartLocation(issueCodeInfo.filePath, i.functionNode)));
       const issues: IssueLocation[] = [];
 
-      while (nextIndex < codeHelper.maxIndex) {
-        const next = codeHelper.findNextWord(nextIndex, true, codeHelper.delimitersFunction);
-
-        if (next.word === functionNode.node.name) {
-          issues.push({index: nextIndex, issue: functionNode.node.name});
-        }
-
-        nextIndex = next.nextIndex;
+      for (const occursIndex of i.occurs) {
+        issues.push({index: occursIndex, issue: functionNode.node.name});
       }
 
       this.highlightIssues(i.functionNode.node.code, issues);

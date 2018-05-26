@@ -12,7 +12,7 @@ import {createElmNodeHelper, ElmNodeHelper} from "./elm-node-helper";
 export interface IndirectlyExposedInfo {
   codeInfoKey: string;
   functionNode: AnalyzedTestFunctionNode;
-  occurs: number;
+  occurs: number[];
 }
 
 export interface AnalyzedFunctionDependency {
@@ -209,7 +209,7 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
     let exposedCount = 0;
 
     for (const item of functionNode.isExposedIndirectlyBy) {
-      exposedCount += item.occurs;
+      exposedCount += item.occurs.length;
 
       if (exposedCount > 1) {
         return true;

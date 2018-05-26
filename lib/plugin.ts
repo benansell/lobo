@@ -51,7 +51,7 @@ export interface BaseElmNode {
 }
 
 export interface ElmFunctionDependency {
-  occurs: number;
+  occurs: number[];
   typeInfo: ElmTypeInfo;
 }
 

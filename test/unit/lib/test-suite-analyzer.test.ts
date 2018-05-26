@@ -897,7 +897,7 @@ describe("lib test-suite-analyzer", () => {
 
     it("should be false when function node no arguments and is not directly exposed but is indirectly exposed once", () => {
       // arrange
-      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [{occurs: 1}], node: {arguments: []}};
+      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [{occurs: [1]}], node: {arguments: []}};
 
       // act
       let actual = analyzerImp.isOverExposed(node);
@@ -908,7 +908,7 @@ describe("lib test-suite-analyzer", () => {
 
     it("should be true when function node no arguments and is directly exposed and indirectly exposed once", () => {
       // arrange
-      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: true, isExposedIndirectlyBy: [{occurs: 1}], node: {arguments: []}};
+      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: true, isExposedIndirectlyBy: [{occurs: [1]}], node: {arguments: []}};
 
       // act
       let actual = analyzerImp.isOverExposed(node);
@@ -919,7 +919,7 @@ describe("lib test-suite-analyzer", () => {
 
     it("should be true when function node no arguments and is not directly exposed and indirectly exposed more than once", () => {
       // arrange
-      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [{occurs: 2}], node: {arguments: []}};
+      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [{occurs: [1, 2]}], node: {arguments: []}};
 
       // act
       let actual = analyzerImp.isOverExposed(node);
@@ -933,7 +933,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return false when node is not a test function node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "expect"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "expect"}}]};
 
       // act
       let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
@@ -945,7 +945,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a test node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "test"}}]};
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "test"}}]};
 
       // act
       let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
@@ -957,7 +957,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a test node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "test"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "test"}}]};
 
       // act
       let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
@@ -969,7 +969,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a fuzz test node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "fuzz"}}]};
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz"}}]};
 
       // act
       let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
@@ -981,7 +981,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a fuzz test node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "fuzz"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz"}}]};
 
       // act
       let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
@@ -995,7 +995,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return false when node is not a test function node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "expect"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "expect"}}]};
 
       // act
       let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
@@ -1007,7 +1007,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a describe node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "describe"}}]};
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "describe"}}]};
 
       // act
       let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
@@ -1019,7 +1019,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a describe node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "describe"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "describe"}}]};
 
       // act
       let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
@@ -1031,7 +1031,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a concat node with arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "concat"}}]};
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "concat"}}]};
 
       // act
       let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
@@ -1043,7 +1043,7 @@ describe("lib test-suite-analyzer", () => {
     it("should return true when node is not a concat node with no arguments", () => {
       // arrange
       let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: 1, typeInfo: {moduleName: "foo", name: "concat"}}]};
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "concat"}}]};
 
       // act
       let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
@@ -1278,7 +1278,7 @@ describe("lib test-suite-analyzer", () => {
       let typeInfo = <ElmTypeInfo> {moduleName: "foo"};
       let test = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {dependencies: [{typeInfo}]}};
       let moduleNode = <AnalyzedTestModuleNode> {codeInfoKey: "foo", moduleNode: {}, tests: [test]};
-      let dependencyFunctionNode = {isExposedIndirectlyBy: [{codeInfoKey: "foo", functionNode: test, occurs: 1}]};
+      let dependencyFunctionNode = {isExposedIndirectlyBy: [{codeInfoKey: "foo", functionNode: test, occurs: [1]}]};
       let dependency = <AnalyzedFunctionDependency> {functionNode: dependencyFunctionNode, moduleNode};
       let nodes = <AnalyzedTestModuleNode[]> [moduleNode];
       analyzerImp.findAnalyzedFunctionNodeInModulesForDependency = Sinon.stub().returns(dependency);

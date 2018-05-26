@@ -10,7 +10,7 @@ export interface ElmTypeHelper {
   addModule(name: string, alias: string | undefined): void;
   findAllChildTypes(moduleName: string, parentTypeName: string | undefined): ElmTypeInfo[];
   resolve(name: string, parentTypeName?: string, moduleName?: string): ElmTypeInfo;
-  resolveExcludingDefaultModule(name: string, parentTypeName?: string): ElmTypeInfo | undefined;
+  resolveExistingType(name: string, parentTypeName?: string): ElmTypeInfo | undefined;
 }
 
 export class ElmTypeHelperImp implements ElmTypeHelper {
@@ -105,51 +105,51 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
   }
 
   public resolve(name: string, parentTypeName?: string, moduleName?: string): ElmTypeInfo {
-    const type = this.toModuleTypeInfo(name, parentTypeName, moduleName);
-    const result = this.resolveInternal(true, type);
+    let existingType = this.resolveExistingType(name, moduleName);
 
-    return result.type;
+    if (existingType) {
+      return existingType;
+    }
+
+    let module: ElmModuleTypeInfo;
+
+    if (moduleName) {
+      module = this.resolveModule(moduleName);
+    } else {
+      module = this.resolveModule(this.defaultModuleName);
+    }
+
+    const type = this.toModuleTypeInfo(name, parentTypeName, moduleName);
+    module.exposing.push(type);
+
+    return type;
   }
 
-  public resolveExcludingDefaultModule(name: string, parentTypeName?: string): ElmTypeInfo | undefined {
-    const type = this.toModuleTypeInfo(name, parentTypeName, undefined);
-    const result = this.resolveInternal(false, type);
-
-    if (result.existing || result.type.moduleName !== this.defaultModuleName) {
-      return result.type;
+  public resolveExistingType(name: string, moduleName?: string): ElmTypeInfo | undefined {
+    for (const module of this.modules) {
+      for (const exposed of module.exposing) {
+        if (moduleName === undefined || moduleName === exposed.moduleName) {
+          if (exposed.name === name) {
+            return exposed;
+          }
+        }
+      }
     }
 
     return undefined;
   }
 
-  public resolveInternal(addToDefaultModule: boolean, type: ElmTypeInfo): {existing: boolean, type: ElmTypeInfo} {
-    if (type.moduleName === this.defaultModuleName) {
-      const existingType = this.findExposedType(type.name);
+  public resolveModule(moduleName: string): ElmModuleTypeInfo {
+    let module: ElmModuleTypeInfo | undefined;
 
-      if (existingType) {
-        return { existing: true, type: existingType};
-      }
+    if (moduleName) {
+      module = this.resolveExistingModule(moduleName);
+    } else {
+      module = this.resolveExistingModule(this.defaultModuleName);
     }
-
-    const module = this.resolveModule(type);
-    let moduleType = this.resolveType(module, type);
-
-    if (moduleType) {
-      return { existing: true, type: moduleType };
-    }
-
-    if (addToDefaultModule || type.moduleName !== this.defaultModuleName) {
-      module.exposing.push(type);
-    }
-
-    return { existing: false, type };
-  }
-
-  public resolveModule(type: ElmTypeInfo): ElmModuleTypeInfo {
-    let module = this.resolveExistingModule(type.moduleName);
 
     if (!module) {
-      module = {alias: undefined, exposing: [type], name: type.moduleName};
+      module = {alias: undefined, exposing: [], name: moduleName};
       this.modules.push(module);
     }
 
@@ -160,16 +160,6 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
     for (const m of this.modules) {
       if (m.name === name || m.alias === name) {
         return m;
-      }
-    }
-
-    return undefined;
-  }
-
-  public resolveType(module: ElmModuleTypeInfo, type: ElmTypeInfo): ElmTypeInfo | undefined {
-    for (const exposed of module.exposing) {
-      if (exposed.name === type.name) {
-        return exposed;
       }
     }
 

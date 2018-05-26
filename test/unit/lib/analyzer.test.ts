@@ -290,8 +290,7 @@ describe("lib analyzer", () => {
       let style = Sinon.stub();
       let mockToNameAndStartLocation = Sinon.stub();
       analyzerImp.toNameAndStartLocation = mockToNameAndStartLocation;
-      let mockPaddedLog = Sinon.stub();
-      analyzerImp.paddedLog = mockPaddedLog;
+      analyzerImp.paddedLog = Sinon.stub();
 
       // act
       analyzerImp.logLabels(codeInfo, functionNode, 123, "abc", style);
@@ -307,8 +306,7 @@ describe("lib analyzer", () => {
       let style = Sinon.stub();
       let mockToNameAndStartLocation = Sinon.stub();
       analyzerImp.toNameAndStartLocation = mockToNameAndStartLocation;
-      let mockPaddedLog = Sinon.stub();
-      analyzerImp.paddedLog = mockPaddedLog;
+      analyzerImp.paddedLog = Sinon.stub();
 
       // act
       analyzerImp.logLabels(codeInfo, functionNode, 123, "abc", style);
@@ -541,7 +539,7 @@ describe("lib analyzer", () => {
         analyzerImp.reportAnalysisDetail(codeLookup, analysis);
 
         // assert
-        const matcher = /Please update the modules exposing list or test suites such that each test is exposed by a single route/;
+        const matcher = /Please update the modules exposing list or test suites such that each test is exposed once by a single module/;
         expect(mockLog).to.have.been.calledWith(Sinon.match(matcher));
       });
 
@@ -903,9 +901,9 @@ describe("lib analyzer", () => {
       // arrange
       let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = false;
-      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar"}};
-      functionNode.isExposedIndirectlyBy = [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: 1}];
-      let codeLookup = <ElmCodeLookup> {};
+      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar", start: {}}};
+      functionNode.isExposedIndirectlyBy = [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [1]}];
+      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -919,9 +917,10 @@ describe("lib analyzer", () => {
       // arrange
       let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = false;
-      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar"}};
-      functionNode.isExposedIndirectlyBy = [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: 1}];
-      let codeLookup = <ElmCodeLookup> {};
+      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar", start: {}}};
+      functionNode.isExposedIndirectlyBy =
+        [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [6]}];
+      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -936,9 +935,10 @@ describe("lib analyzer", () => {
       // arrange
       let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = false;
-      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = [bar, bar]"}};
-      functionNode.isExposedIndirectlyBy = [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: 1}];
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: ""}}};
+      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = [bar, bar]", start: {}}};
+      functionNode.isExposedIndirectlyBy =
+        [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [7,12]}];
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: ""}}, baz: <ElmCodeInfo> {}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
