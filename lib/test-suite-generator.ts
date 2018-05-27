@@ -5,7 +5,7 @@ import {
   ElmFunctionNode,
   ElmImportNode,
   ElmModuleNode,
-  ElmNode,
+  ElmNode, ElmTestSuiteType, ElmTestType,
   ExecutionContext,
   LoboConfig,
   PluginTestFrameworkWithConfig,
@@ -212,12 +212,13 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     return lines;
   }
 
-  public isTestFunctionNodeWithoutArguments(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
+  public isTestFunctionNodeWithoutArgumentsOfType<T extends string>(testImportNodes: ElmImportNode[], node: ElmFunctionNode,
+                                                                    testTypes: T[]): boolean {
     for (const importNode of testImportNodes) {
       for (const d of node.dependencies) {
         const ti = d.typeInfo;
 
-        if (node.arguments.length === 0 && ti.moduleName === importNode.name && (ti.name === "test" || ti.name === "fuzz")) {
+        if (node.arguments.length === 0 && ti.moduleName === importNode.name && testTypes.indexOf(<T> ti.name) > -1) {
           return true;
         }
       }
@@ -226,18 +227,16 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     return false;
   }
 
+  public isTestFunctionNodeWithoutArguments(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
+    const testTypes: ElmTestType[] = ["test", "fuzz", "fuzz2", "fuzz3", "fuzz4", "fuzz5", "fuzzWith", "todo"];
+
+    return this.isTestFunctionNodeWithoutArgumentsOfType(testImportNodes, node, testTypes);
+  }
+
   public isTestSuiteFunctionNodeWithoutArguments(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
-    for (const importNode of testImportNodes) {
-      for (const d of node.dependencies) {
-        const ti = d.typeInfo;
+    const testSuiteTypes: ElmTestSuiteType[] = ["describe", "concat"];
 
-        if (node.arguments.length === 0 && ti.moduleName === importNode.name && (ti.name === "describe" || ti.name === "concat")) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return this.isTestFunctionNodeWithoutArgumentsOfType(testImportNodes, node, testSuiteTypes);
   }
 
   public toSuiteName(testModuleNode: TestModuleNode): string {

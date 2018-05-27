@@ -3,7 +3,7 @@ import {
   ElmFunctionNode,
   ElmImportNode,
   ElmModuleNode,
-  ElmNode,
+  ElmNode, ElmTestSuiteType, ElmTestType,
   ElmTypeInfo,
   ExecutionContext
 } from "./plugin";
@@ -33,8 +33,8 @@ export interface AnalyzedTestFunctionNode {
   codeInfoModuleKey: string;
   isExposedDirectly: boolean;
   isExposedIndirectlyBy: IndirectlyExposedInfo[];
-  isSuite: boolean;
-  isTest: boolean;
+  suiteType?: ElmTestSuiteType;
+  testType?: ElmTestType;
   moduleName: string;
   node: ElmFunctionNode;
 }
@@ -46,7 +46,6 @@ export interface AnalysisTestSummary {
   hiddenTests: AnalyzedTestFunctionNode[];
   overExposedTestCount: number;
   overExposedTests: AnalyzedTestFunctionNode[];
-  testCount: number;
 }
 
 export interface TestSuiteAnalyzer {
@@ -107,18 +106,18 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
         continue;
       }
 
-      const isSuite = this.isTestSuiteFunctionNode(testImportNodes, child);
-      const isTest = this.isTestFunctionNode(testImportNodes, child);
+      const suiteType = this.findTestSuiteTypeFunctionNode(testImportNodes, child);
+      const testType = this.findTestTypeOfFunctionNode(testImportNodes, child);
 
-      if (isSuite || isTest) {
+      if (suiteType !== undefined || testType !== undefined) {
         const item = <AnalyzedTestFunctionNode> {
           codeInfoModuleKey: codeInfoKey,
           isExposedDirectly: this.isFunctionNodeExposed(moduleNode.exposing, child),
           isExposedIndirectlyBy: [],
-          isSuite,
-          isTest,
           moduleName: moduleNode.name,
-          node: child
+          node: child,
+          suiteType,
+          testType
         };
         tests.push(item);
       }
@@ -131,9 +130,8 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
     let testFrameworkElmModuleName = context.config.testFramework.testFrameworkElmModuleName();
     let results = this.buildAnalyzedModuleNodes(context.codeLookup, testFrameworkElmModuleName);
     this.updateExposedIndirectly(results);
-    const summary = this.toAnalysisTestSummary(results);
 
-    return summary;
+    return this.toAnalysisTestSummary(results);
   }
 
   public findAnalyzedFunctionNodeInModulesForDependency(nodes: AnalyzedTestModuleNode[], dependency: ElmTypeInfo)
@@ -179,6 +177,37 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
     return importNodes;
   }
 
+  public findTestTypeOfFunctionNodeForTestType<T extends string>(testImportNodes: ElmImportNode[], node: ElmFunctionNode,
+                                                                 testTypes: T[]): T | undefined {
+    for (const importNode of testImportNodes) {
+      for (const d of node.dependencies) {
+        const ti = d.typeInfo;
+
+        if (ti.moduleName === importNode.name) {
+          const index = testTypes.indexOf(<T> ti.name);
+
+          if (index > -1) {
+            return testTypes[index];
+          }
+        }
+      }
+    }
+
+    return undefined;
+  }
+
+  public findTestSuiteTypeFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): ElmTestSuiteType | undefined {
+    const testSuiteTypes: ElmTestSuiteType[] = ["describe", "concat"];
+
+    return this.findTestTypeOfFunctionNodeForTestType(testImportNodes, node, testSuiteTypes);
+  }
+
+  public findTestTypeOfFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): ElmTestType | undefined {
+    const testTypes: ElmTestType[] = ["test", "fuzz", "fuzz2", "fuzz3", "fuzz4", "fuzz5", "fuzzWith", "todo"];
+
+    return this.findTestTypeOfFunctionNodeForTestType(testImportNodes, node, testTypes);
+  }
+
   public isFunctionNodeExposed(exposing: ElmTypeInfo[], node: ElmFunctionNode): boolean {
     for (const t of exposing) {
       if (t.name === node.name) {
@@ -219,30 +248,6 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
     return false;
   }
 
-  public isTestFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
-    for (const importNode of testImportNodes) {
-      for (const d of node.dependencies) {
-        if (d.typeInfo.moduleName === importNode.name && (d.typeInfo.name === "test" || d.typeInfo.name === "fuzz")) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  public isTestSuiteFunctionNode(testImportNodes: ElmImportNode[], node: ElmFunctionNode): boolean {
-    for (const importNode of testImportNodes) {
-      for (const d of node.dependencies) {
-        if (d.typeInfo.moduleName === importNode.name && (d.typeInfo.name === "describe" || d.typeInfo.name === "concat")) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
   public toAnalysisTestSummary(moduleNodes: AnalyzedTestModuleNode[]): AnalysisTestSummary {
     const result = <AnalysisTestSummary> {
       analysisFailureCount: 0,
@@ -250,8 +255,7 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
       hiddenTestCount: 0,
       hiddenTests: [],
       overExposedTestCount: 0,
-      overExposedTests: [],
-      testCount: 0
+      overExposedTests: []
     };
 
     for (const mn of moduleNodes) {
@@ -262,8 +266,6 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
       }
 
       for (const t of mn.tests) {
-        result.testCount++;
-
         if (this.isHidden(t)) {
           result.hiddenTests.push(t);
           result.hiddenTestCount++;

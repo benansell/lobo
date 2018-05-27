@@ -202,7 +202,16 @@ export class AnalyzerImp implements Analyzer {
   }
 
   public reportAnalysisSummary(analysis: AnalysisTestSummary): number {
-    this.paddedLog(this.fixStyle(`Found ${analysis.testCount} test${analysis.testCount === 1 ? "" : "s"}`));
+    const issueCount = analysis.analysisFailureCount + analysis.overExposedTestCount + analysis.hiddenTestCount;
+
+    if (issueCount === 0) {
+      return issueCount;
+    }
+
+    if (analysis.analysisFailureCount > 0) {
+      this.paddedLog(
+        this.fixStyle(`Failed to analyze ${analysis.analysisFailureCount} module${analysis.analysisFailureCount === 1 ? "" : "s"}`));
+    }
 
     if (analysis.hiddenTestCount > 0) {
       this.paddedLog(this.failedStyle(`Found ${analysis.hiddenTestCount} hidden test${analysis.hiddenTestCount === 1 ? "" : "s"}`));
@@ -215,7 +224,7 @@ export class AnalyzerImp implements Analyzer {
 
     this.logger.log("");
 
-    return analysis.analysisFailureCount + analysis.overExposedTestCount + analysis.hiddenTestCount;
+    return issueCount;
   }
 
   public reportOverExposedTest(codeLookup: ElmCodeLookup, functionNode: AnalyzedTestFunctionNode): void {

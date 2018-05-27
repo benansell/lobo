@@ -84,7 +84,7 @@ describe("lib analyzer", () => {
 
     it("should return a promise that calls report with the analysis summary", () => {
       // arrange
-      let expected = <AnalysisTestSummary> {testCount: 123};
+      let expected = <AnalysisTestSummary> {analysisFailureCount: 123};
       let context = <ExecutionContext> {codeLookup: {}};
       mockBuildSummary.returns(expected);
       let mockReport = Sinon.stub();
@@ -361,7 +361,7 @@ describe("lib analyzer", () => {
   describe("report", () => {
     it("should call reportAnalysisSummary with the analysis", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {testCount: 123};
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
@@ -393,7 +393,7 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisFailure with the codeLookup", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {testCount: 123};
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
@@ -408,7 +408,7 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisFailure with the analysis", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {testCount: 123};
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
@@ -423,7 +423,7 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetail with the codeLookup", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {testCount: 123};
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
@@ -438,7 +438,7 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetail with the analysis", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {testCount: 123};
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
@@ -707,28 +707,40 @@ describe("lib analyzer", () => {
   });
 
   describe("reportAnalysisSummary", () => {
-    it("should call paddedLog with the singular total testCount message when testCount is 1", () => {
+    it("should not call paddedLog when there are no issues", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {testCount: 1};
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 0, hiddenTestCount: 0, overExposedTestCount: 0};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
       analyzerImp.reportAnalysisSummary(analysis);
 
       // assert
-      expect(analyzerImp.paddedLog).to.have.been.calledWith(Sinon.match(/Found 1 test/));
+      expect(analyzerImp.paddedLog).not.to.have.been.called;
     });
 
-    it("should call paddedLog with the plural total testCount message when testCount is not 1", () => {
+    it("should call paddedLog with the singular total failed analysis message when failure count is 1", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {testCount: 0};
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 1};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
       analyzerImp.reportAnalysisSummary(analysis);
 
       // assert
-      expect(analyzerImp.paddedLog).to.have.been.calledWith(Sinon.match(/Found 0 tests/));
+      expect(analyzerImp.paddedLog).to.have.been.calledWith(Sinon.match(/Failed to analyze 1 module/));
+    });
+
+    it("should call paddedLog with the singular total failed analysis message when failure count is not 1", () => {
+      // arrange
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 2};
+      analyzerImp.paddedLog = Sinon.stub();
+
+      // act
+      analyzerImp.reportAnalysisSummary(analysis);
+
+      // assert
+      expect(analyzerImp.paddedLog).to.have.been.calledWith(Sinon.match(/Failed to analyze 2 modules/));
     });
 
     it("should not call paddedLog with the hiddenTestCount message when hiddenTestCount is 0", () => {
@@ -937,7 +949,7 @@ describe("lib analyzer", () => {
       functionNode.isExposedDirectly = false;
       let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = [bar, bar]", start: {}}};
       functionNode.isExposedIndirectlyBy =
-        [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [7,12]}];
+        [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [7, 12]}];
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: ""}}, baz: <ElmCodeInfo> {}};
       analyzerImp.highlightIssues = Sinon.stub();
 

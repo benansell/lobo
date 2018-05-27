@@ -133,9 +133,9 @@ describe("lib test-suite-analyzer", () => {
       let codeLookup = <ElmCodeLookup> {
         foo: <ElmCodeInfo> {isTestFile: true, moduleNode: {}}
       };
-      const mockfindImportNodesForModuleName = Sinon.stub();
-      mockfindImportNodesForModuleName.returns(expected);
-      analyzerImp.findImportNodesForModuleName = mockfindImportNodesForModuleName;
+      const mockFindImportNodesForModuleName = Sinon.stub();
+      mockFindImportNodesForModuleName.returns(expected);
+      analyzerImp.findImportNodesForModuleName = mockFindImportNodesForModuleName;
       analyzerImp.buildAnalyzedFunctionNodes = Sinon.stub();
 
       // act
@@ -307,14 +307,14 @@ describe("lib test-suite-analyzer", () => {
       let testImportNodes = <ElmImportNode[]> [{exposing: []}];
       let moduleNode = <ElmModuleNode> {children: [{name: "bar", nodeType: ElmNodeType.Type}]};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub();
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub();
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
 
       // act
       analyzerImp.buildAnalyzedFunctionNodes("foo", moduleNode, testImportNodes);
 
       // assert
-      expect(analyzerImp.isTestFunctionNode).to.have.been.calledWith(testImportNodes, Sinon.match.any);
+      expect(analyzerImp.findTestTypeOfFunctionNode).to.have.been.calledWith(testImportNodes, Sinon.match.any);
     });
 
     it("should call isTestFunction with nodes in moduleNode.children", () => {
@@ -322,14 +322,14 @@ describe("lib test-suite-analyzer", () => {
       let testImportNodes = <ElmImportNode[]> [{exposing: []}];
       let moduleNode = <ElmModuleNode> {children: [{name: "bar", nodeType: ElmNodeType.Type}]};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub();
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub();
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
 
       // act
       analyzerImp.buildAnalyzedFunctionNodes("foo", moduleNode, testImportNodes);
 
       // assert
-      expect(analyzerImp.isTestFunctionNode).to.have.been.calledWith(Sinon.match.any, moduleNode.children[0]);
+      expect(analyzerImp.findTestTypeOfFunctionNode).to.have.been.calledWith(Sinon.match.any, moduleNode.children[0]);
     });
 
     it("should call isTestSuiteFunction with testImportNodes", () => {
@@ -337,14 +337,14 @@ describe("lib test-suite-analyzer", () => {
       let testImportNodes = <ElmImportNode[]> [{exposing: []}];
       let moduleNode = <ElmModuleNode> {children: [{name: "bar", nodeType: ElmNodeType.Type}]};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub();
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub();
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
 
       // act
       analyzerImp.buildAnalyzedFunctionNodes("foo", moduleNode, testImportNodes);
 
       // assert
-      expect(analyzerImp.isTestSuiteFunctionNode).to.have.been.calledWith(testImportNodes, Sinon.match.any);
+      expect(analyzerImp.findTestSuiteTypeFunctionNode).to.have.been.calledWith(testImportNodes, Sinon.match.any);
     });
 
     it("should call isTestSuiteFunction with nodes in moduleNode.children", () => {
@@ -352,14 +352,14 @@ describe("lib test-suite-analyzer", () => {
       let testImportNodes = <ElmImportNode[]> [{exposing: []}];
       let moduleNode = <ElmModuleNode> {children: [{name: "bar", nodeType: ElmNodeType.Type}]};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub();
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub();
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
 
       // act
       analyzerImp.buildAnalyzedFunctionNodes("foo", moduleNode, testImportNodes);
 
       // assert
-      expect(analyzerImp.isTestSuiteFunctionNode).to.have.been.calledWith(Sinon.match.any, moduleNode.children[0]);
+      expect(analyzerImp.findTestSuiteTypeFunctionNode).to.have.been.calledWith(Sinon.match.any, moduleNode.children[0]);
     });
 
     it("should call isFunctionExposed for child nodes that are tests with moduleNode.exposing", () => {
@@ -367,8 +367,8 @@ describe("lib test-suite-analyzer", () => {
       let testImportNodes = <ElmImportNode[]> [{exposing: []}];
       let moduleNode = <ElmModuleNode> {children: [{name: "bar", nodeType: ElmNodeType.Type, exposing: []}]};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub().returns(true);
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub().returns("test");
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -383,8 +383,8 @@ describe("lib test-suite-analyzer", () => {
       let testImportNodes = <ElmImportNode[]> [{exposing: []}];
       let moduleNode = <ElmModuleNode> {children: [{name: "bar", nodeType: ElmNodeType.Type}]};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub().returns(true);
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub().returns("test");
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -400,11 +400,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children};
       mockIsFunctionNode.returns(true);
-      let mockIsTestFunctionNode = Sinon.stub();
-      mockIsTestFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestFunctionNode.returns(false);
-      analyzerImp.isTestFunctionNode = mockIsTestFunctionNode;
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      let mockFindTestTypeOfFunctionNode = Sinon.stub();
+      mockFindTestTypeOfFunctionNode.withArgs(testImportNodes, children[0]).returns("test");
+      mockFindTestTypeOfFunctionNode.returns(undefined);
+      analyzerImp.findTestTypeOfFunctionNode = mockFindTestTypeOfFunctionNode;
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -421,11 +421,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children};
       mockIsFunctionNode.returns(true);
-      let mockIsTestFunctionNode = Sinon.stub();
-      mockIsTestFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestFunctionNode.returns(false);
-      analyzerImp.isTestFunctionNode = mockIsTestFunctionNode;
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      let mockFindTestTypeOfFunctionNode = Sinon.stub();
+      mockFindTestTypeOfFunctionNode.withArgs(testImportNodes, children[0]).returns("test");
+      mockFindTestTypeOfFunctionNode.returns(undefined);
+      analyzerImp.findTestTypeOfFunctionNode = mockFindTestTypeOfFunctionNode;
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
       analyzerImp.isFunctionNodeExposed = Sinon.stub().returns(true);
 
       // act
@@ -442,11 +442,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children};
       mockIsFunctionNode.returns(true);
-      let mockIsTestFunctionNode = Sinon.stub();
-      mockIsTestFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestFunctionNode.returns(false);
-      analyzerImp.isTestFunctionNode = mockIsTestFunctionNode;
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      let mockFindTestTypeOfFunctionNode = Sinon.stub();
+      mockFindTestTypeOfFunctionNode.withArgs(testImportNodes, children[0]).returns("test");
+      mockFindTestTypeOfFunctionNode.returns(undefined);
+      analyzerImp.findTestTypeOfFunctionNode = mockFindTestTypeOfFunctionNode;
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -463,11 +463,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children};
       mockIsFunctionNode.returns(true);
-      let mockIsTestFunctionNode = Sinon.stub();
-      mockIsTestFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestFunctionNode.returns(false);
-      analyzerImp.isTestFunctionNode = mockIsTestFunctionNode;
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub().returns(false);
+      let mockFindTestTypeOfFunctionNode = Sinon.stub();
+      mockFindTestTypeOfFunctionNode.withArgs(testImportNodes, children[0]).returns("test");
+      mockFindTestTypeOfFunctionNode.returns(undefined);
+      analyzerImp.findTestTypeOfFunctionNode = mockFindTestTypeOfFunctionNode;
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub().returns(undefined);
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -475,7 +475,7 @@ describe("lib test-suite-analyzer", () => {
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual[0].isSuite).to.be.false;
+      expect(actual[0].suiteType).to.be.undefined;
     });
 
     it("should return analyzedTestFunctionNodes with isSuite true for test suite child nodes", () => {
@@ -484,11 +484,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub().returns(false);
-      let mockIsTestSuiteFunctionNode = Sinon.stub();
-      mockIsTestSuiteFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestSuiteFunctionNode.returns(false);
-      analyzerImp.isTestSuiteFunctionNode = mockIsTestSuiteFunctionNode;
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub().returns(undefined);
+      let mockFindTestSuiteTypeFunctionNode = Sinon.stub();
+      mockFindTestSuiteTypeFunctionNode.withArgs(testImportNodes, children[0]).returns("describe");
+      mockFindTestSuiteTypeFunctionNode.returns(undefined);
+      analyzerImp.findTestSuiteTypeFunctionNode = mockFindTestSuiteTypeFunctionNode;
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -496,7 +496,7 @@ describe("lib test-suite-analyzer", () => {
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual[0].isSuite).to.be.true;
+      expect(actual[0].suiteType).to.be.equal("describe");
     });
 
     it("should return analyzedTestFunctionNodes with isTest false for test suite child nodes", () => {
@@ -505,11 +505,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children};
       mockIsFunctionNode.returns(true);
-      analyzerImp.isTestFunctionNode = Sinon.stub().returns(false);
-      let mockIsTestSuiteFunctionNode = Sinon.stub();
-      mockIsTestSuiteFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestSuiteFunctionNode.returns(false);
-      analyzerImp.isTestSuiteFunctionNode = mockIsTestSuiteFunctionNode;
+      analyzerImp.findTestTypeOfFunctionNode = Sinon.stub().returns(undefined);
+      let mockFindTestSuiteTypeFunctionNode = Sinon.stub();
+      mockFindTestSuiteTypeFunctionNode.withArgs(testImportNodes, children[0]).returns("describe");
+      mockFindTestSuiteTypeFunctionNode.returns(undefined);
+      analyzerImp.findTestSuiteTypeFunctionNode = mockFindTestSuiteTypeFunctionNode;
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -517,7 +517,7 @@ describe("lib test-suite-analyzer", () => {
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual[0].isTest).to.be.false;
+      expect(actual[0].testType).to.be.undefined;
     });
 
     it("should return analyzedTestFunctionNodes with codeInfoModuleKey for test child nodes", () => {
@@ -526,11 +526,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children, name: "qux"};
       mockIsFunctionNode.returns(true);
-      let mockIsTestFunctionNode = Sinon.stub();
-      mockIsTestFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestFunctionNode.returns(false);
-      analyzerImp.isTestFunctionNode = mockIsTestFunctionNode;
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      let mockFindTestTypeOfFunctionNode = Sinon.stub();
+      mockFindTestTypeOfFunctionNode.withArgs(testImportNodes, children[0]).returns("test");
+      mockFindTestTypeOfFunctionNode.returns(undefined);
+      analyzerImp.findTestTypeOfFunctionNode = mockFindTestTypeOfFunctionNode;
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -547,11 +547,11 @@ describe("lib test-suite-analyzer", () => {
       let children = [{name: "bar", nodeType: ElmNodeType.TypedModuleFunction}, {name: "baz", nodeType: ElmNodeType.Type}];
       let moduleNode = <ElmModuleNode> {children};
       mockIsFunctionNode.returns(true);
-      let mockIsTestFunctionNode = Sinon.stub();
-      mockIsTestFunctionNode.withArgs(testImportNodes, children[0]).returns(true);
-      mockIsTestFunctionNode.returns(false);
-      analyzerImp.isTestFunctionNode = mockIsTestFunctionNode;
-      analyzerImp.isTestSuiteFunctionNode = Sinon.stub();
+      let mockFindTestTypeOfFunctionNode = Sinon.stub();
+      mockFindTestTypeOfFunctionNode.withArgs(testImportNodes, children[0]).returns("test");
+      mockFindTestTypeOfFunctionNode.returns(undefined);
+      analyzerImp.findTestTypeOfFunctionNode = mockFindTestTypeOfFunctionNode;
+      analyzerImp.findTestSuiteTypeFunctionNode = Sinon.stub();
       analyzerImp.isFunctionNodeExposed = Sinon.stub();
 
       // act
@@ -800,6 +800,202 @@ describe("lib test-suite-analyzer", () => {
     });
   });
 
+  describe("findTestTypeOfFunctionNode", () => {
+    it("should return undefined when node is not a test function node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "expect"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should return undefined when node dependencies are for test modules not in testImportNodes", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "bar", name: "expect"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should return 'test' when node is not a test node with arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "test"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("test");
+    });
+
+    it("should return 'fuzz' when node is not a fuzz test node with arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("fuzz");
+    });
+
+    it("should return 'fuzz' when node is not a fuzz test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("fuzz");
+    });
+
+    it("should return 'fuzz2' when node is not a fuzz2 test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz2"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("fuzz2");
+    });
+
+    it("should return 'fuz3' when node is not a fuzz3 test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz3"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("fuzz3");
+    });
+
+    it("should return 'fuzz4' when node is not a fuzz4 test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz4"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("fuzz4");
+    });
+
+    it("should return 'fuzz5' when node is not a fuzz5 test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz5"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("fuzz5");
+    });
+
+    it("should return 'fuzzWith' when node is not a fuzzWith test node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzzWith"}}]};
+
+      // act
+      let actual = analyzerImp.findTestTypeOfFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("fuzzWith");
+    });
+  });
+
+  describe("findTestSuiteTypeFunctionNode", () => {
+    it("should return undefined when node is not a test function node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "expect"}}]};
+
+      // act
+      let actual = analyzerImp.findTestSuiteTypeFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should return undefined when node dependencies are for test modules not in testImportNodes", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "bar", name: "expect"}}]};
+
+      // act
+      let actual = analyzerImp.findTestSuiteTypeFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should return 'describe' when node is not a describe node", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "describe"}}]};
+
+      // act
+      let actual = analyzerImp.findTestSuiteTypeFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("describe");
+    });
+
+    it("should return 'describe' when node is not a describe node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "describe"}}]};
+
+      // act
+      let actual = analyzerImp.findTestSuiteTypeFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("describe");
+    });
+
+    it("should return 'concat' when node is not a concat node with arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "concat"}}]};
+
+      // act
+      let actual = analyzerImp.findTestSuiteTypeFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("concat");
+    });
+
+    it("should return 'concat' when node is not a concat node with no arguments", () => {
+      // arrange
+      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
+      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "concat"}}]};
+
+      // act
+      let actual = analyzerImp.findTestSuiteTypeFunctionNode(testImportNodes, node);
+
+      // assert
+      expect(actual).to.be.equal("concat");
+    });
+  });
+
   describe("isFunctionNdeExposed", () => {
     it("should return false when function node is not in the exposing list", () => {
       // arrange
@@ -929,130 +1125,6 @@ describe("lib test-suite-analyzer", () => {
     });
   });
 
-  describe("isTestFunctionNode", () => {
-    it("should return false when node is not a test function node with no arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "expect"}}]};
-
-      // act
-      let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-
-    it("should return true when node is not a test node with arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "test"}}]};
-
-      // act
-      let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when node is not a test node with no arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "test"}}]};
-
-      // act
-      let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when node is not a fuzz test node with arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["baz"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz"}}]};
-
-      // act
-      let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when node is not a fuzz test node with no arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "fuzz"}}]};
-
-      // act
-      let actual = analyzerImp.isTestFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-  });
-
-  describe("isTestSuiteFunctionNode", () => {
-    it("should return false when node is not a test function node with no arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "expect"}}]};
-
-      // act
-      let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-
-    it("should return true when node is not a describe node with arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "describe"}}]};
-
-      // act
-      let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when node is not a describe node with no arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "describe"}}]};
-
-      // act
-      let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when node is not a concat node with arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: ["bar"], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "concat"}}]};
-
-      // act
-      let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when node is not a concat node with no arguments", () => {
-      // arrange
-      let testImportNodes = <ElmImportNode[]> [{name: "foo"}];
-      let node = <ElmFunctionNode> {arguments: [], dependencies: [{occurs: [1], typeInfo: {moduleName: "foo", name: "concat"}}]};
-
-      // act
-      let actual = analyzerImp.isTestSuiteFunctionNode(testImportNodes, node);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-  });
-
   describe("toAnalysisSummary", () => {
     it("should return empty summary when there are no analyzed module nodes", () => {
       // arrange
@@ -1062,8 +1134,7 @@ describe("lib test-suite-analyzer", () => {
         hiddenTestCount: 0,
         hiddenTests: [],
         overExposedTestCount: 0,
-        overExposedTests: [],
-        testCount: 0
+        overExposedTests: []
       };
 
       // act
@@ -1101,23 +1172,6 @@ describe("lib test-suite-analyzer", () => {
 
       // assert
       expect(actual.analysisFailures).to.deep.equal(["foo", "baz"]);
-    });
-
-    it("should return summary with count of tests", () => {
-      // arrange
-      let tests = [{node: {name: "foo"}}, {node: {name: "bar"}}, {node: {name: "baz"}}];
-      let moduleNodes = [
-        <AnalyzedTestModuleNode> {analyzed: false},
-        <AnalyzedTestModuleNode> {analyzed: true, tests}
-      ];
-      analyzerImp.isHidden = Sinon.stub();
-      analyzerImp.isOverExposed = Sinon.stub();
-
-      // act
-      let actual = analyzerImp.toAnalysisTestSummary(moduleNodes);
-
-      // assert
-      expect(actual.testCount).to.equal(3);
     });
 
     it("should return summary with count of hidden tests", () => {

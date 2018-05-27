@@ -86,6 +86,10 @@ export interface ElmUntypedModuleFunctionNode extends BaseElmNode {
   dependencies: ElmFunctionDependency[];
 }
 
+export type ElmTestSuiteType = "concat" | "describe";
+
+export type ElmTestType = "test" | "fuzz" | "fuzz2" |  "fuzz3" | "fuzz4" | "fuzz5" | "fuzzWith" | "todo";
+
 export interface ElmTypeInfo {
   name: string;
   parentTypeName?: string;
