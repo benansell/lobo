@@ -169,7 +169,7 @@ export class LoboImp implements Lobo {
           return;
         } else if (/Ran into a `Debug.crash` in module/.test(err)) {
           this.logger.error(err);
-        } else if (/Analysis Issues Found/.test(err)) {
+        } else if (/Analysis Issues Found|Test Run Failed/.test(err)) {
           // don't print anything
         } else {
           this.logger.error("Error running the tests. ", err);

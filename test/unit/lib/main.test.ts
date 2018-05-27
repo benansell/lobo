@@ -445,9 +445,26 @@ describe("lib main", () => {
       });
     });
 
-    it("should log Analysis Failed errors to the logger", () => {
+    it("should not log Analysis Failed errors to the logger", () => {
       // arrange
       let expected = new Error("Analysis Issues Found");
+      lobo.handleUncaughtException = Sinon.spy();
+      let mockLaunchStages = Sinon.stub();
+      mockLaunchStages.rejects(expected);
+      lobo.launchStages = mockLaunchStages;
+
+      // act
+      let actual = lobo.launch(<ExecutionContext>{});
+
+      // assert
+      return actual.then(() => {
+        expect(mockLogger.error).not.to.have.been.called;
+      });
+    });
+
+    it("should not log Test Run Failed errors to the logger", () => {
+      // arrange
+      let expected = new Error("Test Run Failed");
       lobo.handleUncaughtException = Sinon.spy();
       let mockLaunchStages = Sinon.stub();
       mockLaunchStages.rejects(expected);
