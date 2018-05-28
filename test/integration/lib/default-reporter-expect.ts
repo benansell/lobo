@@ -11,27 +11,27 @@ function summaryArgument(result: ExecOutputReturnValue, argName: string, argValu
 }
 
 function summaryCounts(result: ExecOutputReturnValue, pass: number, fail: number, todo?: number, skip?: number, ignore?: number): void {
-  expect(result.stdout).to.match(new RegExp("Passed:\\s+" + pass + "\n"));
+  expect(result.stdout).to.match(new RegExp("Passed:\\s+" + pass + "(.\\[\\d\\dm)?\n"));
   expect(result.stdout).to.match(new RegExp("([^.]*.){" + pass + "}"));
-  expect(result.stdout).to.match(new RegExp("Failed:\\s+" + fail + "\n"));
+  expect(result.stdout).to.match(new RegExp("Failed:\\s+" + fail + "(.\\[\\d\\dm)?\n"));
   expect(result.stdout).to.match(new RegExp("([^!]*!){" + fail + "}"));
 
   if (todo || todo === 0) {
-    expect(result.stdout).to.match(new RegExp("Todo:\\s+" + todo + "\n"));
+    expect(result.stdout).to.match(new RegExp("Todo:\\s+" + todo + "(.\\[\\d\\dm)?\n"));
     expect(result.stdout).to.match(new RegExp("([^-]*-){" + todo + "}"));
   } else {
     expect(result.stdout).not.to.match(new RegExp("Todo:\\s+"));
   }
 
   if (skip || skip === 0) {
-    expect(result.stdout).to.match(new RegExp("Skipped:\\s+" + skip + "\n"));
+    expect(result.stdout).to.match(new RegExp("Skipped:\\s+" + skip + "(.\\[\\d\\dm)?\n"));
     expect(result.stdout).to.match(new RegExp("([^?]*?){" + skip + "}"));
   } else {
     expect(result.stdout).not.to.match(new RegExp("Skipped:\\s+"));
   }
 
   if (ignore || ignore === 0) {
-    expect(result.stdout).to.match(new RegExp("Ignored:\\s+" + ignore + "\n"));
+    expect(result.stdout).to.match(new RegExp("Ignored:\\s+" + ignore + "(.\\[\\d\\dm)?\n"));
   } else {
     expect(result.stdout).not.to.match(new RegExp("Ignored:\\s+"));
   }

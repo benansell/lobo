@@ -13,7 +13,7 @@ all =
         identity
         |> Array.toList
         |> List.map toTest
-        |> describe "Tests"
+        |> describe "performanceTestSuite"
 
 
 toTest : Int -> Test

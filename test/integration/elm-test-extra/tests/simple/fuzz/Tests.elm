@@ -1,19 +1,9 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
 import Expect exposing (equal)
 import Fuzz exposing (int, list, string)
 import String exposing (reverse)
 import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2)
-
-
-all : Test
-all =
-    describe "Tests"
-        [ stringReverseTest
-        , listLengthTest
-        , fuzzWithTest
-        , fuzz2Test
-        ]
 
 
 stringReverseTest : Test

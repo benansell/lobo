@@ -1,4 +1,4 @@
-module ConcatChildTest exposing (all)
+module SuiteB.ConcatTest exposing (all)
 
 import Expect exposing (pass)
 import Test exposing (Test, concat, test)

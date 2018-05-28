@@ -1,48 +1,10 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
 import Dict
 import Expect exposing (atLeast, atMost, equal, fail, false, greaterThan, notEqual, true)
 import Fuzz exposing (string)
 import Set
 import Test exposing (Test, describe, fuzz, fuzzWith, fuzz2, skip, test)
-
-
-all : Test
-all =
-    describe "Tests"
-        [ testExpectFail
-        , testExpectTrue
-        , testExpectFalse
-        , testExpectErr
-        , testExpectEqualStringShort
-        , testExpectEqualStringLong
-        , testExpectEqualFloat
-        , testExpectEqualFloatNegative
-        , testExpectEqualFloatExponent
-        , testExpectEqualFloatNaN
-        , testExpectEqualFloatInfinite
-        , testExpectEqualList
-        , testExpectEqualTuple
-        , testExpectEqualRecord
-        , testExpectEqualTypeUnion
-        , testExpectEqualUnionDifferentRecords
-        , testExpectEqualUnionDifferentRecordsNoCommonField
-        , testExpectEqualUnionDifferentRecordsCommonField
-        , testExpectNotEqual
-        , testExpectAllEmptyList
-        , testExpectAllFirstFails
-        , testExpectLessThan
-        , testExpectGreaterThan
-        , testExpectAtLeast
-        , testExpectAtMost
-        , testExpectEqualLists
-        , testExpectEqualDicts
-        , testExpectEqualSets
-        , testFuzz
-        , testFuzzWith
-        , testFuzz2
-        , testMultiLine
-        ]
 
 
 testExpectFail : Test
@@ -191,7 +153,7 @@ testExpectNotEqual =
 
 testExpectAllEmptyList : Test
 testExpectAllEmptyList =
-     skip <| test "Expect.all empty test" <|
+     test "Expect.all empty test" <|
         \() ->
             Expect.all [] (List.length [])
 

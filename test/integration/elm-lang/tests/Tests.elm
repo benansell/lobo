@@ -1,18 +1,9 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
 import Expect exposing (pass)
 import ImportCheck
 import ImportNavigation
 import Test exposing (Test, describe, test)
-
-
-all : Test
-all =
-    describe "Tests"
-        [ testImportCheck
-        , testImportNavigation
-        , testImportNavigationInit
-        ]
 
 
 testImportCheck : Test

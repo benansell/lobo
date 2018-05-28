@@ -8,7 +8,7 @@ import ElmTest.Extra exposing (Test, describe, test)
 
 all : Test
 all =
-    describe "Tests"
+    describe "treeeTestSuite"
         [ suiteA
         , suiteB
         ]
@@ -16,7 +16,7 @@ all =
 suiteA : Test
 suiteA =
     describe "Suite A"
-        [ passingTest
+        [ passingTestA
         , FirstChildTest.all
         , SecondChildTest.all
         , FuzzyChildTest.all
@@ -25,14 +25,20 @@ suiteA =
 suiteB : Test
 suiteB =
     describe "Suite B"
-        [ passingTest
+        [ passingTestB
         , FirstChildTest.all
         , SecondChildTest.all
         , FuzzyChildTest.all
         ]
 
-passingTest : Test
-passingTest =
-    test "PassingTest Child" <|
+passingTestA : Test
+passingTestA =
+    test "PassingTest Child A" <|
+        \() ->
+            Expect.pass
+
+passingTestB : Test
+passingTestB =
+    test "PassingTest Child B" <|
         \() ->
             Expect.pass

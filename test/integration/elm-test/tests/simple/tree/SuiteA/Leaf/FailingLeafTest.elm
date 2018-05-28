@@ -1,13 +1,7 @@
-module FailingGrandChildTest exposing (all)
+module SuiteA.Leaf.FailingLeafTest exposing (..)
 
 import Expect exposing (pass)
 import Test exposing (Test, describe, test)
-
-
-all : Test
-all =
-    describe "FailingGrandChildTest"
-        [ failingTest ]
 
 
 failingTest : Test

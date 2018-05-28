@@ -21,13 +21,13 @@ describe("elm-test-extra-simple", () => {
   });
 
   beforeEach(() => {
-    runner.cleanBuildArtifacts();
+    runner.cleanLoboAndBuildArtifacts();
   });
 
   describe("pass", () => {
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "simple/pass/Tests.elm");
+      let result = runner.run(testContext, "elm-test-extra", "./tests/simple/pass");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -37,51 +37,51 @@ describe("elm-test-extra-simple", () => {
   });
 
   describe("debug", () => {
-    let testFile: string;
+    let testDir: string;
 
     beforeEach(() => {
-      testFile = "simple/debug/Tests.elm";
+      testDir = "./tests/simple/debug";
     });
 
     it("should show Debug.log messages by default", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", testFile);
+      let result = runner.run(testContext, "elm-test-extra", testDir);
 
       // assert
-      let firstTestIndex = result.stdout.indexOf("1) failing Debug.log test");
-      let secondTestIndex = result.stdout.indexOf("2) passing Debug.log test");
-      let failureMessage = result.stdout.substring(firstTestIndex, secondTestIndex);
-      expect(failureMessage).to.have.string("→ Bar: \"Hello Bar\"");
+      let firstTestIndex = /1\) (.\[\d\dm)?failing Debug\.log test/g.exec(result.stdout);
+      let secondTestIndex = /2\) (.\[\d\dm)?passing Debug\.log test/g.exec(result.stdout);
+      let failureMessage = result.stdout.substring(firstTestIndex.index, secondTestIndex.index);
+      expect(failureMessage).to.have.match(/→ (.\[\d\dm)?Bar: "Hello Bar"/);
 
-      failureMessage = result.stdout.substring(secondTestIndex, result.stdout.length - 1);
-      expect(failureMessage).to.have.string("→ Foo: \"Hello Foo\"");
+      failureMessage = result.stdout.substring(secondTestIndex.index, result.stdout.length - 1);
+      expect(failureMessage).to.have.match(/→ (.\[\d\dm)?Foo: "Hello Foo"/);
     });
 
     it("should not show Debug.log messages when --hideDebugMessages is supplied", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testFile, "--hideDebugMessages");
+      let result = runner.run(testContext, "elm-test-extra", testDir, "--hideDebugMessages");
 
       // assert
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
-      expect(failureMessage).not.to.have.string("→ Bar: \"Hello Bar\"");
-      expect(failureMessage).not.to.have.string("2) passing Debug.log test");
-      expect(failureMessage).not.to.have.string("→ Foo: \"Hello Foo\"");
+      expect(failureMessage).not.to.have.string("Bar: \"Hello Bar\"");
+      expect(failureMessage).not.to.have.string("passing Debug.log test");
+      expect(failureMessage).not.to.have.string("Foo: \"Hello Foo\"");
     });
   });
 
   describe("fail", () => {
-    let testFile: string;
+    let testDir: string;
 
     beforeEach(() => {
-      testFile = "simple/fail/Tests.elm";
+      testDir = "./tests/simple/fail";
     });
 
     it("should report failure", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", testFile);
+      let result = runner.run(testContext, "elm-test-extra", testDir);
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -91,7 +91,7 @@ describe("elm-test-extra-simple", () => {
 
     it("should update message to use ┌ └  instead of ╷ ╵", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", testFile);
+      let result = runner.run(testContext, "elm-test-extra", testDir);
 
       // assert
       let startIndex = result.stdout
@@ -106,7 +106,7 @@ describe("elm-test-extra-simple", () => {
 
     it("should update string equals to show diff hint", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", testFile);
+      let result = runner.run(testContext, "elm-test-extra", testDir);
 
       // assert
       let startIndex = result.stdout
@@ -114,23 +114,23 @@ describe("elm-test-extra-simple", () => {
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
 
       expect(failureMessage).to.match(/\r*\n\s{4}┌ "foobar"\r*\n/g);
-      expect(failureMessage).to.match(/\r*\n\s{4}│\s{3}\^ \^\^\^\s\r*\n/g);
-      expect(failureMessage).to.match(/\r*\n\s{4}│ Expect.equal\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│ (.\[\d\dm)?\s{2}\^ \^\^\^\s(.\[\d\dm)?\r*\n/g);
+      expect(failureMessage).to.match(/\r*\n\s{4}│ (.\[\d\dm)?Expect.equal(.\[\d\dm)?\r*\n/g);
       expect(failureMessage).to.match(/\r*\n\s{4}│\r*\n/g);
       expect(failureMessage).to.match(/\r*\n\s{4}└ "fao"/g);
     });
   });
 
   describe("fuzz", () => {
-    let testFile: string;
+    let testDir: string;
 
     beforeEach(() => {
-      testFile = "simple/fuzz/Tests.elm";
+      testDir = "./tests/simple/fuzz";
     });
 
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", testFile);
+      let result = runner.run(testContext, "elm-test-extra", testDir);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -143,7 +143,7 @@ describe("elm-test-extra-simple", () => {
       let expectedRunCount = 11;
 
       // act
-      let result = runner.run(testContext, "elm-test-extra", testFile, "--runCount=" + expectedRunCount);
+      let result = runner.run(testContext, "elm-test-extra", testDir, "--runCount=" + expectedRunCount);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -165,7 +165,7 @@ describe("elm-test-extra-simple", () => {
       let initialSeed = 101;
 
       // act
-      let result = runner.run(testContext, "elm-test-extra", testFile, "--seed=" + initialSeed);
+      let result = runner.run(testContext, "elm-test-extra", testDir, "--seed=" + initialSeed);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -178,7 +178,7 @@ describe("elm-test-extra-simple", () => {
   describe("nested", () => {
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "simple/nested/Tests.elm");
+      let result = runner.run(testContext, "elm-test-extra", "./tests/simple/nested");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -190,31 +190,32 @@ describe("elm-test-extra-simple", () => {
   describe("tree", () => {
     it("should report failure", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "simple/tree/Tests.elm");
+      let result = runner.run(testContext, "elm-test-extra", "./tests/simple/tree");
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(10, 4);
-      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+SecondChildTest\r?\n.+1\) FailingTest - Child/);
+      reporterExpect(result).summaryCounts(12, 6);
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+1\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest\r?\n.+2\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests\r?\n.+Suite A\r?\n.+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+2\) FailingTest - GrandChild/);
-      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+SecondChildTest\r?\n.+3\) FailingTest - Child/);
+        /Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+3\) FailingTest - GrandChild/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+4\) FailingTest - Concat/);
+      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest\r?\n.+5\) FailingTest - Child/);
       expect(result.stdout).to.matches(
-        /Tests(.|\r?\n)+Suite B\r?\n.+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+4\) FailingTest - GrandChild/);
-
+        /Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+6\) FailingTest - GrandChild/);
       expect(result.code).to.equal(1);
     });
   });
 
   describe("only", () => {
-    it("should report focused passed", () => {
+    it("should report only passed", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "simple/only/Tests.elm", "--runCount=5");
+      let result = runner.run(testContext, "elm-test-extra", "./tests/simple/only", "--runCount=5");
 
       // assert
-      reporterExpect(result).summaryFocused();
+      reporterExpect(result).summaryPartial();
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(3, 0, null, null, 3);
+      reporterExpect(result).summaryCounts(3, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -222,11 +223,12 @@ describe("elm-test-extra-simple", () => {
   describe("skip", () => {
     it("should report inconclusive", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "simple/skip/Tests.elm");
+      let result = runner.run(testContext, "elm-test-extra", "./tests/simple/skip");
 
       // assert
+      reporterExpect(result).summaryPartial();
       reporterExpect(result).summaryInconclusive();
-      reporterExpect(result).summaryCounts(1, 0, null, 5);
+      reporterExpect(result).summaryCounts(1, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -234,7 +236,7 @@ describe("elm-test-extra-simple", () => {
   describe("todo", () => {
     it("should report inconclusive", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "simple/todo/Tests.elm");
+      let result = runner.run(testContext, "elm-test-extra", "./tests/simple/todo");
 
       // assert
       reporterExpect(result).summaryInconclusive();

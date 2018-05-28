@@ -1,17 +1,11 @@
-module GrandChildTest exposing (all)
+module SuiteB.PassingTest exposing (..)
 
 import Expect exposing (pass)
 import Test exposing (Test, describe, test)
 
 
-all : Test
-all =
-    describe "GrandChildTest"
-        [ passingTest ]
-
-
 passingTest : Test
 passingTest =
-    test "passingTest" <|
+    test "PassingTest Child" <|
         \() ->
             Expect.pass

@@ -1,4 +1,4 @@
-module FuzzyChildTest exposing (all)
+module SuiteB.FuzzyTest exposing (all)
 
 import Expect exposing (pass)
 import Fuzz exposing (int, list)

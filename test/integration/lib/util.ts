@@ -43,6 +43,12 @@ export class Util {
     this.rmDir("elm-stuff/build-artifacts");
   }
 
+  public cleanLobo(): void {
+    this.rmDir(".lobo/elm-stuff");
+    this.rmFile(".lobo/elm-package.json");
+    // this.rmDir(".lobo");
+  }
+
   public initializeTestContext(dirName: string): string[] {
     let dir = dirName;
     let testContext = [];

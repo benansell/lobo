@@ -6,5 +6,5 @@ import ChildTest exposing (all)
 
 all : Test
 all =
-    describe "Tests"
+    describe "nestedTestSuite"
         [ ChildTest.all ]

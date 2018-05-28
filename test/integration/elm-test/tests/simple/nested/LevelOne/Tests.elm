@@ -1,4 +1,4 @@
-module Tests exposing (..)
+module LevelOne.Tests exposing (..)
 
 import Expect
 import Test exposing (Test, test)
@@ -8,4 +8,4 @@ failingTest : Test
 failingTest =
     test "failingTest" <|
         \() ->
-            Expect.fail "fail root"
+            Expect.fail "fail level one"
