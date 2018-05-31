@@ -1,10 +1,10 @@
 module Tests exposing (..)
 
 import Dict
-import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 import Expect exposing (atLeast, atMost, equal, fail, false, greaterThan, notEqual, true)
 import Fuzz exposing (string)
 import Set
+import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 
 testExpectFail : Test
 testExpectFail =

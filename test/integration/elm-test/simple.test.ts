@@ -182,7 +182,7 @@ describe("elm-test-simple", () => {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(0, 3);
+      reporterExpect(result).summaryCounts(3, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -194,15 +194,15 @@ describe("elm-test-simple", () => {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(10, 4);
-      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+1\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest\r?\n.+2\) FailingTest - Child/);
-      expect(result.stdout).to.matches(
-        /Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+3\) FailingTest - GrandChild/);
-      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+4\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest\r?\n.+5\) FailingTest - Child/);
-      expect(result.stdout).to.matches(
-        /Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+6\) FailingTest - GrandChild/);
+      reporterExpect(result).summaryCounts(10, 6);
+      expect(result.stdout).to.matches(/SuiteA(.|\r|\n)*Branch(.|\r|\n)*FailingTest(.|\r|\n)*1\)(.|\r|\n)*FailingTest - Branch/);
+      expect(result.stdout).to
+        .matches(/SuiteA(.|\r|\n)*Branch(.|\r|\n)*Leaf(.|\r|\n)*FailingTest(.|\r|\n)*2\)(.|\r|\n)*FailingTest - Leaf/);
+      expect(result.stdout).to.matches(/SuiteA(.|\r|\n)*FailingTest(.|\r|\n)*3\)(.|\r|\n)*FailingTest - Suite A/);
+      expect(result.stdout).to
+        .matches(/SuiteB(.|\r|\n)*Branch(.|\r|\n)*Leaf(.|\r|\n)*FailingTest(.|\r|\n)*4\)(.|\r|\n)*FailingTest - Leaf/);
+      expect(result.stdout).to.matches(/SuiteB(.|\r|\n)*ConcatTest(.|\r|\n)*5\)(.|\r|\n)*FailingTest - Concat/);
+      expect(result.stdout).to.matches(/SuiteB(.|\r|\n)*FailingTest(.|\r|\n)*6\)(.|\r|\n)*FailingTest - Suite B/);
       expect(result.code).to.equal(1);
     });
   });

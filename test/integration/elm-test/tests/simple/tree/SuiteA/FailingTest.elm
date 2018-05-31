@@ -6,6 +6,6 @@ import Test exposing (Test, describe, test)
 
 failingTest : Test
 failingTest =
-    test "FailingTest - Child" <|
+    test "FailingTest - Suite A" <|
         \() ->
             Expect.fail "Expected fail"

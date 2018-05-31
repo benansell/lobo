@@ -1,12 +1,11 @@
-module Tests exposing (all)
+module LevelOne.Tests exposing (..)
 
-import Expect exposing (pass)
+import Expect
 import ElmTest.Extra exposing (Test, test)
 
 
-all : Test
-all =
+passingTest : Test
+passingTest =
     test "passingTest" <|
         \() ->
             Expect.pass
-

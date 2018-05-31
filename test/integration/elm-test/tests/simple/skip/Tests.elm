@@ -29,7 +29,7 @@ skippedSuiteContainingFocus =
     skip <|
         describe "skippedSuite"
             [ normalTest
-            , focusTest
+            , onlyTest
             ]
 
 
@@ -40,10 +40,10 @@ normalTest =
             Expect.fail "Never runs"
 
 
-focusTest : Test
-focusTest =
+onlyTest : Test
+onlyTest =
     only <|
-        test "focusTest" <|
+        test "onlyTest" <|
             \() ->
                 Expect.fail "Never runs"
 
@@ -66,3 +66,4 @@ skipFuzzTest =
 skipTodoTest : Test
 skipTodoTest =
     skip <| todo "todoTest"
+

@@ -1,17 +1,11 @@
-module FailingGrandChildTest exposing (all)
+module SuiteA.FailingTest exposing (..)
 
 import Expect exposing (pass)
 import ElmTest.Extra exposing (Test, describe, test)
 
 
-all : Test
-all =
-    describe "FailingGrandChildTest"
-        [ failingTest ]
-
-
 failingTest : Test
 failingTest =
-    test "FailingTest - GrandChild" <|
+    test "FailingTest - Suite A" <|
         \() ->
             Expect.fail "Expected fail"

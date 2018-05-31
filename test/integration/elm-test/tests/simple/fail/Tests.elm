@@ -4,7 +4,7 @@ import Dict
 import Expect exposing (atLeast, atMost, equal, fail, false, greaterThan, notEqual, true)
 import Fuzz exposing (string)
 import Set
-import Test exposing (Test, describe, fuzz, fuzzWith, fuzz2, skip, test)
+import Test exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 
 
 testExpectFail : Test

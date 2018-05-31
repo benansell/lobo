@@ -15,3 +15,4 @@ passingTestB =
     test "PassingTest B" <|
         \() ->
             Expect.pass
+

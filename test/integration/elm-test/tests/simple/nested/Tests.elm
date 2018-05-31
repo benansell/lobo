@@ -4,8 +4,9 @@ import Expect
 import Test exposing (Test, test)
 
 
-failingTest : Test
-failingTest =
-    test "failingTest" <|
+passingTest : Test
+passingTest =
+    test "passingTest" <|
         \() ->
-            Expect.fail "fail root"
+            Expect.pass
+

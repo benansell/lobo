@@ -182,7 +182,7 @@ describe("elm-test-extra-simple", () => {
 
       // assert
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(1, 0);
+      reporterExpect(result).summaryCounts(3, 0);
       expect(result.code).to.equal(0);
     });
   });
@@ -194,15 +194,14 @@ describe("elm-test-extra-simple", () => {
 
       // assert
       reporterExpect(result).summaryFailed();
-      reporterExpect(result).summaryCounts(12, 6);
-      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A\r?\n.+1\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest\r?\n.+2\) FailingTest - Child/);
-      expect(result.stdout).to.matches(
-        /Tests\r?\n.+Suite A(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+3\) FailingTest - GrandChild/);
-      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B\r?\n.+4\) FailingTest - Concat/);
-      expect(result.stdout).to.matches(/Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest\r?\n.+5\) FailingTest - Child/);
-      expect(result.stdout).to.matches(
-        /Tests(.|\r?\n)+Suite B(.|\r?\n)+SecondChildTest(.|\r?\n)+FailingGrandChildTest\r?\n.+6\) FailingTest - GrandChild/);
+      reporterExpect(result).summaryCounts(7, 5);
+      expect(result.stdout).to.matches(/SuiteA(.|\r|\n)*Branch(.|\r|\n)*FailingTest(.|\r|\n)*1\)(.|\r|\n)*FailingTest - Branch/);
+      expect(result.stdout).to
+        .matches(/SuiteA(.|\r|\n)*Branch(.|\r|\n)*Leaf(.|\r|\n)*FailingTest(.|\r|\n)*2\)(.|\r|\n)*FailingTest - Leaf/);
+      expect(result.stdout).to.matches(/SuiteA(.|\r|\n)*FailingTest(.|\r|\n)*3\)(.|\r|\n)*FailingTest - Suite A/);
+      expect(result.stdout).to
+        .matches(/SuiteB(.|\r|\n)*Branch(.|\r|\n)*Leaf(.|\r|\n)*FailingTest(.|\r|\n)*4\)(.|\r|\n)*FailingTest - Leaf/);
+      expect(result.stdout).to.matches(/SuiteB(.|\r|\n)*FailingTest(.|\r|\n)*5\)(.|\r|\n)*FailingTest - Suite B/);
       expect(result.code).to.equal(1);
     });
   });
@@ -213,9 +212,9 @@ describe("elm-test-extra-simple", () => {
       let result = runner.run(testContext, "elm-test-extra", "./tests/simple/only", "--runCount=5");
 
       // assert
-      reporterExpect(result).summaryPartial();
+      reporterExpect(result).summaryFocused();
       reporterExpect(result).summaryPassed();
-      reporterExpect(result).summaryCounts(3, 0);
+      reporterExpect(result).summaryCounts(3, 0, null, null, 3);
       expect(result.code).to.equal(0);
     });
   });
@@ -226,9 +225,8 @@ describe("elm-test-extra-simple", () => {
       let result = runner.run(testContext, "elm-test-extra", "./tests/simple/skip");
 
       // assert
-      reporterExpect(result).summaryPartial();
       reporterExpect(result).summaryInconclusive();
-      reporterExpect(result).summaryCounts(1, 0);
+      reporterExpect(result).summaryCounts(1, 0, null, 5);
       expect(result.code).to.equal(0);
     });
   });

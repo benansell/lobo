@@ -1,10 +1,12 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
-import ElmTest.Extra exposing (Test, describe)
-import ChildTest exposing (all)
+import Expect
+import ElmTest.Extra exposing (Test, test)
 
 
-all : Test
-all =
-    describe "nestedTestSuite"
-        [ ChildTest.all ]
+passingTest : Test
+passingTest =
+    test "passingTest" <|
+        \() ->
+            Expect.pass
+
