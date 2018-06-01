@@ -219,6 +219,10 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
   }
 
   public isHidden(functionNode: AnalyzedTestFunctionNode): boolean {
+    if (functionNode.node.arguments.length > 0) {
+      return false;
+    }
+
     if (functionNode.isExposedDirectly) {
       return false;
     }

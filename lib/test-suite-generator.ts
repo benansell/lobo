@@ -273,11 +273,15 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
 
   public isTestFunctionNodeWithoutArgumentsOfType<T extends string>(testImportNodes: ElmImportNode[], node: ElmFunctionNode,
                                                                     testTypes: T[]): boolean {
+    if (node.arguments.length !== 0) {
+      return false;
+    }
+
     for (const importNode of testImportNodes) {
       for (const d of node.dependencies) {
         const ti = d.typeInfo;
 
-        if (node.arguments.length === 0 && ti.moduleName === importNode.name && testTypes.indexOf(<T> ti.name) > -1) {
+        if (ti.moduleName === importNode.name && testTypes.indexOf(<T> ti.name) > -1) {
           return true;
         }
       }
