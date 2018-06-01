@@ -238,8 +238,14 @@ toTestReportNode reports =
 toSuiteNode : DetachedNode -> SuiteNode
 toSuiteNode node =
     case node.report of
-        Failed _ ->
-            Debug.crash "Impossible to have failed node as root"
+        Failed failedLeaf ->
+            { id = failedLeaf.id
+            , runType = failedLeaf.runType
+            , label = failedLeaf.label
+            , reports = [ node.report ]
+            , startTime = Just failedLeaf.startTime
+            , endTime = Just failedLeaf.endTime
+            }
 
         Ignored _ ->
             Debug.crash "Impossible to have ignored node as root"
@@ -395,8 +401,15 @@ fromDetachedNode parentId node =
 attachChild : TestReportNode -> TestReportNode -> TestReportNode
 attachChild child parent =
     case parent of
-        Failed _ ->
-            Debug.crash "Impossible to attach a child to a failed test"
+        Failed node ->
+            Suite
+                { id = node.id
+                , runType = node.runType
+                , label = node.label
+                , reports = [parent, child]
+                , startTime = Just node.startTime
+                , endTime = Just node.endTime
+                }
 
         Ignored _ ->
             Debug.crash "Impossible to attach a child to a ignored test"
