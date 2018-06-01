@@ -5,7 +5,13 @@ import rewire = require("rewire");
 import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {Logger} from "../../../lib/logger";
-import {createTestSuiteGenerator, TestModuleNode, TestSuiteGenerator, TestSuiteGeneratorImp} from "../../../lib/test-suite-generator";
+import {
+  createTestSuiteGenerator,
+  SuiteStructureNode,
+  TestModuleNode,
+  TestSuiteGenerator,
+  TestSuiteGeneratorImp
+} from "../../../lib/test-suite-generator";
 import {
   ElmCodeInfo,
   ElmCodeLookup,
@@ -63,6 +69,72 @@ describe("lib test-suite-generator", () => {
 
       // assert
       expect(actual).to.exist;
+    });
+  });
+
+  describe("buildSuiteStructure", () => {
+    it("should return a root node with the label 'Unit Tests'", () => {
+      // act
+      let actual = testSuiteGenerator.buildSuiteStructure([]);
+
+      // assert
+      expect(actual.label).to.equal("Unit Tests");
+    });
+
+    it("should return a root node with the name 'all'", () => {
+      // act
+      let actual = testSuiteGenerator.buildSuiteStructure([]);
+
+      // assert
+      expect(actual.name).to.equal("all");
+    });
+
+    it("should return a root node with empty childNodes when they are not sub modules", () => {
+      // arrange
+      const testModules = <TestModuleNode[]> [{moduleNode: {name: "Foo"}}, {moduleNode: {name: "Bar"}}];
+
+      // act
+      let actual = testSuiteGenerator.buildSuiteStructure(testModules);
+
+      // assert
+      expect(actual.childNodes).to.deep.equal([]);
+    });
+
+    it("should return a root node with childTests of test modules when they are not sub modules", () => {
+      // arrange
+      const testModules = <TestModuleNode[]> [{moduleNode: {name: "Foo"}}, {moduleNode: {name: "Bar"}}];
+
+      // act
+      let actual = testSuiteGenerator.buildSuiteStructure(testModules);
+
+      // assert
+      expect(actual.childTests).to.deep.equal([testModules[0], testModules[1]]);
+    });
+
+    it("should return a root node with childNodes when they are sub modules", () => {
+      // arrange
+      const testModules = <TestModuleNode[]> [{moduleNode: {name: "Foo.Bar"}}, {moduleNode: {name: "Foo.Baz"}}];
+
+      // act
+      let actual = testSuiteGenerator.buildSuiteStructure(testModules);
+
+      // assert
+      expect(actual.childTests).to.deep.equal([]);
+      expect(actual.childNodes[0]).to.deep
+        .equal({label: "Foo", name: "foo", childNodes: [], childTests: [testModules[0], testModules[1]]});
+    });
+
+    it("should return a root node with mixture of nodes for when there are modules and submodules", () => {
+      // arrange
+      const testModules = <TestModuleNode[]> [{moduleNode: {name: "Foo"}}, {moduleNode: {name: "Foo.Baz"}}];
+
+      // act
+      let actual = testSuiteGenerator.buildSuiteStructure(testModules);
+
+      // assert
+      expect(actual.childTests).to.deep.equal([testModules[0]]);
+      expect(actual.childNodes[0]).to.deep
+        .equal({label: "Foo", name: "foo", childNodes: [], childTests: [testModules[1]]});
     });
   });
 
@@ -229,6 +301,52 @@ describe("lib test-suite-generator", () => {
 
       // assert
       expect(actual).to.deep.equal(expected);
+    });
+  });
+
+  describe("findParent", () => {
+    it("should return undefined when there are no matching labels", () => {
+      // arrange
+      const structureNode = <SuiteStructureNode> {label: "bar", childNodes: []};
+
+      // act
+      let actual = testSuiteGenerator.findParent(structureNode, "foo");
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should return supplied node when the node.label is the label", () => {
+      // arrange
+      const expected = <SuiteStructureNode> {label: "foo"};
+
+      // act
+      let actual = testSuiteGenerator.findParent(expected, "foo");
+
+      // assert
+      expect(actual).to.equal(expected);
+    });
+
+    it("should return child node with matching label", () => {
+      // arrange
+      const structureNode = <SuiteStructureNode> {label: "bar", childNodes: [{label: "foo"}]};
+
+      // act
+      let actual = testSuiteGenerator.findParent(structureNode, "foo");
+
+      // assert
+      expect(actual).to.equal(structureNode.childNodes[0]);
+    });
+
+    it("should return child node with matching label when other child nodes exist", () => {
+      // arrange
+      const structureNode = <SuiteStructureNode> {label: "bar", childNodes: [{label: "baz", childNodes: []}, {label: "foo"}]};
+
+      // act
+      let actual = testSuiteGenerator.findParent(structureNode, "foo");
+
+      // assert
+      expect(actual).to.equal(structureNode.childNodes[1]);
     });
   });
 
@@ -671,56 +789,79 @@ describe("lib test-suite-generator", () => {
     });
   });
 
-  describe("generateTestSuiteRoot", () => {
-    it("should return code with empty all test definition when there are no test module nodes", () => {
+  describe("generateTestSuiteForStructure", () => {
+    it("should add code with empty all module test definition when there are no test nodes", () => {
+      // arrange
+      let suiteStructureNode = <SuiteStructureNode> {label: "SuiteOne", name: "suiteOne", childNodes: [], childTests: []};
+
       // act
-      let lines = testSuiteGenerator.generateTestSuiteRoot("    ", []);
+      let lines = [];
+      testSuiteGenerator.generateTestSuiteForStructure("    ", lines, suiteStructureNode);
 
       // assert
       const actual = lines.join("\n");
-      expect(actual).to.match(/all : Test/);
-      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[]/);
+      expect(actual).to.match(/suiteOne : Test/);
+      expect(actual).to.match(/suiteOne =\n\s{4}describe "SuiteOne"\n\s{8}\[]/);
     });
 
-    it("should return code with all test definition that uses suite name for module nodes", () => {
+    it("should add code for each child node with the child name for the node", () => {
       // arrange
-      let testModuleNodes = <TestModuleNode[]> [
-        {moduleNode: {name: "Foo.Bar.Baz"}, tests: [{name: "TestOne"}]}
-      ];
+      let childNodes = <SuiteStructureNode[]> [
+        {label: "TestOne", name: "testOne", childNodes: [], childTests: []},
+        {label: "TestTwo", name: "testTwo", childNodes: [], childTests: []}];
+      let suiteStructureNode = <SuiteStructureNode> {label: "Baz", name: "suiteOne", childNodes, childTests: []};
 
       // act
-      let lines = testSuiteGenerator.generateTestSuiteRoot("    ", testModuleNodes);
+      let lines = [];
+      testSuiteGenerator.generateTestSuiteForStructure("    ", lines, suiteStructureNode);
 
       // assert
       const actual = lines.join("\n");
-      expect(actual).to.match(/all : Test/);
-      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[ allFooBarBaz\n\s{8}]/);
+      expect(actual).to.match(/suiteOne : Test/);
+      expect(actual).to.match(/suiteOne =\n\s{4}describe "Baz"\n\s{8}\[ testOne\n\s{8}, testTwo\n\s{8}]/);
     });
 
-    it("should return code with all test definition that contains all the test module nodes", () => {
+    it("should add code for each child tests with the suite name for the test module", () => {
       // arrange
-      let testModuleNodes = <TestModuleNode[]> [
-        {moduleNode: {name: "SuiteOne"}, tests: [{name: "TestOne"}]},
-        {moduleNode: {name: "SuiteTwo"}, tests: [{name: "TestTwo"}]}
-      ];
+      let childTests = <TestModuleNode[]> [{moduleNode: {name: "TestOne"}}, {moduleNode: {name: "TestTwo"}}];
+      let suiteStructureNode = <SuiteStructureNode> {label: "Baz", name: "suiteOne", childNodes: [], childTests};
 
       // act
-      let lines = testSuiteGenerator.generateTestSuiteRoot("    ", testModuleNodes);
+      let lines = [];
+      testSuiteGenerator.generateTestSuiteForStructure("    ", lines, suiteStructureNode);
 
       // assert
       const actual = lines.join("\n");
-      expect(actual).to.match(/all : Test/);
-      expect(actual).to.match(/all =\n\s{4}describe "Unit Tests"\n\s{8}\[ allSuiteOne\n\s{8}, allSuiteTwo\n\s{8}]/);
+      expect(actual).to.match(/suiteOne : Test/);
+      expect(actual).to.match(/suiteOne =\n\s{4}describe "Baz"\n\s{8}\[ allTestOne\n\s{8}, allTestTwo\n\s{8}]/);
+    });
+
+    it("should recursively call self to add code for each child node with the child name for the node", () => {
+      // arrange
+      let grandChildNodes = <SuiteStructureNode[]> [{label: "TestTwo", name: "testTwo", childNodes: [], childTests: []}];
+      let childNodes = <SuiteStructureNode[]> [{label: "TestOne", name: "testOne", childNodes: grandChildNodes, childTests: []}];
+      let suiteStructureNode = <SuiteStructureNode> {label: "Baz", name: "suiteOne", childNodes, childTests: []};
+
+      // act
+      let lines = [];
+      testSuiteGenerator.generateTestSuiteForStructure("    ", lines, suiteStructureNode);
+
+      // assert
+      const actual = lines.join("\n");
+      expect(actual).to.match(/suiteOne : Test/);
+      expect(actual).to.match(/suiteOne =\n\s{4}describe "Baz"\n\s{8}\[ testOne\n\s{8}]/);
+      expect(actual).to.match(/testOne =\n\s{4}describe "TestOne"\n\s{8}\[ testTwo\n\s{8}]/);
     });
   });
 
   describe("generateTestSuiteForModule", () => {
-    it("should return code with empty all module test definition when there are no test nodes", () => {
+    it("should add code with empty all module test definition when there are no test nodes", () => {
       // arrange
-      let testModelNode = <TestModuleNode> {moduleNode: {name: "SuiteOne"}, tests: []};
+      let testModuleNode = <TestModuleNode> {moduleNode: {name: "SuiteOne"}, tests: []};
 
       // act
-      let lines = testSuiteGenerator.generateTestSuiteForModule("    ", testModelNode);
+      let lines = [];
+      testSuiteGenerator.generateTestSuiteForModule("    ", lines, testModuleNode);
 
       // assert
       const actual = lines.join("\n");
@@ -728,26 +869,28 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.match(/allSuiteOne =\n\s{4}describe "SuiteOne"\n\s{8}\[]/);
     });
 
-    it("should return code with all module test definition with suite name for module nodes", () => {
+    it("should add code with all module test definition with suite name for module nodes", () => {
       // arrange
       let testModuleNode = <TestModuleNode> {moduleNode: {name: "Foo.Bar.Baz"}, tests: [{name: "TestOne"}, {name: "TestTwo"}]};
 
       // act
-      let lines = testSuiteGenerator.generateTestSuiteForModule("    ", testModuleNode);
+      let lines = [];
+      testSuiteGenerator.generateTestSuiteForModule("    ", lines, testModuleNode);
 
       // assert
       const actual = lines.join("\n");
       expect(actual).to.match(/allFooBarBaz : Test/);
       expect(actual)
-        .to.match(/allFooBarBaz =\n\s{4}describe "Foo.Bar.Baz"\n\s{8}\[ Foo\.Bar\.Baz\.TestOne\n\s{8}, Foo\.Bar\.Baz\.TestTwo\n\s{8}]/);
+        .to.match(/allFooBarBaz =\n\s{4}describe "Baz"\n\s{8}\[ Foo\.Bar\.Baz\.TestOne\n\s{8}, Foo\.Bar\.Baz\.TestTwo\n\s{8}]/);
     });
 
-    it("should return code with all module test definition that contains all the test module nodes", () => {
+    it("should add code with all module test definition that contains all the test module nodes", () => {
       // arrange
       let testModuleNode = <TestModuleNode> {moduleNode: {name: "SuiteOne"}, tests: [{name: "TestOne"}, {name: "TestTwo"}]};
 
       // act
-      let lines = testSuiteGenerator.generateTestSuiteForModule("    ", testModuleNode);
+      let lines = [];
+      testSuiteGenerator.generateTestSuiteForModule("    ", lines, testModuleNode);
 
       // assert
       const actual = lines.join("\n");
@@ -940,21 +1083,81 @@ describe("lib test-suite-generator", () => {
     });
   });
 
-  describe("toSuiteName", () => {
+  describe("toDescriptionForTestModule", () => {
+    it("should return empty string when module name is empty", () => {
+      // act
+      let actual = testSuiteGenerator.toDescriptionForTestModule(<TestModuleNode>{moduleNode: {name: ""}});
+
+      // assert
+      expect(actual).to.equal("");
+    });
+
+    it("should return last part of moduleName when it contains '.'", () => {
+      // act
+      let actual = testSuiteGenerator.toDescriptionForTestModule(<TestModuleNode>{moduleNode: {name: "Foo.Bar.Baz"}});
+
+      // assert
+      expect(actual).to.equal("Baz");
+    });
+
     it("should return moduleName when it contains no '.'", () => {
       // act
-      let actual = testSuiteGenerator.toSuiteName(<TestModuleNode>{moduleNode: {name: "FooBarBaz"}});
+      let actual = testSuiteGenerator.toDescriptionForTestModule(<TestModuleNode>{moduleNode: {name: "FooBarBaz"}});
 
       // assert
       expect(actual).to.equal("FooBarBaz");
     });
 
-    it("should return moduleName with '.' replaced by empty string when it contains '.'", () => {
+    it("should return last part of moduleName when it contains '.'", () => {
       // act
-      let actual = testSuiteGenerator.toSuiteName(<TestModuleNode>{moduleNode: {name: "Foo.Bar.Baz"}});
+      let actual = testSuiteGenerator.toDescriptionForTestModule(<TestModuleNode>{moduleNode: {name: "Foo.Bar.Baz"}});
 
       // assert
-      expect(actual).to.equal("FooBarBaz");
+      expect(actual).to.equal("Baz");
+    });
+  });
+
+  describe("toSuiteNameForStructure", () => {
+    it("should return label without changes when first character is lowercase and parent is empty", () => {
+      // act
+      let actual = testSuiteGenerator.toSuiteNameForStructure("", "foo");
+
+      // assert
+      expect(actual).to.equal("foo");
+    });
+
+    it("should return label with first character lowercase when parent is empty", () => {
+      // act
+      let actual = testSuiteGenerator.toSuiteNameForStructure("", "Foo");
+
+      // assert
+      expect(actual).to.equal("foo");
+    });
+
+    it("should return parentName and label with first character lowercase when parent is not empty", () => {
+      // act
+      let actual = testSuiteGenerator.toSuiteNameForStructure("Foo", "Bar");
+
+      // assert
+      expect(actual).to.equal("fooBar");
+    });
+  });
+
+  describe("toSuiteNameForTestModule", () => {
+    it("should return moduleName with 'all' prefix when it contains no '.'", () => {
+      // act
+      let actual = testSuiteGenerator.toSuiteNameForTestModule(<TestModuleNode>{moduleNode: {name: "FooBarBaz"}});
+
+      // assert
+      expect(actual).to.equal("allFooBarBaz");
+    });
+
+    it("should return moduleName with 'all' prefix and '.' replaced by empty string when it contains '.'", () => {
+      // act
+      let actual = testSuiteGenerator.toSuiteNameForTestModule(<TestModuleNode>{moduleNode: {name: "Foo.Bar.Baz"}});
+
+      // assert
+      expect(actual).to.equal("allFooBarBaz");
     });
   });
 });
