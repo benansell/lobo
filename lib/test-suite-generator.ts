@@ -23,6 +23,13 @@ export interface TestModuleNode {
   tests: ElmFunctionNode[];
 }
 
+export interface SuiteStructureNode {
+  childNodes: SuiteStructureNode[];
+  childTests: TestModuleNode[];
+  label: string;
+  name: string;
+}
+
 export interface TestSuiteGenerator {
   generate(context: ExecutionContext): Bluebird<ExecutionContext>;
 }
@@ -35,6 +42,38 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
   constructor(elmNodeHelper: ElmNodeHelper, logger: Logger) {
     this.elmNodeHelper = elmNodeHelper;
     this.logger = logger;
+  }
+
+  public buildSuiteStructure(testModuleNodes: TestModuleNode[]): SuiteStructureNode {
+    const suite: SuiteStructureNode = {label: "Unit Tests", childNodes: [], childTests: [], name: ""};
+
+    for (const tmn of testModuleNodes) {
+      const labelList = tmn.moduleNode.name.split(".").reverse();
+      let parent: SuiteStructureNode = suite;
+      let label: string | undefined = suite.label;
+
+      while (label !== undefined) {
+        let nextParent = this.findParent(parent, label);
+
+        if (!nextParent) {
+          nextParent = {label: label, childNodes: [], childTests: [], name: this.toSuiteNameForStructure(parent.name, label)};
+          parent.childNodes.push(nextParent);
+        }
+
+        parent = nextParent;
+
+        if (labelList.length === 1) {
+          parent.childTests.push(tmn);
+          break;
+        }
+
+        label = labelList.pop();
+      }
+    }
+
+    suite.name = "all";
+
+    return suite;
   }
 
   public findExposedTests(testFramework: PluginTestFrameworkWithConfig, moduleNode: ElmModuleNode): ElmFunctionNode[] {
@@ -53,6 +92,22 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     }
 
     return result;
+  }
+
+  public findParent(node: SuiteStructureNode, label: string): SuiteStructureNode | undefined {
+    if (node.label === label) {
+      return node;
+    }
+
+    for (const n of node.childNodes) {
+      const childResult = this.findParent(n, label);
+
+      if (childResult) {
+        return childResult;
+      }
+    }
+
+    return undefined;
   }
 
   public findTestFunctions(nodes: ElmNode[], testImportNodes: ElmImportNode[]): ElmFunctionNode[] {
@@ -147,52 +202,58 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     lines.push(indent + ", toArgs = TestPlugin.toArgs");
     lines.push(indent + "}");
 
-    const rootTestSuite = this.generateTestSuiteRoot(indent, testModuleNodes);
-    lines.push(...rootTestSuite);
+    const suite = this.buildSuiteStructure(testModuleNodes);
+    this.generateTestSuiteForStructure(indent, lines, suite);
 
-    for (let i = 0; i < testModuleNodes.length; i++) {
-      const tm = testModuleNodes[i];
-      const testModuleLines = this.generateTestSuiteForModule(indent, tm);
-      lines.push(...testModuleLines);
+    for (const tmn of testModuleNodes) {
+      this.generateTestSuiteForModule(indent, lines, tmn);
     }
 
     return lines.join(os.EOL);
   }
 
-  public generateTestSuiteRoot(indent: string, testModuleNodes: TestModuleNode[]): string[] {
-    const lines: string[] = [];
+  public generateTestSuiteForStructure(indent: string, lines: string[], suite: SuiteStructureNode): void {
     lines.push("");
     lines.push("");
-    lines.push("all : Test");
-    lines.push("all =");
-    lines.push(indent + "describe \"Unit Tests\"");
+    lines.push(suite.name + " : Test");
+    lines.push(suite.name + " =");
+    lines.push(`${indent}describe "${suite.label}"`);
 
-    if (testModuleNodes.length === 0) {
+    if (suite.childNodes.length === 0 && suite.childTests.length === 0) {
       lines.push(`${indent}${indent}[]`);
     } else {
+      let isFirst = true;
       const firstTestIndent = indent + indent + "[ ";
       const restTestIndent = indent + indent + ", ";
 
-      for (let i = 0; i < testModuleNodes.length; i++) {
-        const tm = testModuleNodes[i];
-        let prefix = i === 0 ? firstTestIndent : restTestIndent;
-        lines.push(`${prefix}all${this.toSuiteName(tm)}`);
+      for (const child of suite.childNodes) {
+        let prefix = isFirst ? firstTestIndent : restTestIndent;
+        lines.push(`${prefix}${child.name}`);
+        isFirst = false;
+      }
+
+      for (const child of suite.childTests) {
+        let prefix = isFirst ? firstTestIndent : restTestIndent;
+        lines.push(`${prefix}${this.toSuiteNameForTestModule(child)}`);
+        isFirst = false;
       }
 
       lines.push(indent + indent + "]");
-    }
 
-    return lines;
+      for (const child of suite.childNodes) {
+        this.generateTestSuiteForStructure(indent, lines, child);
+      }
+    }
   }
 
-  public generateTestSuiteForModule(indent: string, testModuleNode: TestModuleNode): string[] {
-    const lines: string[] = [];
-    const alias = this.toSuiteName(testModuleNode);
+  public generateTestSuiteForModule(indent: string, lines: string[], testModuleNode: TestModuleNode): void {
+    const name = this.toSuiteNameForTestModule(testModuleNode);
+    const description = this.toDescriptionForTestModule(testModuleNode);
     lines.push("");
     lines.push("");
-    lines.push("all" + alias + " : Test");
-    lines.push("all" + alias + " =");
-    lines.push(`${indent}describe "${testModuleNode.moduleNode.name}"`);
+    lines.push(name + " : Test");
+    lines.push(name + " =");
+    lines.push(`${indent}describe "${description}"`);
 
     if (testModuleNode.tests.length === 0) {
       lines.push(`${indent}${indent}[]`);
@@ -208,8 +269,6 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
 
       lines.push(indent + indent + "]");
     }
-
-    return lines;
   }
 
   public isTestFunctionNodeWithoutArgumentsOfType<T extends string>(testImportNodes: ElmImportNode[], node: ElmFunctionNode,
@@ -239,8 +298,24 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     return this.isTestFunctionNodeWithoutArgumentsOfType(testImportNodes, node, testSuiteTypes);
   }
 
-  public toSuiteName(testModuleNode: TestModuleNode): string {
-    return testModuleNode.moduleNode.name.replace(/\./g, "");
+  public toDescriptionForTestModule(testModuleNode: TestModuleNode): string {
+      const parts = testModuleNode.moduleNode.name.split(".");
+
+      return parts[parts.length - 1];
+  }
+
+  public toSuiteNameForStructure(parentName: string, label: string): string {
+    const name = parentName + label;
+
+    if (name[0] === name[0].toLowerCase()) {
+      return name;
+    }
+
+    return name[0].toLowerCase() + name.slice(1);
+  }
+
+  public toSuiteNameForTestModule(testModuleNode: TestModuleNode): string {
+    return "all" + testModuleNode.moduleNode.name.replace(/\./g, "");
   }
 }
 
