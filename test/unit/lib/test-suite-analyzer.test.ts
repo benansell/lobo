@@ -1023,9 +1023,9 @@ describe("lib test-suite-analyzer", () => {
   });
 
   describe("isHidden", () => {
-    it("should return false when the functionNode is directly exposed", () => {
+    it("should be false when function node has arguments", () => {
       // arrange
-      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: true};
+      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [], node: {arguments: ["foo"]}};
 
       // act
       let actual = analyzerImp.isHidden(node);
@@ -1034,9 +1034,9 @@ describe("lib test-suite-analyzer", () => {
       expect(actual).to.be.false;
     });
 
-    it("should return false when the functionNode is not directly exposed and is indirectly exposed", () => {
+    it("should return false when the functionNode is directly exposed and has no arguments", () => {
       // arrange
-      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [{}]};
+      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: true, node: {arguments: []}};
 
       // act
       let actual = analyzerImp.isHidden(node);
@@ -1045,9 +1045,20 @@ describe("lib test-suite-analyzer", () => {
       expect(actual).to.be.false;
     });
 
-    it("should return true when the functionNode is not directly exposed and is not indirectly exposed", () => {
+    it("should return false when the functionNode is not directly exposed, is indirectly exposed and has no arguments", () => {
       // arrange
-      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: []};
+      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [{}], node: {arguments: []}};
+
+      // act
+      let actual = analyzerImp.isHidden(node);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should return true when the functionNode is not directly exposed,is not indirectly exposed and has no arguments", () => {
+      // arrange
+      let node = <AnalyzedTestFunctionNode> {isExposedDirectly: false, isExposedIndirectlyBy: [], node: {arguments: []}};
 
       // act
       let actual = analyzerImp.isHidden(node);
