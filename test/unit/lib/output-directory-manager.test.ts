@@ -6,7 +6,7 @@ import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {Logger} from "../../../lib/logger";
 import {createOutputDirectoryManager, OutputDirectoryManager, OutputDirectoryManagerImp} from "../../../lib/output-directory-manager";
-import {ExecutionContext, LoboConfig} from "../../../lib/plugin";
+import {ExecutionContext, LoboConfig, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
 import {ElmPackageHelper, ElmPackageJson, UpdateCallback} from "../../../lib/elm-package-helper";
 
 
@@ -411,6 +411,68 @@ describe("lib output-directory-manager", () => {
       }).to.throw("Unable to read the lobo test elm-package.json file.");
     });
 
+    it("should call updateDependencies with the config.testFramework", () => {
+      // arrange
+      let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
+      mockHelperRead.withArgs("bar").returns({});
+      mockHelperRead.withArgs("foo").returns({});
+      outputDirectoryManager.updateDependencies = Sinon.spy();
+
+      // act
+      outputDirectoryManager.syncLoboTestElmPackage(config, "bar", "baz", false);
+
+      // assert
+      expect(outputDirectoryManager.updateDependencies)
+        .to.have.been.calledWith(config.testFramework, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call updateDependencies with the testElmPackage", () => {
+      // arrange
+      let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
+      let expected = <ElmPackageJson> { sourceDirectories: [] };
+      mockHelperRead.withArgs("bar").returns(expected);
+      mockHelperRead.withArgs("foo").returns({});
+      outputDirectoryManager.updateDependencies = Sinon.spy();
+
+      // act
+      outputDirectoryManager.syncLoboTestElmPackage(config, "bar", "baz", false);
+
+      // assert
+      expect(outputDirectoryManager.updateDependencies)
+        .to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call updateDependencies with the lobo directory", () => {
+      // arrange
+      let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
+      mockHelperRead.withArgs("bar").returns({});
+      mockHelperRead.withArgs("foo").returns({});
+      outputDirectoryManager.updateDependencies = Sinon.spy();
+
+      // act
+      outputDirectoryManager.syncLoboTestElmPackage(config, "bar", "baz", false);
+
+      // assert
+      expect(outputDirectoryManager.updateDependencies)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "foo", Sinon.match.any);
+    });
+
+    it("should call updateDependencies with the lobo elmPackage", () => {
+      // arrange
+      let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
+      let expected = <ElmPackageJson> { sourceDirectories: ["qux"] };
+      mockHelperRead.withArgs("bar").returns({});
+      mockHelperRead.withArgs("foo").returns(expected);
+      outputDirectoryManager.updateDependencies = Sinon.spy();
+
+      // act
+      outputDirectoryManager.syncLoboTestElmPackage(config, "bar", "baz", false);
+
+      // assert
+      expect(outputDirectoryManager.updateDependencies)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, expected);
+    });
+
     it("should call updateSourceDirectories with the testElmPackageDir", () => {
       // arrange
       let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
@@ -520,6 +582,139 @@ describe("lib output-directory-manager", () => {
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
         .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, expected);
+    });
+  });
+
+  describe("updateDependencies", () => {
+    it("should call helper.updateDependencies with the specified testFramework", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
+      let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
+      let updateAction = Sinon.stub();
+      mockHelper.updateDependencies = Sinon.spy((...args) => {
+        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
+        updateCallback([], updateAction);
+      });
+
+      // act
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+
+      // assert
+      expect(mockHelper.updateDependencies)
+        .to.have.been.calledWith(testFramework, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call helper.updateDependencies with the specified baseElmPackage", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
+      let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
+      let updateAction = Sinon.stub();
+      mockHelper.updateDependencies = Sinon.spy((...args) => {
+        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
+        updateCallback([], updateAction);
+      });
+
+      // act
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+
+      // assert
+      expect(mockHelper.updateDependencies)
+        .to.have.been.calledWith(Sinon.match.any, sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call helper.updateDependencies with the specified testElmPackageDir", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
+      let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
+      let updateAction = Sinon.stub();
+      mockHelper.updateDependencies = Sinon.spy((...args) => {
+        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
+        updateCallback([], updateAction);
+      });
+
+      // act
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+
+      // assert
+      expect(mockHelper.updateDependencies)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call helper.updateDependencies with the specified testElmPackage", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
+      let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
+      let updateAction = Sinon.stub();
+      mockHelper.updateDependencies = Sinon.spy((...args) => {
+        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
+        updateCallback([], updateAction);
+      });
+
+      // act
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+
+      // assert
+      expect(mockHelper.updateDependencies)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any);
+    });
+
+    it("should call helper.updateDependencies with a callback", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
+      let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
+      let updateAction = Sinon.stub();
+      mockHelper.updateDependencies = Sinon.spy((...args) => {
+        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
+        updateCallback([], updateAction);
+      });
+
+      // act
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+
+      // assert
+      expect(mockHelper.updateDependencies)
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.func);
+    });
+
+    it("should not call updateAction when there is no difference", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
+      let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
+      let updateAction = Sinon.stub();
+      mockHelper.updateDependencies = (...args) => {
+        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
+        updateCallback([], updateAction);
+      };
+
+      // act
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+
+      // assert
+      expect(updateAction).not.to.have.been.called;
+    });
+
+    it("should call updateAction when there is a difference", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
+      let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
+      let updateAction = Sinon.stub();
+      mockHelper.updateDependencies = (...args) => {
+        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
+        updateCallback(["abc"], updateAction);
+      };
+
+      // act
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+
+      // assert
+      expect(updateAction).to.have.been.calledWith();
     });
   });
 

@@ -1,5 +1,5 @@
 import * as Bluebird from "bluebird";
-import {ExecutionContext, LoboConfig, Reject, Resolve} from "./plugin";
+import {ExecutionContext, LoboConfig, PluginTestFrameworkWithConfig, Reject, Resolve} from "./plugin";
 import {createLogger, Logger} from "./logger";
 import * as shelljs from "shelljs";
 import * as path from "path";
@@ -87,7 +87,21 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     }
 
     const testFramework = config.testFramework;
+    this.updateDependencies(testFramework, base, config.loboDirectory, target);
     this.updateSourceDirectories(testElmPackageDir, base, config.loboDirectory, testDir, target, testFramework.config.sourceDirectories);
+  }
+
+  public updateDependencies(testFramework: PluginTestFrameworkWithConfig, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
+                            testElmPackage: ElmPackageJson): void {
+    const callback = (diff: string[][], updateAction: () => ElmPackageJson) => {
+      if (diff.length === 0) {
+        return;
+      }
+
+      updateAction();
+    };
+
+    this.elmPackageHelper.updateDependencies(testFramework, baseElmPackage, testElmPackageDir, testElmPackage, callback);
   }
 
   public updateSourceDirectories(baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
@@ -102,7 +116,6 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
 
     this.elmPackageHelper.updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir, testDir,
                                                   testElmPackage, loboTestPluginSourceDirectories, callback);
-
   }
 }
 
