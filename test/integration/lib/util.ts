@@ -46,7 +46,7 @@ export class Util {
   public cleanLobo(): void {
     this.rmDir(".lobo/elm-stuff");
     this.rmFile(".lobo/elm-package.json");
-    // this.rmDir(".lobo");
+    this.rmDir(".lobo");
   }
 
   public initializeTestContext(dirName: string): string[] {
