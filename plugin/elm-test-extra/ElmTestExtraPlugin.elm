@@ -4,7 +4,8 @@ import ElmTest.Runner as Extra exposing (Test(Test, Labeled, Batch, Only, Skippe
 import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
 import Json.Encode as Encode exposing (Value, int, object, string)
 import Random.Pcg exposing (initialSeed)
-import Test.Runner as ElmTestRunner exposing (Runner, SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailure)
+import Test.Runner as ElmTestRunner exposing (Runner, SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailureReason)
+import Test.Runner.Failure as ElmTestFailure
 import TestPlugin as Plugin
 import Time exposing (Time)
 import Tuple
@@ -35,6 +36,12 @@ type alias TestQueue =
     , tests : List TestItem
     }
 
+
+type alias ElmTestFailure =
+    { given : Maybe String
+    , description : String
+    , reason : ElmTestFailure.Reason
+    }
 
 
 -- INIT
@@ -154,7 +161,7 @@ runTest testItem time =
         TodoRunner reason ->
             Plugin.Todo
                 { id = testItem.id
-                , messages = [ { given = Nothing, message = reason } ]
+                , messages = [ { given = Nothing, message = reason, reason = Plugin.TodoTest } ]
                 }
 
 
@@ -163,8 +170,9 @@ runValidTest testId runner time =
     let
         messages =
             runner.run ()
-                |> List.map ElmTestRunner.getFailure
+                |> List.map ElmTestRunner.getFailureReason
                 |> List.filterMap identity
+                |> List.map toFailureMessage
     in
         if List.isEmpty messages then
             Plugin.Pass
@@ -181,6 +189,37 @@ runValidTest testId runner time =
                 }
 
 
+toFailureMessage : ElmTestFailure -> Plugin.FailureMessage
+toFailureMessage failure =
+    { given = failure.given
+    , message = ElmTestFailure.format failure.description failure.reason
+    , reason = toFailureReason failure.reason
+    }
+
+
+toFailureReason : ElmTestFailure.Reason -> Plugin.FailureReason
+toFailureReason reason =
+    case reason of
+            ElmTestFailure.Custom ->
+                Plugin.Unknown
+
+            ElmTestFailure.Equality x y ->
+                Plugin.Expectation
+
+            ElmTestFailure.Comparison x y ->
+                Plugin.Expectation
+
+            ElmTestFailure.ListDiff x y ->
+                Plugin.Expectation
+
+            ElmTestFailure.CollectionDiff _ ->
+                Plugin.Expectation
+
+            ElmTestFailure.TODO ->
+                Plugin.TodoTest
+
+            ElmTestFailure.Invalid _ ->
+                Plugin.Invalid
 
 -- ELM TEST
 

@@ -295,7 +295,13 @@ attachNode nodes =
                         |> attachNode
 
                 x :: xs ->
-                    Debug.crash "Impossible to have more than 1 parent node"
+                    -- merge parents into single parent and add next to it's parent and repeat
+                    let
+                        merged = List.foldl (\a b -> { a | report = attachChild b.report a.report }) x xs
+                    in
+                    { merged | report = attachChild next.report merged.report }
+                        :: others
+                        |> attachNode
 
 
 byTestIds : List TestIdentifier -> DetachedNode -> Bool
