@@ -127,4 +127,16 @@ describe("elm-test-analysis", () => {
       expect(failureMessage).to.have.string("all (tests/analysis/unisolated/ChildTest.elm:7:1)");
     });
   });
+
+  describe("untyped-test", () => {
+    it("should pass analysis and run tests", () => {
+      // act
+      let result = runner.run(testContext, "elm-test", "./tests/analysis/untyped-test");
+
+      // assert
+      reporterExpect(result).summaryPassed();
+      reporterExpect(result).summaryCounts(1, 0);
+      expect(result.code).to.equal(0);
+    });
+  });
 });
