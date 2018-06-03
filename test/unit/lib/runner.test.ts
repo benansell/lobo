@@ -473,7 +473,7 @@ describe("lib runner", () => {
     it("should load the elm test app", () => {
       // arrange
       let config = <LoboConfig> {reporter: mockPluginReporter, testFramework: mockFramework};
-      let context = <ExecutionContext> {config, buildOutputFilePath: "./foo", testFile: "bar"};
+      let context = <ExecutionContext> {config, buildOutputFilePath: "./foo", testDirectory: "bar"};
 
       // act
       runner.run(context);

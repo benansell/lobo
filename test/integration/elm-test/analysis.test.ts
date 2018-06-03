@@ -24,8 +24,20 @@ describe("elm-test-analysis", () => {
     runner.cleanLoboAndBuildArtifacts();
   });
 
+  describe("custom-test-file", () => {
+    it("should pass analysis and run tests", () => {
+      // act
+      let result = runner.run(testContext, "elm-test", "./tests/analysis/custom-test-file");
+
+      // assert
+      reporterExpect(result).summaryPassed();
+      reporterExpect(result).summaryCounts(1, 0);
+      expect(result.code).to.equal(0);
+    });
+  });
+
   describe("duplicate-name", () => {
-    it("should pass analysis run tests", () => {
+    it("should pass analysis and run tests", () => {
       // act
       let result = runner.run(testContext, "elm-test", "./tests/analysis/duplicate-name");
 

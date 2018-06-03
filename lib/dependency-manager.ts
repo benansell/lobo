@@ -37,7 +37,6 @@ export class DependencyManagerImp implements DependencyManager {
   public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
     let baseElmPackageDir = ".";
     let testElmPackageDir = context.testDirectory;
-    let testDir = path.dirname(context.testFile);
     let steps: Array<() => Bluebird<void>> = [];
 
     if (context.config.noUpdate) {
@@ -46,7 +45,7 @@ export class DependencyManagerImp implements DependencyManager {
       steps = steps.concat([
         () => this.ensureElmPackageExists(context.config, baseElmPackageDir, "current"),
         () => this.ensureElmPackageExists(context.config, testElmPackageDir, "tests"),
-        () => this.syncTestElmPackage(context.config, baseElmPackageDir, testElmPackageDir, testDir)]);
+        () => this.syncTestElmPackage(context.config, baseElmPackageDir, testElmPackageDir)]);
     }
 
     steps = steps.concat([
@@ -85,11 +84,11 @@ export class DependencyManagerImp implements DependencyManager {
     });
   }
 
-  public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string, testDir: string): Bluebird<void> {
+  public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string): Bluebird<void> {
     let steps = <Array<(result: ElmPackageCompare) => Bluebird<ElmPackageCompare>>> [
       () => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
       (result: ElmPackageCompare) =>
-        this.updateSourceDirectories(config.prompt, baseElmPackageDir, result.base, testElmPackageDir, testDir, result.target),
+        this.updateSourceDirectories(config.prompt, baseElmPackageDir, result.base, testElmPackageDir, result.target),
       (result: ElmPackageCompare) =>
         this.updateDependencies(config.prompt, config.testFramework, result.base, testElmPackageDir, result.target)];
 
@@ -122,7 +121,7 @@ export class DependencyManagerImp implements DependencyManager {
   }
 
   public updateSourceDirectories(prompt: boolean, baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                                 testDir: string, testElmPackage: ElmPackageJson): Bluebird<ElmPackageCompare> {
+                                 testElmPackage: ElmPackageJson): Bluebird<ElmPackageCompare> {
     return new Bluebird<ElmPackageCompare>((resolve: Resolve<ElmPackageCompare>, reject: Reject) => {
 
       const callback = (diff: string[], updateAction: () => ElmPackageJson) => {
@@ -155,7 +154,7 @@ export class DependencyManagerImp implements DependencyManager {
       };
 
       this.elmPackageHelper
-        .updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir, testDir, testElmPackage, [], callback);
+        .updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir, testElmPackage, [], callback);
     });
   }
 

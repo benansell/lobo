@@ -221,21 +221,6 @@ describe("lib test-suite-analyzer", () => {
       expect(actual[0].filePath).to.deep.equal("bar");
     });
 
-    it("should return AnalyzedTestModuleNode with isMainTestFile from codeInfo", () => {
-      // arrange
-      let codeLookup = <ElmCodeLookup> {
-        foo: <ElmCodeInfo> {isTestFile: true, moduleNode: {}, isMainTestFile: true}
-      };
-      analyzerImp.findImportNodesForModuleName = Sinon.stub();
-      analyzerImp.buildAnalyzedFunctionNodes = Sinon.stub();
-
-      // act
-      let actual = analyzerImp.buildAnalyzedModuleNodes(codeLookup, "abc");
-
-      // assert
-      expect(actual[0].isMainTestFile).to.deep.equal(true);
-    });
-
     it("should return AnalyzedTestModuleNode with moduleNode from codeInfo", () => {
       // arrange
       let codeLookup = <ElmCodeLookup> {

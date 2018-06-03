@@ -16,7 +16,6 @@ export interface ElmCodeLookup {
 export interface ElmCodeInfo {
   fileName: string;
   filePath: string;
-  isMainTestFile: boolean;
   isTestFile: boolean;
   lastModified: Date;
   moduleNode: ElmModuleNode | undefined;
@@ -101,7 +100,6 @@ export interface ExecutionContext {
   codeLookup: ElmCodeLookup;
   config: LoboConfig;
   testDirectory: string;
-  testFile: string;
   testSuiteOutputFilePath: string;
 }
 

@@ -24,7 +24,6 @@ export interface AnalyzedTestModuleNode {
   analyzed: boolean;
   codeInfoKey: string;
   filePath: string;
-  isMainTestFile: boolean;
   moduleNode: ElmModuleNode | undefined;
   tests: AnalyzedTestFunctionNode[];
 }
@@ -76,7 +75,6 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
               analyzed: true,
               codeInfoKey: key,
               filePath: codeInfo.filePath,
-              isMainTestFile: codeInfo.isMainTestFile,
               moduleNode,
               tests
             });
@@ -85,7 +83,6 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
               analyzed: false,
               codeInfoKey: key,
               filePath: codeInfo.filePath,
-              isMainTestFile: codeInfo.isMainTestFile,
               moduleNode: undefined,
               tests: []
             });

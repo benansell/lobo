@@ -110,7 +110,6 @@ export class LoboImp implements Lobo {
         codeLookup: {},
         config: <LoboConfig> config,
         testDirectory: program.testDirectory,
-        testFile: program.testFile
       };
 
       context.testSuiteOutputFilePath = path.resolve(context.config.loboDirectory, context.config.testMainElm);
@@ -259,7 +258,6 @@ export class LoboImp implements Lobo {
       .option("--quiet", "only outputs build info, test summary and errors")
       .option("--reporter <value>", "name of the reporter to use", "default-reporter")
       .option("--testDirectory <value>", "directory containing the tests to run", "tests")
-      .option("--testFile <value>", "location of Tests.elm within the tests directory", "Tests.elm")
       .option("--verbose", "outputs more detailed logging")
       .option("--veryVerbose", "outputs very detailed logging")
       .option("--watch", "watch for file changes and automatically rerun any effected tests");
@@ -350,18 +348,12 @@ export class LoboImp implements Lobo {
       }
     }
 
-    let testsElm = path.join(program.testDirectory, program.testFile);
-
-    if (!shelljs.test("-e", testsElm)) {
+    if (!shelljs.test("-e", program.testDirectory)) {
       this.logger.error("");
-      this.logger.error(`Unable to find "${path.basename(program.testFile)}"`);
-      this.logger.error("Please check that it exists in the test directory:");
-      this.logger.error(path.resolve(path.dirname(testsElm)));
+      this.logger.error(`Unable to find "${path.resolve(program.testDirectory)}"`);
       this.logger.info("");
-      this.logger.info("You can override the default location (\"./tests\") by running either:");
-      this.logger.info("lobo --testDirectory [directory containing Tests.elm]");
-      this.logger.info("or");
-      this.logger.info("lobo --testFile [relative path to main test file inside --testDirectory]");
+      this.logger.info("You can override the default location (\"./tests\") by running:");
+      this.logger.info("lobo --testDirectory [directory containing test files]");
       exit = true;
     }
 

@@ -62,7 +62,7 @@ describe("lib dependency-manager", () => {
     it("should not call ensureElmPackageExists when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: true};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -79,7 +79,7 @@ describe("lib dependency-manager", () => {
     it("should not call syncTestElmPackage when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: true};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -96,7 +96,7 @@ describe("lib dependency-manager", () => {
     it("should call installDependencies when config.noUpdate is true", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: true};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -113,7 +113,7 @@ describe("lib dependency-manager", () => {
     it("should call ensureElmPackageExists with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -130,7 +130,7 @@ describe("lib dependency-manager", () => {
     it("should call ensureElmPackageExists with the base directory of '.' and location 'current'", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -144,10 +144,10 @@ describe("lib dependency-manager", () => {
       });
     });
 
-    it("should call ensureElmPackageExists with the supplied test directory and location of 'test", () => {
+    it("should call ensureElmPackageExists with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testDirectory: "foo", testFile: "bar"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -164,7 +164,7 @@ describe("lib dependency-manager", () => {
     it("should call syncTestElmPackage with the supplied config", () => {
       // arrange
       let config = <LoboConfig> { noUpdate: false};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -174,14 +174,14 @@ describe("lib dependency-manager", () => {
 
       // assert
       return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
       });
     });
 
     it("should call syncTestElmPackage with a base directory of '.'", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -191,14 +191,14 @@ describe("lib dependency-manager", () => {
 
       // assert
       return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, ".", Sinon.match.any, Sinon.match.any);
+        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, ".", Sinon.match.any);
       });
     });
 
     it("should call syncTestElmPackage with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testDirectory: "foo", testFile: "bar"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -208,31 +208,14 @@ describe("lib dependency-manager", () => {
 
       // assert
       return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "foo", Sinon.match.any);
-      });
-    });
-
-    it("should call syncTestElmPackage with the supplied test file directory", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testDirectory: "foo", testFile: "bar/baz"};
-      dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
-      dependencyManager.installDependencies = Sinon.stub();
-
-      // act
-      let actual = dependencyManager.sync(context);
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "bar");
+        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "foo");
       });
     });
 
     it("should call installDependencies with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testFile: "foo"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -249,7 +232,7 @@ describe("lib dependency-manager", () => {
     it("should call installDependencies with the supplied test directory", () => {
       // arrange
       let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testDirectory: "foo", testFile: "bar"};
+      let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -407,7 +390,7 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
@@ -426,7 +409,7 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
@@ -445,12 +428,12 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
         expect(dependencyManager.updateSourceDirectories).to.have.been
-          .calledWith(true, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+          .calledWith(true, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -465,12 +448,12 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
         expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -485,12 +468,12 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
         expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -505,32 +488,12 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
         expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call updateSourceDirectories with the supplied test dir", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "qux", Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
       });
     });
 
@@ -545,12 +508,12 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
         expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
       });
     });
 
@@ -565,11 +528,11 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
-        expect(dependencyManager.updateDependencies).to.have.been.calledWith(true, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        expect(dependencyManager.updateDependencies).to.have.been.calledWith(true, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -584,12 +547,12 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
         expect(dependencyManager.updateDependencies)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any);
       });
     });
 
@@ -604,12 +567,12 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
         expect(dependencyManager.updateDependencies)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz");
       });
     });
 
@@ -624,7 +587,7 @@ describe("lib dependency-manager", () => {
       (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
 
       // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz", "qux");
+      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
 
       // assert
       return actual.then(() => {
@@ -721,7 +684,7 @@ describe("lib dependency-manager", () => {
   });
 
   describe("updateSourceDirectories", () => {
-    it("should call helper.updateSourceDirectories with the specified baseElmPackgaeDir", () => {
+    it("should call helper.updateSourceDirectories with the specified baseElmPackageDir", () => {
       // arrange
       let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
       let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
@@ -732,12 +695,12 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.finally(() => {
         expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -752,12 +715,12 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.finally(() => {
         expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -772,32 +735,12 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz",  testPackageJson);
 
       // assert
       return actual.finally(() => {
         expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call helper.updateSourceDirectories with the specified main testDir", () => {
-      // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      let updateAction = Sinon.stub();
-      mockHelper.updateSourceDirectories = Sinon.spy((...args) => {
-        const updateCallback: UpdateCallback<string[]> = args[args.length - 1];
-        updateCallback([], updateAction);
-      });
-
-      // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
-
-      // assert
-      return actual.finally(() => {
-        expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "qux", Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -812,12 +755,12 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.finally(() => {
         expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any);
       });
     });
 
@@ -832,12 +775,12 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.finally(() => {
         expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, [],
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, [],
                                    Sinon.match.any);
 
       });
@@ -854,13 +797,12 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.finally(() => {
         expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any,
-                                   Sinon.match.func);
+          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.func);
       });
     });
 
@@ -875,7 +817,7 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.then((result: ElmPackageCompare) => {
@@ -894,7 +836,7 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.then((result: ElmPackageCompare) => {
@@ -913,7 +855,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(false, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(false, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.finally(() => {
@@ -934,7 +876,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.catch(() => {
@@ -955,7 +897,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.catch(() => {
@@ -975,7 +917,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.catch(() => {
@@ -994,7 +936,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(false, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(false, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.then((result: ElmPackageCompare) => {
@@ -1015,7 +957,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(false, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(false, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.then((result: ElmPackageCompare) => {
@@ -1034,7 +976,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.then((result: ElmPackageCompare) => {
@@ -1056,7 +998,7 @@ describe("lib dependency-manager", () => {
       };
 
       // act
-      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", "qux", testPackageJson);
+      let actual = dependencyManager.updateSourceDirectories(true, "bar", sourcePackageJson, "baz", testPackageJson);
 
       // assert
       return actual.then((result: ElmPackageCompare) => {

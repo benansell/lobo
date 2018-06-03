@@ -54,9 +54,8 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
   public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
     return new Bluebird<ExecutionContext>((resolve: Resolve<ExecutionContext>, reject: Reject) => {
       try {
-        let testDir = path.dirname(context.testFile);
         const loboElmPackageIsCopy = this.configBuildDirectory(context.config.loboDirectory, context.testDirectory);
-        this.syncLoboTestElmPackage(context.config, context.testDirectory, testDir, loboElmPackageIsCopy);
+        this.syncLoboTestElmPackage(context.config, context.testDirectory, loboElmPackageIsCopy);
         context.buildOutputFilePath = this.generateBuildOutputFilePath(context.config);
 
         resolve(context);
@@ -69,7 +68,7 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     });
   }
 
-  public syncLoboTestElmPackage(config: LoboConfig, testElmPackageDir: string, testDir: string, loboElmPackageIsCopy: boolean): void {
+  public syncLoboTestElmPackage(config: LoboConfig, testElmPackageDir: string, loboElmPackageIsCopy: boolean): void {
     const base = this.elmPackageHelper.read(testElmPackageDir);
 
     if (!base) {
@@ -88,7 +87,7 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
 
     const testFramework = config.testFramework;
     this.updateDependencies(testFramework, base, config.loboDirectory, target);
-    this.updateSourceDirectories(testElmPackageDir, base, config.loboDirectory, testDir, target, testFramework.config.sourceDirectories);
+    this.updateSourceDirectories(testElmPackageDir, base, config.loboDirectory, target, testFramework.config.sourceDirectories);
   }
 
   public updateDependencies(testFramework: PluginTestFrameworkWithConfig, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
@@ -105,7 +104,7 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
   }
 
   public updateSourceDirectories(baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                                 testDir: string, testElmPackage: ElmPackageJson, loboTestPluginSourceDirectories: string[]): void {
+                                 testElmPackage: ElmPackageJson, loboTestPluginSourceDirectories: string[]): void {
     const callback = (diff: string[], updateAction: () => ElmPackageJson) => {
       if (diff.length === 0) {
         return;
@@ -114,7 +113,7 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
       updateAction();
     };
 
-    this.elmPackageHelper.updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir, testDir,
+    this.elmPackageHelper.updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir,
                                                   testElmPackage, loboTestPluginSourceDirectories, callback);
   }
 }
