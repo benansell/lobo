@@ -23,7 +23,7 @@ export interface ElmCodeHelper {
 
 export class ElmCodeHelperImp implements ElmCodeHelper {
 
-  public readonly delimitersFunction: string[] = [" ", "\n", "\"", ",", "=", "[", "]", "{", "}", "(", ")", "\\"];
+  public readonly delimitersFunction: string[] = [" ", "\n", "\"", ":", ",", "=", "[", "]", "{", "}", "(", ")", "\\"];
   public readonly delimitersTypeList: string[] = [" ", "\n", ",", "(", ")"];
   public readonly maxIndex: number;
   private readonly code: string;
@@ -206,7 +206,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
     return endLineIndex - 1;
   }
 
-  public findNextWord(startIndex: number, skipComments: boolean = true, delimiters: string[] = [" ", "\n"]): FindWordResult {
+  public findNextWord(startIndex: number, skipComments: boolean = true, delimiters: string[] = [" ", "\n", ":", "="]): FindWordResult {
     let isMatch: (index: number) => FindWordResult | undefined = (index) => {
       if (this.exists(index, delimiters) >= 0) {
         if (startIndex === index) {

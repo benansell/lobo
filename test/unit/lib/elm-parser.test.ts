@@ -599,6 +599,19 @@ describe("lib elm-parser", () => {
       expect(actual).to.deep.equal([]);
     });
 
+    it("should return the dependency type info when there is an '=' without spaces", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo=baz");
+      let typeHelper = makeElmTypeHelper("bar");
+      typeHelper.resolveType("baz");
+
+      // act
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+
+      // assert
+      expect(actual).to.deep.equal([{ occurs: [4], typeInfo: {name: "baz", moduleName: "bar"}}]);
+    });
+
     it("should return the dependency type info when there is an '='", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz");
@@ -610,6 +623,32 @@ describe("lib elm-parser", () => {
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}}]);
+    });
+
+    it("should return the dependency type info when there is a type definition", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo : String\nfoo = baz");
+      let typeHelper = makeElmTypeHelper("bar");
+      typeHelper.resolveType("baz");
+
+      // act
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+
+      // assert
+      expect(actual).to.deep.equal([{ occurs: [19], typeInfo: {name: "baz", moduleName: "bar"}}]);
+    });
+
+    it("should return the dependency type info when there is a type definition and no spaces", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo:String\nfoo=baz");
+      let typeHelper = makeElmTypeHelper("bar");
+      typeHelper.resolveType("baz");
+
+      // act
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+
+      // assert
+      expect(actual).to.deep.equal([{ occurs: [15], typeInfo: {name: "baz", moduleName: "bar"}}]);
     });
 
     it("should not return string in the dependency type info when there is an '='", () => {

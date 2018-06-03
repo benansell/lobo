@@ -681,6 +681,28 @@ describe("lib elm-code-helper", () => {
       expect(actual).to.deep.equal({nextIndex: 7, word: "bar"});
     });
 
+    it("should return next word when separated by a ':' and using default delimiters", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp("foo:bar baz");
+
+      // act
+      let actual = codeHelper.findNextWord(4);
+
+      // assert
+      expect(actual).to.deep.equal({nextIndex: 7, word: "bar"});
+    });
+
+    it("should return next word when separated by a '=' and using default delimiters", () => {
+      // arrange
+      let codeHelper = new ElmCodeHelperImp("foo=bar baz");
+
+      // act
+      let actual = codeHelper.findNextWord(4);
+
+      // assert
+      expect(actual).to.deep.equal({nextIndex: 7, word: "bar"});
+    });
+
     it("should return next word when separated by '\n' and using default delimiters", () => {
       // arrange
       let codeHelper = new ElmCodeHelperImp("foo\nbar\nbaz");
