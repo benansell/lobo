@@ -14,10 +14,6 @@ function analysisOverExposed(result: ExecOutputReturnValue): void {
   expect(result.stdout).to.match(/OVER EXPOSED TESTS/);
 }
 
-function analysisUnisolated(result: ExecOutputReturnValue): void {
-  expect(result.stdout).to.match(/UNISOLATED TESTS/);
-}
-
 function analysisSummary(result: ExecOutputReturnValue, hidden: number, overExposed: number, unisolated: number): void {
   if (hidden > 0) {
     expect(result.stdout).to.match(new RegExp("Found\\s+" + hidden + " hidden test"));
@@ -29,12 +25,6 @@ function analysisSummary(result: ExecOutputReturnValue, hidden: number, overExpo
     expect(result.stdout).to.match(new RegExp("Found\\s+" + overExposed + " over exposed test"));
   } else {
     expect(result.stdout).not.to.match(new RegExp("over exposed test"));
-  }
-
-  if (unisolated > 0) {
-    expect(result.stdout).to.match(new RegExp("Found\\s+" + unisolated + " unisolated test"));
-  } else {
-    expect(result.stdout).not.to.match(new RegExp("unisolated test"));
   }
 }
 
@@ -92,7 +82,7 @@ function summaryPassed(result: ExecOutputReturnValue): void {
 export interface ReporterExpect {
   analysisHidden(): void;
   analysisOverExposed(): void;
-  analysisSummary(hidden: number, overExposed: number, unisolated: number): void;
+  analysisSummary(hidden: number, overExposed: number): void;
   analysisUnisolated(): void;
   summaryArgument(argName: string, argValue: object): void;
   summaryCounts(pass: number, fail: number, todo?: number, skip?: number, ignore?: number): void;
@@ -108,7 +98,6 @@ export default function(result: ExecOutputReturnValue): ReporterExpect {
     analysisHidden: _.wrap(result, analysisHidden),
     analysisOverExposed: _.wrap(result, analysisOverExposed),
     analysisSummary: _.wrap(result, analysisSummary),
-    analysisUnisolated: _.wrap(result, analysisUnisolated),
     summaryArgument: _.wrap(result, summaryArgument),
     summaryCounts: _.wrap(result, summaryCounts),
     summaryFailed: _.wrap(result, summaryFailed),

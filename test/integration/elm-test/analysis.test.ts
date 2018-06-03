@@ -65,9 +65,14 @@ describe("elm-test-analysis", () => {
       let result = runner.run(testContext, "elm-test", "./tests/analysis/hidden");
 
       // assert
-      reporterExpect(result).analysisSummary(1, 0, 0);
+      reporterExpect(result).analysisSummary(1, 0);
       reporterExpect(result).analysisHidden();
       expect(result.code).to.equal(1);
+
+      let startIndex = result.stdout
+        .indexOf("================================================================================");
+      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      expect(failureMessage).to.have.string("hiddenTest (tests/analysis/hidden/Tests.elm:14:1)");
     });
   });
 
@@ -89,9 +94,17 @@ describe("elm-test-analysis", () => {
       let result = runner.run(testContext, "elm-test", "./tests/analysis/over-exposed");
 
       // assert
-      reporterExpect(result).analysisSummary(0, 2, 0);
+      reporterExpect(result).analysisSummary(0, 2);
       reporterExpect(result).analysisOverExposed();
       expect(result.code).to.equal(1);
+
+      let startIndex = result.stdout
+        .indexOf("================================================================================");
+      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      expect(failureMessage).to.match(/1\) (.\[\d\dm)?testOne \(tests\/analysis\/over-exposed\/Tests.elm:21:1\)/g);
+      expect(failureMessage).to.have.string("all (tests/analysis/over-exposed/Tests.elm:7:1)");
+      expect(failureMessage).to.match(/2\) (.\[\d\dm)?testTwo \(tests\/analysis\/over-exposed\/Tests.elm:28:1\)/g);
+      expect(failureMessage).to.have.string("suiteTwo (tests/analysis/over-exposed/Tests.elm:15:1)");
     });
   });
 
@@ -101,9 +114,17 @@ describe("elm-test-analysis", () => {
       let result = runner.run(testContext, "elm-test", "./tests/analysis/unisolated");
 
       // assert
-      reporterExpect(result).analysisSummary(0, 0, 0);
-      reporterExpect(result).analysisUnisolated();
+      reporterExpect(result).analysisSummary(0, 2);
+      reporterExpect(result).analysisOverExposed();
       expect(result.code).to.equal(1);
+
+      let startIndex = result.stdout
+        .indexOf("================================================================================");
+      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      expect(failureMessage).to.match(/1\) (.\[\d\dm)?all \(tests\/analysis\/unisolated\/ChildTest.elm:7:1\)/g);
+      expect(failureMessage).to.have.string("all (tests/analysis/unisolated/Tests.elm:7:1)");
+      expect(failureMessage).to.match(/2\) (.\[\d\dm)?all \(tests\/analysis\/unisolated\/GrandChildTest\.elm:7:1\)/g);
+      expect(failureMessage).to.have.string("all (tests/analysis/unisolated/ChildTest.elm:7:1)");
     });
   });
 });
