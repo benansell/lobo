@@ -216,7 +216,7 @@ export class ElmParserImp implements ElmParser {
           nextIndex = codeHelper.maxIndex;
         }
       } else if (codeHelper.delimitersFunction.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
-        let typeInfo = typeHelper.resolveExistingType(next.word);
+        let typeInfo = typeHelper.resolveType(next.word);
 
         if (typeInfo) {
           let dep: ElmFunctionDependency | undefined = undefined;
@@ -258,7 +258,7 @@ export class ElmParserImp implements ElmParser {
         }
 
         if (returnType !== "" && previousWord === "\n" && next.word === functionName) {
-          return typeHelper.resolve(returnType);
+          return typeHelper.resolveType(returnType);
         }
       }
 
@@ -386,11 +386,6 @@ export class ElmParserImp implements ElmParser {
 
   public toModuleNode(typeHelper: ElmTypeHelper, token: ElmToken, children: ElmNode[]): ElmModuleNode {
     const codeHelper = this.makeElmCodeHelper(token.code);
-
-    // todo: somehow the default module ends up with a list of 2 exposed types: Test and all ??? - why is Test added
-    // todo: resolve here should be limited to the current module and never pull in other types - elm does not allow reexports!!
-
-    // todo: wrong module is printed to console - complaining about grand child test - when it should be child test??
     const exposing = this.parseTypeList(codeHelper, typeHelper, token.identifier, 8 + token.identifier.length);
 
     return {...this.toBaseNode(token, token.identifier), children: children, exposing: exposing};
@@ -429,7 +424,7 @@ export class ElmParserImp implements ElmParser {
     }
 
     const args = this.parseArguments(codeHelper, token.identifier, true);
-    typeHelper.resolve(token.identifier);
+    typeHelper.resolveType(token.identifier);
     let node = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: [], returnType: returnType};
 
     return {codeHelper, node};
@@ -438,7 +433,7 @@ export class ElmParserImp implements ElmParser {
   public toUntypedModuleFunctionNode(typeHelper: ElmTypeHelper, token: ElmToken): ElmNodeResult<ElmUntypedModuleFunctionNode> {
     const codeHelper = this.makeElmCodeHelper(token.code);
     const args = this.parseArguments(codeHelper, token.identifier, false);
-    typeHelper.resolve(token.identifier);
+    typeHelper.resolveType(token.identifier);
     let node: ElmUntypedModuleFunctionNode = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: []};
 
     return {codeHelper, node};

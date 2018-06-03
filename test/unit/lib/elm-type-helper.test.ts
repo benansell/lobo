@@ -341,6 +341,102 @@ describe("lib elm-type-helper", () => {
     });
   });
 
+  describe("resolveType", () => {
+    it("should return undefined when name is undefined", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+
+      // act
+      let actual = typeHelper.resolveType(undefined);
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should return type info with supplied name for default module when name is simple", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+
+      // act
+      let actual = typeHelper.resolveType("bar");
+
+      // assert
+      expect(actual).to.deep.equal({name: "bar", moduleName: "foo"});
+    });
+
+    it("should return type info with function name and parent type name for dotted name of unknown module", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+
+      // act
+      let actual = typeHelper.resolveType("Bar.Baz");
+
+      // assert
+      expect(actual).to.deep.equal({name: "Baz", parentTypeName: "Bar", moduleName: "foo"});
+    });
+
+    it("should return type info with function name for non default module when name is full name", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      typeHelper.addModule("Bar", undefined);
+
+      // act
+      let actual = typeHelper.resolveType("Bar.Baz");
+
+      // assert
+      expect(actual).to.deep.equal({name: "Baz", moduleName: "Bar"});
+    });
+
+    it("should return type info with function name for non default module when name is aliased full name", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      typeHelper.addModule("Bar", "Qux");
+
+      // act
+      let actual = typeHelper.resolveType("Qux.Baz");
+
+      // assert
+      expect(actual).to.deep.equal({name: "Baz", moduleName: "Bar"});
+    });
+
+    it("should return type info with function name for non default module when name is long full name", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      typeHelper.addModule("Bar", undefined);
+      typeHelper.addModule("Bar.Baz.Qux", undefined);
+
+      // act
+      let actual = typeHelper.resolveType("Bar.Baz.Qux.Quux");
+
+      // assert
+      expect(actual).to.deep.equal({name: "Quux", moduleName: "Bar.Baz.Qux"});
+    });
+
+    it("should return type info with type name for non default module when name is long type name", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      typeHelper.addModule("Bar", undefined);
+
+      // act
+      let actual = typeHelper.resolveType("Bar.Baz.Qux");
+
+      // assert
+      expect(actual).to.deep.equal({name: "Qux", parentTypeName: "Baz", moduleName: "Bar"});
+    });
+
+    it("should return type info with function name for non default module when name is long type name", () => {
+      // arrange
+      let typeHelper = new ElmTypeHelperImp("foo");
+      typeHelper.addModule("Bar", undefined);
+
+      // act
+      let actual = typeHelper.resolveType("Bar.Baz.Qux.Quux");
+
+      // assert
+      expect(actual).to.deep.equal({name: "Quux", parentTypeName: "Baz.Qux", moduleName: "Bar"});
+    });
+  });
+
   describe("toModuleTypeInfo", () => {
     it("should return type info with the supplied name", () => {
       // arrange
@@ -384,39 +480,6 @@ describe("lib elm-type-helper", () => {
 
       // assert
       expect(actual.moduleName).to.equal("foo");
-    });
-
-    it("should return type info with supplied name when it contains a '.' and does not start with upper case letter", () => {
-      // arrange
-      let typeHelper = new ElmTypeHelperImp("foo");
-
-      // act
-      let actual = typeHelper.toModuleTypeInfo("bar.abc", "baz", "qux");
-
-      // assert
-      expect(actual.name).to.equal("bar.abc");
-    });
-
-    it("should return type info with name derived from name when it contains a '.' and starts with an upper case letter", () => {
-      // arrange
-      let typeHelper = new ElmTypeHelperImp("foo");
-
-      // act
-      let actual = typeHelper.toModuleTypeInfo("Bar.abc", "baz", "qux");
-
-      // assert
-      expect(actual.name).to.equal("abc");
-    });
-
-    it("should return type info with module name derived from name when it contains a '.' and starts with an upper case letter", () => {
-      // arrange
-      let typeHelper = new ElmTypeHelperImp("foo");
-
-      // act
-      let actual = typeHelper.toModuleTypeInfo("Bar.abc", "baz", "qux");
-
-      // assert
-      expect(actual.moduleName).to.equal("Bar");
     });
   });
 });

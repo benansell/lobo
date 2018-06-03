@@ -9,8 +9,8 @@ export interface ElmModuleTypeInfo {
 export interface ElmTypeHelper {
   addModule(name: string, alias: string | undefined): void;
   findAllChildTypes(moduleName: string, parentTypeName: string | undefined): ElmTypeInfo[];
-  resolve(name: string, parentTypeName?: string, moduleName?: string): ElmTypeInfo;
-  resolveExistingType(name: string, parentTypeName?: string): ElmTypeInfo | undefined;
+  resolve(name: string, parentTypeName: string | undefined, moduleName: string): ElmTypeInfo;
+  resolveType(name: string): ElmTypeInfo | undefined;
 }
 
 export class ElmTypeHelperImp implements ElmTypeHelper {
@@ -104,7 +104,7 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
     return undefined;
   }
 
-  public resolve(name: string, parentTypeName?: string, moduleName?: string): ElmTypeInfo {
+  public resolve(name: string, parentTypeName: string | undefined, moduleName: string | undefined): ElmTypeInfo {
     let existingType = this.resolveExistingType(name, moduleName);
 
     if (existingType) {
@@ -166,15 +166,40 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
     return undefined;
   }
 
-  public toModuleTypeInfo(name: string, parentTypeName?: string, moduleName?: string): ElmTypeInfo {
-    const lastIndex = name.lastIndexOf(".");
+  public resolveType(name: string): ElmTypeInfo | undefined {
+    if (!name) {
+      return undefined;
+    }
 
-    if (lastIndex > -1) {
-      if (name[0] === name[0].toUpperCase()) {
-        return {name: name.substring(lastIndex + 1), moduleName: name.substring(0, lastIndex)};
+    let parts = name.split(".");
+
+    if (parts.length <= 1) {
+      return this.resolve(name, undefined, undefined);
+    }
+
+    let typeName = parts.pop()!;
+    let parentName: string | undefined = undefined;
+    let moduleName: string | undefined = undefined;
+
+    while (parts.length > 0) {
+      if (moduleName === undefined) {
+        moduleName = name.substring(0, name.length - typeName.length - 1);
+      } else {
+        parentName = parentName === undefined ? parts.pop()! : parts.pop() + "." + parentName;
+        moduleName = name.substring(0, name.length - parentName.length - typeName.length - 2);
+      }
+
+      const module = this.resolveExistingModule(moduleName);
+
+      if (module) {
+        return this.resolve(typeName, parentName, module.name);
       }
     }
 
+    return this.resolve(typeName, parentName, moduleName);
+  }
+
+  public toModuleTypeInfo(name: string, parentTypeName?: string, moduleName?: string): ElmTypeInfo {
     let type: ElmTypeInfo;
 
     if (!moduleName) {

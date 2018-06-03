@@ -603,7 +603,7 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("baz");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -636,7 +636,7 @@ describe("lib elm-parser", () => {
       expect(actual).to.deep.equal([]);
     });
 
-    it("should not return unknown types in the dependency type info when there is an '='", () => {
+    it("should return unknown types in the dependency type info when there is an '='", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz");
       let typeHelper = makeElmTypeHelper("bar");
@@ -645,16 +645,16 @@ describe("lib elm-parser", () => {
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
-      expect(actual).to.deep.equal([]);
+      expect(actual).to.deep.equal([{typeInfo: {name: "baz", moduleName: "bar"}, occurs: [6]}]);
     });
 
     it("should return multiple dependencies type info", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz qux quux");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
-      typeHelper.resolve("qux");
-      typeHelper.resolve("quux");
+      typeHelper.resolveType("baz");
+      typeHelper.resolveType("qux");
+      typeHelper.resolveType("quux");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -670,7 +670,7 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz baz");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("baz");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -684,7 +684,7 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = [baz]");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("baz");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -697,7 +697,7 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = (baz)");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("baz");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -710,7 +710,7 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = {baz}");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("baz");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -723,9 +723,9 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz,qux,quux");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
-      typeHelper.resolve("qux");
-      typeHelper.resolve("quux");
+      typeHelper.resolveType("baz");
+      typeHelper.resolveType("qux");
+      typeHelper.resolveType("quux");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -741,8 +741,8 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz \"qux\"");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
-      typeHelper.resolve("qux");
+      typeHelper.resolveType("baz");
+      typeHelper.resolveType("qux");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -756,8 +756,8 @@ describe("lib elm-parser", () => {
       // arrange
       let codeHelper = makeElmCodeHelper("foo = baz \"qux");
       let typeHelper = makeElmTypeHelper("bar");
-      typeHelper.resolve("baz");
-      typeHelper.resolve("qux");
+      typeHelper.resolveType("baz");
+      typeHelper.resolveType("qux");
 
       // act
       let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
@@ -765,6 +765,19 @@ describe("lib elm-parser", () => {
       // assert
       expect(actual.length).to.equal(1);
       expect(actual[0]).to.deep.equal({ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}});
+    });
+
+    it("should not return unknown types in the dependency type info when there is an '='", () => {
+      // arrange
+      let codeHelper = makeElmCodeHelper("foo = baz");
+      let typeHelper = makeElmTypeHelper("bar");
+      typeHelper.resolveType = () => undefined;
+
+      // act
+      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+
+      // assert
+      expect(actual).to.deep.equal([]);
     });
   });
 
@@ -1423,8 +1436,8 @@ describe("lib elm-parser", () => {
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
-      typeHelper.resolve("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("bar");
+      typeHelper.resolveType("baz");
       let mockParseArguments = Sinon.stub();
       mockParseArguments.returns(args);
       parserImp.parseArguments = mockParseArguments;
@@ -1448,8 +1461,8 @@ describe("lib elm-parser", () => {
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
-      typeHelper.resolve("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("bar");
+      typeHelper.resolveType("baz");
       let mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
@@ -1512,8 +1525,8 @@ describe("lib elm-parser", () => {
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
-      typeHelper.resolve("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("bar");
+      typeHelper.resolveType("baz");
       let mockParseArguments = Sinon.stub();
       mockParseArguments.returns(args);
       parserImp.parseArguments = mockParseArguments;
@@ -1535,8 +1548,8 @@ describe("lib elm-parser", () => {
       let end = {columnNumber: 56, lineNumber: 78};
       let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
       let typeHelper = makeElmTypeHelper("abc");
-      typeHelper.resolve("bar");
-      typeHelper.resolve("baz");
+      typeHelper.resolveType("bar");
+      typeHelper.resolveType("baz");
       let mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
