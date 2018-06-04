@@ -1,11 +1,7 @@
 module Tests exposing (..)
 
 
-import Test exposing (Test, concat, describe, test)
-
-testConcat: Test
-testConcat =
-    concat []
+import ElmTest.Extra exposing (Test, describe, test, only)
 
 
 testDescribe : Test
