@@ -220,7 +220,7 @@ type alias DetachedNode =
     }
 
 
-toTestReportNode : List TestReport -> SuiteNode
+toTestReportNode : List TestReport -> Maybe SuiteNode
 toTestReportNode reports =
     let
         detachedNode =
@@ -229,10 +229,10 @@ toTestReportNode reports =
     in
     case detachedNode of
         Nothing ->
-            Debug.crash "Impossible not to have any detached nodes"
+            Nothing
 
         Just node ->
-            toSuiteNode node
+            toSuiteNode node |> Just
 
 
 toSuiteNode : DetachedNode -> SuiteNode
@@ -651,16 +651,28 @@ encodeSkippedLeaf leaf =
         ]
 
 
-encodeRootNode : Value -> SuiteNode -> Value
-encodeRootNode config node =
-    object
-        [ ( "id", int node.id )
-        , ( "runType", string <| toRunType node.runType )
-        , ( "config", config )
-        , ( "runResults", encodeTestReportNodeList node.reports )
-        , ( "startTime", encodeMaybeTime node.startTime )
-        , ( "endTime", encodeMaybeTime node.endTime )
-        ]
+encodeRootNode : Value -> Maybe SuiteNode -> Value
+encodeRootNode config maybeNode =
+    case maybeNode of
+        Nothing ->
+            object
+                [ ( "id", int 0 )
+                , ( "runType", string <| toRunType Normal )
+                , ( "config", config )
+                , ( "runResults", encodeTestReportNodeList [] )
+                , ( "startTime", encodeMaybeTime Nothing )
+                , ( "endTime", encodeMaybeTime Nothing )
+                ]
+
+        Just node ->
+            object
+                [ ( "id", int node.id )
+                , ( "runType", string <| toRunType node.runType )
+                , ( "config", config )
+                , ( "runResults", encodeTestReportNodeList node.reports )
+                , ( "startTime", encodeMaybeTime node.startTime )
+                , ( "endTime", encodeMaybeTime node.endTime )
+                ]
 
 
 encodeSuiteNode : SuiteNode -> Value
