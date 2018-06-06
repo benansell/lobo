@@ -73,7 +73,7 @@ describe("lib output-directory-manager", () => {
     revert();
   });
 
-  describe("cleanUp", () => {
+  describe("cleanup", () => {
     it("should not delete any files when the config.noCleanup is true", () => {
       // arrange
       outputDirectoryManager.delete = Sinon.stub();

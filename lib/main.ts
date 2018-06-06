@@ -126,11 +126,11 @@ export class LoboImp implements Lobo {
   }
 
   public launchStages(initialContext: ExecutionContext): Bluebird<ExecutionContext> {
-    let logStage = (context: ExecutionContext, stage: string) =>  {
-        this.logger.info(`-----------------------------------${stage}------------------------------------`);
+    let logStage = (context: ExecutionContext, stage: string) => {
+      this.logger.info(`-----------------------------------${stage}------------------------------------`);
 
-        return Bluebird.resolve(context);
-     };
+      return Bluebird.resolve(context);
+    };
 
     let stages = [
       (context: ExecutionContext) => logStage(context, "[ BUILD ]"),
@@ -273,7 +273,7 @@ export class LoboImp implements Lobo {
     program.allowUnknownOption(false);
     program.parse(process.argv);
 
-    this.logger.debug("options", program.opts());
+    this.logger.debug("Options", program.opts());
     config.reporter = this.loadReporter(program.reporter, reporterConfig);
     config.testFramework = this.loadTestFramework(program.framework, testFrameworkConfig);
 
@@ -287,7 +287,7 @@ export class LoboImp implements Lobo {
     }
 
     if (program.verbose !== true && program.veryVerbose !== true) {
-      this.logger.debug("silencing shelljs");
+      this.logger.debug("Silencing shelljs");
       shelljs.config.silent = true;
     }
 

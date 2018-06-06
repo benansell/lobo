@@ -4,13 +4,13 @@ import * as _ from "lodash";
 import * as shelljs from "shelljs";
 import {createLogger, Logger} from "./logger";
 import * as path from "path";
-import {PluginConfig} from "./plugin";
+import {PluginConfig, PluginReporter, PluginTestFramework} from "./plugin";
 
 export interface Util {
   availablePlugins(fileSpec: RegExp | string): string[];
   checkNodeVersion(major: number, minor: number, patch: number): void;
   closestMatch(name: string, items: string[]): string;
-  getPlugin<T>(type: string, pluginName: string, fileSpec: string): T;
+  getPlugin<T extends PluginReporter | PluginTestFramework>(type: string, pluginName: string, fileSpec: string): T;
   getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T;
   isInteger(value: number): boolean;
   padRight(value: string, length: number, spacer?: string): string;
@@ -68,10 +68,10 @@ export class UtilImp implements Util {
     return <string> _.minBy(items, (i: string) => levenshtein.get(name, i));
   }
 
-  public getPlugin<T>(type: string, pluginName: string, fileSpec: string): T {
+  public getPlugin<T extends PluginReporter | PluginTestFramework>(type: string, pluginName: string, fileSpec: string): T {
     let value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, false);
     let plugin: T = value.createPlugin();
-    this.logger.debug(pluginName + " plugin loaded");
+    this.logger.debug("Plugin loaded: "  + pluginName);
     this.logger.trace("plugin", plugin);
 
     return plugin;
@@ -80,7 +80,7 @@ export class UtilImp implements Util {
   public getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T {
       let value = this.load<{PluginConfig: T}>(type, pluginName, fileSpec, true);
       let config = value.PluginConfig;
-      this.logger.debug(pluginName + " plugin configured");
+      this.logger.debug("Plugin configured: " + pluginName);
       this.logger.trace("plugin configuration", config);
 
       return config;
