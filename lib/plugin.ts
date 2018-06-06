@@ -99,6 +99,7 @@ export interface ExecutionContext {
   buildOutputFilePath: string;
   codeLookup: ElmCodeLookup;
   config: LoboConfig;
+  tempDirectory: string;
   testDirectory: string;
   testSuiteOutputFilePath: string;
 }
@@ -111,6 +112,7 @@ export interface FailureMessage {
 export interface LoboConfig {
   readonly compiler: string;
   readonly loboDirectory: string;
+  readonly noCleanup: boolean;
   readonly noInstall: boolean;
   readonly noUpdate: boolean;
   readonly noWarn: boolean;

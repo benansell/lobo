@@ -1,5 +1,6 @@
 "use strict";
 
+import * as path from "path";
 import * as chai from "chai";
 import rewire = require("rewire");
 import * as Sinon from "sinon";
@@ -9,7 +10,6 @@ import {createOutputDirectoryManager, OutputDirectoryManager, OutputDirectoryMan
 import {ExecutionContext, LoboConfig, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
 import {ElmPackageHelper, ElmPackageJson, UpdateCallback} from "../../../lib/elm-package-helper";
 
-
 let expect = chai.expect;
 chai.use(SinonChai);
 
@@ -17,30 +17,39 @@ describe("lib output-directory-manager", () => {
   let RewiredOutputDirectoryManager = rewire("../../../lib/output-directory-manager");
   let rewiredImp;
   let outputDirectoryManager: OutputDirectoryManagerImp;
+  let mockBasename: Sinon.SinonStub;
   let mockCp: Sinon.SinonStub;
   let mockDirname: Sinon.SinonStub;
   let mockExists: Sinon.SinonStub;
   let mockHelperRead: Sinon.SinonStub;
   let mockHelperUpdateSourceDirectories: Sinon.SinonStub;
+  let mockJoin: Sinon.SinonStub;
   let mockLogger: Logger;
   let mockLn: Sinon.SinonStub;
   let mockMkDir: Sinon.SinonStub;
   let mockHelper: ElmPackageHelper;
   let mockResolvePath: Sinon.SinonStub;
+  let mockTmpDirSync: Sinon.SinonStub;
+  let mockUnlinkSync: Sinon.SinonStub;
   let revert: () => void;
 
   beforeEach(() => {
+    mockBasename = Sinon.stub();
     mockCp = Sinon.stub();
     mockDirname = Sinon.stub();
     mockExists = Sinon.stub();
+    mockJoin = Sinon.stub();
     mockLn = Sinon.stub();
     mockMkDir = Sinon.stub();
     mockResolvePath = Sinon.stub();
+    mockTmpDirSync = Sinon.stub();
+    mockUnlinkSync = Sinon.stub();
 
     revert = RewiredOutputDirectoryManager.__set__({
-      fs: {existsSync: mockExists},
-      path: {dirname: mockDirname, resolve: mockResolvePath},
-      shelljs: {cp: mockCp, ln: mockLn, mkdir: mockMkDir}
+      fs: {existsSync: mockExists, unlinkSync: mockUnlinkSync},
+      path: {basename: mockBasename, dirname: mockDirname, join: mockJoin, resolve: mockResolvePath},
+      shelljs: {cp: mockCp, ln: mockLn, mkdir: mockMkDir},
+      tmp: {dirSync: mockTmpDirSync}
     });
     rewiredImp = RewiredOutputDirectoryManager.__get__("OutputDirectoryManagerImp");
     mockLogger = <Logger> {
@@ -62,6 +71,74 @@ describe("lib output-directory-manager", () => {
 
   afterEach(() => {
     revert();
+  });
+
+  describe("cleanUp", () => {
+    it("should not delete any files when the config.noCleanup is true", () => {
+      // arrange
+      outputDirectoryManager.delete = Sinon.stub();
+
+      // act
+      outputDirectoryManager.cleanup(<ExecutionContext> {config: {noCleanup: true}});
+
+      // assert
+      expect(outputDirectoryManager.delete).not.to.have.been.called;
+    });
+
+    it("should not delete any files when the tempDirectory is undefined", () => {
+      // arrange
+      outputDirectoryManager.delete = Sinon.stub();
+
+      // act
+      outputDirectoryManager.cleanup(<ExecutionContext> {config: {noCleanup: false}});
+
+      // assert
+      expect(outputDirectoryManager.delete).not.to.have.been.called;
+    });
+
+    it("should call delete with tempDir when tempDirectory and buildOutputFilePath are defined", () => {
+      // arrange
+      outputDirectoryManager.delete = Sinon.stub();
+
+      // act
+      outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", buildOutputFilePath: "bar", config: {noCleanup: false}});
+
+      // assert
+      expect(outputDirectoryManager.delete).to.have.been.calledWith("foo", Sinon.match.any);
+    });
+
+    it("should call delete with buildOutputFilePath when tempDirectory and buildOutputFilePath are defined", () => {
+      // arrange
+      outputDirectoryManager.delete = Sinon.stub();
+
+      // act
+      outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", buildOutputFilePath: "bar", config: {noCleanup: false}});
+
+      // assert
+      expect(outputDirectoryManager.delete).to.have.been.calledWith(Sinon.match.any, "bar");
+    });
+
+    it("should call delete with tempDir when tempDirectory and testSuiteOutputFilePath are defined", () => {
+      // arrange
+      outputDirectoryManager.delete = Sinon.stub();
+
+      // act
+      outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", testSuiteOutputFilePath: "bar", config: {noCleanup: false}});
+
+      // assert
+      expect(outputDirectoryManager.delete).to.have.been.calledWith("foo", Sinon.match.any);
+    });
+
+    it("should call delete with testSuiteOutputFilePath when tempDirectory and testSuiteOutputFilePath are defined", () => {
+      // arrange
+      outputDirectoryManager.delete = Sinon.stub();
+
+      // act
+      outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", testSuiteOutputFilePath: "bar", config: {noCleanup: false}});
+
+      // assert
+      expect(outputDirectoryManager.delete).to.have.been.calledWith(Sinon.match.any, "bar");
+    });
   });
 
   describe("createOutputDirectoryManager", () => {
@@ -208,41 +285,83 @@ describe("lib output-directory-manager", () => {
     });
   });
 
-  describe("generateBuildOutputFilePath", () => {
-    it("should return a file name in the config.LoboDirectory", () => {
+  describe("delete", () => {
+    it("should not call fs.unlink when the tempDirectory is undefined", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "/./.foo"};
-      mockResolvePath.returns("bar/.foo");
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
 
       // act
-      let actual = outputDirectoryManager.generateBuildOutputFilePath(config);
+      outputDirectoryManager.delete(undefined, "./.lobo/foo/bar");
 
       // assert
-      expect(actual).to.match(/\.foo\/.+\.js$/);
+      expect(mockUnlinkSync).not.to.have.been.called;
     });
 
-    it("should return a file name with 'lobo-test-' prefix", () => {
+    it("should not call fs.unlink when the tempDirectory outside the '.lobo' directory", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "foo"};
-      mockResolvePath.returns("bar/.foo");
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
 
       // act
-      let actual = outputDirectoryManager.generateBuildOutputFilePath(config);
+      outputDirectoryManager.delete("./foo", "./abc/foo/bar");
 
       // assert
-      expect(actual).to.match(/\/lobo-test.+\.js$/);
+      expect(mockUnlinkSync).not.to.have.been.called;
     });
 
-    it("should return a js file name", () => {
+    it("should not call fs.unlink when the file path is not in the lobo temp directory", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "foo"};
-      mockResolvePath.returns("bar/.foo");
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
 
       // act
-      let actual = outputDirectoryManager.generateBuildOutputFilePath(config);
+      outputDirectoryManager.delete("./.lobo/foo", "./.lobo/abc/bar");
 
       // assert
-      expect(actual).to.match(/.js$/);
+      expect(mockUnlinkSync).not.to.have.been.called;
+    });
+
+    it("should not call fs.unlink when the file path does not exist and it is a valid temp lobo file", () => {
+      // arrange
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+      mockExists.returns(false);
+
+      // act
+      outputDirectoryManager.delete("./.lobo/foo", "./.lobo/foo/bar");
+
+      // assert
+      expect(mockUnlinkSync).not.to.have.been.called;
+    });
+
+    it("should call fs.unlink when the file path exists and it is a valid temp lobo file", () => {
+      // arrange
+      const expected = "./.lobo/foo/bar";
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+      mockExists.returns(true);
+
+      // act
+      outputDirectoryManager.delete("./.lobo/foo", expected);
+
+      // assert
+      expect(mockUnlinkSync).to.have.been.calledWith(expected);
+    });
+
+    it("should log any errors when deleting the file", () => {
+      // arrange
+      const expected = new Error();
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+      mockExists.returns(true);
+      mockUnlinkSync.throws(expected);
+
+      // act
+      outputDirectoryManager.delete("./.lobo/foo", "./.lobo/foo/bar");
+
+      // assert
+      expect(mockLogger.debug).to.have.been.calledWith(expected);
     });
   });
 
@@ -252,7 +371,7 @@ describe("lib output-directory-manager", () => {
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
       outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
-      outputDirectoryManager.generateBuildOutputFilePath = Sinon.spy();
+      outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
       let actual = outputDirectoryManager.sync(context);
@@ -268,7 +387,7 @@ describe("lib output-directory-manager", () => {
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
       outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
-      outputDirectoryManager.generateBuildOutputFilePath = Sinon.spy();
+      outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
       let actual = outputDirectoryManager.sync(context);
@@ -284,7 +403,7 @@ describe("lib output-directory-manager", () => {
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
       outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
-      outputDirectoryManager.generateBuildOutputFilePath = Sinon.spy();
+      outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
       let actual = outputDirectoryManager.sync(context);
@@ -301,7 +420,7 @@ describe("lib output-directory-manager", () => {
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
       outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
-      outputDirectoryManager.generateBuildOutputFilePath = Sinon.spy();
+      outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
       let actual = outputDirectoryManager.sync(context);
@@ -320,7 +439,7 @@ describe("lib output-directory-manager", () => {
       mockConfigBuildDirectory.returns(true);
       outputDirectoryManager.configBuildDirectory = mockConfigBuildDirectory;
       outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
-      outputDirectoryManager.generateBuildOutputFilePath = Sinon.spy();
+      outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
       let actual = outputDirectoryManager.sync(context);
@@ -332,21 +451,20 @@ describe("lib output-directory-manager", () => {
       });
     });
 
-    it("should return a promise that sets the buildOutputFilePath on the returned context", () => {
+    it("should return a promise that calls updateContextForRun with the context", () => {
       // arrange
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
       outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
-      let mockGenerateBuildOutputFilePath = Sinon.mock();
-      mockGenerateBuildOutputFilePath.returns("qux");
-      outputDirectoryManager.generateBuildOutputFilePath = mockGenerateBuildOutputFilePath;
+      let mockUpdateContextForRun = Sinon.mock();
+      outputDirectoryManager.updateContextForRun = mockUpdateContextForRun;
 
       // act
       let actual = outputDirectoryManager.sync(context);
 
       // assert
-      return actual.then((result: ExecutionContext) => {
-        expect(result.buildOutputFilePath).equal("qux");
+      return actual.then(() => {
+        expect(mockUpdateContextForRun).to.have.been.calledWith(context);
       });
     });
 
@@ -357,7 +475,7 @@ describe("lib output-directory-manager", () => {
       mockConfigBuildDirectory.throws(new Error("qux"));
       outputDirectoryManager.configBuildDirectory = mockConfigBuildDirectory;
       outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
-      outputDirectoryManager.generateBuildOutputFilePath = Sinon.spy();
+      outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
       let actual = outputDirectoryManager.sync(context);
@@ -411,7 +529,7 @@ describe("lib output-directory-manager", () => {
     it("should call updateDependencies with the testElmPackage", () => {
       // arrange
       let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
-      let expected = <ElmPackageJson> { sourceDirectories: [] };
+      let expected = <ElmPackageJson> {sourceDirectories: []};
       mockHelperRead.withArgs("bar").returns(expected);
       mockHelperRead.withArgs("foo").returns({});
       outputDirectoryManager.updateDependencies = Sinon.spy();
@@ -442,7 +560,7 @@ describe("lib output-directory-manager", () => {
     it("should call updateDependencies with the lobo elmPackage", () => {
       // arrange
       let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
-      let expected = <ElmPackageJson> { sourceDirectories: ["qux"] };
+      let expected = <ElmPackageJson> {sourceDirectories: ["qux"]};
       mockHelperRead.withArgs("bar").returns({});
       mockHelperRead.withArgs("foo").returns(expected);
       outputDirectoryManager.updateDependencies = Sinon.spy();
@@ -473,13 +591,13 @@ describe("lib output-directory-manager", () => {
     it("should call updateSourceDirectories with the testElmPackage", () => {
       // arrange
       let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
-      let expected = <ElmPackageJson> { sourceDirectories: [] };
+      let expected = <ElmPackageJson> {sourceDirectories: []};
       mockHelperRead.withArgs("bar").returns(expected);
       mockHelperRead.withArgs("foo").returns({});
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, "bar",  false);
+      outputDirectoryManager.syncLoboTestElmPackage(config, "bar", false);
 
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
@@ -504,7 +622,7 @@ describe("lib output-directory-manager", () => {
     it("should call updateSourceDirectories with the lobo elmPackage", () => {
       // arrange
       let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
-      let expected = <ElmPackageJson> { sourceDirectories: ["qux"] };
+      let expected = <ElmPackageJson> {sourceDirectories: ["qux"]};
       mockHelperRead.withArgs("bar").returns({});
       mockHelperRead.withArgs("foo").returns(expected);
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
@@ -520,7 +638,7 @@ describe("lib output-directory-manager", () => {
     it("should call updateSourceDirectories with the lobo elmPackage with empty source directories when copied flag is true", () => {
       // arrange
       let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {}}};
-      let expected = <ElmPackageJson> { sourceDirectories: ["qux"] };
+      let expected = <ElmPackageJson> {sourceDirectories: ["qux"]};
       mockHelperRead.withArgs("bar").returns({});
       mockHelperRead.withArgs("foo").returns(expected);
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
@@ -537,7 +655,7 @@ describe("lib output-directory-manager", () => {
     it("should call updateSourceDirectories with the testFramework sourceDirectories", () => {
       // arrange
       let expected = ["abc"];
-      let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: { sourceDirectories: expected}}};
+      let config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {sourceDirectories: expected}}};
       mockHelperRead.withArgs("bar").returns({});
       mockHelperRead.withArgs("foo").returns({});
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
@@ -551,10 +669,76 @@ describe("lib output-directory-manager", () => {
     });
   });
 
+  describe("updateContextForRun", () => {
+    it("should call tmp.dirSync with dir as config.loboDirectory", () => {
+      // arrange
+      const context = <ExecutionContext> {config: {loboDirectory: "foo"}};
+      mockTmpDirSync.returns({name: "bar"});
+      mockResolvePath.returns("abc");
+
+      // act
+      outputDirectoryManager.updateContextForRun(context);
+
+      // assert
+      expect(mockTmpDirSync).to.have.been.calledWith(Sinon.match({dir: "abc"}));
+    });
+
+    it("should call tmp.dirSync with prefix as 'lobo-", () => {
+      // arrange
+      const context = <ExecutionContext> {config: {loboDirectory: "foo"}};
+      mockTmpDirSync.returns({name: "bar"});
+
+      // act
+      outputDirectoryManager.updateContextForRun(context);
+
+      // assert
+      expect(mockTmpDirSync).to.have.been.calledWith(Sinon.match({prefix: "lobo-"}));
+    });
+
+    it("should set the context.tempDirectory with path returned from tmp.dirSync", () => {
+      // arrange
+      const context = <ExecutionContext> {config: {loboDirectory: "foo"}};
+      mockTmpDirSync.returns({name: "bar"});
+
+      // act
+      outputDirectoryManager.updateContextForRun(context);
+
+      // assert
+      expect(context.tempDirectory).to.equal("bar");
+    });
+
+    it("should set the context.buildOutputFilePath with 'UnitTest.js' in the tempDirectory", () => {
+      // arrange
+      const context = <ExecutionContext> {config: {loboDirectory: "foo", testMainElm: "baz"}};
+      mockTmpDirSync.returns({name: "bar"});
+      mockJoin.callsFake(path.join);
+
+      // act
+      outputDirectoryManager.updateContextForRun(context);
+
+      // assert
+      expect(context.buildOutputFilePath).to.equal("bar/UnitTest.js");
+    });
+
+    it("should set the context.testSuiteOutputFilePath with testMainElm in the tempDirectory", () => {
+      // arrange
+      const context = <ExecutionContext> {config: {loboDirectory: "foo", testMainElm: "baz"}};
+      mockTmpDirSync.returns({name: "bar"});
+      mockJoin.callsFake(path.join);
+
+      // act
+      outputDirectoryManager.updateContextForRun(context);
+
+      // assert
+      expect(context.testSuiteOutputFilePath).to.equal("bar/baz");
+    });
+  });
+
+
   describe("updateDependencies", () => {
     it("should call helper.updateDependencies with the specified testFramework", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {name: "bar"}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
       let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
       let updateAction = Sinon.stub();
@@ -564,7 +748,7 @@ describe("lib output-directory-manager", () => {
       });
 
       // act
-      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(mockHelper.updateDependencies)
@@ -573,7 +757,7 @@ describe("lib output-directory-manager", () => {
 
     it("should call helper.updateDependencies with the specified baseElmPackage", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {name: "bar"}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
       let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
       let updateAction = Sinon.stub();
@@ -583,7 +767,7 @@ describe("lib output-directory-manager", () => {
       });
 
       // act
-      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(mockHelper.updateDependencies)
@@ -592,7 +776,7 @@ describe("lib output-directory-manager", () => {
 
     it("should call helper.updateDependencies with the specified testElmPackageDir", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {name: "bar"}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
       let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
       let updateAction = Sinon.stub();
@@ -602,7 +786,7 @@ describe("lib output-directory-manager", () => {
       });
 
       // act
-      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(mockHelper.updateDependencies)
@@ -611,7 +795,7 @@ describe("lib output-directory-manager", () => {
 
     it("should call helper.updateDependencies with the specified testElmPackage", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {name: "bar"}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
       let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
       let updateAction = Sinon.stub();
@@ -621,7 +805,7 @@ describe("lib output-directory-manager", () => {
       });
 
       // act
-      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(mockHelper.updateDependencies)
@@ -630,7 +814,7 @@ describe("lib output-directory-manager", () => {
 
     it("should call helper.updateDependencies with a callback", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {name: "bar"}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
       let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
       let updateAction = Sinon.stub();
@@ -640,7 +824,7 @@ describe("lib output-directory-manager", () => {
       });
 
       // act
-      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(mockHelper.updateDependencies)
@@ -649,7 +833,7 @@ describe("lib output-directory-manager", () => {
 
     it("should not call updateAction when there is no difference", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {name: "bar"}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
       let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
       let updateAction = Sinon.stub();
@@ -659,7 +843,7 @@ describe("lib output-directory-manager", () => {
       };
 
       // act
-      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(updateAction).not.to.have.been.called;
@@ -667,7 +851,7 @@ describe("lib output-directory-manager", () => {
 
     it("should call updateAction when there is a difference", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> { config: {name: "bar"}};
+      let testFramework = <PluginTestFrameworkWithConfig> {config: {name: "bar"}};
       let sourcePackageJson = <ElmPackageJson>{dependencies: {source: "abc"}, sourceDirectories: []};
       let testPackageJson = <ElmPackageJson>{dependencies: {test: "def"}, sourceDirectories: []};
       let updateAction = Sinon.stub();
@@ -677,7 +861,7 @@ describe("lib output-directory-manager", () => {
       };
 
       // act
-      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz",  testPackageJson);
+      outputDirectoryManager.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson);
 
       // assert
       expect(updateAction).to.have.been.calledWith();
@@ -700,7 +884,7 @@ describe("lib output-directory-manager", () => {
 
       // assert
       expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call helper.updateSourceDirectories with the specified baseElmPackage", () => {
@@ -718,7 +902,7 @@ describe("lib output-directory-manager", () => {
 
       // assert
       expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call helper.updateSourceDirectories with the specified testElmPackageDir", () => {
@@ -736,7 +920,7 @@ describe("lib output-directory-manager", () => {
 
       // assert
       expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call helper.updateSourceDirectories with the specified testElmPackage", () => {
@@ -754,7 +938,7 @@ describe("lib output-directory-manager", () => {
 
       // assert
       expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any);
     });
 
     it("should call helper.updateSourceDirectories with test framework source directories list", () => {
@@ -768,11 +952,11 @@ describe("lib output-directory-manager", () => {
       });
 
       // act
-      outputDirectoryManager.updateSourceDirectories( "bar", sourcePackageJson, "baz", testPackageJson, ["foo"]);
+      outputDirectoryManager.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, ["foo"]);
 
       // assert
       expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, ["foo"], Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, ["foo"], Sinon.match.any);
     });
 
     it("should call helper.updateSourceDirectories with a callback", () => {
@@ -790,7 +974,7 @@ describe("lib output-directory-manager", () => {
 
       // assert
       expect(mockHelper.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.func);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.func);
     });
 
     it("should not call updateAction when there is no difference", () => {

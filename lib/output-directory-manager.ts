@@ -4,10 +4,11 @@ import {createLogger, Logger} from "./logger";
 import * as shelljs from "shelljs";
 import * as path from "path";
 import * as fs from "fs";
-import * as tmp from "tmp";
 import {createElmPackageHelper, ElmPackageHelper, ElmPackageJson} from "./elm-package-helper";
+import * as tmp from "tmp";
 
 export interface OutputDirectoryManager {
+  cleanup(context: ExecutionContext): Bluebird<ExecutionContext>;
   sync(context: ExecutionContext): Bluebird<ExecutionContext>;
 }
 
@@ -19,6 +20,24 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
   constructor(elmPackageHelper: ElmPackageHelper, logger: Logger) {
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
+  }
+
+  public cleanup(context: ExecutionContext): Bluebird<ExecutionContext> {
+    if (context.config.noCleanup || !context.tempDirectory) {
+      return Bluebird.resolve(context);
+    }
+
+    this.logger.debug("Cleaning lobo temp directory");
+
+    if (context.buildOutputFilePath) {
+      this.delete(context.tempDirectory, context.buildOutputFilePath);
+    }
+
+    if (context.testSuiteOutputFilePath) {
+      this.delete(context.tempDirectory, context.testSuiteOutputFilePath);
+    }
+
+    return Bluebird.resolve(context);
   }
 
   public configBuildDirectory(loboDirectory: string, testDirectory: string): boolean {
@@ -45,10 +64,26 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     return false;
   }
 
-  public generateBuildOutputFilePath(config: LoboConfig): string {
-    const dir = path.resolve(config.loboDirectory);
+  public delete(tempDir: string, filePath: string): void {
+    try {
+      if (path.basename(path.dirname(path.dirname(filePath))) !== ".lobo") {
+        this.logger.error("Unable to delete files outside of the \".lobo\" directory");
+        return;
+      }
 
-    return tmp.tmpNameSync({dir, prefix: "lobo-test-", postfix: ".js"});
+      if (tempDir !== path.dirname(filePath)) {
+        this.logger.error("Unable to delete files outside of the lobo temp directory");
+        return;
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return;
+      }
+
+      fs.unlinkSync(filePath);
+    } catch (err) {
+      this.logger.debug(err);
+    }
   }
 
   public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
@@ -56,12 +91,11 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
       try {
         const loboElmPackageIsCopy = this.configBuildDirectory(context.config.loboDirectory, context.testDirectory);
         this.syncLoboTestElmPackage(context.config, context.testDirectory, loboElmPackageIsCopy);
-        context.buildOutputFilePath = this.generateBuildOutputFilePath(context.config);
-
+        this.updateContextForRun(context);
         resolve(context);
       } catch (err) {
         const message = "Failed to configure lobo. " +
-        `Please try deleting the lobo directory (${context.config.loboDirectory}) and re-run lobo`;
+          `Please try deleting the lobo directory (${context.config.loboDirectory}) and re-run lobo`;
         this.logger.error(message, err);
         reject();
       }
@@ -88,6 +122,13 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     const testFramework = config.testFramework;
     this.updateDependencies(testFramework, base, config.loboDirectory, target);
     this.updateSourceDirectories(testElmPackageDir, base, config.loboDirectory, target, testFramework.config.sourceDirectories);
+  }
+
+  public updateContextForRun(context: ExecutionContext): void {
+    const dir = path.resolve(context.config.loboDirectory);
+    context.tempDirectory = tmp.dirSync({dir, prefix: "lobo-", discardDescriptor: true}).name;
+    context.buildOutputFilePath = path.join(context.tempDirectory, "UnitTest.js");
+    context.testSuiteOutputFilePath = path.join(context.tempDirectory, context.config.testMainElm);
   }
 
   public updateDependencies(testFramework: PluginTestFrameworkWithConfig, baseElmPackage: ElmPackageJson, testElmPackageDir: string,

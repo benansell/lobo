@@ -25,6 +25,7 @@ import {createElmCodeLookupManager, ElmCodeLookupManager} from "./elm-code-looku
 interface PartialLoboConfig {
   compiler: string | undefined;
   loboDirectory: string | undefined;
+  noCleanup: boolean | undefined;
   noInstall: boolean | undefined;
   noUpdate: boolean | undefined;
   noWarn: boolean | undefined;
@@ -109,10 +110,8 @@ export class LoboImp implements Lobo {
       let context: ExecutionContext = <ExecutionContext> {
         codeLookup: {},
         config: <LoboConfig> config,
-        testDirectory: program.testDirectory,
+        testDirectory: program.testDirectory
       };
-
-      context.testSuiteOutputFilePath = path.resolve(context.config.loboDirectory, context.config.testMainElm);
 
       if (program.watch) {
         this.watch(context);
@@ -150,7 +149,8 @@ export class LoboImp implements Lobo {
     return Bluebird
       .mapSeries(stages, (item: (context: ExecutionContext) => Bluebird<ExecutionContext>) => item(value)
         .then((result: ExecutionContext) => value = result))
-      .then(() => value);
+      .then(() => value)
+      .finally(() => this.outputDirectoryManager.cleanup(value));
   }
 
   public launch(context: ExecutionContext): Bluebird<void> {
@@ -158,6 +158,7 @@ export class LoboImp implements Lobo {
       .then(
         (result: ExecutionContext) => {
           this.logger.debug("Test execution complete");
+
           if (program.watch) {
             this.done(result);
           }
@@ -277,8 +278,12 @@ export class LoboImp implements Lobo {
     config.testFramework = this.loadTestFramework(program.framework, testFrameworkConfig);
 
     if (!program.debug) {
-      this.logger.debug("enabling auto-cleanup of temp files");
+      this.logger.debug("Enabling cleanup of temp files");
+      config.noCleanup = false;
       tmp.setGracefulCleanup();
+    } else {
+      this.logger.debug("Disabling cleanup of temp files");
+      config.noCleanup = true;
     }
 
     if (program.verbose !== true && program.veryVerbose !== true) {

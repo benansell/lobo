@@ -44,6 +44,7 @@ describe("lib main", () => {
   let mockRunner: Runner;
   let mockSyncDependencies: Sinon.SinonStub;
   let mockSyncElmCodeLookup: Sinon.SinonStub;
+  let mockOutputDirectoryCleanUp: Sinon.SinonStub;
   let mockOutputDirectorySync: Sinon.SinonStub;
   let mockOutputDirectoryManager: OutputDirectoryManager;
   let mockTestSuiteGenerate: Sinon.SinonStub;
@@ -71,8 +72,9 @@ describe("lib main", () => {
     };
     mockRun = Sinon.stub();
     mockRunner = <Runner> {run: mockRun};
+    mockOutputDirectoryCleanUp = Sinon.stub();
     mockOutputDirectorySync = Sinon.stub();
-    mockOutputDirectoryManager = <OutputDirectoryManager> {sync: mockOutputDirectorySync};
+    mockOutputDirectoryManager = <OutputDirectoryManager> {cleanup: mockOutputDirectoryCleanUp, sync: mockOutputDirectorySync};
     mockTestSuiteGenerate = Sinon.stub();
     mockTestSuiteGenerator = <TestSuiteGenerator> {generate: mockTestSuiteGenerate};
     mockUtil = <Util><{}> {
@@ -185,6 +187,7 @@ describe("lib main", () => {
       mockBuild.resolves({});
       mockAnalyze.resolves({});
       mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
       let actual = lobo.launchStages(expected);
@@ -205,6 +208,7 @@ describe("lib main", () => {
       mockBuild.resolves({});
       mockAnalyze.resolves({});
       mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
       let actual = lobo.launchStages(<ExecutionContext> {});
@@ -225,6 +229,7 @@ describe("lib main", () => {
       mockBuild.resolves({});
       mockAnalyze.resolves({});
       mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
       let actual = lobo.launchStages(<ExecutionContext> {});
@@ -245,6 +250,7 @@ describe("lib main", () => {
       mockBuild.resolves({});
       mockAnalyze.resolves({});
       mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
       let actual = lobo.launchStages(<ExecutionContext> {});
@@ -265,6 +271,7 @@ describe("lib main", () => {
       mockBuild.resolves({});
       mockAnalyze.resolves({});
       mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
       let actual = lobo.launchStages(<ExecutionContext> {});
@@ -285,6 +292,7 @@ describe("lib main", () => {
       mockBuild.resolves({});
       mockAnalyze.resolves(expected);
       mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
       let actual = lobo.launchStages(<ExecutionContext> {});
@@ -292,6 +300,45 @@ describe("lib main", () => {
       // assert
       return actual.finally(() => {
         expect(mockRunner.run).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should call outputDirectoryManager.cleanUp with the final context when there are no errors", () => {
+      // arrange
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves(expected);
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.finally(() => {
+        expect(mockOutputDirectoryCleanUp).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should call outputDirectoryManager.cleanUp with the current context when there is an error", () => {
+      // arrange
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves(expected);
+      mockTestSuiteGenerate.rejects(new Error());
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.catch(() => {
+        expect(mockOutputDirectoryCleanUp).to.have.been.calledWith(expected);
       });
     });
 
@@ -305,6 +352,7 @@ describe("lib main", () => {
       mockBuild.resolves({});
       mockAnalyze.resolves({});
       mockRun.resolves(expected);
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
       let actual = lobo.launchStages(<ExecutionContext> {});
@@ -947,6 +995,20 @@ describe("lib main", () => {
       expect(actual.testFramework).to.equal(expected);
     });
 
+    it("should set noCleanup to false when debug option is false", () => {
+      // arrange
+      let mockCleanup = Sinon.stub();
+      (<{ debug: boolean }>programMocks).debug = false;
+      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+
+      // act
+      let result: LoboConfig = undefined;
+      revert(() => result = lobo.configure());
+
+      // assert
+      expect(result.noCleanup).to.be.false;
+    });
+
     it("should set cleanup of temp files when debug option is false", () => {
       // arrange
       let mockCleanup = Sinon.stub();
@@ -958,6 +1020,20 @@ describe("lib main", () => {
 
       // assert
       expect(mockCleanup).to.have.been.called;
+    });
+
+    it("should set noCleanup to false when debug option is true", () => {
+      // arrange
+      let mockCleanup = Sinon.stub();
+      (<{ debug: boolean }>programMocks).debug = true;
+      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+
+      // act
+      let result: LoboConfig = undefined;
+      revert(() => result = lobo.configure());
+
+      // assert
+      expect(result.noCleanup).to.be.true;
     });
 
     it("should not set cleanup of temp files when debug option is true", () => {
