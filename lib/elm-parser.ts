@@ -108,8 +108,8 @@ export class ElmParserImp implements ElmParser {
     tokenConverters.push([ElmTokenType.Type, token => this.toTypeNode(typeHelper, moduleName, token)]);
     tokenConverters.push([ElmTokenType.TypeAlias, token => this.toTypeAliasNode(token)]);
     tokenConverters.push([ElmTokenType.Port, token => this.toPortNode(token)]);
-    tokenConverters.push([ElmTokenType.TypedModuleFunction, token => this.toTypedModuleFunctionNode(typeHelper, token)]);
-    tokenConverters.push([ElmTokenType.UntypedModuleFunction, token => this.toUntypedModuleFunctionNode(typeHelper, token)]);
+    tokenConverters.push([ElmTokenType.TypedModuleFunction, token => this.toTypedModuleFunctionNode(typeHelper, moduleName, token)]);
+    tokenConverters.push([ElmTokenType.UntypedModuleFunction, token => this.toUntypedModuleFunctionNode(typeHelper, moduleName, token)]);
 
     const complete: ElmNode[] = [];
     const partial: ElmNodeResult<ElmNode>[] = [];
@@ -413,27 +413,28 @@ export class ElmParserImp implements ElmParser {
     return {codeHelper, node};
   }
 
-  public toTypedModuleFunctionNode(typeHelper: ElmTypeHelper, token: ElmToken)
+  public toTypedModuleFunctionNode(typeHelper: ElmTypeHelper, moduleName: string, token: ElmToken)
     : ElmNodeResult<ElmTypedModuleFunctionNode> | ElmNodeResult<ElmUntypedModuleFunctionNode> {
     const codeHelper = this.makeElmCodeHelper(token.code);
     const returnType = this.parseReturnType(codeHelper, typeHelper, token.identifier, token.identifier.length);
 
     if (!returnType) {
       token.tokenType = ElmTokenType.UntypedModuleFunction;
-      return this.toUntypedModuleFunctionNode(typeHelper, token);
+      return this.toUntypedModuleFunctionNode(typeHelper, moduleName, token);
     }
 
     const args = this.parseArguments(codeHelper, token.identifier, true);
-    typeHelper.resolveType(token.identifier);
+    typeHelper.resolve(token.identifier, undefined, moduleName);
     let node = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: [], returnType: returnType};
 
     return {codeHelper, node};
   }
 
-  public toUntypedModuleFunctionNode(typeHelper: ElmTypeHelper, token: ElmToken): ElmNodeResult<ElmUntypedModuleFunctionNode> {
+  public toUntypedModuleFunctionNode(typeHelper: ElmTypeHelper, moduleName: string, token: ElmToken)
+    : ElmNodeResult<ElmUntypedModuleFunctionNode> {
     const codeHelper = this.makeElmCodeHelper(token.code);
     const args = this.parseArguments(codeHelper, token.identifier, false);
-    typeHelper.resolveType(token.identifier);
+    typeHelper.resolve(token.identifier, undefined, moduleName);
     let node: ElmUntypedModuleFunctionNode = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: []};
 
     return {codeHelper, node};
