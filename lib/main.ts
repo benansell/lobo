@@ -5,8 +5,6 @@ import * as chokidar from "chokidar";
 import * as program from "commander";
 import * as path from "path";
 import * as shelljs from "shelljs";
-import * as tmp from "tmp";
-
 import {Builder, createBuilder} from "./builder";
 import {createLogger, Logger} from "./logger";
 import {createRunner, Runner} from "./runner";
@@ -210,11 +208,12 @@ export class LoboImp implements Lobo {
     chokidar.watch(paths, {
       ignored: /(.*\/\..*)|(.*\/elm-stuff\/.*)/,
       persistent: true
-    }).on("ready", () => {
+    }).on("ready", (event: string, filePath: string) => {
+      this.logger.warn("watch - ready - event: " + event + ", path: " + filePath);
       this.ready = true;
       this.launch(context);
     }).on("all", (event: string, filePath: string) => {
-      this.logger.trace("watch - event: " + event + ", path: " + filePath);
+      this.logger.trace("watch - all - event: " + event + ", path: " + filePath);
 
       if (this.ready === false) {
         return;
@@ -280,7 +279,6 @@ export class LoboImp implements Lobo {
     if (!program.debug) {
       this.logger.debug("Enabling cleanup of temp files");
       config.noCleanup = false;
-      tmp.setGracefulCleanup();
     } else {
       this.logger.debug("Disabling cleanup of temp files");
       config.noCleanup = true;
@@ -307,7 +305,7 @@ export class LoboImp implements Lobo {
       config.compiler = path.normalize(program.compiler);
     }
 
-    this.logger.trace("config", config);
+    this.logger.trace("Config", config);
 
     return config;
   }

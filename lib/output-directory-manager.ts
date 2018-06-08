@@ -30,12 +30,14 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     this.logger.debug("Cleaning lobo temp directory");
 
     if (context.buildOutputFilePath) {
-      this.delete(context.tempDirectory, context.buildOutputFilePath);
+      this.deleteTempFile(context.tempDirectory, context.buildOutputFilePath);
     }
 
     if (context.testSuiteOutputFilePath) {
-      this.delete(context.tempDirectory, context.testSuiteOutputFilePath);
+      this.deleteTempFile(context.tempDirectory, context.testSuiteOutputFilePath);
     }
+
+    this.deleteTempDir(context.tempDirectory);
 
     return Bluebird.resolve(context);
   }
@@ -64,7 +66,24 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     return false;
   }
 
-  public delete(tempDir: string, filePath: string): void {
+  public deleteTempDir(tempDir: string): void {
+    try {
+      if (path.basename(path.dirname(tempDir)) !== ".lobo") {
+        this.logger.error("Unable to delete directories outside of the \".lobo\" directory");
+        return;
+      }
+
+      if (!fs.existsSync(tempDir)) {
+        return;
+      }
+
+      fs.rmdirSync(tempDir);
+    } catch (err) {
+      this.logger.debug(err);
+    }
+  }
+
+  public deleteTempFile(tempDir: string, filePath: string): void {
     try {
       if (path.basename(path.dirname(path.dirname(filePath))) !== ".lobo") {
         this.logger.error("Unable to delete files outside of the \".lobo\" directory");

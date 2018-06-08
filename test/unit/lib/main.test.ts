@@ -999,7 +999,7 @@ describe("lib main", () => {
       // arrange
       let mockCleanup = Sinon.stub();
       (<{ debug: boolean }>programMocks).debug = false;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let result: LoboConfig = undefined;
@@ -1009,24 +1009,10 @@ describe("lib main", () => {
       expect(result.noCleanup).to.be.false;
     });
 
-    it("should set cleanup of temp files when debug option is false", () => {
-      // arrange
-      let mockCleanup = Sinon.stub();
-      (<{ debug: boolean }>programMocks).debug = false;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
-
-      // act
-      revert(() => lobo.configure());
-
-      // assert
-      expect(mockCleanup).to.have.been.called;
-    });
-
     it("should set noCleanup to false when debug option is true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ debug: boolean }>programMocks).debug = true;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let result: LoboConfig = undefined;
@@ -1036,24 +1022,10 @@ describe("lib main", () => {
       expect(result.noCleanup).to.be.true;
     });
 
-    it("should not set cleanup of temp files when debug option is true", () => {
-      // arrange
-      let mockCleanup = Sinon.stub();
-      (<{ debug: boolean }>programMocks).debug = true;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
-
-      // act
-      revert(() => lobo.configure());
-
-      // assert
-      expect(mockCleanup).not.to.have.been.called;
-    });
-
     it("should convert program prompt 'y' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "y";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1065,9 +1037,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'Y' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "Y";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1079,9 +1050,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'yes' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "yes";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1095,9 +1065,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ verbose: boolean }>programMocks).verbose = false;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1111,9 +1080,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ verbose: boolean }>programMocks).verbose = true;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1127,9 +1095,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ veryVerbose: boolean }>programMocks).veryVerbose = false;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1143,9 +1110,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ veryVerbose: boolean }>programMocks).veryVerbose = true;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1157,9 +1123,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'Yes' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "Yes";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1171,9 +1136,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'n' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "n";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1185,9 +1149,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'N' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "N";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1199,9 +1162,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'no' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "no";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1215,7 +1177,7 @@ describe("lib main", () => {
       // arrange
       let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "No";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1229,7 +1191,7 @@ describe("lib main", () => {
       // arrange
       let mockCleanup = Sinon.stub();
       (<{ compiler: string }>programMocks).compiler = "foo";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1243,7 +1205,7 @@ describe("lib main", () => {
       // arrange
       let mockCleanup = Sinon.stub();
       (<{ compiler: string }>programMocks).compiler = "foo/../bar";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;

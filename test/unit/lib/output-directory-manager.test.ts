@@ -29,6 +29,7 @@ describe("lib output-directory-manager", () => {
   let mockMkDir: Sinon.SinonStub;
   let mockHelper: ElmPackageHelper;
   let mockResolvePath: Sinon.SinonStub;
+  let mockRmDirSync: Sinon.SinonStub;
   let mockTmpDirSync: Sinon.SinonStub;
   let mockUnlinkSync: Sinon.SinonStub;
   let revert: () => void;
@@ -42,11 +43,12 @@ describe("lib output-directory-manager", () => {
     mockLn = Sinon.stub();
     mockMkDir = Sinon.stub();
     mockResolvePath = Sinon.stub();
+    mockRmDirSync = Sinon.stub();
     mockTmpDirSync = Sinon.stub();
     mockUnlinkSync = Sinon.stub();
 
     revert = RewiredOutputDirectoryManager.__set__({
-      fs: {existsSync: mockExists, unlinkSync: mockUnlinkSync},
+      fs: {existsSync: mockExists, rmdirSync: mockRmDirSync, unlinkSync: mockUnlinkSync},
       path: {basename: mockBasename, dirname: mockDirname, join: mockJoin, resolve: mockResolvePath},
       shelljs: {cp: mockCp, ln: mockLn, mkdir: mockMkDir},
       tmp: {dirSync: mockTmpDirSync}
@@ -74,70 +76,88 @@ describe("lib output-directory-manager", () => {
   });
 
   describe("cleanup", () => {
-    it("should not delete any files when the config.noCleanup is true", () => {
+    it("should not deleteTempFile any files when the config.noCleanup is true", () => {
       // arrange
-      outputDirectoryManager.delete = Sinon.stub();
+      outputDirectoryManager.deleteTempFile = Sinon.stub();
+      outputDirectoryManager.deleteTempDir = Sinon.stub();
 
       // act
       outputDirectoryManager.cleanup(<ExecutionContext> {config: {noCleanup: true}});
 
       // assert
-      expect(outputDirectoryManager.delete).not.to.have.been.called;
+      expect(outputDirectoryManager.deleteTempFile).not.to.have.been.called;
     });
 
-    it("should not delete any files when the tempDirectory is undefined", () => {
+    it("should not deleteTempFile any files when the tempDirectory is undefined", () => {
       // arrange
-      outputDirectoryManager.delete = Sinon.stub();
+      outputDirectoryManager.deleteTempFile = Sinon.stub();
+      outputDirectoryManager.deleteTempDir = Sinon.stub();
 
       // act
       outputDirectoryManager.cleanup(<ExecutionContext> {config: {noCleanup: false}});
 
       // assert
-      expect(outputDirectoryManager.delete).not.to.have.been.called;
+      expect(outputDirectoryManager.deleteTempFile).not.to.have.been.called;
     });
 
-    it("should call delete with tempDir when tempDirectory and buildOutputFilePath are defined", () => {
+    it("should call deleteTempFile with tempDir when tempDirectory and buildOutputFilePath are defined", () => {
       // arrange
-      outputDirectoryManager.delete = Sinon.stub();
+      outputDirectoryManager.deleteTempFile = Sinon.stub();
+      outputDirectoryManager.deleteTempDir = Sinon.stub();
 
       // act
       outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", buildOutputFilePath: "bar", config: {noCleanup: false}});
 
       // assert
-      expect(outputDirectoryManager.delete).to.have.been.calledWith("foo", Sinon.match.any);
+      expect(outputDirectoryManager.deleteTempFile).to.have.been.calledWith("foo", Sinon.match.any);
     });
 
-    it("should call delete with buildOutputFilePath when tempDirectory and buildOutputFilePath are defined", () => {
+    it("should call deleteTempFile with buildOutputFilePath when tempDirectory and buildOutputFilePath are defined", () => {
       // arrange
-      outputDirectoryManager.delete = Sinon.stub();
+      outputDirectoryManager.deleteTempFile = Sinon.stub();
+      outputDirectoryManager.deleteTempDir = Sinon.stub();
 
       // act
       outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", buildOutputFilePath: "bar", config: {noCleanup: false}});
 
       // assert
-      expect(outputDirectoryManager.delete).to.have.been.calledWith(Sinon.match.any, "bar");
+      expect(outputDirectoryManager.deleteTempFile).to.have.been.calledWith(Sinon.match.any, "bar");
     });
 
-    it("should call delete with tempDir when tempDirectory and testSuiteOutputFilePath are defined", () => {
+    it("should call deleteTempFile with tempDir when tempDirectory and testSuiteOutputFilePath are defined", () => {
       // arrange
-      outputDirectoryManager.delete = Sinon.stub();
+      outputDirectoryManager.deleteTempFile = Sinon.stub();
+      outputDirectoryManager.deleteTempDir = Sinon.stub();
 
       // act
       outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", testSuiteOutputFilePath: "bar", config: {noCleanup: false}});
 
       // assert
-      expect(outputDirectoryManager.delete).to.have.been.calledWith("foo", Sinon.match.any);
+      expect(outputDirectoryManager.deleteTempFile).to.have.been.calledWith("foo", Sinon.match.any);
     });
 
-    it("should call delete with testSuiteOutputFilePath when tempDirectory and testSuiteOutputFilePath are defined", () => {
+    it("should call deleteTempFile with testSuiteOutputFilePath when tempDirectory and testSuiteOutputFilePath are defined", () => {
       // arrange
-      outputDirectoryManager.delete = Sinon.stub();
+      outputDirectoryManager.deleteTempFile = Sinon.stub();
+      outputDirectoryManager.deleteTempDir = Sinon.stub();
 
       // act
       outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", testSuiteOutputFilePath: "bar", config: {noCleanup: false}});
 
       // assert
-      expect(outputDirectoryManager.delete).to.have.been.calledWith(Sinon.match.any, "bar");
+      expect(outputDirectoryManager.deleteTempFile).to.have.been.calledWith(Sinon.match.any, "bar");
+    });
+
+    it("should call deleteTempDir with tempDirectory when tempDirectory is defined and noCleanUp is false", () => {
+      // arrange
+      outputDirectoryManager.deleteTempFile = Sinon.stub();
+      outputDirectoryManager.deleteTempDir = Sinon.stub();
+
+      // act
+      outputDirectoryManager.cleanup(<ExecutionContext> {tempDirectory: "foo", testSuiteOutputFilePath: "bar", config: {noCleanup: false}});
+
+      // assert
+      expect(outputDirectoryManager.deleteTempDir).to.have.been.calledWith("foo");
     });
   });
 
@@ -285,14 +305,82 @@ describe("lib output-directory-manager", () => {
     });
   });
 
-  describe("delete", () => {
+  describe("deleteTempDir", () => {
+    it("should not call fs.rmdir when the tempDirectory is undefined", () => {
+      // arrange
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+
+      // act
+      outputDirectoryManager.deleteTempDir(undefined);
+
+      // assert
+      expect(mockRmDirSync).not.to.have.been.called;
+    });
+
+    it("should not call fs.rmdir when the tempDirectory outside the '.lobo' directory", () => {
+      // arrange
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+
+      // act
+      outputDirectoryManager.deleteTempDir("./foo");
+
+      // assert
+      expect(mockRmDirSync).not.to.have.been.called;
+    });
+
+    it("should not call fs.rmdir when the tempDirectory does not exist and it is a valid temp directory", () => {
+      // arrange
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+      mockExists.returns(false);
+
+      // act
+      outputDirectoryManager.deleteTempDir("./.lobo/foo");
+
+      // assert
+      expect(mockRmDirSync).not.to.have.been.called;
+    });
+
+    it("should call fs.rmdir when the directory exists and it is a valid temp directory", () => {
+      // arrange
+      const expected = "./.lobo/foo";
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+      mockExists.returns(true);
+
+      // act
+      outputDirectoryManager.deleteTempDir(expected);
+
+      // assert
+      expect(mockRmDirSync).to.have.been.calledWith(expected);
+    });
+
+    it("should log any errors when deleting the directory", () => {
+      // arrange
+      const expected = new Error();
+      mockBasename.callsFake(path.basename);
+      mockDirname.callsFake(path.dirname);
+      mockExists.returns(true);
+      mockRmDirSync.throws(expected);
+
+      // act
+      outputDirectoryManager.deleteTempDir("./.lobo/foo");
+
+      // assert
+      expect(mockLogger.debug).to.have.been.calledWith(expected);
+    });
+  });
+
+  describe("deleteTempFile", () => {
     it("should not call fs.unlink when the tempDirectory is undefined", () => {
       // arrange
       mockBasename.callsFake(path.basename);
       mockDirname.callsFake(path.dirname);
 
       // act
-      outputDirectoryManager.delete(undefined, "./.lobo/foo/bar");
+      outputDirectoryManager.deleteTempFile(undefined, "./.lobo/foo/bar");
 
       // assert
       expect(mockUnlinkSync).not.to.have.been.called;
@@ -304,7 +392,7 @@ describe("lib output-directory-manager", () => {
       mockDirname.callsFake(path.dirname);
 
       // act
-      outputDirectoryManager.delete("./foo", "./abc/foo/bar");
+      outputDirectoryManager.deleteTempFile("./foo", "./abc/foo/bar");
 
       // assert
       expect(mockUnlinkSync).not.to.have.been.called;
@@ -316,7 +404,7 @@ describe("lib output-directory-manager", () => {
       mockDirname.callsFake(path.dirname);
 
       // act
-      outputDirectoryManager.delete("./.lobo/foo", "./.lobo/abc/bar");
+      outputDirectoryManager.deleteTempFile("./.lobo/foo", "./.lobo/abc/bar");
 
       // assert
       expect(mockUnlinkSync).not.to.have.been.called;
@@ -329,7 +417,7 @@ describe("lib output-directory-manager", () => {
       mockExists.returns(false);
 
       // act
-      outputDirectoryManager.delete("./.lobo/foo", "./.lobo/foo/bar");
+      outputDirectoryManager.deleteTempFile("./.lobo/foo", "./.lobo/foo/bar");
 
       // assert
       expect(mockUnlinkSync).not.to.have.been.called;
@@ -343,7 +431,7 @@ describe("lib output-directory-manager", () => {
       mockExists.returns(true);
 
       // act
-      outputDirectoryManager.delete("./.lobo/foo", expected);
+      outputDirectoryManager.deleteTempFile("./.lobo/foo", expected);
 
       // assert
       expect(mockUnlinkSync).to.have.been.calledWith(expected);
@@ -358,7 +446,7 @@ describe("lib output-directory-manager", () => {
       mockUnlinkSync.throws(expected);
 
       // act
-      outputDirectoryManager.delete("./.lobo/foo", "./.lobo/foo/bar");
+      outputDirectoryManager.deleteTempFile("./.lobo/foo", "./.lobo/foo/bar");
 
       // assert
       expect(mockLogger.debug).to.have.been.calledWith(expected);
