@@ -47,9 +47,43 @@ describe("lib analyzer", () => {
   });
 
   describe("analyze", () => {
+    it("should return a promise that does not call testSuiteAnalyzer.buildSummary when noAnalysis is true", () => {
+      // arrange
+      let context = <ExecutionContext> {config: {noAnalysis: true}};
+      mockBuildSummary.returns({});
+      let mockReport = Sinon.stub();
+      mockReport.returns(0);
+      analyzerImp.report = mockReport;
+
+      // act
+      let actual = analyzerImp.analyze(context);
+
+      // assert
+      return actual.then(() => {
+        expect(mockTestSuiteAnalyzer.buildSummary).not.to.have.been.called;
+      });
+    });
+
+    it("should return a promise that calls testSuiteAnalyzer.buildSummary when noAnalysis is false", () => {
+      // arrange
+      let context = <ExecutionContext> {config: {noAnalysis: false}};
+      mockBuildSummary.returns({});
+      let mockReport = Sinon.stub();
+      mockReport.returns(0);
+      analyzerImp.report = mockReport;
+
+      // act
+      let actual = analyzerImp.analyze(context);
+
+      // assert
+      return actual.then(() => {
+        expect(mockTestSuiteAnalyzer.buildSummary).to.have.been.called;
+      });
+    });
+
     it("should return a promise that calls testSuiteAnalyzer.buildSummary with the context", () => {
       // arrange
-      let context = <ExecutionContext> {};
+      let context = <ExecutionContext> {config: {}};
       mockBuildSummary.returns({});
       let mockReport = Sinon.stub();
       mockReport.returns(0);
@@ -67,7 +101,7 @@ describe("lib analyzer", () => {
     it("should return a promise that calls report with the context.codeLookup", () => {
       // arrange
       let expected = <ElmCodeLookup> {};
-      let context = <ExecutionContext> {codeLookup: expected};
+      let context = <ExecutionContext> {codeLookup: expected, config: {}};
       mockBuildSummary.returns({});
       let mockReport = Sinon.stub();
       mockReport.returns(0);
@@ -85,7 +119,7 @@ describe("lib analyzer", () => {
     it("should return a promise that calls report with the analysis summary", () => {
       // arrange
       let expected = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let context = <ExecutionContext> {codeLookup: {}};
+      let context = <ExecutionContext> {codeLookup: {}, config: {}};
       mockBuildSummary.returns(expected);
       let mockReport = Sinon.stub();
       mockReport.returns(0);
@@ -102,7 +136,7 @@ describe("lib analyzer", () => {
 
     it("should return a promise that is resolved with the context when there are no issues", () => {
       // arrange
-      let context = <ExecutionContext> {codeLookup: {}};
+      let context = <ExecutionContext> {codeLookup: {}, config: {}};
       mockBuildSummary.returns({});
       let mockReport = Sinon.stub();
       mockReport.returns(0);
@@ -119,7 +153,7 @@ describe("lib analyzer", () => {
 
     it("should return a promise that is rejected with an 'Analysis Failed' error when there are issues", () => {
       // arrange
-      let context = <ExecutionContext> {codeLookup: {}};
+      let context = <ExecutionContext> {codeLookup: {}, config: {}};
       mockBuildSummary.returns({});
       let mockReport = Sinon.stub();
       mockReport.returns(1);

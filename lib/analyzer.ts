@@ -49,6 +49,11 @@ export class AnalyzerImp implements Analyzer {
 
   public analyze(context: ExecutionContext): Bluebird<ExecutionContext> {
     return new Bluebird<ExecutionContext>((resolve: Resolve<ExecutionContext>, reject: Reject) => {
+      if (context.config.noAnalysis === true) {
+        resolve(context);
+        return;
+      }
+
       const summary = this.testSuiteAnalyzer.buildSummary(context);
       const issueCount = this.report(context.codeLookup, summary);
 

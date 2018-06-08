@@ -23,6 +23,7 @@ import {createElmCodeLookupManager, ElmCodeLookupManager} from "./elm-code-looku
 interface PartialLoboConfig {
   compiler: string | undefined;
   loboDirectory: string | undefined;
+  noAnalysis: boolean | undefined;
   noCleanup: boolean | undefined;
   noInstall: boolean | undefined;
   noUpdate: boolean | undefined;
@@ -208,8 +209,8 @@ export class LoboImp implements Lobo {
     chokidar.watch(paths, {
       ignored: /(.*\/\..*)|(.*\/elm-stuff\/.*)/,
       persistent: true
-    }).on("ready", (event: string, filePath: string) => {
-      this.logger.warn("watch - ready - event: " + event + ", path: " + filePath);
+    }).on("ready", () => {
+      this.logger.trace("watch - ready");
       this.ready = true;
       this.launch(context);
     }).on("all", (event: string, filePath: string) => {
@@ -251,6 +252,7 @@ export class LoboImp implements Lobo {
       .option("--failOnSkip", "exit with non zero exit code when there are any skip tests")
       .option("--failOnTodo", "exit with non zero exit code when there are any todo tests")
       .option("--framework <value>", "name of the testing framework to use", "elm-test-extra")
+      .option("--noAnalysis", "prevents lobo from running analysis on the test suite")
       .option("--noInstall", "prevents lobo from running elm-package install")
       .option("--noUpdate", "prevents lobo updating the test elm-package.json")
       .option("--noWarn", "hides elm make build warnings")
@@ -296,6 +298,7 @@ export class LoboImp implements Lobo {
       config.prompt = program.prompt.toLowerCase()[0] === "y";
     }
 
+    config.noAnalysis = program.noAnalysis === true;
     config.noInstall = program.noInstall === true;
     config.noUpdate = program.noUpdate === true;
     config.noWarn = program.noWarn === true;

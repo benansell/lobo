@@ -112,6 +112,7 @@ export interface FailureMessage {
 export interface LoboConfig {
   readonly compiler: string;
   readonly loboDirectory: string;
+  readonly noAnalysis: boolean;
   readonly noCleanup: boolean;
   readonly noInstall: boolean;
   readonly noUpdate: boolean;

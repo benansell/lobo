@@ -813,6 +813,14 @@ describe("lib main", () => {
       expect(mockOption).to.have.been.calledWith("--framework <value>", Sinon.match.any);
     });
 
+    it("should add the '--noAnalysis' option", () => {
+      // act
+      lobo.configure();
+
+      // assert
+      expect(mockOption).to.have.been.calledWith("--noAnalysis", Sinon.match.any);
+    });
+
     it("should add the '--noInstall' option", () => {
       // act
       lobo.configure();
@@ -997,7 +1005,6 @@ describe("lib main", () => {
 
     it("should set noCleanup to false when debug option is false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ debug: boolean }>programMocks).debug = false;
       let revert = rewiredMain.__with__({program: programMocks});
 
@@ -1175,7 +1182,6 @@ describe("lib main", () => {
 
     it("should convert program prompt 'No' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "No";
       let revert = rewiredMain.__with__({program: programMocks});
 
@@ -1189,7 +1195,6 @@ describe("lib main", () => {
 
     it("should set the compiler path to program.compiler", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ compiler: string }>programMocks).compiler = "foo";
       let revert = rewiredMain.__with__({program: programMocks});
 
@@ -1203,7 +1208,6 @@ describe("lib main", () => {
 
     it("should set the compiler path to a normalized program.compiler path", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ compiler: string }>programMocks).compiler = "foo/../bar";
       let revert = rewiredMain.__with__({program: programMocks});
 
