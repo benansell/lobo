@@ -157,7 +157,7 @@ export class AnalyzerImp implements Analyzer {
     this.logger.log("");
 
     if (analysis.hiddenTestCount > 0) {
-      this.logger.log(this.headerStyle("HIDDEN TESTS"));
+      this.logger.log(this.headerStyle("Hidden Tests"));
       const message = this.fixStyle("Please add the following to the modules exposing list:");
       this.paddedLog(message);
       this.logger.log("");
@@ -166,7 +166,7 @@ export class AnalyzerImp implements Analyzer {
     }
 
     if (analysis.overExposedTestCount > 0) {
-      this.logger.log(this.headerStyle("OVER EXPOSED TESTS"));
+      this.logger.log(this.headerStyle("Over Exposed Tests"));
       const message = "Please update the modules exposing list or test suites such that each test is exposed once by a single module";
       this.paddedLog(this.fixStyle(message));
       this.logger.log("");
@@ -212,6 +212,8 @@ export class AnalyzerImp implements Analyzer {
     if (issueCount === 0) {
       return issueCount;
     }
+
+    this.logger.log(this.headerStyle("ANALYSIS FAILED"));
 
     if (analysis.analysisFailureCount > 0) {
       this.paddedLog(

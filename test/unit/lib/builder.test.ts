@@ -239,15 +239,14 @@ describe("lib builder", () => {
     it("should catch any elm-make build errors and call the specified reject with the error", () => {
       // arrange
       let config = <LoboConfig> {};
-      let expected = new Error();
-      mockExec.throws(expected);
+      mockExec.throws( new Error("qux"));
 
       // act
       let actual = builder.make(config, "bar", "baz");
 
       // assert
       actual.catch((err) => {
-        expect(err).to.equal(expected);
+        expect(err.toString()).to.equal("Error: Build Failed");
       });
     });
   });

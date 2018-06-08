@@ -487,7 +487,7 @@ describe("lib analyzer", () => {
   });
 
   describe("reportAnalysisDetail", () => {
-    it("should log the 'HIDDEN TESTS' detail when hiddenTestCount is greater than zero", () => {
+    it("should log the 'Hidden Tests' detail when hiddenTestCount is greater than zero", () => {
       // arrange
       let analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
@@ -496,7 +496,7 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail(codeLookup, analysis);
 
       // assert
-      expect(mockLog).to.have.been.calledWith(Sinon.match(/HIDDEN TESTS/));
+      expect(mockLog).to.have.been.calledWith(Sinon.match(/Hidden Tests/));
     });
 
     it("should log the 'Please add the following to the modules exposing list:' detail when hiddenTestCount is greater than zero", () => {
@@ -551,7 +551,7 @@ describe("lib analyzer", () => {
       expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "Hidden");
     });
 
-    it("should log the 'OVER EXPOSED TESTS' detail when overExposedTestCount is greater than zero", () => {
+    it("should log the 'Over Exposed Tests' detail when overExposedTestCount is greater than zero", () => {
       // arrange
       let analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
@@ -560,7 +560,7 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail(codeLookup, analysis);
 
       // assert
-      expect(mockLog).to.have.been.calledWith(Sinon.match(/OVER EXPOSED TESTS/));
+      expect(mockLog).to.have.been.calledWith(Sinon.match(/Over Exposed Tests/));
     });
 
     it("should log the 'Please add the following to the modules exposing list:' detail when overExposedTestCount is greater than zero",
@@ -741,16 +741,26 @@ describe("lib analyzer", () => {
   });
 
   describe("reportAnalysisSummary", () => {
-    it("should not call paddedLog when there are no issues", () => {
+    it("should not log 'ANALYSIS FAILED' when there are no issues", () => {
       // arrange
       let analysis = <AnalysisTestSummary> {analysisFailureCount: 0, hiddenTestCount: 0, overExposedTestCount: 0};
-      analyzerImp.paddedLog = Sinon.stub();
 
       // act
       analyzerImp.reportAnalysisSummary(analysis);
 
       // assert
-      expect(analyzerImp.paddedLog).not.to.have.been.called;
+      expect(mockLogger.log).not.to.have.been.calledWith(Sinon.match(/ANALYSIS FAILED/));
+    });
+
+    it("should log 'ANALYSIS FAILED' when there are issues", () => {
+      // arrange
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 1, hiddenTestCount: 0, overExposedTestCount: 0};
+
+      // act
+      analyzerImp.reportAnalysisSummary(analysis);
+
+      // assert
+      expect(mockLogger.log).to.have.been.calledWith(Sinon.match(/ANALYSIS FAILED/));
     });
 
     it("should call paddedLog with the singular total failed analysis message when failure count is 1", () => {

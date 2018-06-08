@@ -81,7 +81,7 @@ export class UtilImp implements Util {
       let value = this.load<{PluginConfig: T}>(type, pluginName, fileSpec, true);
       let config = value.PluginConfig;
       this.logger.debug("Plugin configured: " + pluginName);
-      this.logger.trace("plugin configuration", config);
+      this.logger.trace("Plugin configuration", config);
 
       return config;
   }

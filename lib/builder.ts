@@ -52,7 +52,7 @@ export class BuilderImp implements Builder {
         this.logger.error(chalk.bold("  BUILD FAILED"));
         this.logger.error("");
         this.logger.debug(err);
-        reject(err);
+        reject(new Error("Build Failed"));
       }
     });
   }
