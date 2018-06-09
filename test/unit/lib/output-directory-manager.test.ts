@@ -799,7 +799,7 @@ describe("lib output-directory-manager", () => {
       // arrange
       const context = <ExecutionContext> {config: {loboDirectory: "foo", testMainElm: "baz"}};
       mockTmpDirSync.returns({name: "bar"});
-      mockJoin.callsFake(path.join);
+      mockJoin.callsFake((...args) => args.join("/"));
 
       // act
       outputDirectoryManager.updateContextForRun(context);
@@ -812,7 +812,7 @@ describe("lib output-directory-manager", () => {
       // arrange
       const context = <ExecutionContext> {config: {loboDirectory: "foo", testMainElm: "baz"}};
       mockTmpDirSync.returns({name: "bar"});
-      mockJoin.callsFake(path.join);
+      mockJoin.callsFake((...args) => args.join("/"));
 
       // act
       outputDirectoryManager.updateContextForRun(context);
