@@ -149,36 +149,28 @@ describe("plugin junit-reporter reporter-plugin", () => {
   });
 
   describe("build", () => {
-    it("should return MeasuredNode with label 'Lobo Tests'", () => {
+    it("should return MeasuredNodes returned by enrichResult", () => {
+      // arrange
+      const expected = {testCount: 123};
+      reporter.enrichResult = Sinon.stub().returns(expected);
+
       // act
-      let actual = reporter.build(<TestRunSummary> {});
+      let actual = reporter.build(<TestRunSummary><{}>{runResults: [{}]});
 
       // assert
-      expect(actual.label).to.equal("Lobo Tests");
+      expect(actual).to.deep.equal([expected]);
     });
 
-    it("should call enrichResult with endTime set from summary endDateTime", () => {
+    it("should call enrichResult with the supplied summary.runResults", () => {
       // arrange
-      let expected = new Date();
+      let expected = <MeasuredNode> {testCount: 123};
       reporter.enrichResult = Sinon.spy();
 
       // act
-      reporter.build(<TestRunSummary> {endDateTime: expected});
+      reporter.build(<TestRunSummary><{}>{runResults: [expected]});
 
       // assert
-      expect(reporter.enrichResult).to.have.been.calledWith(Sinon.match({endTime: expected.getTime()}));
-    });
-
-    it("should call enrichResult with startTime set from summary startDateTime", () => {
-      // arrange
-      let expected = new Date();
-      reporter.enrichResult = Sinon.spy();
-
-      // act
-      reporter.build(<TestRunSummary> {startDateTime: expected});
-
-      // assert
-      expect(reporter.enrichResult).to.have.been.calledWith(Sinon.match({startTime: expected.getTime()}));
+      expect(reporter.enrichResult).to.have.been.calledWith(expected);
     });
   });
 
@@ -347,6 +339,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
     it("should return a promise that calls standardConsole.finish", () => {
       // arrange
       let expected = <TestRun>{summary: {runType: "NORMAL"}};
+      reporter.build = Sinon.stub();
       reporter.write = Sinon.stub();
       (<SinonStub>reporter.write).resolves();
 
@@ -362,6 +355,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
     it("should return a promise that calls write with the reportFile", () => {
       // arrange
       let revertProgram = RewiredPlugin.__with__({program: {reportFile: "foo"}});
+      reporter.build = Sinon.stub();
       reporter.write = Sinon.stub();
       (<SinonStub>reporter.write).resolves();
 
@@ -397,8 +391,8 @@ describe("plugin junit-reporter reporter-plugin", () => {
     it("should return a promise that calls reject when logging fails", () => {
       // arrange
       let expected = new Error("qux");
-      reporter.write = Sinon.stub();
-      (<SinonStub>reporter.write).throws(expected);
+      reporter.build = Sinon.stub();
+      reporter.write = Sinon.stub().throws(expected);
 
       // act
       let actual = reporter.finish(<TestRun>{summary: {}});
@@ -458,9 +452,120 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/testsuites>/));
     });
+
+    it("should call writeResultList with the supplied writeLine", () => {
+      // arrange
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(mockWriteLine, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call writeResultList with the supplied measuredNode.label", () => {
+      // arrange
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call writeResultList with the supplied node as results when the supplied measuredNode.results are not empty", () => {
+      // arrange
+      const expected = <MeasuredNode><{}> {label: "foo", results: []};
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, expected);
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, [expected], Sinon.match.any);
+    });
+
+    it("should call writeResultList with the supplied measuredNode.results when they are not empty", () => {
+      // arrange
+      const expected = [{}];
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode><{}> {label: "foo", results: expected});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected, Sinon.match.any);
+    });
+
+    it("should call writeResultList with the reporters paddingUnit", () => {
+      // arrange
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "*");
+    });
+
   });
 
   describe("writeResultList", () => {
+    it("should call self with writeLine when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[0]).to.equal(mockWriteLine);
+    });
+
+    it("should call self with node label when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[1]).to.equal("bar");
+    });
+
+    it("should call self with faked suite when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const expected = { endTime: undefined, failedCount: 1, id: 123, label: "bar", results: [node], startTime: undefined, testCount: 1};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[2]).to.deep.equal([expected]);
+    });
+
+    it("should call self with supplied padding when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[3]).to.equal("*");
+    });
+
     it("should call writeFailure with the supplied writeLine when the node resultType is 'FAILED'", () => {
       // arrange
       reporter.writeFailure = Sinon.spy();
@@ -1506,7 +1611,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       mockCreateWriteStream.returns({end: (value, cb) => cb()});
 
       // act
-      let actual = reporter.write("foo", <MeasuredNode>{label: "bar"});
+      let actual = reporter.write("foo", [<MeasuredNode>{label: "bar"}]);
 
       // assert
       actual.then(() => {
@@ -1522,7 +1627,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       mockCreateWriteStream.returns({end: (value, cb) => cb()});
 
       // act
-      let actual = reporter.write("foo", expected);
+      let actual = reporter.write("foo", [expected]);
 
       // assert
       actual.then(() => {
@@ -1536,7 +1641,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       mockCreateWriteStream.throws(expected);
 
       // act
-      let actual = reporter.write("foo", <MeasuredNode>{label: "bar"});
+      let actual = reporter.write("foo", [<MeasuredNode>{label: "bar"}]);
 
       // assert
       actual.catch((err) => {
