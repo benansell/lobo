@@ -22,8 +22,8 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   private testResultFormatter: TestResultFormatter;
   private util: Util;
   private labelStyle: Chalk = chalk.dim;
-  private messagePrefixPadding: string;
-  private diffMaxLength: number;
+  private readonly messagePrefixPadding: string;
+  private readonly diffMaxLength: number;
 
   public static calculateMaxLabelLength(items: LeafItem[]): number {
     let maxLabelLength = 0;
@@ -72,11 +72,11 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     this.standardConsole.update(result);
   }
 
-  public finish(results: plugin.TestRun): Bluebird<object> {
-    let steps: Array<() => Bluebird<object>> = [];
+  public finish(results: plugin.TestRun): Bluebird<void> {
+    let steps: Array<() => Bluebird<void>> = [];
     steps.push(() => this.standardConsole.finish(results));
 
-    steps.push(() => new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+    steps.push(() => new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       try {
         if (!program.quiet) {
           this.logResults(results.summary);
@@ -89,7 +89,8 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       }
     }));
 
-    return Bluebird.mapSeries(steps, (item: () => Bluebird<object>) => item());
+    return Bluebird.mapSeries(steps, (item: () => Bluebird<void>) => item())
+      .return();
   }
 
   public sortItemsByLabel(items: LeafItem[]): LeafItem[] {
@@ -181,7 +182,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       }
     }
 
-    for (let j = 0; j < labels.length; j++) {
+    for (let j = 1; j < labels.length; j++) {
       if (context[j] === labels[j]) {
         labelPad += " ";
         continue;

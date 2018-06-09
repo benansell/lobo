@@ -1,7 +1,7 @@
 module Tests exposing (all)
 
 import Expect exposing (pass)
-import ElmTest.Extra exposing (Test, describe, test, todo, only, skip)
+import ElmTest.Extra exposing (Test, describe, test, todo)
 
 
 all : Test

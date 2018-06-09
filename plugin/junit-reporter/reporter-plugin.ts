@@ -30,9 +30,9 @@ export class JUnitReporter implements plugin.PluginReporter {
   private textFormatter: TestResultFormatter;
   private standardConsole: ReporterStandardConsole;
   private logger: plugin.PluginReporterLogger;
-  private diffMaxLength: number;
-  private junitFormat: JUnitFormat;
-  private paddingUnit: string;
+  private readonly diffMaxLength: number;
+  private readonly junitFormat: JUnitFormat;
+  private readonly paddingUnit: string;
 
   public static getDurationSecondsFrom(node: {startTime?: number, endTime?: number}): number {
     if (!node || !node.startTime || !node.endTime) {
@@ -56,22 +56,8 @@ export class JUnitReporter implements plugin.PluginReporter {
     this.junitFormat = program.junitFormat;
   }
 
-  public build(summary: plugin.TestRunSummary): MeasuredNode {
-    let root = <plugin.TestReportNode><{}> {
-      endTime: summary.endDateTime ? summary.endDateTime.getTime() : undefined,
-      failedCount: 0,
-      ignoredCount: 0,
-      label: "Lobo Tests",
-      passedCount: 0,
-      resultType: "SUITE",
-      results: summary.runResults,
-      skippedCount: 0,
-      startTime: summary.startDateTime ? summary.startDateTime.getTime() : undefined,
-      testCount: 0,
-      todoCount: 0
-    };
-
-    return this.enrichResult(root);
+  public build(summary: plugin.TestRunSummary): MeasuredNode[] {
+    return summary.runResults.map((n) => this.enrichResult(n));
   }
 
   public enrichResult(node: plugin.TestReportNode): MeasuredNode {
@@ -141,62 +127,78 @@ export class JUnitReporter implements plugin.PluginReporter {
     // ignore testCount
   }
 
-  public  update(result: plugin.ProgressReport): void {
+  public update(result: plugin.ProgressReport): void {
     this.standardConsole.update(result);
   }
 
-  public finish(results: plugin.TestRun): Bluebird<object> {
-    let steps: Array<() => Bluebird<object>> = [];
+  public finish(results: plugin.TestRun): Bluebird<void> {
+    let steps: Array<() => Bluebird<void>> = [];
     steps.push(() => this.standardConsole.finish(results));
 
     steps.push(() => {
-      let measuredRoot = this.build(results.summary);
+      let measuredRoots = this.build(results.summary);
 
-      return this.write(program.reportFile, measuredRoot);
+      return this.write(program.reportFile, measuredRoots);
     });
 
-    return Bluebird.mapSeries(steps, (item: () => Bluebird<object>) => item());
+    return Bluebird.mapSeries(steps, (item: () => Bluebird<void>) => item())
+      .return();
   }
 
   public writeResult(writeLine: WriteLine, measuredRoot: MeasuredNode): void {
     writeLine(`<?xml version="1.0" encoding="UTF-8"?>`);
-    let durationInSeconds = JUnitReporter.getDurationSecondsFrom(<plugin.TestReportSuiteNode><{}>measuredRoot);
-    let line = `<testsuites name="${measuredRoot.label}" time="${durationInSeconds}" tests="${measuredRoot.testCount}"`
-      + ` failures="${measuredRoot.failedCount}">`;
+    let line = `<testsuites name="${measuredRoot.label}">`;
     writeLine(line);
-    let node = <{results: plugin.TestReportNode[]}><{}>measuredRoot;
-    this.writeResultList(writeLine, measuredRoot.label, node.results, this.paddingUnit);
+    let node = <plugin.TestReportSuiteNode><{}> measuredRoot;
+
+    if (!node.results || node.results.length === 0) {
+      this.writeResultList(writeLine, measuredRoot.label, [node], this.paddingUnit);
+    } else {
+      this.writeResultList(writeLine, measuredRoot.label, node.results, this.paddingUnit);
+    }
+
     writeLine(`</testsuites>`);
   }
 
   public writeResultList(writeLine: WriteLine, label: string, results: plugin.TestReportNode[], padding: string): void {
-    if (!results) {
-      return;
-    }
-
     _.forEach(results, (node: plugin.TestReportNode) => {
-      switch (node.resultType) {
-        case "FAILED":
-          this.writeFailure(writeLine, label, <plugin.TestReportFailedLeaf> node, padding);
-          break;
-        case "IGNORED":
-          this.writeIgnored(writeLine, label, <plugin.TestReportIgnoredLeaf> node, padding);
-          break;
-        case "PASSED":
-          this.writePassed(writeLine, label, <plugin.TestReportPassedLeaf> node, padding);
-          break;
-        case "SKIPPED":
-          this.writeSkipped(writeLine, label, <plugin.TestReportSkippedLeaf> node, padding);
-          break;
-        case "TODO":
-          this.writeTodo(writeLine, label, <plugin.TestReportTodoLeaf> node, padding);
-          break;
-        default:
-          let testSuite = <plugin.TestReportSuiteNode> node;
-          this.writeTestSuiteStart(writeLine, testSuite, padding);
-          let newPadding = padding + this.paddingUnit;
-          this.writeResultList(writeLine, testSuite.label, testSuite.results, newPadding);
-          this.writeTestSuiteEnd(writeLine, padding);
+      const testSuite = <plugin.TestReportSuiteNode> node;
+
+      if (!testSuite.results && this.paddingUnit === padding) {
+        const suite = <plugin.TestReportSuiteNode><{}> {
+          endTime: testSuite.endTime,
+          failedCount: 1,
+          id: node.id,
+          label: node.label,
+          results: [node],
+          startTime: testSuite.startTime,
+          testCount: 1
+        };
+
+        this.writeResultList(writeLine, testSuite.label, [suite], padding);
+      } else {
+        switch (node.resultType) {
+          case "FAILED":
+            this.writeFailure(writeLine, label, <plugin.TestReportFailedLeaf> node, padding);
+            break;
+          case "IGNORED":
+            this.writeIgnored(writeLine, label, <plugin.TestReportIgnoredLeaf> node, padding);
+            break;
+          case "PASSED":
+            this.writePassed(writeLine, label, <plugin.TestReportPassedLeaf> node, padding);
+            break;
+          case "SKIPPED":
+            this.writeSkipped(writeLine, label, <plugin.TestReportSkippedLeaf> node, padding);
+            break;
+          case "TODO":
+            this.writeTodo(writeLine, label, <plugin.TestReportTodoLeaf> node, padding);
+            break;
+          default:
+            this.writeTestSuiteStart(writeLine, testSuite, padding);
+            let newPadding = padding + this.paddingUnit;
+            this.writeResultList(writeLine, testSuite.label, testSuite.results, newPadding);
+            this.writeTestSuiteEnd(writeLine, padding);
+        }
       }
     });
   }
@@ -299,12 +301,12 @@ export class JUnitReporter implements plugin.PluginReporter {
     writeLine(`${padding}</testcase>`);
   }
 
-  public write(reportPath: string, measuredRoot: MeasuredNode): Bluebird<object> {
-    return new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+  public write(reportPath: string, measuredRoots: MeasuredNode[]): Bluebird<void> {
+    return new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       try {
         let stream = fs.createWriteStream(reportPath);
         let writeLine = this.createLineWriter(stream);
-        this.writeResult(writeLine, measuredRoot);
+        measuredRoots.forEach((mn: MeasuredNode) => this.writeResult(writeLine, mn));
         stream.end(null, () => {
           this.logger.log("JUnit report successfully written to: " + reportPath);
           this.logger.log("");

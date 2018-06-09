@@ -1,7 +1,107 @@
 import * as Bluebird from "bluebird";
 
+export interface CodeLocation {
+  columnNumber: number;
+  lineNumber: number;
+}
+
 export interface Dependencies {
   [index: string]: string;
+}
+
+export interface ElmCodeLookup {
+  [key: string]: ElmCodeInfo;
+}
+
+export interface ElmCodeInfo {
+  fileName: string;
+  filePath: string;
+  isTestFile: boolean;
+  lastModified: Date;
+  moduleNode: ElmModuleNode | undefined;
+}
+
+export type ElmNode = ElmImportNode
+  | ElmPortNode
+  | ElmTypeNode
+  | ElmTypeAliasNode
+  | ElmTypedModuleFunctionNode
+  | ElmUntypedModuleFunctionNode;
+
+export type ElmFunctionNode = ElmTypedModuleFunctionNode | ElmUntypedModuleFunctionNode;
+
+export enum ElmNodeType {
+  Import = 0,
+  Module,
+  Port,
+  Type,
+  TypeAlias,
+  TypedModuleFunction,
+  UntypedModuleFunction,
+  Unknown
+}
+
+export interface BaseElmNode {
+  code: string;
+  end: CodeLocation;
+  name: string;
+  nodeType: ElmNodeType;
+  start: CodeLocation;
+}
+
+export interface ElmFunctionDependency {
+  occurs: number[];
+  typeInfo: ElmTypeInfo;
+}
+
+export interface ElmImportNode extends BaseElmNode {
+  alias?: string;
+  exposing: ElmTypeInfo[];
+}
+
+export interface ElmModuleNode extends BaseElmNode {
+  children: ElmNode[];
+  exposing: ElmTypeInfo[];
+}
+
+export interface ElmPortNode extends BaseElmNode {
+}
+
+export interface ElmTypeNode extends BaseElmNode {
+  dependencies: ElmTypeInfo[];
+}
+
+export interface ElmTypeAliasNode extends BaseElmNode {
+}
+
+export interface ElmTypedModuleFunctionNode extends BaseElmNode {
+  arguments: string[];
+  dependencies: ElmFunctionDependency[];
+  returnType: ElmTypeInfo;
+}
+
+export interface ElmUntypedModuleFunctionNode extends BaseElmNode {
+  arguments: string[];
+  dependencies: ElmFunctionDependency[];
+}
+
+export type ElmTestSuiteType = "concat" | "describe";
+
+export type ElmTestType = "test" | "fuzz" | "fuzz2" |  "fuzz3" | "fuzz4" | "fuzz5" | "fuzzWith" | "todo";
+
+export interface ElmTypeInfo {
+  name: string;
+  parentTypeName?: string;
+  moduleName: string;
+}
+
+export interface ExecutionContext {
+  buildOutputFilePath: string;
+  codeLookup: ElmCodeLookup;
+  config: LoboConfig;
+  tempDirectory: string;
+  testDirectory: string;
+  testSuiteOutputFilePath: string;
 }
 
 export interface FailureMessage {
@@ -11,13 +111,15 @@ export interface FailureMessage {
 
 export interface LoboConfig {
   readonly compiler: string;
+  readonly loboDirectory: string;
+  readonly noAnalysis: boolean;
+  readonly noCleanup: boolean;
   readonly noInstall: boolean;
   readonly noUpdate: boolean;
   readonly noWarn: boolean;
   readonly prompt: boolean;
   readonly reportProgress: boolean;
   readonly reporter: PluginReporter;
-  readonly testFile: string;
   readonly testFramework: PluginTestFrameworkWithConfig;
   readonly testMainElm: string;
 }
@@ -29,6 +131,8 @@ export interface PluginConfig {
 
 export interface PluginTestFramework {
   initArgs(): RunArgs;
+  pluginElmModuleName(): string;
+  testFrameworkElmModuleName(): string;
 }
 
 export interface PluginTestFrameworkConfig extends PluginConfig {
@@ -49,7 +153,7 @@ export interface PluginOption {
 
 export interface PluginReporter {
   init(testCount: number): void;
-  finish(results: TestRun): Bluebird<object>;
+  finish(results: TestRun): Bluebird<void>;
   runArgs(args: RunArgs): void;
   update(result: ProgressReport): void;
 }
@@ -75,7 +179,7 @@ export type ProgressReport =
 
 export type Reject = (reason?: Error) => void;
 
-export type Resolve = (data?: object) => void;
+export type Resolve<T> = (data?: T) => void;
 
 export type ResultType =
   "FAILED"
@@ -93,6 +197,7 @@ export type RunType =
   "FOCUS"
   | "NORMAL"
   | "SKIP";
+
 
 export interface TestArgs {
   readonly seed: number;

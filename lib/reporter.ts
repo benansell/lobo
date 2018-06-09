@@ -75,7 +75,7 @@ export class ReporterImp implements Reporter {
 
     return promise.then(() => {
       if (!results.summary.success) {
-        throw new Error("Failed");
+        throw new Error("Test Run Failed");
       }
     });
   }

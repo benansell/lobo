@@ -13,33 +13,38 @@ import {Stats} from "fs";
 
 let expect = chai.expect;
 chai.use(SinonChai);
+chai.use(require("chai-things"));
 
 describe("lib util", () => {
   let RewiredUtil = rewire("../../../lib/util");
   let util: UtilImp;
   let mockLogger: Logger;
-  let mockDirname: SinonStub;
+  let mockDirName: SinonStub;
   let mockExit: SinonStub;
   let mockExists: SinonStub;
   let mockLstat: SinonStub;
+  let mockReadFileSync: SinonStub;
   let mockRealPath: SinonStub;
   let mockRelativePath: SinonStub;
   let mockResolvePath: SinonStub;
   let mockVersions: SinonStub;
+  let revert: () => void;
 
   beforeEach(() => {
-    mockDirname = Sinon.stub();
+    mockDirName = Sinon.stub();
     mockExit = Sinon.stub();
     mockExists = Sinon.stub();
     mockLstat = Sinon.stub();
+    mockReadFileSync = Sinon.stub();
     mockRealPath = Sinon.stub();
     mockRelativePath = Sinon.stub();
     mockResolvePath = Sinon.stub();
     mockVersions = Sinon.stub();
 
-    RewiredUtil.__set__({
-      fs: {existsSync: mockExists, lstatSync: mockLstat, realpathSync: mockRealPath},
-      path: {dirname: mockDirname, relative: mockRelativePath, resolve: mockResolvePath},
+    revert = RewiredUtil.__set__({
+      fs: {existsSync: mockExists, lstatSync: mockLstat, readFileSync: mockReadFileSync,
+        realpathSync: mockRealPath},
+      path: {dirname: mockDirName, relative: mockRelativePath, resolve: mockResolvePath},
       process: {exit: mockExit, versions: mockVersions}
     });
     let rewiredImp = RewiredUtil.__get__("UtilImp");
@@ -50,6 +55,10 @@ describe("lib util", () => {
     mockLogger.error = Sinon.stub();
     mockLogger.trace = Sinon.stub();
     util = new rewiredImp(mockLogger);
+  });
+
+  afterEach(() => {
+    revert();
   });
 
   describe("createUtil", () => {
@@ -67,11 +76,11 @@ describe("lib util", () => {
       // arrange
       let mockFind = Sinon.stub();
       mockFind.returns(["plugin/1/foo.js", "plugin/2/foobar.js"]);
-      let revert = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
+      let revertShellJs = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
 
       // act
       let actual: string[] = undefined;
-      revert(() => actual = util.availablePlugins("foo"));
+      revertShellJs(() => actual = util.availablePlugins("foo"));
 
       // assert
       expect(actual.length).to.equal(2);
@@ -385,7 +394,7 @@ describe("lib util", () => {
   describe("load", () => {
     it("should load and return elm-test plugin config", () => {
       // arrange
-      let mockJoin = x => "../plugin/elm-test/plugin-config";
+      let mockJoin = () => "../plugin/elm-test/plugin-config";
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
@@ -442,6 +451,44 @@ describe("lib util", () => {
       // assert
       expect(mockClosestMatch).to.have.been.calledWith("bar", Sinon.match.any);
     });
+  });
+
+  describe("read", () => {
+    it("should be undefined when file does not exist", () => {
+      // arrange
+      mockExists.returns(false);
+
+      // act
+      let actual = util.read("/foo");
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should be undefined when fs.readFileSync throws an error", () => {
+      // arrange
+      mockExists.returns(true);
+      mockReadFileSync.throws(new Error("foo"));
+
+      // act
+      let actual = util.read("/foo");
+
+      // assert
+      expect(actual).to.be.undefined;
+    });
+
+    it("should return raw file when it exists", () => {
+      // arrange
+      mockExists.returns(true);
+      mockReadFileSync.returns("bar");
+
+      // act
+      let actual = util.read("foo");
+
+      // assert
+      expect(actual).to.equal("bar");
+    });
+
   });
 
   describe("resolveDir", () => {

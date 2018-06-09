@@ -2,7 +2,7 @@ module Tests exposing (all)
 
 import Expect exposing (pass)
 import Fuzz exposing (int, list)
-import ElmTest.Extra exposing (Test, describe, only, fuzz, skip, test, todo)
+import ElmTest.Extra exposing (Test, describe, fuzz, only, skip, test, todo)
 
 
 all : Test
@@ -68,3 +68,4 @@ onlyFuzzTest =
 todoTest : Test
 todoTest =
     todo "todoTest"
+

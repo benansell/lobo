@@ -1,8 +1,8 @@
 environment:
   ELM_VERSION: "0.18.0"
   matrix:
-  - nodejs_version: "4"
-  - nodejs_version: "9"
+  - nodejs_version: "8"
+  - nodejs_version: "10"
 
 platform:
   - x64
@@ -12,7 +12,7 @@ matrix:
 
 init:
   # report build worker details
-  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  #- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 install:
   # update node version
@@ -32,7 +32,7 @@ test_script:
 
 on_finish:
   # pause before completion when $blockRdp is true
-  - ps: $blockRdp = $false;
+  #- ps: $blockRdp = $false;
 
   # upload unit test results
   - ps: |

@@ -29,6 +29,8 @@ updated
 * Checks elm-package.json in base directory and test directory for 
 missing source directories and packages
 * Friendly error output
+* Test suite generation
+* Test suite analysis that checks for hidden and over exposed tests
 
 
 ## Prerequisites
@@ -50,49 +52,83 @@ Once they are installed you can run lobo via the following command:
 lobo --help 
 ```
 
-## Updating
+## .lobo directory
+Once lobo has been run once you should see a ".lobo" directory in the
+root of your project - this is the lobo temp directory.
+
+This directory only contains temp files for the running of lobo. You
+should configure your source control to ignore this directory and its
+contents.
+
+## Upgrading
 After updating lobo, you may find that elm does not properly find the 
-lobo elm code. To fix this delete your test elm-stuff directory.
+lobo elm code. To fix this delete your test elm-stuff and .lobo
+directories.
 
-## Tests.elm
-So that lobo can find all your tests it assumes that you have a 
-Tests.elm file that references all the tests that should be run.
+### Versions of lobo prior to 0.5
+Prior to 0.5 lobo did not generate the test suite and required you to
+construct the test suites, which were typically linked together at a
+central Tests.elm file. This is no longer required - you should be able
+to remove most if not all of the describe tests in your project and
+change each test module to expose everything.
 
-lobo does not require an elm file containing a main function - this is 
-provided for you in the lobo npm package.
+## Tests
+The recommended approach to writing tests is to expose all of the
+tests automatically in the module through the use of "exposing (..)"
+
+Lobo supports the following test frameworks:
+* elm-test
+* elm-test-extra
 
 ### elm-test
-If you are using the elm-test framework your Tests.elm file should look
-like:
+If you are using the elm-test framework your elm tests should be
+similar to this:
 
 ```elm
-module Tests exposing (all)
+module Tests exposing (..)
 
-import Test exposing (Test, describe)
+import Expect
+import Test exposing (Test, test)
 
-all : Test
-all =
-    describe "Tests"
-        [ anExampleTest
-        , ...
-        ]
+testExpectTrue : Test
+testExpectTrue =
+    test "Expect.true test" <|
+        \() ->
+            True
+                |> Expect.true "Expected true"
+
+testExpectNotEqual : Test
+testExpectNotEqual =
+    test "Expect Not Equal" <|
+        \() ->
+            Expect.notEqual "foo" "foobar"
+...
 ```
 
 ### elm-test-extra
-If you are using the elm-test-extra framework your Tests.elm file should
-look like:
+If you are using the elm-test-extra framework your elm tests should be
+similar to this:
 
 ```elm
-module Tests exposing (all)
+module Tests exposing (..)
 
-import ElmTest.Extra exposing (Test, describe)
+import ElmTest.Extra exposing (Test, test)
+import Expect
 
-all : Test
-all =
-    describe "Tests"
-        [ anExampleTest
-        , ...
-        ]
+testExpectTrue : Test
+testExpectTrue =
+    test "Expect.true test" <|
+        \() ->
+            True
+                |> Expect.true "Expected true"
+
+testExpectNotEqual : Test
+testExpectNotEqual =
+    test "Expect Not Equal" <|
+        \() ->
+            Expect.notEqual "foo" "foobar"
+...
+
 ```
 
 The following elm-test functions are not available in elm-test-extra:
@@ -100,10 +136,30 @@ The following elm-test functions are not available in elm-test-extra:
 
 Note: the use of skip in lobo requires a reason to be specified
 
+## Analysis
+Lobo considers any function that it finds in the test directory that
+has no arguments and returns a Test to be a test that should be part of
+the test suite. Using this definition lobo checks for the following
+issues:
+* Hidden Tests
+* Over Exposed Tests
+
+### Hidden Tests
+These are tests that exist within the test files, but have not been
+exposed by their module. The easiest way to avoid this issue is to
+simply expose all of the types in the module by "exposing (..)".
+
+### Over Exposed Tests
+These are tests that are exposed directly or indirectly by more than
+one test suite. This commonly occurs when using a describe block that
+either is in a module that exposes all tests or including a test that
+belongs to another module.
+
 ## Typical Workflow
 Assuming your application follows the recommended directory structure 
 for an elm application:
 ```
+.lobo                 --> lobo temp directory - should be ignored by source control
 elm-package.json      --> definition of the elm required packages
 elm-stuff/            --> elm installed packages
 node_modules/         --> npm installed modules
@@ -112,7 +168,6 @@ src/                  --> source code directory
 tests/                --> test code directory
     elm-package.json  --> definition of the elm required packages for app & testing
     elm-stuff/        --> elm installed packages for app & testing
-    Tests.elm         --> defines which tests are run by the test runner
 ```
 
 Locally running the following command will start lobo in watch mode:
@@ -120,15 +175,18 @@ Locally running the following command will start lobo in watch mode:
 lobo --watch 
 ```
 
-lobo will then check that the elm-package.json files in the application
+Lobo will then check that the elm-package.json files in the application
 directory and tests directory are in-sync. If they are out of sync it
 will ask you if the tests elm-package.json can be updated.
 
-lobo will then attempt to build the tests, if this fails the errors
-from elm make will be displayed
+Lobo will then attempt to generate the test suite and build the tests,
+if this fails the errors from elm make will be displayed
 
-Once the build succeeds lobo will run the tests referenced in Tests.elm
-and report the result to the console.
+Once the build succeeds lobo will analyze the test suite for issues, if
+this fails the issues will be displayed.
+
+After the analysis is completed without any issues lobo will run the
+test suite and report the result to the console.
 
 Once a build/run loop has completed if lobo is running in watch mode 
 (recommended) it will wait for changes in the source code and 
@@ -167,6 +225,12 @@ use elm-test use the following:
 ```
 lobo --framework=elm-test
 ```
+
+### --noAnalysis
+Prevents lobo from running the test suite analysis. This can be useful
+when the analysis is reporting false positives that cause the tests not
+to run.
+
 ### --noInstall
 Prevents lobo from trying to run elm-package when running the tests.
 This can be useful when using lobo without an internet connection.
@@ -197,10 +261,6 @@ follows:
 ```
 lobo --testDirectory="test/unit"
 ```
-
-### --testFile
-Specify the relative path to the main elm tests file within the tests
-directory. The default value is "Tests.elm"
 
 ### --verbose
 Increases the verbosity of lobo logging messages. Please use this when
@@ -284,6 +344,8 @@ html; defaults to text
 * reportFile - the path to save the test run report to
 
 ## Troubleshooting
+In general if lobo quits abnormaly try deleting your test elm-stuff and
+.lobo directories.
 
 ### The argument to function `findTests` is causing a mismatch
 If you are seeing an error similar to the following:

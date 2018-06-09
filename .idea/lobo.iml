@@ -3,12 +3,18 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+      <excludeFolder url="" />
       <excludeFolder url="file://$MODULE_DIR$/.nyc_output" />
-      <excludeFolder url="file://$MODULE_DIR$/.tmp" />
       <excludeFolder url="file://$MODULE_DIR$/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/elm-stuff" />
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/test-result" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-lang/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-lang/tests/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test-extra/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test-extra/tests/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test/elm-stuff" />
+      <excludeFolder url="file://$MODULE_DIR$/test/integration/elm-test/tests/elm-stuff" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
     </content>
     <orderEntry type="inheritedJdk" />

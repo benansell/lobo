@@ -1,49 +1,10 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
 import Dict
-import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 import Expect exposing (atLeast, atMost, equal, fail, false, greaterThan, notEqual, true)
 import Fuzz exposing (string)
 import Set
-
-
-all : Test
-all =
-    describe "Tests"
-        [ testExpectFail
-        , testExpectTrue
-        , testExpectFalse
-        , testExpectErr
-        , testExpectEqualStringShort
-        , testExpectEqualStringLong
-        , testExpectEqualFloat
-        , testExpectEqualFloatNegative
-        , testExpectEqualFloatExponent
-        , testExpectEqualFloatNaN
-        , testExpectEqualFloatInfinite
-        , testExpectEqualList
-        , testExpectEqualTuple
-        , testExpectEqualRecord
-        , testExpectEqualTypeUnion
-        , testExpectEqualUnionDifferentRecords
-        , testExpectEqualUnionDifferentRecordsNoCommonField
-        , testExpectEqualUnionDifferentRecordsCommonField
-        , testExpectNotEqual
-        , testExpectAllEmptyList
-        , testExpectAllFirstFails
-        , testExpectLessThan
-        , testExpectGreaterThan
-        , testExpectAtLeast
-        , testExpectAtMost
-        , testExpectEqualLists
-        , testExpectEqualDicts
-        , testExpectEqualSets
-        , testFuzz
-        , testFuzzWith
-        , testFuzz2
-        , testMultiLine
-        ]
-
+import ElmTest.Extra exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
 
 testExpectFail : Test
 testExpectFail =

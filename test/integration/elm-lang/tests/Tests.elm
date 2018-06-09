@@ -1,18 +1,10 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
 import Expect exposing (pass)
 import ImportCheck
 import ImportNavigation
+import ImportWebGL
 import Test exposing (Test, describe, test)
-
-
-all : Test
-all =
-    describe "Tests"
-        [ testImportCheck
-        , testImportNavigation
-        , testImportNavigationInit
-        ]
 
 
 testImportCheck : Test
@@ -50,3 +42,9 @@ testImportNavigationInit =
                 |> ImportNavigation.init
                 |> Tuple.second
                 |> Expect.equal Cmd.none
+
+testImportWebGL : Test
+testImportWebGL =
+    test "test import WebGL" <|
+        \() ->
+            Expect.true "truthy" ImportWebGL.truthy

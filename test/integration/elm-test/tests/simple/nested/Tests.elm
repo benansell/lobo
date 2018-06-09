@@ -1,10 +1,12 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
-import Test exposing (Test, describe)
-import ChildTest exposing (all)
+import Expect
+import Test exposing (Test, test)
 
 
-all : Test
-all =
-    describe "Tests"
-        [ ChildTest.all ]
+passingTest : Test
+passingTest =
+    test "passingTest" <|
+        \() ->
+            Expect.pass
+

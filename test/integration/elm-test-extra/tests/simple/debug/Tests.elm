@@ -1,16 +1,7 @@
-module Tests exposing (all)
+module Tests exposing (..)
 
 import Expect exposing (equal)
 import ElmTest.Extra exposing (Test, describe, test)
-
-
-all : Test
-all =
-    describe "Tests"
-        [ testDebugFail
-        , testDebugPass
-        ]
-
 
 testDebugPass : Test
 testDebugPass =

@@ -146,10 +146,11 @@ toProgressMessage testReport =
 encodeProgressMessage : String -> TestId -> Value
 encodeProgressMessage resultType id =
     object
-    [ ( "id", int id.current.uniqueId)
-    , ( "label", string id.current.label )
-    , ( "resultType", string resultType )
-    ]
+        [ ( "id", int id.current.uniqueId )
+        , ( "label", string id.current.label )
+        , ( "resultType", string resultType )
+        ]
+
 
 
 -- TEST REPORT NODE
@@ -219,26 +220,32 @@ type alias DetachedNode =
     }
 
 
-toTestReportNode : List TestReport -> SuiteNode
+toTestReportNode : List TestReport -> Maybe SuiteNode
 toTestReportNode reports =
     let
         detachedNode =
             List.map toDetachedNode reports
                 |> attachNode
     in
-        case detachedNode of
-            Nothing ->
-                Debug.crash "Impossible not to have any detached nodes"
+    case detachedNode of
+        Nothing ->
+            Nothing
 
-            Just node ->
-                toSuiteNode node
+        Just node ->
+            toSuiteNode node |> Just
 
 
 toSuiteNode : DetachedNode -> SuiteNode
 toSuiteNode node =
     case node.report of
-        Failed _ ->
-            Debug.crash "Impossible to have failed node as root"
+        Failed failedLeaf ->
+            { id = failedLeaf.id
+            , runType = failedLeaf.runType
+            , label = failedLeaf.label
+            , reports = [ node.report ]
+            , startTime = Just failedLeaf.startTime
+            , endTime = Just failedLeaf.endTime
+            }
 
         Ignored _ ->
             Debug.crash "Impossible to have ignored node as root"
@@ -268,27 +275,33 @@ attachNode nodes =
                     List.filter (\x -> next.id.current.uniqueId /= x.id.current.uniqueId) nodes
                         |> List.partition (byTestIds next.id.parents)
             in
-                case parents of
-                    [] ->
-                        case next.id.parents of
-                            [] ->
-                                -- done when run out of parents
-                                Just next
+            case parents of
+                [] ->
+                    case next.id.parents of
+                        [] ->
+                            -- done when run out of parents
+                            Just next
 
-                            x :: xs ->
-                                -- create new parent with next as a child and repeat
-                                { id = { current = x, parents = xs }, report = fromDetachedNode x next }
-                                    :: others
-                                    |> attachNode
+                        x :: xs ->
+                            -- create new parent with next as a child and repeat
+                            { id = { current = x, parents = xs }, report = fromDetachedNode x next }
+                                :: others
+                                |> attachNode
 
-                    [ x ] ->
-                        -- add next to it's parent and repeat
-                        { x | report = attachChild next.report x.report }
-                            :: others
-                            |> attachNode
+                [ x ] ->
+                    -- add next to it's parent and repeat
+                    { x | report = attachChild next.report x.report }
+                        :: others
+                        |> attachNode
 
-                    x :: xs ->
-                        Debug.crash "Impossible to have more than 1 parent node"
+                x :: xs ->
+                    -- merge parents into single parent and add next to it's parent and repeat
+                    let
+                        merged = List.foldl (\a b -> { a | report = attachChild b.report a.report }) x xs
+                    in
+                    { merged | report = attachChild next.report merged.report }
+                        :: others
+                        |> attachNode
 
 
 byTestIds : List TestIdentifier -> DetachedNode -> Bool
@@ -394,8 +407,15 @@ fromDetachedNode parentId node =
 attachChild : TestReportNode -> TestReportNode -> TestReportNode
 attachChild child parent =
     case parent of
-        Failed _ ->
-            Debug.crash "Impossible to attach a child to a failed test"
+        Failed node ->
+            Suite
+                { id = node.id
+                , runType = node.runType
+                , label = node.label
+                , reports = [parent, child]
+                , startTime = Just node.startTime
+                , endTime = Just node.endTime
+                }
 
         Ignored _ ->
             Debug.crash "Impossible to attach a child to a ignored test"
@@ -411,15 +431,15 @@ attachChild child parent =
                 todoNode =
                     { node | label = List.map (\x -> x.message) node.messages |> String.concat }
             in
-                Suite
-                    { id = node.id
-                    , runType = Normal
-                    , label = node.label
-                    , reports = Todoed todoNode :: []
-                    , startTime = Nothing
-                    , endTime = Nothing
-                    }
-                    |> attachChild child
+            Suite
+                { id = node.id
+                , runType = Normal
+                , label = node.label
+                , reports = Todoed todoNode :: []
+                , startTime = Nothing
+                , endTime = Nothing
+                }
+                |> attachChild child
 
         Suite node ->
             let
@@ -435,13 +455,13 @@ attachChild child parent =
                     extractEndTime child
                         |> improveTime (>) node.endTime
             in
-                Suite
-                    { node
-                        | reports = child :: node.reports
-                        , runType = runType
-                        , startTime = startTime
-                        , endTime = endTime
-                    }
+            Suite
+                { node
+                    | reports = child :: node.reports
+                    , runType = runType
+                    , startTime = startTime
+                    , endTime = endTime
+                }
 
 
 improveRunType : TestRunType -> TestRunType -> TestRunType
@@ -592,7 +612,7 @@ encodeTestReportNode reportTree =
 encodeFailedLeaf : FailedLeaf -> Value
 encodeFailedLeaf leaf =
     object
-        [ ( "id", int leaf.id)
+        [ ( "id", int leaf.id )
         , ( "label", string leaf.label )
         , ( "resultType", string resultType.failed )
         , ( "resultMessages", list (List.map encodeFailureMessage leaf.messages) )
@@ -604,7 +624,7 @@ encodeFailedLeaf leaf =
 encodeIgnoredLeaf : IgnoredLeaf -> Value
 encodeIgnoredLeaf leaf =
     object
-        [ ( "id", int leaf.id)
+        [ ( "id", int leaf.id )
         , ( "label", string leaf.label )
         , ( "resultType", string resultType.ignored )
         ]
@@ -613,7 +633,7 @@ encodeIgnoredLeaf leaf =
 encodePassedLeaf : PassedLeaf -> Value
 encodePassedLeaf leaf =
     object
-        [ ( "id", int leaf.id)
+        [ ( "id", int leaf.id )
         , ( "label", string leaf.label )
         , ( "resultType", string resultType.passed )
         , ( "startTime", float leaf.startTime )
@@ -624,29 +644,41 @@ encodePassedLeaf leaf =
 encodeSkippedLeaf : SkippedLeaf -> Value
 encodeSkippedLeaf leaf =
     object
-        [ ( "id", int leaf.id)
+        [ ( "id", int leaf.id )
         , ( "label", string leaf.label )
         , ( "resultType", string resultType.skipped )
         , ( "reason", string leaf.reason )
         ]
 
 
-encodeRootNode : Value -> SuiteNode -> Value
-encodeRootNode config node =
-    object
-        [ ( "id", int node.id)
-        , ( "runType", string <| toRunType node.runType )
-        , ( "config", config )
-        , ( "runResults", encodeTestReportNodeList node.reports )
-        , ( "startTime", encodeMaybeTime node.startTime )
-        , ( "endTime", encodeMaybeTime node.endTime )
-        ]
+encodeRootNode : Value -> Maybe SuiteNode -> Value
+encodeRootNode config maybeNode =
+    case maybeNode of
+        Nothing ->
+            object
+                [ ( "id", int 0 )
+                , ( "runType", string <| toRunType Normal )
+                , ( "config", config )
+                , ( "runResults", encodeTestReportNodeList [] )
+                , ( "startTime", encodeMaybeTime Nothing )
+                , ( "endTime", encodeMaybeTime Nothing )
+                ]
+
+        Just node ->
+            object
+                [ ( "id", int node.id )
+                , ( "runType", string <| toRunType node.runType )
+                , ( "config", config )
+                , ( "runResults", encodeTestReportNodeList node.reports )
+                , ( "startTime", encodeMaybeTime node.startTime )
+                , ( "endTime", encodeMaybeTime node.endTime )
+                ]
 
 
 encodeSuiteNode : SuiteNode -> Value
 encodeSuiteNode node =
     object
-        [ ( "id", int node.id)
+        [ ( "id", int node.id )
         , ( "label", string node.label )
         , ( "results", encodeTestReportNodeList node.reports )
         , ( "startTime", encodeMaybeTime node.startTime )
@@ -657,7 +689,7 @@ encodeSuiteNode node =
 encodeTodoLeaf : TodoLeaf -> Value
 encodeTodoLeaf leaf =
     object
-        [ ( "id", int leaf.id)
+        [ ( "id", int leaf.id )
         , ( "label", string leaf.label )
         , ( "resultType", string resultType.todo )
         ]
@@ -669,14 +701,14 @@ encodeFailureMessage failureMessage =
         messages =
             [ ( "message", string failureMessage.message ) ]
     in
-        case failureMessage.given of
-            Nothing ->
-                object messages
+    case failureMessage.given of
+        Nothing ->
+            object messages
 
-            Just givenMessage ->
-                ( "given", encodeMaybeString failureMessage.given )
-                    :: messages
-                    |> object
+        Just givenMessage ->
+            ( "given", encodeMaybeString failureMessage.given )
+                :: messages
+                |> object
 
 
 encodeMaybeString : Maybe String -> Value

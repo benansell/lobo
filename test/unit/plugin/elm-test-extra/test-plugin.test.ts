@@ -2,7 +2,7 @@
 
 import * as chai from "chai";
 import rewire = require("rewire");
-import {PluginTestFramework} from "../../../../lib/plugin";
+import {PluginTestFramework, RunArgs} from "../../../../lib/plugin";
 import {createPlugin, ElmTestExtraPlugin} from "../../../../plugin/elm-test-extra/test-plugin";
 
 let expect = chai.expect;
@@ -29,10 +29,11 @@ describe("plugin elm-test-extra test-plugin", () => {
   describe("initArgs", () => {
     it("should use the supplied seed value when it exists", () => {
       // arrange
-      RewiredPlugin.__set__({program: {seed: 123}});
+      let revertProgram = RewiredPlugin.__with__({program: {seed: 123}});
 
       // act
-      let actual = plugin.initArgs();
+      let actual: RunArgs = undefined;
+      revertProgram(() => actual = plugin.initArgs());
 
       // assert
       expect(actual.seed).to.equal(123);
@@ -40,10 +41,11 @@ describe("plugin elm-test-extra test-plugin", () => {
 
     it("should use the supplied runCount value when it exists", () => {
       // arrange
-      RewiredPlugin.__set__({program: {runCount: 123}});
+      let revertProgram = RewiredPlugin.__with__({program: {runCount: 123}});
 
       // act
-      let actual = plugin.initArgs();
+      let actual: RunArgs = undefined;
+      revertProgram(() => actual = plugin.initArgs());
 
       // assert
       expect(actual.runCount).to.equal(123);
@@ -51,10 +53,11 @@ describe("plugin elm-test-extra test-plugin", () => {
 
     it("should generate a seed value no value is supplied", () => {
       // arrange
-      RewiredPlugin.__set__({program: {seed: undefined}});
+      let revertProgram = RewiredPlugin.__with__({program: {seed: undefined}});
 
       // act
-      let actual = plugin.initArgs();
+      let actual: RunArgs = undefined;
+      revertProgram(() => actual = plugin.initArgs());
 
       // assert
       expect(actual.seed).not.to.be.undefined;
@@ -62,14 +65,39 @@ describe("plugin elm-test-extra test-plugin", () => {
 
     it("should generate a different seed value each time when no value is supplied", () => {
       // arrange
-      RewiredPlugin.__set__({program: {seed: undefined}});
+      let revertProgram = RewiredPlugin.__with__({program: {seed: undefined}});
 
       // act
-      let first = plugin.initArgs();
-      let second = plugin.initArgs();
+      let first: RunArgs = undefined;
+      let second: RunArgs = undefined;
+
+      revertProgram(() => {
+        first = plugin.initArgs();
+        second = plugin.initArgs();
+      });
 
       // assert
       expect(first.seed).not.to.equal(second.seed);
+    });
+  });
+
+  describe("pluginElmModuleName", () => {
+    it("should return 'ElmTestExtraPlugin'", () => {
+      // act
+      let actual = plugin.pluginElmModuleName();
+
+      // assert
+      expect(actual).to.equal("ElmTestExtraPlugin");
+    });
+  });
+
+  describe("testFrameworkElmModuleName", () => {
+    it("should return 'ElmTestTest.Extra'", () => {
+      // act
+      let actual = plugin.testFrameworkElmModuleName();
+
+      // assert
+      expect(actual).to.equal("ElmTest.Extra");
     });
   });
 });

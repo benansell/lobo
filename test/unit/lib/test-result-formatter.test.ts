@@ -20,9 +20,10 @@ describe("lib test-result-formatter", () => {
   let mockComparer: Comparer;
   let mockDecorator: TestResultDecorator;
   let mockLogger: { log(message: string): void };
+  let revert: () => void;
 
   beforeEach(() => {
-    RewiredFormatter.__set__({os: {EOL: "\n"}});
+    revert = RewiredFormatter.__set__({os: {EOL: "\n"}});
     let rewiredImp = RewiredFormatter.__get__("TestResultFormatterImp");
     mockComparer = <Comparer> {diff: Sinon.stub()};
     mockDecorator = <TestResultDecorator><{}>{
@@ -42,6 +43,10 @@ describe("lib test-result-formatter", () => {
     };
     mockLogger = {log: Sinon.spy()};
     formatter = new rewiredImp(mockComparer, mockDecorator);
+  });
+
+  afterEach(() => {
+    revert();
   });
 
   describe("createTestResultFormatter", () => {
@@ -147,12 +152,12 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatFailure with supplied columns value", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({process: {stdout: undefined}});
+      let revertStdOut = RewiredFormatter.__with__({process: {stdout: undefined}});
       let expected = <FailureMessage>{message: ""};
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
-      revert(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123));
+      revertStdOut(() => formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123));
 
       // assert
       expect(formatter.formatFailureMessage).to.have.been.calledWith(Sinon.match.any, 123);
@@ -285,10 +290,10 @@ describe("lib test-result-formatter", () => {
 
     it("should return the reason prefixed with a new line", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({os: {EOL: "::"}});
+      let revertOs = RewiredFormatter.__with__({os: {EOL: "::"}});
       // act
       let actual: string = undefined;
-      revert(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
+      revertOs(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
 
       // assert
       expect(actual).to.match(/^::/);
@@ -296,10 +301,10 @@ describe("lib test-result-formatter", () => {
 
     it("should return the reason suffixed with a new line", () => {
       // arrange
-      let revert = RewiredFormatter.__with__({os: {EOL: "::"}});
+      let revertOs = RewiredFormatter.__with__({os: {EOL: "::"}});
       // act
       let actual: string = undefined;
-      revert(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
+      revertOs(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
 
       // assert
       expect(actual).to.match(/::$/);

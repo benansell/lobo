@@ -7,15 +7,21 @@ import * as Sinon from "sinon";
 import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createLobo, Lobo, LoboImp} from "../../../lib/main";
+import {Analyzer} from "../../../lib/analyzer";
 import {Builder} from "../../../lib/builder";
 import {ElmPackageHelper} from "../../../lib/elm-package-helper";
 import {Logger} from "../../../lib/logger";
 import {Runner} from "../../../lib/runner";
 import {Util} from "../../../lib/util";
 import {
+  ExecutionContext,
   LoboConfig, PluginConfig, PluginReporterWithConfig, PluginTestFrameworkConfig,
   PluginTestFrameworkWithConfig
 } from "../../../lib/plugin";
+import {TestSuiteGenerator} from "../../../lib/test-suite-generator";
+import {OutputDirectoryManager} from "../../../lib/output-directory-manager";
+import {DependencyManager} from "../../../lib/dependency-manager";
+import {ElmCodeLookupManager} from "../../../lib/elm-code-lookup-manager";
 
 
 let expect = chai.expect;
@@ -25,11 +31,24 @@ describe("lib main", () => {
   let rewiredMain = rewire("../../../lib/main");
   let rewiredImp;
   let lobo: LoboImp;
+  let mockAnalyze: Sinon.SinonStub;
+  let mockAnalyzer: Analyzer;
+  let mockBuild: Sinon.SinonStub;
   let mockBuilder: Builder;
+  let mockDependencyManager: DependencyManager;
+  let mockElmCodeLookupManager: ElmCodeLookupManager;
   let mockExit: () => void;
   let mockHelper: ElmPackageHelper;
   let mockLogger: Logger;
+  let mockRun: Sinon.SinonStub;
   let mockRunner: Runner;
+  let mockSyncDependencies: Sinon.SinonStub;
+  let mockSyncElmCodeLookup: Sinon.SinonStub;
+  let mockOutputDirectoryCleanUp: Sinon.SinonStub;
+  let mockOutputDirectorySync: Sinon.SinonStub;
+  let mockOutputDirectoryManager: OutputDirectoryManager;
+  let mockTestSuiteGenerate: Sinon.SinonStub;
+  let mockTestSuiteGenerator: TestSuiteGenerator;
   let mockUtil: Util;
 
   let revertExit: () => void;
@@ -38,13 +57,26 @@ describe("lib main", () => {
     mockExit = Sinon.stub();
     revertExit = rewiredMain.__set__({process: {exit: mockExit}});
     rewiredImp = rewiredMain.__get__("LoboImp");
-    mockBuilder = <Builder> {build: Sinon.stub()};
+    mockAnalyze = Sinon.stub();
+    mockAnalyzer = <Analyzer> {analyze: mockAnalyze};
+    mockBuild = Sinon.stub();
+    mockBuilder = <Builder> {build: mockBuild};
+    mockSyncDependencies = Sinon.stub();
+    mockDependencyManager = <DependencyManager> {sync: mockSyncDependencies};
+    mockSyncElmCodeLookup = Sinon.stub();
+    mockElmCodeLookupManager = <ElmCodeLookupManager> {sync: mockSyncElmCodeLookup};
     mockHelper = <ElmPackageHelper><{}> {read: Sinon.stub()};
     mockLogger = <Logger> {
       debug: Sinon.stub(), error: Sinon.stub(), info: Sinon.stub(),
       trace: Sinon.stub(), warn: Sinon.stub()
     };
-    mockRunner = <Runner> {run: Sinon.stub()};
+    mockRun = Sinon.stub();
+    mockRunner = <Runner> {run: mockRun};
+    mockOutputDirectoryCleanUp = Sinon.stub();
+    mockOutputDirectorySync = Sinon.stub();
+    mockOutputDirectoryManager = <OutputDirectoryManager> {cleanup: mockOutputDirectoryCleanUp, sync: mockOutputDirectorySync};
+    mockTestSuiteGenerate = Sinon.stub();
+    mockTestSuiteGenerator = <TestSuiteGenerator> {generate: mockTestSuiteGenerate};
     mockUtil = <Util><{}> {
       availablePlugins: Sinon.stub(),
       checkNodeVersion: Sinon.stub(),
@@ -55,7 +87,8 @@ describe("lib main", () => {
       unsafeLoad: Sinon.stub()
     };
 
-    lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
+    lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockElmCodeLookupManager, mockHelper, mockLogger,
+                          mockOutputDirectoryManager, mockRunner, mockTestSuiteGenerator, mockUtil, false, false, false);
   });
 
   afterEach(() => {
@@ -69,24 +102,6 @@ describe("lib main", () => {
 
       // assert
       expect(actual).to.exist;
-    });
-  });
-
-  describe("generateTestFileName", () => {
-    it("should return a file name with 'lobo-test-' prefix", () => {
-      // act
-      let actual = LoboImp.generateTestFileName();
-
-      // assert
-      expect(actual).to.match(/([\/\\])lobo-test.+\.js$/);
-    });
-
-    it("should return a js file name", () => {
-      // act
-      let actual = LoboImp.generateTestFileName();
-
-      // assert
-      expect(actual).to.match(/.js$/);
     });
   });
 
@@ -106,6 +121,7 @@ describe("lib main", () => {
 
         return <LoboConfig> {};
       };
+      lobo.launch = Sinon.mock();
       lobo.validateConfiguration = Sinon.spy();
 
       // act
@@ -117,9 +133,9 @@ describe("lib main", () => {
 
     it("should call watch with config when program.watch is true", () => {
       // arrange
-      let expected = <LoboConfig> {};
+      let config = <LoboConfig> {loboDirectory: "", testMainElm: ""};
       lobo.configure = Sinon.stub();
-      (<SinonStub>lobo.configure).returns(expected);
+      (<SinonStub>lobo.configure).returns(config);
       lobo.validateConfiguration = Sinon.stub();
       lobo.watch = Sinon.spy();
       let revert = rewiredMain.__with__({program: {watch: true}});
@@ -128,23 +144,23 @@ describe("lib main", () => {
       revert(() => lobo.execute());
 
       // assert
-      expect(lobo.watch).to.have.been.calledWith(expected);
+      expect(lobo.watch).to.have.been.calledWith(Sinon.match.has("config", config));
     });
 
     it("should call launch with config when program.watch is false", () => {
       // arrange
-      let expected = <LoboConfig> {};
+      let config = <LoboConfig> {loboDirectory: "", testMainElm: ""};
       lobo.configure = Sinon.stub();
-      (<SinonStub>lobo.configure).returns(expected);
+      (<SinonStub>lobo.configure).returns(config);
       lobo.validateConfiguration = Sinon.stub();
-      lobo.launch = Sinon.spy();
+      lobo.launch = Sinon.mock();
       let revert = rewiredMain.__with__({program: {watch: false}});
 
       // act
       revert(() => lobo.execute());
 
       // assert
-      expect(lobo.launch).to.have.been.calledWith(expected);
+      expect(lobo.launch).to.have.been.calledWith(Sinon.match.has("config", config));
     });
 
     it("should exit the process with exitCode 1 when there is an error", () => {
@@ -160,140 +176,354 @@ describe("lib main", () => {
     });
   });
 
-  describe("launch", () => {
-    it("should call builder.build with the config", () => {
+  describe("launchStages", () => {
+    it("should call dependencyManager.sync with the initial context", () => {
       // arrange
-      let expected = <LoboConfig> {};
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
-      let actual = lobo.launch(expected);
+      let actual = lobo.launchStages(expected);
 
       // assert
-      actual.then(() => {
-        expect(mockBuilder.build).to.have.been.calledWith(expected, Sinon.match.any);
+      return actual.finally(() => {
+        expect(mockDependencyManager.sync).to.have.been.calledWith(expected);
       });
     });
 
-    it("should call builder.build with the test directory", () => {
+    it("should call outputDirectoryManager.sync with the context from dependency manager", () => {
       // arrange
-      let expected = <LoboConfig> {};
-      let revert = rewiredMain.__with__({program: {testDirectory: "foo"}});
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves(expected);
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
-      let actual: Bluebird<void> = undefined;
-      revert(() => actual = lobo.launch(expected));
+      let actual = lobo.launchStages(<ExecutionContext> {});
 
       // assert
-      actual.then(() => {
-        expect(mockBuilder.build).to.have.been.calledWith(Sinon.match.any, "foo");
+      return actual.finally(() => {
+        expect(mockOutputDirectoryManager.sync).to.have.been.calledWith(expected);
       });
     });
 
-    it("should call runner.run with the config", () => {
+    it("should call elmCodeLookupManager.sync with the context from output directory manager", () => {
       // arrange
-      let expected = <LoboConfig> {};
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves(expected);
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
 
       // act
-      let actual = lobo.launch(expected);
+      let actual = lobo.launchStages(<ExecutionContext> {});
 
       // assert
-      actual.then(() => {
+      return actual.finally(() => {
+        expect(mockElmCodeLookupManager.sync).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should call testSuiteGenerator.generate with the context from elm code lookup manager", () => {
+      // arrange
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves(expected);
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.finally(() => {
+        expect(mockTestSuiteGenerator.generate).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should call builder.build with the context from test suite generator", () => {
+      // arrange
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves(expected);
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.finally(() => {
+        expect(mockBuilder.build).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should call runner.run with the context from analyze", () => {
+      // arrange
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves(expected);
+      mockRun.resolves({});
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.finally(() => {
         expect(mockRunner.run).to.have.been.calledWith(expected);
       });
     });
 
-    it("should not call done with the config when watch is false", () => {
+    it("should call outputDirectoryManager.cleanUp with the final context when there are no errors", () => {
       // arrange
-      let expected = <LoboConfig> {};
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves(expected);
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.finally(() => {
+        expect(mockOutputDirectoryCleanUp).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should call outputDirectoryManager.cleanUp with the current context when there is an error", () => {
+      // arrange
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves(expected);
+      mockTestSuiteGenerate.rejects(new Error());
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.catch(() => {
+        expect(mockOutputDirectoryCleanUp).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should return the execution context from runner.run", () => {
+      // arrange
+      let expected = <ExecutionContext> {config: {}};
+      mockSyncDependencies.resolves({});
+      mockOutputDirectorySync.resolves({});
+      mockSyncElmCodeLookup.resolves({});
+      mockTestSuiteGenerate.resolves({});
+      mockBuild.resolves({});
+      mockAnalyze.resolves({});
+      mockRun.resolves(expected);
+      mockOutputDirectoryCleanUp.resolves({});
+
+      // act
+      let actual = lobo.launchStages(<ExecutionContext> {});
+
+      // assert
+      return actual.then((result: ExecutionContext) => {
+        expect(result).to.equal(expected);
+      });
+    });
+  });
+
+  describe("launch", () => {
+    it("should not call done with the context when watch is false", () => {
+      // arrange
       let revert = rewiredMain.__with__({program: {watch: false}});
       lobo.done = Sinon.spy();
+      let mockLaunchStages = Sinon.stub();
+      mockLaunchStages.resolves();
+      lobo.launchStages = mockLaunchStages;
 
       // act
       let actual: Bluebird<void> = undefined;
-      revert(() => actual = lobo.launch(expected));
+      revert(() => actual = lobo.launch(<ExecutionContext>{}));
 
       // assert
-      actual.then(() => {
+      return actual.then(() => {
         expect(lobo.done).not.to.have.been.called;
       });
     });
 
-    it("should call done with the config when watch is true", () => {
+    it("should call done with the context from launchStages when watch is true", () => {
       // arrange
-      let expected = <LoboConfig> {};
+      let expected = <ExecutionContext>{config: {loboDirectory: "foo", testMainElm: "bar"}};
       let revert = rewiredMain.__with__({program: {watch: true}});
       lobo.done = Sinon.spy();
+      let mockLaunchStages = Sinon.stub();
+      mockLaunchStages.resolves(expected);
+      lobo.launchStages = mockLaunchStages;
 
       // act
       let actual: Bluebird<void> = undefined;
-      revert(() => actual = lobo.launch(expected));
+      revert(() => actual = lobo.launch(<ExecutionContext>{}));
 
       // assert
-      actual.then(() => {
+      return actual.then(() => {
         expect(lobo.done).to.have.been.calledWith(expected);
       });
     });
 
-    it("should call process.exit with exitCode of 1 when an error is thrown and watch is false", () => {
-      // arrange
-      (<SinonStub>mockBuilder.build).throws(new Error());
-      let revert = rewiredMain.__with__({program: {watch: false}});
+    describe("watch is true", () => {
+      let revertProgram: () => void;
 
-      // act
-      let actual: Bluebird<void> = undefined;
-      revert(() => actual = lobo.launch(<LoboConfig>{}));
+      beforeEach(() => {
+        revertProgram = rewiredMain.__set__({program: {watch: true}});
+      });
 
-      // assert
-      actual.then(() => {
-        expect(mockExit).to.have.been.calledWith(1);
+      afterEach(() => {
+        revertProgram();
+      });
+
+      it("should call done with the context when an error is thrown and watch is true", () => {
+        // arrange
+        let expected = <ExecutionContext>{config: {loboDirectory: "foo", testMainElm: "bar"}};
+        lobo.done = Sinon.spy();
+        let mockLaunchStages = Sinon.stub();
+        mockLaunchStages.rejects(new Error());
+        lobo.launchStages = mockLaunchStages;
+
+        // act
+        let actual = lobo.launch(expected);
+
+        // assert
+        return actual.then(() => {
+          expect(lobo.done).to.have.been.calledWith(expected);
+          expect(mockExit).not.to.have.been.called;
+        });
       });
     });
 
-    it("should call done with the config when an error is thrown and watch is false", () => {
-      // arrange
-      let expected = <LoboConfig> {};
-      (<SinonStub>mockBuilder.build).throws(new Error());
-      let revert = rewiredMain.__with__({program: {watch: true}});
-      lobo.done = Sinon.spy();
+    describe("watch is false", () => {
+      let revertProgram: () => void;
 
-      // act
-      let actual: Bluebird<void> = undefined;
-      revert(() => actual = lobo.launch(expected));
+      beforeEach(() => {
+        revertProgram = rewiredMain.__set__({program: {watch: false}});
+      });
 
-      // assert
-      actual.then(() => {
-        expect(lobo.done).to.have.been.calledWith(expected);
-        expect(mockExit).not.to.have.been.called;
+      afterEach(() => {
+        revertProgram();
+      });
+
+      it("should call process.exit with exitCode of 1 when an error is thrown and watch is false", () => {
+        // arrange
+        let mockLaunchStages = Sinon.stub();
+        mockLaunchStages.rejects(new Error());
+        lobo.launchStages = mockLaunchStages;
+
+        // act
+        let actual = lobo.launch(<ExecutionContext>{});
+
+        // assert
+        return actual.then(() => {
+          expect(mockExit).to.have.been.calledWith(1);
+        });
       });
     });
 
     it("should call handleUncaughtException when an ReferenceError is thrown", () => {
       // arrange
-      let expected = new ReferenceError();
-      (<SinonStub>mockBuilder.build).throws(expected);
+      let expected = new ReferenceError("foo");
       lobo.handleUncaughtException = Sinon.spy();
+      let mockLaunchStages = Sinon.stub();
+      mockLaunchStages.rejects(expected);
+      lobo.launchStages = mockLaunchStages;
 
       // act
-      let actual = lobo.launch(<LoboConfig>{});
+      let actual = lobo.launch(<ExecutionContext>{});
 
       // assert
-      actual.then(() => {
-        expect(lobo.handleUncaughtException).to.have.been.calledWith(expected);
+      return actual.then(() => {
+        expect(lobo.handleUncaughtException).to.have.been.calledWith(expected, Sinon.match.any);
       });
     });
 
     it("should log Debug.crash errors to the logger", () => {
       // arrange
       let expected = new Error("Ran into a `Debug.crash` in module");
-      (<SinonStub>mockBuilder.build).throws(expected);
       lobo.handleUncaughtException = Sinon.spy();
+      let mockLaunchStages = Sinon.stub();
+      mockLaunchStages.rejects(expected);
+      lobo.launchStages = mockLaunchStages;
 
       // act
-      let actual = lobo.launch(<LoboConfig>{});
+      let actual = lobo.launch(<ExecutionContext>{});
 
       // assert
-      actual.then(() => {
+      return actual.then(() => {
         expect(mockLogger.error).to.have.been.calledWith(expected);
+      });
+    });
+
+    it("should not log Analysis Failed errors to the logger", () => {
+      // arrange
+      let expected = new Error("Analysis Issues Found");
+      lobo.handleUncaughtException = Sinon.spy();
+      let mockLaunchStages = Sinon.stub();
+      mockLaunchStages.rejects(expected);
+      lobo.launchStages = mockLaunchStages;
+
+      // act
+      let actual = lobo.launch(<ExecutionContext>{});
+
+      // assert
+      return actual.then(() => {
+        expect(mockLogger.error).not.to.have.been.called;
+      });
+    });
+
+    it("should not log Test Run Failed errors to the logger", () => {
+      // arrange
+      let expected = new Error("Test Run Failed");
+      lobo.handleUncaughtException = Sinon.spy();
+      let mockLaunchStages = Sinon.stub();
+      mockLaunchStages.rejects(expected);
+      lobo.launchStages = mockLaunchStages;
+
+      // act
+      let actual = lobo.launch(<ExecutionContext>{});
+
+      // assert
+      return actual.then(() => {
+        expect(mockLogger.error).not.to.have.been.called;
       });
     });
   });
@@ -301,8 +531,9 @@ describe("lib main", () => {
   describe("done", () => {
     it("should call launch when waiting is true", () => {
       // arrange
-      let expected = <LoboConfig> {};
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, true);
+      let expected = <ExecutionContext>{};
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockElmCodeLookupManager, mockHelper, mockLogger,
+                            mockOutputDirectoryManager, mockRunner, mockTestSuiteGenerator, mockUtil, false, false, true);
       lobo.launch = Sinon.spy();
 
       // act
@@ -314,8 +545,9 @@ describe("lib main", () => {
 
     it("should not call launch when waiting is false", () => {
       // arrange
-      let expected = <LoboConfig> {};
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
+      let expected = <ExecutionContext>{};
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockElmCodeLookupManager, mockHelper, mockLogger,
+                            mockOutputDirectoryManager, mockRunner, mockTestSuiteGenerator, mockUtil, false, false, false);
       lobo.launch = Sinon.spy();
 
       // act
@@ -346,10 +578,10 @@ describe("lib main", () => {
 
     it("should watch the root elm-package.json", () => {
       // arrange
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext>{};
 
       // act
-      lobo.watch(config);
+      lobo.watch(context);
 
       // assert
       expect(mockWatch.firstCall.args[0]).to.include("./elm-package.json");
@@ -357,10 +589,10 @@ describe("lib main", () => {
 
     it("should watch paths excluding elm-stuff directory", () => {
       // arrange
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext>{};
 
       // act
-      lobo.watch(config);
+      lobo.watch(context);
 
       // assert
       let ignored = mockWatch.firstCall.args[1].ignored;
@@ -369,21 +601,21 @@ describe("lib main", () => {
 
     it("should watch the directories in the test elm-package json", () => {
       // arrange
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext>{};
       (<SinonStub>mockHelper.read).returns({sourceDirectories: [".", "../src"]});
       let revert = rewiredMain.__with__({process: {cwd: () => "./"}, program: {testDirectory: "./test"}, shelljs: {test: () => true}});
 
       // act
-      revert(() => lobo.watch(config));
+      revert(() => lobo.watch(context));
 
       // assert
       expect(mockWatch.firstCall.args[0]).to.include("src");
       expect(mockWatch.firstCall.args[0]).to.include("test");
     });
 
-    it("should call launch with supplied config when 'ready' event is received", () => {
+    it("should call launch with supplied context when 'ready' event is received", () => {
       // arrange
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext>{};
       lobo.launch = Sinon.spy();
       mockOn.callsFake((event, func) => {
         if (event === "ready") {
@@ -394,15 +626,15 @@ describe("lib main", () => {
       });
 
       // act
-      lobo.watch(config);
+      lobo.watch(context);
 
       // assert
-      expect(lobo.launch).to.have.been.calledWith(config);
+      expect(lobo.launch).to.have.been.calledWith(context);
     });
 
-    it("should not call launch with supplied config when 'all' event is received and ready is false", () => {
+    it("should not call launch with supplied context when 'all' event is received and ready is false", () => {
       // arrange
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext>{};
       mockOn.callsFake((event, func) => {
         if (event === "all") {
           func();
@@ -411,19 +643,20 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, false, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockElmCodeLookupManager, mockHelper, mockLogger,
+                            mockOutputDirectoryManager, mockRunner, mockTestSuiteGenerator, mockUtil, false, false, false);
       lobo.launch = Sinon.spy();
 
       // act
-      lobo.watch(config);
+      lobo.watch(context);
 
       // assert
       expect(lobo.launch).not.to.have.been.called;
     });
 
-    it("should not call launch with supplied config when 'all' event is received and ready is true and busy is true", () => {
+    it("should not call launch with supplied context when 'all' event is received and ready is true and busy is true", () => {
       // arrange
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext>{};
       mockOn.callsFake((event, func) => {
         if (event === "all") {
           func();
@@ -432,19 +665,20 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, true, true, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockElmCodeLookupManager, mockHelper, mockLogger,
+                            mockOutputDirectoryManager, mockRunner, mockTestSuiteGenerator, mockUtil, true, true, false);
       lobo.launch = Sinon.spy();
 
       // act
-      lobo.watch(config);
+      lobo.watch(context);
 
       // assert
       expect(lobo.launch).not.to.have.been.called;
     });
 
-    it("should call launch with supplied config when 'all' event is received and ready is true", () => {
+    it("should call launch with supplied context when 'all' event is received and ready is true", () => {
       // arrange
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext>{};
       mockOn.callsFake((event, func) => {
         if (event === "all") {
           func();
@@ -453,14 +687,15 @@ describe("lib main", () => {
         return {on: mockOn};
       });
 
-      lobo = new rewiredImp(mockBuilder, mockHelper, mockLogger, mockRunner, mockUtil, false, true, false);
+      lobo = new rewiredImp(mockAnalyzer, mockBuilder, mockDependencyManager, mockElmCodeLookupManager, mockHelper, mockLogger,
+                            mockOutputDirectoryManager, mockRunner, mockTestSuiteGenerator, mockUtil, false, true, false);
       lobo.launch = Sinon.spy();
 
       // act
-      lobo.watch(config);
+      lobo.watch(context);
 
       // assert
-      expect(lobo.launch).to.have.been.calledWith(config);
+      expect(lobo.launch).to.have.been.calledWith(context);
     });
   });
 
@@ -578,6 +813,14 @@ describe("lib main", () => {
       expect(mockOption).to.have.been.calledWith("--framework <value>", Sinon.match.any);
     });
 
+    it("should add the '--noAnalysis' option", () => {
+      // act
+      lobo.configure();
+
+      // assert
+      expect(mockOption).to.have.been.calledWith("--noAnalysis", Sinon.match.any);
+    });
+
     it("should add the '--noInstall' option", () => {
       // act
       lobo.configure();
@@ -652,7 +895,7 @@ describe("lib main", () => {
 
     it("should call loadReporterConfig with program.reporter", () => {
       // arrange
-      (<{reporter: string}>programMocks).reporter = "foo";
+      (<{ reporter: string }>programMocks).reporter = "foo";
       let revert = rewiredMain.__with__({program: programMocks});
       lobo.loadReporterConfig = Sinon.spy();
 
@@ -665,7 +908,7 @@ describe("lib main", () => {
 
     it("should call loadReporter with program.reporter", () => {
       // arrange
-      (<{reporter: string}>programMocks).reporter = "foo";
+      (<{ reporter: string }>programMocks).reporter = "foo";
       let revert = rewiredMain.__with__({program: programMocks});
       lobo.loadReporter = Sinon.spy();
 
@@ -681,7 +924,7 @@ describe("lib main", () => {
       let expected = {name: "foo"};
       lobo.loadReporterConfig = Sinon.stub();
       (<SinonStub>lobo.loadReporterConfig).returns(expected);
-      (<{reporter: string}>programMocks).reporter = "foo";
+      (<{ reporter: string }>programMocks).reporter = "foo";
       let revert = rewiredMain.__with__({program: programMocks});
       lobo.loadReporter = Sinon.spy();
 
@@ -707,7 +950,7 @@ describe("lib main", () => {
 
     it("should call loadReporterConfig with program.framework", () => {
       // arrange
-      (<{framework: string}>programMocks).framework = "foo";
+      (<{ framework: string }>programMocks).framework = "foo";
       let revert = rewiredMain.__with__({program: programMocks});
       lobo.loadTestFrameworkConfig = Sinon.spy();
 
@@ -720,7 +963,7 @@ describe("lib main", () => {
 
     it("should call loadReporter with program.framework", () => {
       // arrange
-      (<{framework: string}>programMocks).framework = "foo";
+      (<{ framework: string }>programMocks).framework = "foo";
       let revert = rewiredMain.__with__({program: programMocks});
       lobo.loadTestFramework = Sinon.spy();
 
@@ -736,7 +979,7 @@ describe("lib main", () => {
       let expected = {name: "foo"};
       lobo.loadTestFrameworkConfig = Sinon.stub();
       (<SinonStub>lobo.loadTestFrameworkConfig).returns(expected);
-      (<{framework: string}>programMocks).framework = "foo";
+      (<{ framework: string }>programMocks).framework = "foo";
       let revert = rewiredMain.__with__({program: programMocks});
       lobo.loadTestFramework = Sinon.spy();
 
@@ -760,37 +1003,36 @@ describe("lib main", () => {
       expect(actual.testFramework).to.equal(expected);
     });
 
-    it("should set cleanup of temp files when debug option is false", () => {
+    it("should set noCleanup to false when debug option is false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ debug: boolean }>programMocks).debug = false;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      revert(() => lobo.configure());
+      let result: LoboConfig = undefined;
+      revert(() => result = lobo.configure());
 
       // assert
-      expect(mockCleanup).to.have.been.called;
+      expect(result.noCleanup).to.be.false;
     });
 
-    it("should not set cleanup of temp files when debug option is true", () => {
+    it("should set noCleanup to false when debug option is true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ debug: boolean }>programMocks).debug = true;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      revert(() => lobo.configure());
+      let result: LoboConfig = undefined;
+      revert(() => result = lobo.configure());
 
       // assert
-      expect(mockCleanup).not.to.have.been.called;
+      expect(result.noCleanup).to.be.true;
     });
 
     it("should convert program prompt 'y' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "y";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -802,9 +1044,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'Y' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "Y";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -816,9 +1057,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'yes' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "yes";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -832,9 +1072,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ verbose: boolean }>programMocks).verbose = false;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -848,9 +1087,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ verbose: boolean }>programMocks).verbose = true;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -864,9 +1102,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ veryVerbose: boolean }>programMocks).veryVerbose = false;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -880,9 +1117,8 @@ describe("lib main", () => {
       // arrange
       let shelljs = rewiredMain.__get__("shelljs");
       shelljs.config.silent = false;
-      let mockCleanup = Sinon.stub();
       (<{ veryVerbose: boolean }>programMocks).veryVerbose = true;
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -894,9 +1130,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'Yes' to true", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "Yes";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -908,9 +1143,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'n' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "n";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -922,9 +1156,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'N' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "N";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -936,9 +1169,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'no' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "no";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -950,9 +1182,8 @@ describe("lib main", () => {
 
     it("should convert program prompt 'No' to false", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ prompt: string }>programMocks).prompt = "No";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -964,9 +1195,8 @@ describe("lib main", () => {
 
     it("should set the compiler path to program.compiler", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ compiler: string }>programMocks).compiler = "foo";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -978,9 +1208,8 @@ describe("lib main", () => {
 
     it("should set the compiler path to a normalized program.compiler path", () => {
       // arrange
-      let mockCleanup = Sinon.stub();
       (<{ compiler: string }>programMocks).compiler = "foo/../bar";
-      let revert = rewiredMain.__with__({program: programMocks, tmp: {setGracefulCleanup: mockCleanup}});
+      let revert = rewiredMain.__with__({program: programMocks});
 
       // act
       let actual: LoboConfig = undefined;
@@ -1113,7 +1342,7 @@ describe("lib main", () => {
 
     it("should log an error when the elm compiler cannot be found", () => {
       // arrange
-      let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar", testFile: "baz"}, shelljs: {test: () => false}});
+      let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar"}, shelljs: {test: () => false}});
 
       // act
       revert(() => lobo.validateConfiguration());
@@ -1124,7 +1353,7 @@ describe("lib main", () => {
 
     it("should not log an error when the elm compiler is found", () => {
       // arrange
-      let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar", testFile: "baz"}, shelljs: {test: () => true}});
+      let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar"}, shelljs: {test: () => true}});
 
       // act
       revert(() => lobo.validateConfiguration());
@@ -1135,7 +1364,7 @@ describe("lib main", () => {
 
     it("should call process.exit with an exitCode of 1 when the elm compiler cannot be found", () => {
       // arrange
-      let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar", testFile: "baz"}, shelljs: {test: () => false}});
+      let revert = rewiredMain.__with__({program: {compiler: "foo", testDirectory: "bar"}, shelljs: {test: () => false}});
 
       // act
       revert(() => lobo.validateConfiguration());
@@ -1144,11 +1373,11 @@ describe("lib main", () => {
       expect(mockExit).to.have.been.calledWith(1);
     });
 
-    it("should log an error with the specified test file when the specified test file cannot be found in the test directory", () => {
+    it("should log an error with the specified test directory when the specified test directory cannot be found", () => {
       // arrange
       let revert = rewiredMain.__with__({
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
-        program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
+        path: {resolve: x => "abc-" + x},
+        program: {compiler: "foo", testDirectory: "bar"},
         shelljs: {test: () => false}
       });
 
@@ -1156,29 +1385,13 @@ describe("lib main", () => {
       revert(() => lobo.validateConfiguration());
 
       // assert
-      expect(mockLogger.error).to.have.been.calledWith("Unable to find \"base\"");
+      expect(mockLogger.error).to.have.been.calledWith("Unable to find \"abc-bar\"");
     });
 
-    it("should log an error with the specified test directory when the specified test file cannot be found in the test directory", () => {
+    it("should call process.exit with an exitCode of 1 when the test directory cannot be found", () => {
       // arrange
       let revert = rewiredMain.__with__({
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
-        program: {compiler: "foo", testDirectory: "bar", testFile: "baz/Tests.elm"},
-        shelljs: {test: () => false}
-      });
-
-      // act
-      revert(() => lobo.validateConfiguration());
-
-      // assert
-      expect(mockLogger.error).to.have.been.calledWith("abc-dir");
-    });
-
-    it("should call process.exit with an exitCode of 1 when the Tests.elm file cannot be found in the test directory", () => {
-      // arrange
-      let revert = rewiredMain.__with__({
-        path: {basename: x => "base", dirname: x => "dir", join: (...args) => args.join("-"), resolve: x => "abc-" + x},
-        program: {compiler: "foo", testDirectory: "bar", testFile: "baz-Tests.elm"},
+        program: {compiler: "foo", testDirectory: "bar"},
         shelljs: {test: () => false}
       });
 
@@ -1542,10 +1755,10 @@ describe("lib main", () => {
   describe("handleUncaughtException", () => {
     it("should log undefined error", () => {
       // arrange
-      let config = <LoboConfig> {};
+      let context = <ExecutionContext> {};
 
       // act
-      lobo.handleUncaughtException(undefined, config);
+      lobo.handleUncaughtException(undefined, context);
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Unhandled exception", Sinon.match.any);
@@ -1554,10 +1767,10 @@ describe("lib main", () => {
     it("should log unknown general errors", () => {
       // arrange
       let error = new Error();
-      let config = <LoboConfig> {};
+      let context = <ExecutionContext> {};
 
       // act
-      lobo.handleUncaughtException(error, config);
+      lobo.handleUncaughtException(error, context);
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Unhandled exception", Sinon.match.any);
@@ -1566,10 +1779,10 @@ describe("lib main", () => {
     it("should log unknown reference errors", () => {
       // arrange
       let error = new ReferenceError();
-      let config = <LoboConfig> {};
+      let context = <ExecutionContext> {};
 
       // act
-      lobo.handleUncaughtException(error, config);
+      lobo.handleUncaughtException(error, context);
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Unhandled exception", Sinon.match.any);
@@ -1579,10 +1792,10 @@ describe("lib main", () => {
       // arrange
       let error = new ReferenceError();
       error.stack = undefined;
-      let config = <LoboConfig> {};
+      let context = <ExecutionContext> {};
 
       // act
-      lobo.handleUncaughtException(error, config);
+      lobo.handleUncaughtException(error, context);
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Unhandled exception", Sinon.match.any);
@@ -1592,10 +1805,10 @@ describe("lib main", () => {
       // arrange
       let error = new ReferenceError("ElmTest.Plugin$findTests is not defined");
       error.stack = "foo";
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext> {buildOutputFilePath: "foo"};
 
       // act
-      lobo.handleUncaughtException(error, config);
+      lobo.handleUncaughtException(error, context);
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Error running the tests. This is usually " +
@@ -1606,10 +1819,10 @@ describe("lib main", () => {
       // arrange
       let error = new ReferenceError();
       error.stack = "foo";
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext> {buildOutputFilePath: "foo"};
 
       // act
-      lobo.handleUncaughtException(error, config);
+      lobo.handleUncaughtException(error, context);
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Error running the tests. This is usually " +
@@ -1620,10 +1833,10 @@ describe("lib main", () => {
       // arrange
       let error = new TypeError();
       error.stack = "foo";
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext> {buildOutputFilePath: "foo"};
 
       // act
-      lobo.handleUncaughtException(error, config);
+      lobo.handleUncaughtException(error, context);
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Error running the tests. This is usually " +
@@ -1634,11 +1847,11 @@ describe("lib main", () => {
       // arrange
       let error = new TypeError();
       error.stack = "foo";
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext> {buildOutputFilePath: "foo"};
       let revert = rewiredMain.__with__({program: {verbose: true}});
 
       // act
-      revert(() => lobo.handleUncaughtException(error, config));
+      revert(() => lobo.handleUncaughtException(error, context));
 
       // assert
       expect(mockLogger.error).to.have.been.not.calledWith("Please rerun lobo with the --verbose option to see the cause of the error");
@@ -1648,11 +1861,11 @@ describe("lib main", () => {
       // arrange
       let error = new TypeError();
       error.stack = "foo";
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext> {buildOutputFilePath: "foo"};
       let revert = rewiredMain.__with__({program: {veryVerbose: true}});
 
       // act
-      revert(() => lobo.handleUncaughtException(error, config));
+      revert(() => lobo.handleUncaughtException(error, context));
 
       // assert
       expect(mockLogger.error).to.have.been.not.calledWith("Please rerun lobo with the --verbose option to see the cause of the error");
@@ -1662,11 +1875,11 @@ describe("lib main", () => {
       // arrange
       let error = new TypeError();
       error.stack = "foo";
-      let config = <LoboConfig> {testFile: "foo"};
+      let context = <ExecutionContext> {buildOutputFilePath: "foo"};
       let revert = rewiredMain.__with__({program: {verbose: false}});
 
       // act
-      revert(() => lobo.handleUncaughtException(error, config));
+      revert(() => lobo.handleUncaughtException(error, context));
 
       // assert
       expect(mockLogger.error).to.have.been.calledWith("Please rerun lobo with the --verbose option to see the cause of the error");
@@ -1675,11 +1888,11 @@ describe("lib main", () => {
     it("should not exit the process when there is an error and in watch mode", () => {
       // arrange
       let error = new Error();
-      let config = <LoboConfig> {};
+      let context = <ExecutionContext> {config: {}};
       let revert = rewiredMain.__with__({program: {watch: true}});
 
       // act
-      revert(() => lobo.handleUncaughtException(error, config));
+      revert(() => lobo.handleUncaughtException(error, context));
 
       // assert
       expect(mockExit).not.to.have.been.called;
@@ -1688,11 +1901,11 @@ describe("lib main", () => {
     it("should exit the process with exitCode 1 when there is an error and not in watch mode", () => {
       // arrange
       let error = new Error();
-      let config = <LoboConfig> {};
+      let context = <ExecutionContext> {};
       let revert = rewiredMain.__with__({program: {watch: false}});
 
       // act
-      revert(() => lobo.handleUncaughtException(error, config));
+      revert(() => lobo.handleUncaughtException(error, context));
 
       // assert
       expect(mockExit).to.have.been.calledWith(1);

@@ -1,4 +1,4 @@
-module TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRun, TestRunType(Focusing, Normal, Skipping))
+module TestPlugin exposing (Args, FailureMessage, FailureReason(Expectation, Invalid, TodoTest, Unknown), TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRun, TestRunType(Focusing, Normal, Skipping))
 
 import Json.Encode as Encode exposing (Value)
 import Time exposing (Time)
@@ -12,7 +12,15 @@ type alias Args a =
 type alias FailureMessage =
     { given : Maybe String
     , message : String
+    , reason: FailureReason
     }
+
+
+type FailureReason
+    = Expectation
+    | Invalid
+    | TodoTest
+    | Unknown
 
 
 type alias TestId =

@@ -5,27 +5,32 @@ import * as chokidar from "chokidar";
 import * as program from "commander";
 import * as path from "path";
 import * as shelljs from "shelljs";
-import * as tmp from "tmp";
-
 import {Builder, createBuilder} from "./builder";
 import {createLogger, Logger} from "./logger";
 import {createRunner, Runner} from "./runner";
 import {createUtil, Util} from "./util";
 import {
-  LoboConfig, PluginConfig, PluginReporter, PluginReporterWithConfig, PluginTestFrameworkConfig,
+  ExecutionContext, LoboConfig, PluginConfig, PluginReporter, PluginReporterWithConfig, PluginTestFrameworkConfig,
   PluginTestFrameworkWithConfig
 } from "./plugin";
 import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
+import {Analyzer, createAnalyzer} from "./analyzer";
+import {createTestSuiteGenerator, TestSuiteGenerator} from "./test-suite-generator";
+import {createOutputDirectoryManager, OutputDirectoryManager} from "./output-directory-manager";
+import {createDependencyManager, DependencyManager} from "./dependency-manager";
+import {createElmCodeLookupManager, ElmCodeLookupManager} from "./elm-code-lookup-manager";
 
 interface PartialLoboConfig {
   compiler: string | undefined;
+  loboDirectory: string | undefined;
+  noAnalysis: boolean | undefined;
+  noCleanup: boolean | undefined;
   noInstall: boolean | undefined;
   noUpdate: boolean | undefined;
   noWarn: boolean | undefined;
   prompt: boolean | undefined;
   reportProgress: boolean | undefined;
   reporter: PluginReporter | undefined;
-  testFile: string | undefined;
   testFramework: PluginTestFrameworkWithConfig | undefined;
   testMainElm: string;
 }
@@ -41,7 +46,7 @@ interface PluginTypeDetail {
 
 export interface Lobo {
   execute(): void;
-  handleUncaughtException(error: Error, config?: PartialLoboConfig): void;
+  handleUncaughtException(error: Error): void;
 }
 
 export class LoboImp implements Lobo {
@@ -57,27 +62,32 @@ export class LoboImp implements Lobo {
     }
   };
 
-  private builder: Builder;
+  private readonly analyzer: Analyzer;
+  private readonly builder: Builder;
   private busy: boolean;
-  private elmPackageHelper: ElmPackageHelper;
-  private logger: Logger;
+  private readonly dependencyManager: DependencyManager;
+  private readonly elmCodeLookupManager: ElmCodeLookupManager;
+  private readonly elmPackageHelper: ElmPackageHelper;
+  private readonly outputDirectoryManager: OutputDirectoryManager;
+  private readonly logger: Logger;
   private ready: boolean;
-  private runner: Runner;
-  private util: Util;
+  private readonly runner: Runner;
+  private readonly testSuiteGenerator: TestSuiteGenerator;
+  private readonly util: Util;
   private waiting: boolean;
 
-  public static generateTestFileName(): string {
-    let tmpFile = tmp.fileSync({prefix: "lobo-test-", postfix: ".js"});
-
-    return tmpFile.name;
-  }
-
-  constructor(builder: Builder, elmPackageHelper: ElmPackageHelper, logger: Logger, runner: Runner, util: Util,
-              busy: boolean, ready: boolean, waiting: boolean) {
+  constructor(analyzer: Analyzer, builder: Builder, dependencyManager: DependencyManager, elmCodeLookupManager: ElmCodeLookupManager,
+              elmPackageHelper: ElmPackageHelper, logger: Logger, outputDirectoryManager: OutputDirectoryManager, runner: Runner,
+              testSuiteGenerator: TestSuiteGenerator, util: Util, busy: boolean, ready: boolean, waiting: boolean) {
+    this.analyzer = analyzer;
     this.builder = builder;
+    this.dependencyManager = dependencyManager;
+    this.elmCodeLookupManager = elmCodeLookupManager;
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
+    this.outputDirectoryManager = outputDirectoryManager;
     this.runner = runner;
+    this.testSuiteGenerator = testSuiteGenerator;
     this.util = util;
 
     this.busy = busy;
@@ -96,10 +106,16 @@ export class LoboImp implements Lobo {
       let config = this.configure();
       this.validateConfiguration();
 
+      let context: ExecutionContext = <ExecutionContext> {
+        codeLookup: {},
+        config: <LoboConfig> config,
+        testDirectory: program.testDirectory
+      };
+
       if (program.watch) {
-        this.watch(config);
+        this.watch(context);
       } else {
-        this.launch(config);
+        this.launch(context);
       }
     } catch (err) {
       this.logger.debug(err.stack);
@@ -108,53 +124,77 @@ export class LoboImp implements Lobo {
     }
   }
 
-  public launch(partialConfig: PartialLoboConfig): Bluebird<void> {
-    partialConfig.testFile = LoboImp.generateTestFileName();
-    let config = <LoboConfig> partialConfig;
+  public launchStages(initialContext: ExecutionContext): Bluebird<ExecutionContext> {
+    let logStage = (context: ExecutionContext, stage: string) => {
+      this.logger.info(`-----------------------------------${stage}------------------------------------`);
+
+      return Bluebird.resolve(context);
+    };
 
     let stages = [
-      () => this.builder.build(config, program.testDirectory, program.testFile),
-      () => this.runner.run(config)
+      (context: ExecutionContext) => logStage(context, "[ BUILD ]"),
+      (context: ExecutionContext) => this.dependencyManager.sync(context),
+      (context: ExecutionContext) => this.outputDirectoryManager.sync(context),
+      (context: ExecutionContext) => this.elmCodeLookupManager.sync(context),
+      (context: ExecutionContext) => this.testSuiteGenerator.generate(context),
+      (context: ExecutionContext) => this.builder.build(context),
+      (context: ExecutionContext) => logStage(context, "[ TEST ]-"),
+      (context: ExecutionContext) => this.analyzer.analyze(context),
+      (context: ExecutionContext) => this.runner.run(context)
     ];
 
-    return Bluebird.mapSeries(stages, (item: () => Bluebird<object>) => {
-      return item();
-    }).then(() => {
-      this.logger.debug("Test execution complete");
-      if (program.watch) {
-        this.done(config);
-      }
-    }).catch((err) => {
-      if (err instanceof ReferenceError || err instanceof TypeError) {
-        this.handleUncaughtException(err, config);
-        return;
-      } else if (/Ran into a `Debug.crash` in module/.test(err)) {
-        this.logger.error(err);
-      } else {
-        this.logger.error("Error running the tests. ", err);
-      }
+    let value: ExecutionContext = initialContext;
 
-      if (program.watch) {
-        this.done(config);
-      } else {
-        process.exit(1);
-      }
-    });
+    return Bluebird
+      .mapSeries(stages, (item: (context: ExecutionContext) => Bluebird<ExecutionContext>) => item(value)
+        .then((result: ExecutionContext) => value = result))
+      .then(() => value)
+      .finally(() => this.outputDirectoryManager.cleanup(value));
   }
 
-  public done(config: PartialLoboConfig): void {
+  public launch(context: ExecutionContext): Bluebird<void> {
+    return this.launchStages(context)
+      .then(
+        (result: ExecutionContext) => {
+          this.logger.debug("Test execution complete");
+
+          if (program.watch) {
+            this.done(result);
+          }
+        })
+      .catch((err) => {
+        if (err instanceof ReferenceError || err instanceof TypeError) {
+          this.handleUncaughtException(err, context);
+          return;
+        } else if (/Ran into a `Debug.crash` in module/.test(err)) {
+          this.logger.error(err);
+        } else if (/Build Failed|Analysis Issues Found|Test Run Failed/.test(err)) {
+          // don't print anything
+        } else {
+          this.logger.error("Error running the tests. ", err);
+        }
+
+        if (program.watch) {
+          this.done(context);
+        } else {
+          process.exit(1);
+        }
+      });
+  }
+
+  public done(context: ExecutionContext): void {
     this.logger.info("----------------------------------[ WAITING ]-----------------------------------");
 
     if (this.waiting === true) {
       this.waiting = false;
       this.busy = true;
-      this.launch(config);
+      this.launch(context);
     } else {
       this.busy = false;
     }
   }
 
-  public watch(config: PartialLoboConfig): void {
+  public watch(context: ExecutionContext): void {
     let paths = ["./elm-package.json"];
     let testElmPackage = this.elmPackageHelper.read(program.testDirectory);
 
@@ -170,10 +210,11 @@ export class LoboImp implements Lobo {
       ignored: /(.*\/\..*)|(.*\/elm-stuff\/.*)/,
       persistent: true
     }).on("ready", () => {
+      this.logger.trace("watch - ready");
       this.ready = true;
-      this.launch(config);
+      this.launch(context);
     }).on("all", (event: string, filePath: string) => {
-      this.logger.trace("watch - event: " + event + ", path: " + filePath);
+      this.logger.trace("watch - all - event: " + event + ", path: " + filePath);
 
       if (this.ready === false) {
         return;
@@ -185,7 +226,7 @@ export class LoboImp implements Lobo {
         this.waiting = true;
       } else {
         this.busy = true;
-        this.launch(config);
+        this.launch(context);
       }
     });
   }
@@ -197,6 +238,7 @@ export class LoboImp implements Lobo {
   public configure(): PartialLoboConfig {
     let packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
     let config: PartialLoboConfig = <PartialLoboConfig> {
+      loboDirectory: "./.lobo",
       testMainElm: "UnitTest.elm"
     };
 
@@ -210,6 +252,7 @@ export class LoboImp implements Lobo {
       .option("--failOnSkip", "exit with non zero exit code when there are any skip tests")
       .option("--failOnTodo", "exit with non zero exit code when there are any todo tests")
       .option("--framework <value>", "name of the testing framework to use", "elm-test-extra")
+      .option("--noAnalysis", "prevents lobo from running analysis on the test suite")
       .option("--noInstall", "prevents lobo from running elm-package install")
       .option("--noUpdate", "prevents lobo updating the test elm-package.json")
       .option("--noWarn", "hides elm make build warnings")
@@ -217,7 +260,6 @@ export class LoboImp implements Lobo {
       .option("--quiet", "only outputs build info, test summary and errors")
       .option("--reporter <value>", "name of the reporter to use", "default-reporter")
       .option("--testDirectory <value>", "directory containing the tests to run", "tests")
-      .option("--testFile <value>", "location of Tests.elm within the tests directory", "Tests.elm")
       .option("--verbose", "outputs more detailed logging")
       .option("--veryVerbose", "outputs very detailed logging")
       .option("--watch", "watch for file changes and automatically rerun any effected tests");
@@ -232,17 +274,20 @@ export class LoboImp implements Lobo {
     program.allowUnknownOption(false);
     program.parse(process.argv);
 
-    this.logger.debug("options", program.opts());
+    this.logger.debug("Options", program.opts());
     config.reporter = this.loadReporter(program.reporter, reporterConfig);
     config.testFramework = this.loadTestFramework(program.framework, testFrameworkConfig);
 
     if (!program.debug) {
-      this.logger.debug("enabling auto-cleanup of temp files");
-      tmp.setGracefulCleanup();
+      this.logger.debug("Enabling cleanup of temp files");
+      config.noCleanup = false;
+    } else {
+      this.logger.debug("Disabling cleanup of temp files");
+      config.noCleanup = true;
     }
 
     if (program.verbose !== true && program.veryVerbose !== true) {
-      this.logger.debug("silencing shelljs");
+      this.logger.debug("Silencing shelljs");
       shelljs.config.silent = true;
     }
 
@@ -253,6 +298,7 @@ export class LoboImp implements Lobo {
       config.prompt = program.prompt.toLowerCase()[0] === "y";
     }
 
+    config.noAnalysis = program.noAnalysis === true;
     config.noInstall = program.noInstall === true;
     config.noUpdate = program.noUpdate === true;
     config.noWarn = program.noWarn === true;
@@ -262,7 +308,7 @@ export class LoboImp implements Lobo {
       config.compiler = path.normalize(program.compiler);
     }
 
-    this.logger.trace("config", config);
+    this.logger.trace("Config", config);
 
     return config;
   }
@@ -308,18 +354,12 @@ export class LoboImp implements Lobo {
       }
     }
 
-    let testsElm = path.join(program.testDirectory, program.testFile);
-
-    if (!shelljs.test("-e", testsElm)) {
+    if (!shelljs.test("-e", program.testDirectory)) {
       this.logger.error("");
-      this.logger.error(`Unable to find "${path.basename(program.testFile)}"`);
-      this.logger.error("Please check that it exists in the test directory:");
-      this.logger.error(path.resolve(path.dirname(testsElm)));
+      this.logger.error(`Unable to find "${path.resolve(program.testDirectory)}"`);
       this.logger.info("");
-      this.logger.info("You can override the default location (\"./tests\") by running either:");
-      this.logger.info("lobo --testDirectory [directory containing Tests.elm]");
-      this.logger.info("or");
-      this.logger.info("lobo --testFile [relative path to main test file inside --testDirectory]");
+      this.logger.info("You can override the default location (\"./tests\") by running:");
+      this.logger.info("lobo --testDirectory [directory containing test files]");
       exit = true;
     }
 
@@ -399,7 +439,7 @@ export class LoboImp implements Lobo {
     return config;
   }
 
-  public handleUncaughtException(error: Error, config?: PartialLoboConfig): void {
+  public handleUncaughtException(error: Error, context?: ExecutionContext): void {
     let errorString: string = "";
 
     if (error) {
@@ -407,7 +447,7 @@ export class LoboImp implements Lobo {
     }
 
     if (error instanceof ReferenceError || error instanceof TypeError) {
-      if (config && config.testFile && error.stack && error.stack.match(new RegExp(config.testFile))) {
+      if (context && context.buildOutputFilePath && error.stack && error.stack.match(new RegExp(context.buildOutputFilePath))) {
         if (/ElmTest.*Plugin\$findTests is not defined/.test(errorString)) {
           this.logger.error("Error running the tests. This is usually caused by an npm upgrade to lobo: ");
           this.logger.info("");
@@ -443,8 +483,8 @@ export class LoboImp implements Lobo {
       }
     }
 
-    if (config && program.watch) {
-      this.done(config);
+    if (context && program.watch) {
+      this.done(context);
       return;
     }
 
@@ -457,5 +497,7 @@ export function createLobo(returnFake: boolean = false): Lobo {
     return <Lobo> { execute: () => { /* do nothing */ } };
   }
 
-  return new LoboImp(createBuilder(), createElmPackageHelper(), createLogger(), createRunner(), createUtil(), false, false, false);
+  return new LoboImp(createAnalyzer(), createBuilder(), createDependencyManager(), createElmCodeLookupManager(), createElmPackageHelper(),
+                     createLogger(), createOutputDirectoryManager(), createRunner(), createTestSuiteGenerator(), createUtil(),
+                     false, false, false);
 }

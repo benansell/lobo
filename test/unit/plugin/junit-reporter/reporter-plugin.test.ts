@@ -31,10 +31,11 @@ describe("plugin junit-reporter reporter-plugin", () => {
   let mockTextFormatter: TestResultFormatter;
   let mockCreateWriteStream: SinonStub;
   let mockWriteLine: SinonStub;
+  let revert: () => void;
 
   beforeEach(() => {
     mockCreateWriteStream = Sinon.stub();
-    RewiredPlugin.__set__({fs: {createWriteStream: mockCreateWriteStream}});
+    revert = RewiredPlugin.__set__({fs: {createWriteStream: mockCreateWriteStream}});
     let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
     mockLogger = {log: Sinon.spy()};
     mockStandardConsole = <ReporterStandardConsole> {
@@ -47,6 +48,10 @@ describe("plugin junit-reporter reporter-plugin", () => {
     mockTextFormatter = <TestResultFormatter><{}>{formatDebugLogMessages: Sinon.stub(), formatFailure: Sinon.stub()};
     mockWriteLine = Sinon.stub();
     reporter = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+  });
+
+  afterEach(() => {
+    revert();
   });
 
   describe("createPlugin", () => {
@@ -62,12 +67,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
   describe("constructor", () => {
     it("should set diffMaxLength to program.diffMaxLength", () => {
       // arrange
-      RewiredPlugin.__set__({program: {diffMaxLength: 123}});
+      let revertProgram = RewiredPlugin.__with__({program: {diffMaxLength: 123}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
 
       // act
-      let actual = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
-      actual.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
+      revertProgram(() => {
+        let actual = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        actual.writeFailure(mockWriteLine, "foo", <TestReportFailedLeaf> {label: "bar"}, "::");
+      });
 
       // assert
       expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
@@ -142,36 +149,28 @@ describe("plugin junit-reporter reporter-plugin", () => {
   });
 
   describe("build", () => {
-    it("should return MeasuredNode with label 'Lobo Tests'", () => {
+    it("should return MeasuredNodes returned by enrichResult", () => {
+      // arrange
+      const expected = {testCount: 123};
+      reporter.enrichResult = Sinon.stub().returns(expected);
+
       // act
-      let actual = reporter.build(<TestRunSummary> {});
+      let actual = reporter.build(<TestRunSummary><{}>{runResults: [{}]});
 
       // assert
-      expect(actual.label).to.equal("Lobo Tests");
+      expect(actual).to.deep.equal([expected]);
     });
 
-    it("should call enrichResult with endTime set from summary endDateTime", () => {
+    it("should call enrichResult with the supplied summary.runResults", () => {
       // arrange
-      let expected = new Date();
+      let expected = <MeasuredNode> {testCount: 123};
       reporter.enrichResult = Sinon.spy();
 
       // act
-      reporter.build(<TestRunSummary> {endDateTime: expected});
+      reporter.build(<TestRunSummary><{}>{runResults: [expected]});
 
       // assert
-      expect(reporter.enrichResult).to.have.been.calledWith(Sinon.match({endTime: expected.getTime()}));
-    });
-
-    it("should call enrichResult with startTime set from summary startDateTime", () => {
-      // arrange
-      let expected = new Date();
-      reporter.enrichResult = Sinon.spy();
-
-      // act
-      reporter.build(<TestRunSummary> {startDateTime: expected});
-
-      // assert
-      expect(reporter.enrichResult).to.have.been.calledWith(Sinon.match({startTime: expected.getTime()}));
+      expect(reporter.enrichResult).to.have.been.calledWith(expected);
     });
   });
 
@@ -259,7 +258,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
     it("should return the node from enrichResultChildren node when supplied unknown resultType", () => {
       // arrange
       let expected = <MeasuredNode> {testCount: 123};
-      reporter.enrichResultChildren = x => expected;
+      reporter.enrichResultChildren = () => expected;
       // act
       let actual = reporter.enrichResult(<TestReportNode> {resultType: undefined});
 
@@ -340,6 +339,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
     it("should return a promise that calls standardConsole.finish", () => {
       // arrange
       let expected = <TestRun>{summary: {runType: "NORMAL"}};
+      reporter.build = Sinon.stub();
       reporter.write = Sinon.stub();
       (<SinonStub>reporter.write).resolves();
 
@@ -354,13 +354,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a promise that calls write with the reportFile", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {reportFile: "foo"}});
+      let revertProgram = RewiredPlugin.__with__({program: {reportFile: "foo"}});
+      reporter.build = Sinon.stub();
       reporter.write = Sinon.stub();
       (<SinonStub>reporter.write).resolves();
 
       // act
-      let actual: Bluebird<Object> = undefined;
-      revert(() => actual = reporter.finish(<TestRun>{summary: {runType: "NORMAL"}}));
+      let actual: Bluebird<void> = undefined;
+      revertProgram(() => actual = reporter.finish(<TestRun>{summary: {runType: "NORMAL"}}));
 
       // assert
       actual.then(() => {
@@ -373,13 +374,13 @@ describe("plugin junit-reporter reporter-plugin", () => {
       let expected = <MeasuredNode> {label: "foo"};
       reporter.build = Sinon.stub();
       (<SinonStub>reporter.build).returns(expected);
-      let revert = RewiredPlugin.__with__({program: {reportFile: "foo"}});
+      let revertProgram = RewiredPlugin.__with__({program: {reportFile: "foo"}});
       reporter.write = Sinon.stub();
       (<SinonStub>reporter.write).resolves();
 
       // act
-      let actual: Bluebird<Object> = undefined;
-      revert(() => actual = reporter.finish(<TestRun>{summary: {}}));
+      let actual: Bluebird<void> = undefined;
+      revertProgram(() => actual = reporter.finish(<TestRun>{summary: {}}));
 
       // assert
       actual.then(() => {
@@ -390,8 +391,8 @@ describe("plugin junit-reporter reporter-plugin", () => {
     it("should return a promise that calls reject when logging fails", () => {
       // arrange
       let expected = new Error("qux");
-      reporter.write = Sinon.stub();
-      (<SinonStub>reporter.write).throws(expected);
+      reporter.build = Sinon.stub();
+      reporter.write = Sinon.stub().throws(expected);
 
       // act
       let actual = reporter.finish(<TestRun>{summary: {}});
@@ -417,31 +418,31 @@ describe("plugin junit-reporter reporter-plugin", () => {
       reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* name="foo" .*>/));
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* name="foo".*>/));
     });
 
-    it("should call writeLine for the testsuites node with time attribute value from the start and end times", () => {
+    it("should not call writeLine for the testsuites node with time attribute value from the start and end times", () => {
       // act
       reporter.writeResult(mockWriteLine, <MeasuredNode><{}>{endTime: 3000, startTime: 1000});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* time="2" .*>/));
+      expect(mockWriteLine).not.to.have.been.calledWith(Sinon.match(/<testsuites.* time=.*>/));
     });
 
-    it("should call writeLine for the testsuites node with tests attribute value from the testCount", () => {
+    it("should not call writeLine for the testsuites node with tests attribute value from the testCount", () => {
       // act
       reporter.writeResult(mockWriteLine, <MeasuredNode> {testCount: 123});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* tests="123" .*>/));
+      expect(mockWriteLine).not.to.have.been.calledWith(Sinon.match(/<testsuites.* tests=.*>/));
     });
 
-    it("should call writeLine for the testsuites node with failures attribute value from the failureCount", () => {
+    it("should not call writeLine for the testsuites node with failures attribute value from the failureCount", () => {
       // act
       reporter.writeResult(mockWriteLine, <MeasuredNode> {failedCount: 123});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* failures="123".*>/));
+      expect(mockWriteLine).not.to.have.been.calledWith(Sinon.match(/<testsuites.* failures=.*>/));
     });
 
     it("should call writeLine for the end testsuites node", () => {
@@ -451,9 +452,120 @@ describe("plugin junit-reporter reporter-plugin", () => {
       // assert
       expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<\/testsuites>/));
     });
+
+    it("should call writeResultList with the supplied writeLine", () => {
+      // arrange
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(mockWriteLine, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call writeResultList with the supplied measuredNode.label", () => {
+      // arrange
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any, Sinon.match.any);
+    });
+
+    it("should call writeResultList with the supplied node as results when the supplied measuredNode.results are not empty", () => {
+      // arrange
+      const expected = <MeasuredNode><{}> {label: "foo", results: []};
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, expected);
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, [expected], Sinon.match.any);
+    });
+
+    it("should call writeResultList with the supplied measuredNode.results when they are not empty", () => {
+      // arrange
+      const expected = [{}];
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode><{}> {label: "foo", results: expected});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected, Sinon.match.any);
+    });
+
+    it("should call writeResultList with the reporters paddingUnit", () => {
+      // arrange
+      reporter.writeResultList = Sinon.stub();
+
+      // act
+      reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
+
+      // assert
+      expect(reporter.writeResultList).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "*");
+    });
+
   });
 
   describe("writeResultList", () => {
+    it("should call self with writeLine when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[0]).to.equal(mockWriteLine);
+    });
+
+    it("should call self with node label when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[1]).to.equal("bar");
+    });
+
+    it("should call self with faked suite when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const expected = { endTime: undefined, failedCount: 1, id: 123, label: "bar", results: [node], startTime: undefined, testCount: 1};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[2]).to.deep.equal([expected]);
+    });
+
+    it("should call self with supplied padding when the supplied suite results are undefined and it is a top level result", () => {
+      // arrange
+      const node = <TestReportSuiteNode> {id: 123, label: "bar", resultType: "FAILED"};
+      const mockWriteResultList = Sinon.spy(reporter.writeResultList);
+      reporter.writeResultList = mockWriteResultList;
+
+      // act
+      reporter.writeResultList(mockWriteLine, "foo", [node], "*");
+
+      // assert
+      expect(mockWriteResultList.secondCall.args[3]).to.equal("*");
+    });
+
     it("should call writeFailure with the supplied writeLine when the node resultType is 'FAILED'", () => {
       // arrange
       reporter.writeFailure = Sinon.spy();
@@ -892,13 +1004,16 @@ describe("plugin junit-reporter reporter-plugin", () => {
   describe("writeMessage", () => {
     it("should call writeAsHtml with supplied writeLine when junitFormat is 'html'", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
-      rep.writeAsHtml = Sinon.spy();
 
       // act
-      rep.writeMessage(mockWriteLine, "foo", "::");
+      let rep: JUnitReporter = undefined;
+      revertProgram(() => {
+        rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.writeAsHtml = Sinon.spy();
+        rep.writeMessage(mockWriteLine, "foo", "::");
+      });
 
       // assert
       expect(rep.writeAsHtml).to.have.been.calledWith(mockWriteLine, Sinon.match.any, Sinon.match.any);
@@ -906,13 +1021,16 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeAsHtml with supplied message when junitFormat is 'html'", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
-      rep.writeAsHtml = Sinon.spy();
 
       // act
-      rep.writeMessage(mockWriteLine, "foo", "::");
+      let rep: JUnitReporter = undefined;
+      revertProgram(() => {
+        rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.writeAsHtml = Sinon.spy();
+        rep.writeMessage(mockWriteLine, "foo", "::");
+      });
 
       // assert
       expect(rep.writeAsHtml).to.have.been.calledWith(Sinon.match.any, "foo", Sinon.match.any);
@@ -920,13 +1038,16 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeAsHtml with supplied padding when junitFormat is 'html'", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
-      rep.writeAsHtml = Sinon.spy();
 
       // act
-      rep.writeMessage(mockWriteLine, "foo", "::");
+      let rep: JUnitReporter = undefined;
+      revertProgram(() => {
+        rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.writeAsHtml = Sinon.spy();
+        rep.writeMessage(mockWriteLine, "foo", "::");
+      });
 
       // assert
       expect(rep.writeAsHtml).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "::");
@@ -934,13 +1055,16 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeAsText with supplied writeLine when junitFormat is 'text'", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
-      rep.writeAsText = Sinon.spy();
 
       // act
-      rep.writeMessage(mockWriteLine, "foo", "::");
+      let rep: JUnitReporter = undefined;
+      revertProgram(() => {
+        rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.writeAsText = Sinon.spy();
+        rep.writeMessage(mockWriteLine, "foo", "::");
+      });
 
       // assert
       expect(rep.writeAsText).to.have.been.calledWith(mockWriteLine, Sinon.match.any);
@@ -948,13 +1072,13 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call writeAsText with supplied message when junitFormat is 'text'", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
       let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       rep.writeAsText = Sinon.spy();
 
       // act
-      rep.writeMessage(mockWriteLine, "foo", "::");
+      revertProgram(() => rep.writeMessage(mockWriteLine, "foo", "::"));
 
       // assert
       expect(rep.writeAsText).to.have.been.calledWith(Sinon.match.any, "foo");
@@ -1023,13 +1147,15 @@ describe("plugin junit-reporter reporter-plugin", () => {
   describe("toDebugLogMessage", () => {
     it("should call htmlFormatter.formatFailure with the supplied leaf when junitFormat is html", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
-      rep.toDebugLogMessage(expected);
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toDebugLogMessage(expected);
+      });
 
       // assert
       expect(mockHtmlFormatter.formatDebugLogMessages).to.have.been.calledWith(expected, Sinon.match.any);
@@ -1037,12 +1163,15 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call htmlFormatter.formatFailure with empty padding when junitFormat is html", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
-      rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      let rep: JUnitReporter = undefined;
+      revertProgram(() => {
+        rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      });
 
       // assert
       expect(mockHtmlFormatter.formatDebugLogMessages).to.have.been.calledWith(Sinon.match.any, "");
@@ -1050,13 +1179,15 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call textFormatter.formatFailure with the supplied leaf when junitFormat is text", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
-      rep.toDebugLogMessage(expected);
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toDebugLogMessage(expected);
+      });
 
       // assert
       expect(mockTextFormatter.formatDebugLogMessages).to.have.been.calledWith(expected, Sinon.match.any);
@@ -1064,12 +1195,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call textFormatter.formatFailure with empty padding when junitFormat is text", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
-      rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toDebugLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      });
 
       // assert
       expect(mockTextFormatter.formatDebugLogMessages).to.have.been.calledWith(Sinon.match.any, "");
@@ -1079,13 +1212,15 @@ describe("plugin junit-reporter reporter-plugin", () => {
   describe("toFailureLogMessage", () => {
     it("should call htmlFormatter.formatFailure with the supplied leaf when junitFormat is html", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
-      rep.toFailureLogMessage(expected);
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toFailureLogMessage(expected);
+      });
 
       // assert
       expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
@@ -1093,12 +1228,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call htmlFormatter.formatFailure with empty padding when junitFormat is html", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
-      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      });
 
       // assert
       expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
@@ -1106,12 +1243,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call htmlFormatter.formatFailure with diffMaxLength when junitFormat is html", () => {
       // arrange
-      RewiredPlugin.__set__({program: {diffMaxLength: 123, junitFormat: "html"}});
+      let revertProgram = RewiredPlugin.__with__({program: {diffMaxLength: 123, junitFormat: "html"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
-      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      });
 
       // assert
       expect(mockHtmlFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
@@ -1119,13 +1258,15 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call textFormatter.formatFailure with the supplied leaf when junitFormat is text", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
       let expected = <TestReportFailedLeaf> {label: "bar"};
 
       // act
-      rep.toFailureLogMessage(expected);
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toFailureLogMessage(expected);
+      });
 
       // assert
       expect(mockTextFormatter.formatFailure).to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
@@ -1133,12 +1274,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call textFormatter.formatFailure with empty padding when junitFormat is text", () => {
       // arrange
-      RewiredPlugin.__set__({program: {junitFormat: "text"}});
+      let revertProgram = RewiredPlugin.__with__({program: {junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
-      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      });
 
       // assert
       expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, "", Sinon.match.any);
@@ -1146,12 +1289,14 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should call textFormatter.formatFailure with diffMaxLength when junitFormat is text", () => {
       // arrange
-      RewiredPlugin.__set__({program: {diffMaxLength: 123, junitFormat: "text"}});
+      let revertProgram = RewiredPlugin.__with__({program: {diffMaxLength: 123, junitFormat: "text"}});
       let rewiredImp = RewiredPlugin.__get__("JUnitReporter");
-      let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
 
       // act
-      rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      revertProgram(() => {
+        let rep = new rewiredImp(mockLogger, "*", mockStandardConsole, mockHtmlFormatter, mockTextFormatter);
+        rep.toFailureLogMessage(<TestReportFailedLeaf> {label: "bar"});
+      });
 
       // assert
       expect(mockTextFormatter.formatFailure).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, 123);
@@ -1466,7 +1611,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       mockCreateWriteStream.returns({end: (value, cb) => cb()});
 
       // act
-      let actual = reporter.write("foo", <MeasuredNode>{label: "bar"});
+      let actual = reporter.write("foo", [<MeasuredNode>{label: "bar"}]);
 
       // assert
       actual.then(() => {
@@ -1482,7 +1627,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       mockCreateWriteStream.returns({end: (value, cb) => cb()});
 
       // act
-      let actual = reporter.write("foo", expected);
+      let actual = reporter.write("foo", [expected]);
 
       // assert
       actual.then(() => {
@@ -1496,7 +1641,7 @@ describe("plugin junit-reporter reporter-plugin", () => {
       mockCreateWriteStream.throws(expected);
 
       // act
-      let actual = reporter.write("foo", <MeasuredNode>{label: "bar"});
+      let actual = reporter.write("foo", [<MeasuredNode>{label: "bar"}]);
 
       // assert
       actual.catch((err) => {
@@ -1520,12 +1665,12 @@ describe("plugin junit-reporter reporter-plugin", () => {
 
     it("should return a function that writes a EOL at the end of the value", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({os: {EOL: "::"}});
+      let revertOs = RewiredPlugin.__with__({os: {EOL: "::"}});
       let mockWrite = Sinon.stub();
 
       // act
       let actual: (line: string) => void = undefined;
-      revert(() => {
+      revertOs(() => {
         actual = reporter.createLineWriter(<WriteStream><{}>{write: mockWrite});
         actual("foo");
       });

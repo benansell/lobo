@@ -9,7 +9,7 @@ import {createUtil, Util} from "./util";
 
 
 export interface ReporterStandardConsole {
-  finish(results: plugin.TestRun): Bluebird<object>;
+  finish(results: plugin.TestRun): Bluebird<void>;
   paddedLog(message: string): void;
   runArgs(args: plugin.RunArgs): void;
   update(result: plugin.ProgressReport): void;
@@ -32,8 +32,8 @@ export class ReporterStandardConsoleImp implements ReporterStandardConsole {
     this.util = util;
   }
 
-  public finish(results: plugin.TestRun): Bluebird<object> {
-    return new Bluebird((resolve: plugin.Resolve, reject: plugin.Reject) => {
+  public finish(results: plugin.TestRun): Bluebird<void> {
+    return new Bluebird((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       try {
         let summary = results.summary;
         let failState = results.failState;

@@ -1,7 +1,7 @@
 import * as Bluebird from "bluebird";
 import {createLogger, Logger} from "./logger";
 import {createReporter, Reporter} from "./reporter";
-import {LoboConfig, ProgressReport, Reject, Resolve, RunArgs, TestReportRoot} from "./plugin";
+import {ExecutionContext, ProgressReport, Reject, Resolve, RunArgs, TestReportRoot} from "./plugin";
 
 export interface LoboElmApp {
   ports: {
@@ -17,7 +17,7 @@ export interface ElmTestApp {
 }
 
 export interface Runner {
-  run(config: LoboConfig): Bluebird<object>;
+  run(context: ExecutionContext): Bluebird<ExecutionContext>;
 }
 
 export type NodeProcessWrite = (str: string, encoding?: string, cb?: Function) => boolean;
@@ -44,8 +44,8 @@ export class RunnerImp {
   public static originalNodeProcessWrite: NodeProcessWrite;
   public static debugLogMessages: string[];
 
-  private logger: Logger;
-  private reporter: Reporter;
+  private readonly logger: Logger;
+  private readonly reporter: Reporter;
 
   public static makeTestRunBegin(stdout: NodeProcessStdout, logger: Logger, reporter: Reporter, reject: Reject):
   (testCount: number) => void {
@@ -79,13 +79,14 @@ export class RunnerImp {
     };
   }
 
-  public static makeTestRunComplete(stdout: NodeProcessStdout, logger: Logger, reporter: Reporter, resolve: Resolve, reject: Reject):
+  public static makeTestRunComplete(stdout: NodeProcessStdout, logger: Logger, context: ExecutionContext, reporter: Reporter,
+                                    resolve: Resolve<ExecutionContext>, reject: Reject):
   (rawResults: TestReportRoot) => void {
     return (rawResults: TestReportRoot) => {
       stdout.write = RunnerImp.originalNodeProcessWrite;
       logger.trace("Test run complete", rawResults);
       reporter.finish(rawResults)
-        .then(() => resolve())
+        .then(() => resolve(context))
         .catch((err) => {
           stdout.write = RunnerImp.originalNodeProcessWrite;
           reject(err);
@@ -119,32 +120,30 @@ export class RunnerImp {
     return app;
   }
 
-  public run(config: LoboConfig): Bluebird<object> {
-    this.reporter.configure(config.reporter);
+  public run(context: ExecutionContext): Bluebird<ExecutionContext> {
+    this.reporter.configure(context.config.reporter);
     let logger = this.logger;
     let reporter = this.reporter;
 
-    return new Bluebird((resolve: Resolve, reject: Reject) => {
-      logger.info("-----------------------------------[ TEST ]-------------------------------------");
-
+    return new Bluebird((resolve: Resolve<ExecutionContext>, reject: Reject) => {
       // add to the global scope browser global properties that are used by elm imports
       (<BrowserGlobal>global).document = { location: { hash: "", pathname: "", search: "" } };
       (<BrowserGlobal>global).window = { navigator: {} };
 
-      let elmApp = this.loadElmTestApp(config.testFile, logger);
-      let initArgs = config.testFramework.initArgs();
+      let elmApp = this.loadElmTestApp(context.buildOutputFilePath, logger);
+      let initArgs = context.config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
-      config.reporter.runArgs(initArgs);
+      context.config.reporter.runArgs(initArgs);
       let app = elmApp.UnitTest.worker(initArgs);
 
       logger.debug("Subscribing to ports");
       app.ports.begin.subscribe(RunnerImp.makeTestRunBegin(process.stdout, logger, reporter, reject));
-      app.ports.end.subscribe(RunnerImp.makeTestRunComplete(process.stdout, logger, reporter, resolve, reject));
+      app.ports.end.subscribe(RunnerImp.makeTestRunComplete(process.stdout, logger, context, reporter, resolve, reject));
       app.ports.progress.subscribe(RunnerImp.makeTestRunProgress(process.stdout, logger, reporter, reject));
 
       logger.debug("Running tests");
       app.ports.runTests.send({
-        reportProgress: config.reportProgress
+        reportProgress: context.config.reportProgress
       });
     });
   }

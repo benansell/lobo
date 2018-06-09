@@ -9,3 +9,4 @@ all =
     test "passingTest" <|
         \() ->
             Expect.pass
+
