@@ -7,14 +7,14 @@ import {ExecOutputReturnValue} from "shelljs";
 let expect = chai.expect;
 
 function analysisHidden(result: ExecOutputReturnValue): void {
-  expect(result.stdout).to.match(/HIDDEN TESTS/);
+  expect(result.stdout).to.match(/Hidden Tests/);
 }
 
 function analysisOverExposed(result: ExecOutputReturnValue): void {
-  expect(result.stdout).to.match(/OVER EXPOSED TESTS/);
+  expect(result.stdout).to.match(/Over Exposed Tests/);
 }
 
-function analysisSummary(result: ExecOutputReturnValue, hidden: number, overExposed: number, unisolated: number): void {
+function analysisSummary(result: ExecOutputReturnValue, hidden: number, overExposed: number): void {
   if (hidden > 0) {
     expect(result.stdout).to.match(new RegExp("Found\\s+" + hidden + " hidden test"));
   } else {
