@@ -424,31 +424,31 @@ describe("plugin junit-reporter reporter-plugin", () => {
       reporter.writeResult(mockWriteLine, <MeasuredNode> {label: "foo"});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* name="foo" .*>/));
+      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* name="foo".*>/));
     });
 
-    it("should call writeLine for the testsuites node with time attribute value from the start and end times", () => {
+    it("should not call writeLine for the testsuites node with time attribute value from the start and end times", () => {
       // act
       reporter.writeResult(mockWriteLine, <MeasuredNode><{}>{endTime: 3000, startTime: 1000});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* time="2" .*>/));
+      expect(mockWriteLine).not.to.have.been.calledWith(Sinon.match(/<testsuites.* time=.*>/));
     });
 
-    it("should call writeLine for the testsuites node with tests attribute value from the testCount", () => {
+    it("should not call writeLine for the testsuites node with tests attribute value from the testCount", () => {
       // act
       reporter.writeResult(mockWriteLine, <MeasuredNode> {testCount: 123});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* tests="123" .*>/));
+      expect(mockWriteLine).not.to.have.been.calledWith(Sinon.match(/<testsuites.* tests=.*>/));
     });
 
-    it("should call writeLine for the testsuites node with failures attribute value from the failureCount", () => {
+    it("should not call writeLine for the testsuites node with failures attribute value from the failureCount", () => {
       // act
       reporter.writeResult(mockWriteLine, <MeasuredNode> {failedCount: 123});
 
       // assert
-      expect(mockWriteLine).to.have.been.calledWith(Sinon.match(/<testsuites.* failures="123".*>/));
+      expect(mockWriteLine).not.to.have.been.calledWith(Sinon.match(/<testsuites.* failures=.*>/));
     });
 
     it("should call writeLine for the end testsuites node", () => {

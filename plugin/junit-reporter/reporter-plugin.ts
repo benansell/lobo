@@ -161,9 +161,7 @@ export class JUnitReporter implements plugin.PluginReporter {
 
   public writeResult(writeLine: WriteLine, measuredRoot: MeasuredNode): void {
     writeLine(`<?xml version="1.0" encoding="UTF-8"?>`);
-    let durationInSeconds = JUnitReporter.getDurationSecondsFrom(<plugin.TestReportSuiteNode><{}>measuredRoot);
-    let line = `<testsuites name="${measuredRoot.label}" time="${durationInSeconds}" tests="${measuredRoot.testCount}"`
-      + ` failures="${measuredRoot.failedCount}">`;
+    let line = `<testsuites name="${measuredRoot.label}">`;
     writeLine(line);
     let node = <{results: plugin.TestReportNode[]}><{}>measuredRoot;
     this.writeResultList(writeLine, measuredRoot.label, node.results, this.paddingUnit);
