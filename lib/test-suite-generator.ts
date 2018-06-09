@@ -182,11 +182,9 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     lines.push(`import ${config.testFramework.pluginElmModuleName()} as TestPlugin`);
     lines.push(`import ${config.testFramework.testFrameworkElmModuleName()} exposing (Test, describe)`);
 
-    testModuleNodes.forEach((tm) => {
-      let exposed: string[] = [];
-      tm.tests.forEach(t => exposed.push(t.name));
-      lines.push(`import ${tm.moduleNode.name} exposing (${exposed.join(", ")})`);
-    });
+    testModuleNodes
+      .filter((tm: TestModuleNode) => tm.tests.length > 0)
+      .forEach((tm) => lines.push(`import ${tm.moduleNode.name}`));
 
     lines.push("");
     lines.push("");

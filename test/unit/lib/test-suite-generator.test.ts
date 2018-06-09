@@ -719,7 +719,24 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.match(/import Bar exposing \(Test, describe\)/);
     });
 
-    it("should return code with test module node imports", () => {
+    it("should return code without test module node imports with no exposed tests", () => {
+      // arrange
+      let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
+      let config = <LoboConfig> {testFramework};
+      let testModuleNodes = <TestModuleNode[]> [
+        {moduleNode: {name: "SuiteOne"}, tests: []},
+        {moduleNode: {name: "SuiteTwo"}, tests: []}
+      ];
+
+      // act
+      let actual = testSuiteGenerator.generateTestSuiteCode(config, testModuleNodes);
+
+      // assert
+      expect(actual).not.to.match(/import SuiteOne/);
+      expect(actual).not.to.match(/import SuiteTwo/);
+    });
+
+    it("should return code with test module node imports for exposed tests", () => {
       // arrange
       let testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       let config = <LoboConfig> {testFramework};
@@ -732,8 +749,8 @@ describe("lib test-suite-generator", () => {
       let actual = testSuiteGenerator.generateTestSuiteCode(config, testModuleNodes);
 
       // assert
-      expect(actual).to.match(/import SuiteOne exposing \(TestOne\)/);
-      expect(actual).to.match(/import SuiteTwo exposing \(TestTwo\)/);
+      expect(actual).to.match(/import SuiteOne/);
+      expect(actual).to.match(/import SuiteTwo/);
     });
 
     it("should return code with main function that calls Runner.run plugin", () => {
