@@ -73,7 +73,7 @@ describe("elm-test-extra-analysis", () => {
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
-      expect(failureMessage).to.have.string("hiddenTest (tests/analysis/hidden/Tests.elm:14:1)");
+      expect(failureMessage).to.match(/hiddenTest \(tests[\\/]analysis[\\/]hidden[\\/]Tests\.elm:14:1\)/);
     });
   });
 
@@ -102,10 +102,10 @@ describe("elm-test-extra-analysis", () => {
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
-      expect(failureMessage).to.match(/1\) (.\[\d\dm)?testOne \(tests\/analysis\/over-exposed\/Tests.elm:21:1\)/g);
-      expect(failureMessage).to.have.string("all (tests/analysis/over-exposed/Tests.elm:7:1)");
-      expect(failureMessage).to.match(/2\) (.\[\d\dm)?testTwo \(tests\/analysis\/over-exposed\/Tests.elm:28:1\)/g);
-      expect(failureMessage).to.have.string("suiteTwo (tests/analysis/over-exposed/Tests.elm:15:1)");
+      expect(failureMessage).to.match(/1\) (.\[\d\dm)?testOne \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:21:1\)/g);
+      expect(failureMessage).to.match(/all \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:7:1\)/);
+      expect(failureMessage).to.match(/2\) (.\[\d\dm)?testTwo \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:28:1\)/g);
+      expect(failureMessage).to.match(/suiteTwo \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:15:1\)/);
     });
   });
 
@@ -122,10 +122,10 @@ describe("elm-test-extra-analysis", () => {
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
-      expect(failureMessage).to.match(/1\) (.\[\d\dm)?all \(tests\/analysis\/unisolated\/ChildTest.elm:7:1\)/g);
-      expect(failureMessage).to.have.string("all (tests/analysis/unisolated/Tests.elm:7:1)");
-      expect(failureMessage).to.match(/2\) (.\[\d\dm)?all \(tests\/analysis\/unisolated\/GrandChildTest\.elm:7:1\)/g);
-      expect(failureMessage).to.have.string("all (tests/analysis/unisolated/ChildTest.elm:7:1)");
+      expect(failureMessage).to.match(/1\) (.\[\d\dm)?all \(tests[\\/]analysis[\\/]unisolated[\\/]ChildTest\.elm:7:1\)/g);
+      expect(failureMessage).to.match(/all \(tests[\\/]analysis[\\/]unisolated[\\/]Tests\.elm:7:1\)/);
+      expect(failureMessage).to.match(/2\) (.\[\d\dm)?all \(tests[\\/]analysis[\\/]unisolated[\\/]GrandChildTest\.elm:7:1\)/g);
+      expect(failureMessage).to.match(/all \(tests[\\/]analysis[\\/]unisolated[\\/]ChildTest\.elm:7:1\)/);
     });
   });
 
