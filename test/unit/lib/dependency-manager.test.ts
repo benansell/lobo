@@ -59,60 +59,9 @@ describe("lib dependency-manager", () => {
   });
 
   describe("build", () => {
-    it("should not call ensureElmPackageExists when config.noUpdate is true", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: true};
-      let context = <ExecutionContext> {config, testDirectory: "foo"};
-      dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
-      dependencyManager.installDependencies = Sinon.stub();
-
-      // act
-      let actual = dependencyManager.sync(context);
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.ensureElmPackageExists).not.to.have.been.called;
-      });
-    });
-
-    it("should not call syncTestElmPackage when config.noUpdate is true", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: true};
-      let context = <ExecutionContext> {config, testDirectory: "foo"};
-      dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
-      dependencyManager.installDependencies = Sinon.stub();
-
-      // act
-      let actual = dependencyManager.sync(context);
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).not.to.have.been.called;
-      });
-    });
-
-    it("should call installDependencies when config.noUpdate is true", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: true};
-      let context = <ExecutionContext> {config, testDirectory: "foo"};
-      dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
-      dependencyManager.installDependencies = Sinon.stub();
-
-      // act
-      let actual = dependencyManager.sync(context);
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.installDependencies).to.have.been.called;
-      });
-    });
-
     it("should call ensureElmPackageExists with the supplied config", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -128,7 +77,7 @@ describe("lib dependency-manager", () => {
 
     it("should call ensureElmPackageExists with the base directory of '.' and location 'current'", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -144,7 +93,7 @@ describe("lib dependency-manager", () => {
 
     it("should call ensureElmPackageExists with the supplied test directory", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
@@ -176,7 +125,7 @@ describe("lib dependency-manager", () => {
 
     it("should call installDependencies with the supplied test directory", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();

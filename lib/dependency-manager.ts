@@ -39,16 +39,9 @@ export class DependencyManagerImp implements DependencyManager {
     let testElmPackageDir = context.testDirectory;
     let steps: Array<() => Bluebird<void>> = [];
 
-    if (context.config.noUpdate) {
-      this.logger.info("Ignored sync of base and test elm-package.json files due to configuration");
-    } else {
-      steps = steps.concat([
-        () => this.ensureElmPackageExists(context.config, baseElmPackageDir, "current"),
-        () => this.ensureElmPackageExists(context.config, testElmPackageDir, "tests"),
-    }
-
     steps = steps.concat([
-      () => this.installDependencies(context.config, context.testDirectory)
+        () => this.ensureElmPackageExists(context.config, applicationDir),
+        () => this.installDependencies(context.config, context.testDirectory)
     ]);
 
     return Bluebird.mapSeries(steps, (item: () => Bluebird<ExecutionContext>) => item())

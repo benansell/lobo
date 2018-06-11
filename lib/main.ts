@@ -26,7 +26,6 @@ interface PartialLoboConfig {
   noAnalysis: boolean | undefined;
   noCleanup: boolean | undefined;
   noInstall: boolean | undefined;
-  noUpdate: boolean | undefined;
   prompt: boolean | undefined;
   reportProgress: boolean | undefined;
   reporter: PluginReporter | undefined;
@@ -253,7 +252,6 @@ export class LoboImp implements Lobo {
       .option("--framework <value>", "name of the testing framework to use", "elm-test-extra")
       .option("--noAnalysis", "prevents lobo from running analysis on the test suite")
       .option("--noInstall", "prevents lobo from running elm-package install")
-      .option("--noUpdate", "prevents lobo updating the test elm-package.json")
       .option("--prompt <value>", "default the answer to any questions", /^(y[es])|(n[o])$/i, "yes")
       .option("--quiet", "only outputs build info, test summary and errors")
       .option("--reporter <value>", "name of the reporter to use", "default-reporter")
@@ -298,7 +296,6 @@ export class LoboImp implements Lobo {
 
     config.noAnalysis = program.noAnalysis === true;
     config.noInstall = program.noInstall === true;
-    config.noUpdate = program.noUpdate === true;
     config.reportProgress = true;
 
     if (program.compiler) {
