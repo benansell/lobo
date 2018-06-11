@@ -37,9 +37,6 @@ export class BuilderImp implements Builder {
         command += " --yes";
       }
 
-      if (!config.noWarn) {
-        command += " --warn";
-      }
 
       try {
         // run as child process using current process stdio so that colored output is returned

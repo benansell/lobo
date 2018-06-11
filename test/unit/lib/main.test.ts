@@ -829,14 +829,6 @@ describe("lib main", () => {
       expect(mockOption).to.have.been.calledWith("--noInstall", Sinon.match.any);
     });
 
-    it("should add the '--noWarn' option", () => {
-      // act
-      lobo.configure();
-
-      // assert
-      expect(mockOption).to.have.been.calledWith("--noWarn", Sinon.match.any);
-    });
-
     it("should add the '--prompt' option", () => {
       // act
       lobo.configure();

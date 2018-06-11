@@ -116,7 +116,6 @@ export interface LoboConfig {
   readonly noCleanup: boolean;
   readonly noInstall: boolean;
   readonly noUpdate: boolean;
-  readonly noWarn: boolean;
   readonly prompt: boolean;
   readonly reportProgress: boolean;
   readonly reporter: PluginReporter;

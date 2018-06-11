@@ -184,35 +184,9 @@ describe("lib builder", () => {
       });
     });
 
-    it("should call elm-make to build the tests without --warn when noWarn is true", () => {
-      // arrange
-      let config = <LoboConfig> {noWarn: true};
-
-      // act
-      let actual = builder.make(config, "bar", "baz");
-
-      // assert
-      return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match((x) => x.indexOf("--warn") === -1), Sinon.match.any);
-      });
-    });
-
-    it("should call elm-make to build the tests with --warn when noWarn is false", () => {
-      // arrange
-      let config = <LoboConfig> {noWarn: false};
-
-      // act
-      let actual = builder.make(config, "bar", "baz");
-
-      // assert
-      return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match(/ --warn/), Sinon.match.any);
-      });
-    });
-
     it("should call elm-make to build the tests with cwd as lobo directory", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "foo", noWarn: false};
+      let config = <LoboConfig> {loboDirectory: "foo"};
 
       // act
       let actual = builder.make(config, "bar", "baz");
