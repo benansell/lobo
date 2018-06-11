@@ -45,7 +45,6 @@ export class DependencyManagerImp implements DependencyManager {
       steps = steps.concat([
         () => this.ensureElmPackageExists(context.config, baseElmPackageDir, "current"),
         () => this.ensureElmPackageExists(context.config, testElmPackageDir, "tests"),
-        () => this.syncTestElmPackage(context.config, baseElmPackageDir, testElmPackageDir)]);
     }
 
     steps = steps.concat([
@@ -84,21 +83,6 @@ export class DependencyManagerImp implements DependencyManager {
     });
   }
 
-  public syncTestElmPackage(config: LoboConfig, baseElmPackageDir: string, testElmPackageDir: string): Bluebird<void> {
-    let steps = <Array<(result: ElmPackageCompare) => Bluebird<ElmPackageCompare>>> [
-      () => this.readElmPackage(baseElmPackageDir, testElmPackageDir),
-      (result: ElmPackageCompare) =>
-        this.updateSourceDirectories(config.prompt, baseElmPackageDir, result.base, testElmPackageDir, result.target),
-      (result: ElmPackageCompare) =>
-        this.updateDependencies(config.prompt, config.testFramework, result.base, testElmPackageDir, result.target)];
-
-    let value: ElmPackageCompare;
-
-    return Bluebird
-      .mapSeries(steps, (item: (result: ElmPackageCompare) => Bluebird<ElmPackageCompare>) => item(value)
-        .then((result: ElmPackageCompare) => value = result))
-      .return();
-  }
 
   public readElmPackage(baseElmPackageDir: string, testElmPackageDir: string): Bluebird<ElmPackageCompare> {
     return new Bluebird<ElmPackageCompare>((resolve: Resolve<ElmPackageCompare>, reject: Reject) => {

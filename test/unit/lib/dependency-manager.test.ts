@@ -115,7 +115,6 @@ describe("lib dependency-manager", () => {
       let config = <LoboConfig> {noUpdate: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
 
       // act
@@ -132,7 +131,6 @@ describe("lib dependency-manager", () => {
       let config = <LoboConfig> {noUpdate: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
 
       // act
@@ -149,7 +147,6 @@ describe("lib dependency-manager", () => {
       let config = <LoboConfig> {noUpdate: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
 
       // act
@@ -161,63 +158,11 @@ describe("lib dependency-manager", () => {
       });
     });
 
-    it("should call syncTestElmPackage with the supplied config", () => {
-      // arrange
-      let config = <LoboConfig> { noUpdate: false};
-      let context = <ExecutionContext> {config, testDirectory: "foo"};
-      dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
-      dependencyManager.installDependencies = Sinon.stub();
-
-      // act
-      let actual = dependencyManager.sync(context);
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call syncTestElmPackage with a base directory of '.'", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testDirectory: "foo"};
-      dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
-      dependencyManager.installDependencies = Sinon.stub();
-
-      // act
-      let actual = dependencyManager.sync(context);
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, ".", Sinon.match.any);
-      });
-    });
-
-    it("should call syncTestElmPackage with the supplied test directory", () => {
-      // arrange
-      let config = <LoboConfig> {noUpdate: false};
-      let context = <ExecutionContext> {config, testDirectory: "foo"};
-      dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
-      dependencyManager.installDependencies = Sinon.stub();
-
-      // act
-      let actual = dependencyManager.sync(context);
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.syncTestElmPackage).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "foo");
-      });
-    });
-
     it("should call installDependencies with the supplied config", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
 
       // act
@@ -234,7 +179,6 @@ describe("lib dependency-manager", () => {
       let config = <LoboConfig> {noUpdate: false};
       let context = <ExecutionContext> {config, testDirectory: "foo"};
       dependencyManager.ensureElmPackageExists = Sinon.stub();
-      dependencyManager.syncTestElmPackage = Sinon.stub();
       dependencyManager.installDependencies = Sinon.stub();
 
       // act
@@ -378,232 +322,13 @@ describe("lib dependency-manager", () => {
     });
   });
 
-  describe("syncTestElmPackage", () => {
-    it("should call readElmPackage with the supplied base package directory", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.readElmPackage).to.have.been.calledWith("bar", Sinon.match.any);
-      });
-    });
-
-    it("should call readElmPackage with the supplied test package directory", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.readElmPackage).to.have.been.calledWith(Sinon.match.any, "baz");
-      });
-    });
-
-    it("should call updateSourceDirectories with the supplied config.prompt value", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateSourceDirectories).to.have.been
-          .calledWith(true, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call updateSourceDirectories with the supplied base package directory", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call updateSourceDirectories with the result.base from readElmPackage", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "abc", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call updateSourceDirectories with the supplied test package directory", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
-      });
-    });
-
-    it("should call updateSourceDirectories with the result.target from readElmPackage", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "abc"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
-      });
-    });
-
-    it("should call updateDependencies with the supplied config.prompt value", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateDependencies).to.have.been.calledWith(true, Sinon.match.any, Sinon.match.any);
-      });
-    });
-
-    it("should call updateDependencies with the result.base from updateSourceDirectories", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "abc", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateDependencies)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "abc", Sinon.match.any);
-      });
-    });
-
-    it("should call updateDependencies with the supplied test directory", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "abc", target: "b"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateDependencies)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz");
-      });
-    });
-
-    it("should call updateDependencies with the result.target from updateSourceDirectories", () => {
-      // arrange
-      let config = <LoboConfig> {prompt: true};
-      dependencyManager.readElmPackage = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.readElmPackage).resolves({base: "a", target: "b"});
-      dependencyManager.updateSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateSourceDirectories).resolves({base: "a", target: "abc"});
-      dependencyManager.updateDependencies = Sinon.stub();
-      (<Sinon.SinonStub>dependencyManager.updateDependencies).resolves({});
-
-      // act
-      let actual = dependencyManager.syncTestElmPackage(config, "bar", "baz");
-
-      // assert
-      return actual.then(() => {
-        expect(dependencyManager.updateDependencies)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, "abc");
-      });
-    });
-  });
-
   describe("readElmPackage", () => {
-    it("should log an error when unable to read the source elm-package.json from the supplied base directory", () => {
+    it("should log an error when unable to read the source elm-package.json from the supplied application directory", () => {
       // arrange
       (<Sinon.SinonStub>mockHelper.read).onSecondCall().returns({});
 
       // act
-      let actual = dependencyManager.readElmPackage("foo", "bar");
+      let actual = dependencyManager.readElmPackage("foo");
 
       // assert
       return actual.catch(() => {
