@@ -4,14 +4,14 @@ import Json.Decode as Decode exposing (Decoder, Value, bool, decodeValue, field,
 import Json.Encode as Encode exposing (Value, null)
 import Platform
 import Task exposing (perform)
-import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Pass, Fail, Ignore, Skip), TestRun, TestRunType(Focusing, Normal, Skipping))
+import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(..), TestRun, TestRunType(..))
 import TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
-import Time exposing (Time)
+import Time
 
 
 run : Plugin a b -> Program Decode.Value (Model a b) Msg
 run plugin =
-    Platform.programWithFlags
+    Platform.worker
         { init = init plugin
         , update = update
         , subscriptions = subscriptions
@@ -38,8 +38,8 @@ type alias RunArgs =
 
 
 type alias Plugin a b =
-    { findTests : a -> Time -> TestRun b
-    , runTest : TestItem b -> Time -> TestResult
+    { findTests : a -> Time.Posix -> TestRun b
+    , runTest : TestItem b -> Time.Posix -> TestResult
     , toArgs : Decode.Value -> a
     }
 
@@ -70,10 +70,10 @@ init plugin rawArgs =
 type Msg
     = Start RunArgs
     | Finished
-    | QueueTest Time
-    | StartTest Time
-    | FinishTest TestResult Time
-    | TimeThen (Time -> Msg)
+    | QueueTest Time.Posix
+    | StartTest Time.Posix
+    | FinishTest TestResult Time.Posix
+    | TimeThen (Time.Posix-> Msg)
 
 
 port begin : Int -> Cmd msg
@@ -146,17 +146,17 @@ update msg model =
             ( model, updateTime next )
 
 
-updateTime : (Time -> Msg) -> Cmd Msg
+updateTime : (Time.Posix -> Msg) -> Cmd Msg
 updateTime next =
     Task.perform next Time.now
 
 
-timeThenUpdate : Model args testItem -> (Time -> Msg) -> ( Model args testItem, Cmd Msg )
+timeThenUpdate : Model args testItem -> (Time.Posix -> Msg) -> ( Model args testItem, Cmd Msg )
 timeThenUpdate model next =
     ( model, updateTime next )
 
 
-queueTests : Plugin a b -> Args a -> Time -> ( Encode.Value, RunQueue b )
+queueTests : Plugin a b -> Args a -> Time.Posix -> ( Encode.Value, RunQueue b )
 queueTests plugin args time =
     let
         testRun =
@@ -168,7 +168,7 @@ queueTests plugin args time =
         ( testRun.config, runQueue )
 
 
-dequeReports : Time -> List (TestItem b) -> RunQueue b
+dequeReports : Time.Posix -> List (TestItem b) -> RunQueue b
 dequeReports time tests =
     let
         partitionedTests =
@@ -182,7 +182,7 @@ dequeReports time tests =
                 List.foldl (\t -> testItemToQueuedTest time t) { queue = [], reports = [] } ys
 
 
-testItemToQueuedTest : Time -> TestItem b -> RunQueue b -> RunQueue b
+testItemToQueuedTest : Time.Posix -> TestItem b -> RunQueue b -> RunQueue b
 testItemToQueuedTest time testItem runQueue =
     case testItem.runType of
         Normal ->
@@ -200,7 +200,7 @@ testItemToQueuedTest time testItem runQueue =
                     { runQueue | reports = (skipTest time testItem.id reason) :: runQueue.reports }
 
 
-ignoreTest : Time -> TestItem a -> TestReport
+ignoreTest : Time.Posix -> TestItem a -> TestReport
 ignoreTest time testItem =
     let
         result =
@@ -209,7 +209,7 @@ ignoreTest time testItem =
         toTestReport result time
 
 
-skipTest : Time -> TestId -> String -> TestReport
+skipTest : Time.Posix -> TestId -> String -> TestReport
 skipTest time testId reason =
     let
         result =
@@ -241,7 +241,7 @@ toRunArgs value =
                 runArgs
 
             Err _ ->
-                Debug.crash "Failed to decode runArgs"
+                Debug.todo "Failed to decode runArgs"
 
 
 runArgsDecoder : Decode.Decoder RunArgs

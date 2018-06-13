@@ -1,8 +1,8 @@
 module TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
 
 import Json.Encode exposing (Value, encode, float, int, list, null, object, string)
-import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRunType(Focusing, Normal, Skipping))
-import Time exposing (Time)
+import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(..), TestRunType(..))
+import Time
 
 
 -- RESULT TYPE
@@ -43,8 +43,8 @@ type alias FailReport =
     { id : TestId
     , runType : TestRunType
     , messages : List FailureMessage
-    , startTime : Time
-    , endTime : Time
+    , startTime : Time.Posix
+    , endTime : Time.Posix
     }
 
 
@@ -56,8 +56,8 @@ type alias IgnoreReport =
 type alias PassReport =
     { id : TestId
     , runType : TestRunType
-    , startTime : Time
-    , endTime : Time
+    , startTime : Time.Posix
+    , endTime : Time.Posix
     }
 
 
@@ -73,7 +73,7 @@ type alias TodoReport =
     }
 
 
-toTestReport : TestResult -> Time -> TestReport
+toTestReport : TestResult -> Time.Posix -> TestReport
 toTestReport testResult endTime =
     case testResult of
         Fail result ->
@@ -144,11 +144,11 @@ toProgressMessage testReport =
 
 
 encodeProgressMessage : String -> TestId -> Value
-encodeProgressMessage resultType id =
+encodeProgressMessage resultTypeValue id =
     object
         [ ( "id", int id.current.uniqueId )
         , ( "label", string id.current.label )
-        , ( "resultType", string resultType )
+        , ( "resultType", string resultTypeValue )
         ]
 
 
@@ -170,8 +170,8 @@ type alias FailedLeaf =
     , label : String
     , runType : TestRunType
     , messages : List FailureMessage
-    , startTime : Time
-    , endTime : Time
+    , startTime : Time.Posix
+    , endTime : Time.Posix
     }
 
 
@@ -185,8 +185,8 @@ type alias PassedLeaf =
     { id : Int
     , runType : TestRunType
     , label : String
-    , startTime : Time
-    , endTime : Time
+    , startTime : Time.Posix
+    , endTime : Time.Posix
     }
 
 
@@ -202,8 +202,8 @@ type alias SuiteNode =
     , runType : TestRunType
     , label : String
     , reports : List TestReportNode
-    , startTime : Maybe Time
-    , endTime : Maybe Time
+    , startTime : Maybe Time.Posix
+    , endTime : Maybe Time.Posix
     }
 
 
@@ -248,19 +248,19 @@ toSuiteNode node =
             }
 
         Ignored _ ->
-            Debug.crash "Impossible to have ignored node as root"
+            Debug.todo "Impossible to have ignored node as root"
 
         Passed _ ->
-            Debug.crash "Impossible to have passed node as root"
+            Debug.todo "Impossible to have passed node as root"
 
         Skipped _ ->
-            Debug.crash "Impossible to have skipped node as root"
+            Debug.todo "Impossible to have skipped node as root"
 
         Suite suiteNode ->
             suiteNode
 
         Todoed _ ->
-            Debug.crash "Impossible to have todo node as root"
+            Debug.todo "Impossible to have todo node as root"
 
 
 attachNode : List DetachedNode -> Maybe DetachedNode
@@ -418,13 +418,13 @@ attachChild child parent =
                 }
 
         Ignored _ ->
-            Debug.crash "Impossible to attach a child to a ignored test"
+            Debug.todo "Impossible to attach a child to a ignored test"
 
         Passed _ ->
-            Debug.crash "Impossible to attach a child to a passed test"
+            Debug.todo "Impossible to attach a child to a passed test"
 
         Skipped _ ->
-            Debug.crash "Impossible to attach a child to a skipped test"
+            Debug.todo "Impossible to attach a child to a skipped test"
 
         Todoed node ->
             let
@@ -483,10 +483,10 @@ improveRunType x y =
             x
 
         ( Focusing, Skipping _ ) ->
-            Debug.crash "Impossible to have different TestRunTypes: Focusing & Skipping"
+            Debug.todo "Impossible to have different TestRunTypes: Focusing & Skipping"
 
         ( Skipping _, Focusing ) ->
-            Debug.crash "Impossible to have different TestRunTypes: Skipping & Focusing"
+            Debug.todo "Impossible to have different TestRunTypes: Skipping & Focusing"
 
 
 extractRunType : TestReportNode -> TestRunType
@@ -511,7 +511,7 @@ extractRunType result =
             Normal
 
 
-improveTime : (Time -> Time -> Bool) -> Maybe Time -> Maybe Time -> Maybe Time
+improveTime : (Int -> Int -> Bool) -> Maybe Time.Posix -> Maybe Time.Posix -> Maybe Time.Posix
 improveTime isImprovement x y =
     case ( x, y ) of
         ( Nothing, _ ) ->
@@ -521,13 +521,13 @@ improveTime isImprovement x y =
             x
 
         ( Just currentTime, Just newTime ) ->
-            if isImprovement newTime currentTime then
+            if isImprovement (Time.posixToMillis newTime) (Time.posixToMillis currentTime) then
                 Just newTime
             else
                 Just currentTime
 
 
-extractStartTime : TestReportNode -> Maybe Time
+extractStartTime : TestReportNode -> Maybe Time.Posix
 extractStartTime result =
     case result of
         Failed report ->
@@ -549,7 +549,7 @@ extractStartTime result =
             Nothing
 
 
-extractEndTime : TestReportNode -> Maybe Time
+extractEndTime : TestReportNode -> Maybe Time.Posix
 extractEndTime result =
     case result of
         Failed report ->
@@ -583,8 +583,7 @@ encodeReports config reports =
 
 encodeTestReportNodeList : List TestReportNode -> Value
 encodeTestReportNodeList reports =
-    List.map encodeTestReportNode reports
-        |> list
+    list encodeTestReportNode reports
 
 
 encodeTestReportNode : TestReportNode -> Value
@@ -615,9 +614,9 @@ encodeFailedLeaf leaf =
         [ ( "id", int leaf.id )
         , ( "label", string leaf.label )
         , ( "resultType", string resultType.failed )
-        , ( "resultMessages", list (List.map encodeFailureMessage leaf.messages) )
-        , ( "startTime", float leaf.startTime )
-        , ( "endTime", float leaf.endTime )
+        , ( "resultMessages", list encodeFailureMessage leaf.messages)
+        , ( "startTime", encodeTime leaf.startTime )
+        , ( "endTime", encodeTime leaf.endTime )
         ]
 
 
@@ -636,8 +635,8 @@ encodePassedLeaf leaf =
         [ ( "id", int leaf.id )
         , ( "label", string leaf.label )
         , ( "resultType", string resultType.passed )
-        , ( "startTime", float leaf.startTime )
-        , ( "endTime", float leaf.endTime )
+        , ( "startTime", encodeTime leaf.startTime )
+        , ( "endTime", encodeTime leaf.endTime )
         ]
 
 
@@ -717,7 +716,14 @@ encodeMaybeString value =
         |> Maybe.withDefault null
 
 
-encodeMaybeTime : Maybe Float -> Value
+encodeMaybeTime : Maybe Time.Posix -> Value
 encodeMaybeTime time =
-    Maybe.map float time
+    Maybe.map encodeTime time
         |> Maybe.withDefault null
+
+
+encodeTime : Time.Posix -> Value
+encodeTime time =
+    Time.posixToMillis time
+    |> int
+
