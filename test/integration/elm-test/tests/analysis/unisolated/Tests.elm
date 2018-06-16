@@ -1,7 +1,7 @@
 module Tests exposing (all)
 
-import Test exposing (Test, describe)
 import ChildTest exposing (all)
+import Test exposing (Test, describe)
 
 
 all : Test

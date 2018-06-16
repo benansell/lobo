@@ -10,9 +10,9 @@ passingTestA =
         \() ->
             Expect.pass
 
+
 passingTestB : Test
 passingTestB =
     test "PassingTest B" <|
         \() ->
             Expect.pass
-

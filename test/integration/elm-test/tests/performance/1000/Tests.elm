@@ -19,7 +19,7 @@ all =
 toTest : Int -> Test
 toTest num =
     "test "
-        ++ toString num
+        ++ String.fromInt num
         |> repeatedTest
 
 
@@ -28,3 +28,5 @@ repeatedTest label =
     test label <|
         \() ->
             Expect.equal 1 1
+
+

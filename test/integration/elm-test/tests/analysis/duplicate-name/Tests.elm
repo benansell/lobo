@@ -1,8 +1,8 @@
 module Tests exposing (..)
 
-
 import Expect
 import Test exposing (Test, describe, test)
+
 
 duplicate : Test
 duplicate =
@@ -16,4 +16,3 @@ passingTest =
     test "passingTest" <|
         \() ->
             Expect.pass
-

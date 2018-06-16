@@ -1,9 +1,9 @@
 module Tests exposing (..)
 
-
 import Test exposing (Test, concat, describe, test)
 
-testConcat: Test
+
+testConcat : Test
 testConcat =
     concat []
 
