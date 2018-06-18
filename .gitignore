@@ -22,6 +22,8 @@ plugin/elm-test-extra/ElmTest/
 .nyc_output/
 test/**/tests/elm.json
 test-result/
+test/integration/elm-test/tests/**/elm.json
+test/integration/elm-test-extra/tests/**/elm.json
 
 # lobo
 .lobo
