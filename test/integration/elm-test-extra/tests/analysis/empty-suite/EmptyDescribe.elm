@@ -1,4 +1,4 @@
-module Tests exposing (..)
+module EmptyDescribe exposing (..)
 
 
 import ElmTest.Extra exposing (Test, describe, test, only)
