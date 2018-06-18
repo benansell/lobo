@@ -23,19 +23,17 @@ export class Util {
     }
   }
 
-  public exec(command: string): void {
-    if (shelljs.exec(command).code !== 0) {
-      throw new Error("exec failed for " + command);
-    }
+  public copyElmJsonToTestDir(testDir): void {
+    shelljs.cp("elm.json", testDir);
   }
 
-  public execRaw(command: string): ExecOutputReturnValue | child.ChildProcess {
+  public execRaw(command: string, cwd: string): ExecOutputReturnValue | child.ChildProcess {
     let showExecution = process.env.noisyTestRun === "true";
-    return shelljs.exec(command, {silent: !showExecution});
+    return shelljs.exec(command, {cwd, silent: !showExecution});
   }
 
   public clean(): void {
-    this.rmFile("elm-package.json");
+    this.rmFile("elm.json");
     this.rmDir("elm-stuff");
   }
 
@@ -45,7 +43,7 @@ export class Util {
 
   public cleanLobo(): void {
     this.rmDir(".lobo/elm-stuff");
-    this.rmFile(".lobo/elm-package.json");
+    this.rmFile(".lobo/elm.json");
     this.rmDir(".lobo");
   }
 

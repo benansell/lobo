@@ -73,7 +73,7 @@ describe("elm-test-extra-analysis", () => {
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
-      expect(failureMessage).to.match(/hiddenTest \(tests[\\/]analysis[\\/]hidden[\\/]Tests\.elm:14:1\)/);
+      expect(failureMessage).to.match(/hiddenTest \(Tests\.elm:14:1\)/);
     });
   });
 

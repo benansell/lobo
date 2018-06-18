@@ -1,3 +1,4 @@
+import * as path from "path";
 import * as _ from "lodash";
 import {ExecOutputReturnValue} from "shelljs";
 import {Util} from "./util";
@@ -24,21 +25,25 @@ export class TestRunner {
   }
 
   public run(context: string[], framework: string, testDir?: string, args?: string): ExecOutputReturnValue {
-    let baseDir = _.repeat("../", context.length);
-    let command = `node ${baseDir}bin/lobo.js --prompt=no --verbose`;
+    const baseDir = _.repeat("../", context.length);
+    const rootDir = !testDir ? baseDir : path.relative(testDir, baseDir);
+    let command = `node ${rootDir}/bin/lobo.js --prompt=no --verbose`;
 
     if (framework) {
       command += " --framework=" + framework;
     }
 
     if (testDir) {
-      command += " --testDirectory=" + testDir;
+      this.util.copyElmJsonToTestDir(testDir);
+      command += " --testDirectory=.";
     }
 
     if (args) {
       command += " " + args;
     }
 
-    return <ExecOutputReturnValue> this.util.execRaw(command);
+    const cwd = !testDir ? "." : testDir;
+
+    return <ExecOutputReturnValue> this.util.execRaw(command, cwd);
   }
 }

@@ -1,6 +1,6 @@
 module ImportCheck exposing (..)
 
--- Test native polyfills exist for all elm-lang libs
+-- Test native polyfills exist for all elm core libs
 
 import AnimationFrame
 import Dom
