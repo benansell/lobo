@@ -8,7 +8,7 @@ import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createUtil, Util, UtilImp} from "../../../lib/util";
 import {Logger} from "../../../lib/logger";
-import {PluginConfig} from "../../../lib/plugin";
+import {LoboConfig, PluginConfig} from "../../../lib/plugin";
 import {Stats} from "fs";
 
 let expect = chai.expect;
@@ -20,8 +20,10 @@ describe("lib util", () => {
   let util: UtilImp;
   let mockLogger: Logger;
   let mockDirName: SinonStub;
+  let mockExec: Sinon.SinonStub;
   let mockExit: SinonStub;
   let mockExists: SinonStub;
+  let mockJoin: Sinon.SinonStub;
   let mockLstat: SinonStub;
   let mockReadFileSync: SinonStub;
   let mockRealPath: SinonStub;
@@ -32,8 +34,10 @@ describe("lib util", () => {
 
   beforeEach(() => {
     mockDirName = Sinon.stub();
+    mockExec = Sinon.stub();
     mockExit = Sinon.stub();
     mockExists = Sinon.stub();
+    mockJoin = Sinon.stub();
     mockLstat = Sinon.stub();
     mockReadFileSync = Sinon.stub();
     mockRealPath = Sinon.stub();
@@ -42,9 +46,10 @@ describe("lib util", () => {
     mockVersions = Sinon.stub();
 
     revert = RewiredUtil.__set__({
+      childProcess: {execSync: mockExec}, console: {log: Sinon.stub()},
       fs: {existsSync: mockExists, lstatSync: mockLstat, readFileSync: mockReadFileSync,
         realpathSync: mockRealPath},
-      path: {dirname: mockDirName, relative: mockRelativePath, resolve: mockResolvePath},
+      path: {dirname: mockDirName, join: mockJoin, relative: mockRelativePath, resolve: mockResolvePath},
       process: {exit: mockExit, versions: mockVersions}
     });
     let rewiredImp = RewiredUtil.__get__("UtilImp");
@@ -394,7 +399,7 @@ describe("lib util", () => {
   describe("load", () => {
     it("should load and return elm-test plugin config", () => {
       // arrange
-      let mockJoin = () => "../plugin/elm-test/plugin-config";
+      mockJoin.returns("../plugin/elm-test/plugin-config");
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
@@ -407,9 +412,7 @@ describe("lib util", () => {
 
     it("should catch syntax error in config and log error", () => {
       // arrange
-      let mockJoin = () => {
-        throw new SyntaxError("foo");
-      };
+      mockJoin.throws(new SyntaxError("foo"));
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
@@ -421,9 +424,7 @@ describe("lib util", () => {
 
     it("should catch other errors in load and log error as 'not found'", () => {
       // arrange
-      let mockJoin = () => {
-        throw new Error("foo");
-      };
+      mockJoin.throws(new Error("foo"));
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
       util.closestMatch = Sinon.stub();
@@ -437,9 +438,7 @@ describe("lib util", () => {
 
     it("should catch other errors in load suggest closest plugin name", () => {
       // arrange
-      let mockJoin = () => {
-        throw new Error("foo");
-      };
+      mockJoin.throws(new Error("foo"));
       let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
       let mockClosestMatch = Sinon.stub();
@@ -535,4 +534,74 @@ describe("lib util", () => {
       expect(actual).to.equal("/baz");
     });
   });
+
+  describe("runElmCommand", () => {
+    it("should call elm from the current directory when compiler is not supplied", () => {
+      // arrange
+      let config = <LoboConfig> {};
+
+
+      // act
+      util.runElmCommand(config, "bar", "baz");
+
+      // assert
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^elm /), Sinon.match.any);
+    });
+
+    it("should call elm from the supplied compiler directory", () => {
+      // arrange
+      let config = <LoboConfig> {compiler: "foo"};
+      mockJoin.returns("foo/elm");
+
+      // act
+      util.runElmCommand(config, "bar", "baz");
+
+      // assert
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo\/elm /), Sinon.match.any);
+    });
+
+    it("should call elm with the supplied action", () => {
+      // arrange
+      let config = <LoboConfig> {};
+
+
+      // act
+      util.runElmCommand(config, "bar", "baz");
+
+      // assert
+      expect(mockExec).to.have.been.calledWith(Sinon.match(/ baz$/), Sinon.match.any);
+    });
+
+    it("should call elm with cwd as supplied directory", () => {
+      // arrange
+      let config = <LoboConfig> {compiler: "foo"};
+
+      // act
+      util.runElmCommand(config, "bar", "baz");
+
+      // assert
+      expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "bar"));
+    });
+  });
+
+  describe("sortObject", () => {
+    it("should return empty object when supplied value has no keys", () => {
+      // act
+      const actual = util.sortObject({});
+
+      // assert
+      expect(actual).to.deep.equal({});
+    });
+
+    it("should return sorted object when supplied value has keys", () => {
+      // arrange
+
+      // act
+      const actual = util.sortObject({"def": 1, "abc": 2});
+
+      // assert
+      expect(actual).to.deep.equal({"abc": 2, "def": 1});
+    });
+  });
+
 });
