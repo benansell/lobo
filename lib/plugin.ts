@@ -5,8 +5,40 @@ export interface CodeLocation {
   lineNumber: number;
 }
 
-export interface Dependencies {
-  [index: string]: string;
+export interface Dependencies<T extends VersionSpecification> {
+  [index: string]: T;
+}
+
+export interface Version {
+  readonly major: number;
+  readonly minor: number;
+  readonly patch: number;
+  isEqual(version: Version): boolean;
+  isGreaterThan(version: Version): boolean;
+  isLessThan(version: Version): boolean;
+  toString(): string;
+}
+
+export type VersionSpecification = VersionSpecificationApplication | VersionSpecificationPackage | VersionSpecificationInvalid;
+
+export type VersionSpecificationType = "application" | "package" | "invalid";
+
+export interface VersionSpecificationInvalid {
+  type: VersionSpecificationType;
+  version: string;
+}
+
+export interface VersionSpecificationApplication {
+  type: VersionSpecificationType;
+  version: Version;
+}
+
+export interface VersionSpecificationPackage {
+  type: VersionSpecificationType;
+  canEqualMax: boolean;
+  canEqualMin: boolean;
+  maxVersion: Version;
+  minVersion: Version;
 }
 
 export interface ElmCodeLookup {

@@ -1,23 +1,30 @@
-import {Dependencies, PluginTestFrameworkConfig, PluginOption} from "../../lib/plugin";
+import {Dependencies, PluginTestFrameworkConfig, PluginOption, VersionSpecificationPackage} from "../../lib/plugin";
+import {createVersion} from "../../lib/version";
 
 export class ElmTestConfig implements PluginTestFrameworkConfig {
-  public name: string = "elm-test";
 
-  public sourceDirectories: string[] = ["runner", "plugin/elm-test"];
-
-  public dependencies: Dependencies = {
-    "eeue56/elm-lazy": "1.0.0 <= v < 2.0.0",
-    "eeue56/elm-lazy-list": "1.0.0 <= v < 2.0.0",
-    "eeue56/elm-shrink": "1.0.0 <= v < 2.0.0",
-    "elm-community/elm-test": "4.2.0 <= v < 5.0.0",
-    "elm-lang/core": "5.0.0 <= v < 6.0.0",
-    "mgold/elm-random-pcg": "5.0.0 <= v < 6.0.0"
-  };
+  public readonly name: string = "elm-test";
+  public readonly sourceDirectories: string[] = ["runner", "plugin/elm-test"];
+  public readonly dependencies: Dependencies<VersionSpecificationPackage>;
 
   public options: PluginOption[] = [
     {flags: "--seed <value>", description: "initial seed value for fuzz tests; defaults to a random value"},
     {flags: "--runCount <value>", description: "run count for fuzz tests; defaults to 100"}
   ];
+
+  public constructor() {
+    this.dependencies = {};
+    this.dependencies["elm-explorations/test"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
+    this.dependencies["elm/random"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
+    this.dependencies["elm/time"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
+  }
+
+  public createDependency(minMajor: number, minMinor: number, minPatch: number, canEqualMin: boolean, canEqualMax: boolean,
+                          maxMajor: number, maxMinor: number, maxPatch: number): VersionSpecificationPackage {
+    const maxVersion = createVersion(maxMajor, maxMinor, maxPatch);
+    const minVersion = createVersion(minMajor, minMinor, minPatch);
+    return {canEqualMax, canEqualMin, maxVersion, minVersion, type: "package"};
+  }
 }
 
 let config = new ElmTestConfig();
