@@ -168,7 +168,7 @@ export interface PluginTestFramework {
 
 export interface PluginTestFrameworkConfig extends PluginConfig {
   readonly sourceDirectories: string[];
-  readonly dependencies: Dependencies;
+  readonly dependencies: Dependencies<VersionSpecificationPackage>;
 }
 
 export type PluginOptionValue = boolean | object | number | string;

@@ -1,5 +1,5 @@
 import {Dependencies, PluginTestFrameworkConfig, PluginOption, VersionSpecificationPackage} from "../../lib/plugin";
-import {createVersion} from "../../lib/version";
+import {makeVersion} from "../../lib/version";
 
 export class ElmTestExtraConfig implements PluginTestFrameworkConfig {
 
@@ -22,8 +22,8 @@ export class ElmTestExtraConfig implements PluginTestFrameworkConfig {
 
   public createDependency(minMajor: number, minMinor: number, minPatch: number, canEqualMin: boolean, canEqualMax: boolean,
                           maxMajor: number, maxMinor: number, maxPatch: number): VersionSpecificationPackage {
-    const maxVersion = createVersion(maxMajor, maxMinor, maxPatch);
-    const minVersion = createVersion(minMajor, minMinor, minPatch);
+    const maxVersion = makeVersion(maxMajor, maxMinor, maxPatch);
+    const minVersion = makeVersion(minMajor, minMinor, minPatch);
     return {canEqualMax, canEqualMin, maxVersion, minVersion, type: "package"};
   }
 }
