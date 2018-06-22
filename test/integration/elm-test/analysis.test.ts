@@ -70,7 +70,7 @@ describe("elm-test-analysis", () => {
       expect(failureMessage).to.match(/1\) (.\[\d\dm)?EmptyConcat/g);
       expect(failureMessage).to.have.string("This `concat` has no tests in it. Let's give it some!");
       expect(failureMessage).to.match(/2\) (.\[\d\dm)?EmptyDescribe/g);
-      expect(failureMessage).to.have.string("This `describe \"Test Describe\"` has no tests in it. Let's give it some!");
+      expect(failureMessage).to.have.string("This `describe Test Describe` has no tests in it. Let's give it some!");
 
     });
   });
