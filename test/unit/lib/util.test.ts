@@ -95,8 +95,6 @@ describe("lib util", () => {
   });
 
   describe("checkNodeVersion", () => {
-    let mockLogInfo;
-    let mockLogError;
     let processMajor;
     let processMinor;
     let processPatch;
@@ -106,14 +104,6 @@ describe("lib util", () => {
       processMinor = 456;
       processPatch = 789;
       (<{ node: string }><{}>mockVersions).node = "123.456.789";
-
-      mockLogInfo = Sinon.stub(console, "info");
-      mockLogError = Sinon.stub(console, "error");
-    });
-
-    afterEach(() => {
-      mockLogInfo.restore();
-      mockLogError.restore();
     });
 
     it("should throw error when major is not an integer", () => {
