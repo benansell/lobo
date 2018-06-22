@@ -3,12 +3,12 @@ module ElmTestPlugin exposing (TestArgs, TestRunner, findTests, runTest, toArgs)
 import Dict
 import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
 import Json.Encode as Encode exposing (Value, int, object, string)
-import Random.Pcg exposing (initialSeed)
+import Random
 import Test as ElmTest exposing (Test)
 import Test.Runner.Failure as ElmTestFailure
-import Test.Runner as ElmTestRunner exposing (SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailureReason, isTodo)
+import Test.Runner as ElmTestRunner exposing (SeededRunners(..), fromTest, getFailureReason, isTodo)
 import TestPlugin as Plugin
-import Time exposing (Time)
+import Time
 
 
 type alias TestArgs =
@@ -46,7 +46,7 @@ toArgs args =
             value
 
         Err error ->
-            Debug.crash "Invalid args"
+            Debug.todo "Invalid args"
 
 
 decodeArgs : Decode.Decoder TestArgs
@@ -67,17 +67,17 @@ type alias TestIdentifierContext =
     }
 
 
-findTests : ElmTest.Test -> TestArgs -> Time -> TestRun
+findTests : ElmTest.Test -> TestArgs -> Time.Posix -> TestRun
 findTests test args time =
     let
         runCount =
             Maybe.withDefault 100 args.runCount
 
         initialSeed =
-            Maybe.withDefault (round time) args.initialSeed
+            Maybe.withDefault (Time.posixToMillis time) args.initialSeed
 
         seed =
-            Random.Pcg.initialSeed initialSeed
+            Random.initialSeed initialSeed
 
         config =
             encodeConfig runCount initialSeed
@@ -139,10 +139,10 @@ toInvalidTestItem reason ( context, tests ) =
 toTestId : List String -> TestIdentifierContext -> ( TestIdentifierContext, Plugin.TestId )
 toTestId labels context =
     let
-        ( newContext, _, id ) =
+        ( newContext, _, newId ) =
             List.foldr (\l ( c, ls, id ) -> buildTestId l ls id c) ( context, [], context.testId ) labels
     in
-        ( newContext, id )
+        ( newContext, newId )
 
 
 buildTestId : String -> List String -> Plugin.TestId -> TestIdentifierContext -> ( TestIdentifierContext, List String, Plugin.TestId )
@@ -180,7 +180,7 @@ buildTestIdentifier label labels context =
 -- RUN
 
 
-runTest : TestItem -> Time -> Plugin.TestResult
+runTest : TestItem -> Time.Posix -> Plugin.TestResult
 runTest testItem time =
     case testItem.test of
         ValidRunner runner ->
@@ -193,7 +193,7 @@ runTest testItem time =
                 }
 
 
-runValidTest : Plugin.TestId -> Plugin.TestRunType -> ElmTestRunner.Runner -> Time -> Plugin.TestResult
+runValidTest : Plugin.TestId -> Plugin.TestRunType -> ElmTestRunner.Runner -> Time.Posix -> Plugin.TestResult
 runValidTest testId runType runner time =
     let
         partitionedTests =
