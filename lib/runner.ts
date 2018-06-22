@@ -8,12 +8,13 @@ export interface LoboElmApp {
     begin: { subscribe: (args: (testCount: number) => void) => void },
     end: { subscribe: (args: (rawResults: TestReportRoot) => void) => void },
     progress: { subscribe: (args: (result: ProgressReport) => void) => void },
-    runTests: { send: (args: { reportProgress: boolean }) => void }
+    runNextTest: { send: (args: boolean) => void },
+    startTestRun: { send: (args: { reportProgress: boolean }) => void }
   };
 }
 
 export interface ElmTestApp {
-  UnitTest: { worker: (args: RunArgs) => LoboElmApp };
+  Elm: { UnitTest: { worker: (args: RunArgs) => LoboElmApp } };
 }
 
 export interface Runner {
@@ -51,7 +52,7 @@ export class RunnerImp {
   (testCount: number) => void {
     return (testCount: number) => {
       try {
-        logger.debug("Test run beginning", <{}>testCount);
+        logger.debug("Test run beginning", testCount.toString());
         reporter.init(testCount);
         RunnerImp.originalNodeProcessWrite = stdout.write;
         stdout.write = RunnerImp.testRunStdOutWrite;
@@ -63,7 +64,7 @@ export class RunnerImp {
     };
   }
 
-  public static makeTestRunProgress(stdout: NodeProcessStdout, logger: Logger, reporter: Reporter, reject: Reject):
+  public static makeTestRunProgress(stdout: NodeProcessStdout, logger: Logger, reporter: Reporter, runNextTest: () => void, reject: Reject):
   (result: ProgressReport) => void {
     return (result: ProgressReport) => {
       try {
@@ -72,6 +73,7 @@ export class RunnerImp {
         logger.trace("Test run progress", { result: result, debugLogMessages: RunnerImp.debugLogMessages});
         stdout.write = RunnerImp.testRunStdOutWrite;
         RunnerImp.debugLogMessages = [];
+        runNextTest();
       } catch (err) {
         stdout.write = RunnerImp.originalNodeProcessWrite;
         reject(err);
@@ -134,17 +136,20 @@ export class RunnerImp {
       let initArgs = context.config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
       context.config.reporter.runArgs(initArgs);
-      let app = elmApp.UnitTest.worker(initArgs);
+      let app = elmApp.Elm.UnitTest.worker(initArgs);
+      const runNextTest = () => setImmediate(() => app.ports.runNextTest.send(true));
 
       logger.debug("Subscribing to ports");
       app.ports.begin.subscribe(RunnerImp.makeTestRunBegin(process.stdout, logger, reporter, reject));
       app.ports.end.subscribe(RunnerImp.makeTestRunComplete(process.stdout, logger, context, reporter, resolve, reject));
-      app.ports.progress.subscribe(RunnerImp.makeTestRunProgress(process.stdout, logger, reporter, reject));
+      app.ports.progress.subscribe(RunnerImp.makeTestRunProgress(process.stdout, logger, reporter, runNextTest, reject));
 
       logger.debug("Running tests");
-      app.ports.runTests.send({
+      app.ports.startTestRun.send({
         reportProgress: context.config.reportProgress
       });
+
+      runNextTest();
     });
   }
 }

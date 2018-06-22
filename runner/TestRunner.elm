@@ -24,7 +24,7 @@ run plugin =
 
 type alias Model a b =
     { args : Args a
-    , runArgs : RunArgs
+    , runArgs : TestRunArgs
     , runConfig : Encode.Value
     , plugin : Plugin a b
     , queue : List (TestItem b)
@@ -32,7 +32,7 @@ type alias Model a b =
     }
 
 
-type alias RunArgs =
+type alias TestRunArgs =
     { reportProgress : Bool
     }
 
@@ -68,9 +68,10 @@ init plugin rawArgs =
 
 
 type Msg
-    = Start RunArgs
-    | Finished
+    = StartTestRun TestRunArgs
+    | FinishedTestRun
     | QueueTest Time.Posix
+    | RunNextTest Bool
     | StartTest Time.Posix
     | FinishTest TestResult Time.Posix
     | TimeThen (Time.Posix-> Msg)
@@ -88,7 +89,7 @@ port end : Decode.Value -> Cmd msg
 update : Msg -> Model a b -> ( Model a b, Cmd Msg )
 update msg model =
     case msg of
-        Start runArgs ->
+        StartTestRun runArgs ->
             QueueTest
                 |> timeThenUpdate { model | runArgs = runArgs }
 
@@ -105,8 +106,11 @@ update msg model =
                     List.length runQueue.queue + List.length runQueue.reports
             in
                 ( { model | runConfig = config, queue = runQueue.queue, reports = runQueue.reports }
-                , Cmd.batch [ begin testCount, next ]
+                , begin testCount
                 )
+
+        RunNextTest _ ->
+            (model, StartTest |> updateTime)
 
         StartTest time ->
             let
@@ -115,7 +119,7 @@ update msg model =
             in
                 case nextTest of
                     Nothing ->
-                        update Finished model
+                        update FinishedTestRun model
 
                     Just item ->
                         model.plugin.runTest item time
@@ -129,13 +133,10 @@ update msg model =
 
                 newModel =
                     { model | reports = testReport :: model.reports }
-
-                next =
-                    StartTest |> updateTime
             in
-                ( newModel, Cmd.batch [ progress (toProgressMessage testReport), next ] )
+                ( newModel, progress (toProgressMessage testReport) )
 
-        Finished ->
+        FinishedTestRun ->
             let
                 result =
                     encodeReports model.runConfig model.reports
@@ -222,19 +223,21 @@ skipTest time testId reason =
 -- SUBSCRIPTIONS
 
 
-port runTests : (RunArgs -> msg) -> Sub msg
+port startTestRun : (TestRunArgs -> msg) -> Sub msg
+
+port runNextTest : (Bool -> msg) -> Sub msg
 
 
 subscriptions : Model args testItem -> Sub Msg
 subscriptions model =
-    Sub.batch [ runTests Start ]
+    Sub.batch [ startTestRun StartTestRun, runNextTest RunNextTest ]
 
 
-toRunArgs : Decode.Value -> RunArgs
-toRunArgs value =
+toTestRunArgs : Decode.Value -> TestRunArgs
+toTestRunArgs value =
     let
         result =
-            decodeValue runArgsDecoder value
+            decodeValue testRunArgsDecoder value
     in
         case result of
             Ok runArgs ->
@@ -244,7 +247,7 @@ toRunArgs value =
                 Debug.todo "Failed to decode runArgs"
 
 
-runArgsDecoder : Decode.Decoder RunArgs
-runArgsDecoder =
-    Decode.map RunArgs
+testRunArgsDecoder : Decode.Decoder TestRunArgs
+testRunArgsDecoder =
+    Decode.map TestRunArgs
         (field "reportProgress" Decode.bool)
