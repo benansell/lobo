@@ -33,7 +33,7 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
       "==", "/=", "<", ">", "<=", " >=", " max", "min", {name: "Order", values: ["LT", "EQ", "GT"]}, "compare", "not", "&&", "||",
       "xor", "+", "-", "*", "/", "^", "//", "remainderBy", "modBy", "negate", "abs", "sqrt", "clamp", "logBase", "e", "pi", "cos", "sin",
       "tan", "acos", "asin", "atan", "atan2", "round", "floor", "ceiling", "truncate", "toFloat", "degrees", "radians", "turns", "toPolar",
-      "fromPolar", "isNaN", "isInfinite", "toString", "++", "identity", "always", "<|", "|>", "<<", ">>", "Never", "never"
+      "fromPolar", "isNaN", "isInfinite", "toString", "++", "identity", "always", "<|", "|>", "<<", ">>", "Never", "never", "->"
     ];
     basicsExposing.push(...unlistedTypes);
     this.addDefaultModule("Basics", undefined, basicsExposing);
