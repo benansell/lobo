@@ -7,6 +7,7 @@ import * as SinonChai from "sinon-chai";
 import {Builder, BuilderImp, createBuilder} from "../../../lib/builder";
 import {ExecutionContext, LoboConfig} from "../../../lib/plugin";
 import {Logger} from "../../../lib/logger";
+import {Util} from "../../../lib/util";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -19,16 +20,21 @@ describe("lib builder", () => {
   let mockLogger: Logger;
   let mockReject: (error: Error) => void;
   let mockResolve: () => void;
+  let mockRunElmCommand: Sinon.SinonStub;
+  let mockUtil: Util;
 
   beforeEach(() => {
     mockConfirm = Sinon.stub();
-    let rewiredImp = RewiredBuilder.__get__("BuilderImp");
     mockLogger = <Logger> {};
     mockLogger.debug = Sinon.spy();
     mockLogger.error = Sinon.spy();
     mockLogger.info = Sinon.spy();
     mockLogger.trace = Sinon.spy();
-    builder = new rewiredImp(mockLogger);
+    mockRunElmCommand = Sinon.stub();
+    mockUtil = <Util> {};
+    mockUtil.runElmCommand = mockRunElmCommand;
+    let rewiredImp = RewiredBuilder.__get__("BuilderImp");
+    builder = new rewiredImp(mockLogger, mockUtil);
 
     mockReject = Sinon.spy();
     mockResolve = Sinon.spy();
@@ -47,7 +53,7 @@ describe("lib builder", () => {
   describe("build", () => {
     it("should call make with the supplied config", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config};
       let mockMake = Sinon.stub();
       builder.make = mockMake;
@@ -64,7 +70,7 @@ describe("lib builder", () => {
 
     it("should call make with the supplied testSuiteOutputFilePath", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config, buildOutputFilePath: "foo", testSuiteOutputFilePath: "bar"};
       let mockMake = Sinon.stub();
       builder.make = mockMake;
@@ -81,7 +87,7 @@ describe("lib builder", () => {
 
     it("should call make with the supplied buildOutputFilePath", () => {
       // arrange
-      let config = <LoboConfig> {noUpdate: false};
+      let config = <LoboConfig> {noCleanup: false};
       let context = <ExecutionContext> {config, buildOutputFilePath: "foo", testSuiteOutputFilePath: "bar"};
       let mockMake = Sinon.stub();
       builder.make = mockMake;
@@ -98,54 +104,7 @@ describe("lib builder", () => {
   });
 
   describe("make", () => {
-    let revertMocks: () => void;
-    let mockExec: Sinon.SinonStub;
-    let mockPathResolve: Sinon.SinonStub;
-    let mockJoin: Sinon.SinonStub;
-
-    beforeEach(() => {
-      mockExec = Sinon.stub();
-      mockPathResolve = Sinon.stub();
-      mockJoin = Sinon.stub();
-      revertMocks = RewiredBuilder.__set__({childProcess: {execSync: mockExec}, console: {log: Sinon.stub()},
-        path: { resolve: mockPathResolve, join: mockJoin}});
-    });
-
-    afterEach(() => {
-      revertMocks();
-    });
-
-    it("should call elm-make to build the tests", () => {
-      // arrange
-      let config = <LoboConfig> {compiler: "abc"};
-      mockPathResolve.callsFake(() => "def");
-      mockJoin.callsFake((...args) => args.join("/"));
-
-      // act
-      let actual = builder.make(config, "bar", "baz");
-
-      // assert
-      return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match(/^abc([\/\\])elm-make /), Sinon.match.any);
-      });
-    });
-
-    it("should call elm-make with the supplied testSuiteOutputFilePath", () => {
-      // arrange
-      let config = <LoboConfig> {compiler: "abc"};
-      mockPathResolve.callsFake(() => "def");
-      mockJoin.callsFake((...args) => args.join("-"));
-
-      // act
-      let actual = builder.make(config, "bar", "baz");
-
-      // assert
-      return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match(/elm-make.* bar/), Sinon.match.any);
-      });
-    });
-
-    it("should call elm-make to build the tests to the specified output file path", () => {
+    it("should call util.runElmCommand with the supplied config", () => {
       // arrange
       let config = <LoboConfig> {compiler: "abc"};
 
@@ -154,46 +113,86 @@ describe("lib builder", () => {
 
       // assert
       return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match(/--output=baz/), Sinon.match.any);
+        expect(mockRunElmCommand).to.have.been.calledWith(config, Sinon.match.any);
       });
     });
 
-    it("should call elm-make to build the tests without --yes when prompt is true", () => {
+    it("should call util.runElmCommand with the supplied loboDirectory", () => {
       // arrange
-      let config = <LoboConfig> {prompt: true};
+      let config = <LoboConfig> {compiler: "abc", loboDirectory: "foo"};
 
       // act
       let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match((x) => x.indexOf("--yes") === -1), Sinon.match.any);
+        expect(mockRunElmCommand).to.have.been.calledWith(Sinon.match.any, "foo");
       });
     });
 
-    it("should call elm-make to build the tests with --yes when prompt is false", () => {
+    it("should call util.runElmCommand with the action 'make'", () => {
       // arrange
-      let config = <LoboConfig> {prompt: false};
+      let config = <LoboConfig> {compiler: "abc"};
 
       // act
       let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match(/ --yes/), Sinon.match.any);
+        expect(mockRunElmCommand).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match(/^make /));
       });
     });
 
-    it("should call elm-make to build the tests with cwd as lobo directory", () => {
+    it("should call util.runElmCommand with the supplied testSuiteOutputFilePath", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "foo"};
+      let config = <LoboConfig> {compiler: "abc"};
 
       // act
       let actual = builder.make(config, "bar", "baz");
 
       // assert
       return actual.finally(() => {
-        expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "foo"));
+        expect(mockRunElmCommand).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match(/ bar /));
+      });
+    });
+
+    it("should call util.runElmCommand with the specified output file path", () => {
+      // arrange
+      let config = <LoboConfig> {compiler: "abc"};
+
+      // act
+      let actual = builder.make(config, "bar", "baz");
+
+      // assert
+      return actual.finally(() => {
+        expect(mockRunElmCommand).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match(/--output=baz/));
+      });
+    });
+
+    it("should call util.runElmCommand without --optimize when config.optimize is false", () => {
+      // arrange
+      let config = <LoboConfig> {optimize: false};
+
+      // act
+      let actual = builder.make(config, "bar", "baz");
+
+      // assert
+      return actual.finally(() => {
+        expect(mockRunElmCommand).to.have.been
+          .calledWith(Sinon.match.any, Sinon.match.any, Sinon.match((x) => x.indexOf("--optimize") === -1));
+      });
+    });
+
+    it("should call util.runElmCommand with --optimize when config.optimize is true", () => {
+      // arrange
+      let config = <LoboConfig> {optimize: true};
+
+      // act
+      let actual = builder.make(config, "bar", "baz");
+
+      // assert
+      return actual.finally(() => {
+        expect(mockRunElmCommand).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match(/ --optimize/));
       });
     });
 
@@ -206,14 +205,14 @@ describe("lib builder", () => {
 
       // assert
       return actual.then(() => {
-        expect(mockExec).to.have.been.called;
+        expect(mockRunElmCommand).to.have.been.called;
       });
     });
 
     it("should catch any elm-make build errors and call the specified reject with the error", () => {
       // arrange
       let config = <LoboConfig> {};
-      mockExec.throws( new Error("qux"));
+      mockRunElmCommand.throws( new Error("qux"));
 
       // act
       let actual = builder.make(config, "bar", "baz");

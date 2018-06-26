@@ -1,9 +1,8 @@
 import * as Bluebird from "bluebird";
 import chalk from "chalk";
-import * as path from "path";
-import * as childProcess from "child_process";
 import {createLogger, Logger} from "./logger";
 import {ExecutionContext, LoboConfig, Reject, Resolve} from "./plugin";
+import {createUtil, Util} from "./util";
 
 export interface Builder {
   build(context: ExecutionContext): Bluebird<ExecutionContext>;
@@ -12,9 +11,11 @@ export interface Builder {
 export class BuilderImp implements Builder {
 
   private readonly logger: Logger;
+  private readonly util: Util;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, util: Util) {
     this.logger = logger;
+    this.util = util;
   }
 
   public build(context: ExecutionContext): Bluebird<ExecutionContext> {
@@ -25,24 +26,16 @@ export class BuilderImp implements Builder {
   public make(config: LoboConfig, testSuiteOutputFilePath: string, buildOutputFilePath: string)
     : Bluebird<void> {
     return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
-      let command = "elm-make";
+      let action = "make";
 
-      if (config.compiler) {
-        command = path.join(config.compiler, command);
+      if (config.optimize) {
+        action += " --optimize";
       }
 
-      command += ` ${testSuiteOutputFilePath} --output=${buildOutputFilePath}`;
-
-      if (!config.prompt) {
-        command += " --yes";
-      }
-
+      action += ` ${testSuiteOutputFilePath} --output=${buildOutputFilePath}`;
 
       try {
-        // run as child process using current process stdio so that colored output is returned
-        let options = {cwd: config.loboDirectory, stdio: [process.stdin, process.stdout, process.stderr]};
-        this.logger.trace(command);
-        childProcess.execSync(command, options);
+        this.util.runElmCommand(config, config.loboDirectory, action);
         resolve();
       } catch (err) {
         this.logger.error("");
@@ -56,5 +49,5 @@ export class BuilderImp implements Builder {
 }
 
 export function createBuilder(): Builder {
-  return new BuilderImp(createLogger());
+  return new BuilderImp(createLogger(), createUtil());
 }
