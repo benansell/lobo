@@ -6,6 +6,11 @@ export interface CodeLocation {
 }
 
 export interface Dependencies<T extends VersionSpecification> {
+  direct: DependencyGroup<T>;
+  indirect: DependencyGroup<T>;
+}
+
+export interface DependencyGroup<T extends VersionSpecification> {
   [index: string]: T;
 }
 

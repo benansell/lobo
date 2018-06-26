@@ -13,11 +13,11 @@ export class ElmTestExtraConfig implements PluginTestFrameworkConfig {
   ];
 
   public constructor() {
-    this.dependencies = {};
-    this.dependencies["benansell/lobo-elm-test-extra"] = this.createDependency( 3, 0, 0, true, false, 4, 0, 0);
-    this.dependencies["elm-explorations/test"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
-    this.dependencies["elm/random"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
-    this.dependencies["elm/time"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
+    this.dependencies = {direct: {}, indirect: {}};
+    this.dependencies.direct["benansell/lobo-elm-test-extra"] = this.createDependency( 3, 0, 0, true, false, 4, 0, 0);
+    this.dependencies.direct["elm-explorations/test"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
+    this.dependencies.indirect["elm/random"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
+    this.dependencies.indirect["elm/time"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
   }
 
   public createDependency(minMajor: number, minMinor: number, minPatch: number, canEqualMin: boolean, canEqualMax: boolean,

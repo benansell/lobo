@@ -276,7 +276,7 @@ describe("lib version", () => {
       let version = new VersionImp(1, 2, 3);
 
       // act
-      let actual = version.toString()
+      let actual = version.toString();
 
       // assert
       expect(actual).to.equal("1.2.3");
