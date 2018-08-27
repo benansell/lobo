@@ -179,7 +179,8 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     const lines: string[] = ["module UnitTest exposing (main)", ""];
     lines.push("import Json.Decode exposing (Value)");
     lines.push("import TestRunner as Runner");
-    lines.push(`import ${config.testFramework.pluginElmModuleName()} as TestPlugin`);
+    lines.push("import TestPlugin");
+    lines.push(`import ${config.testFramework.pluginElmModuleName()} as Plugin`);
     lines.push(`import ${config.testFramework.testFrameworkElmModuleName()} exposing (Test, describe)`);
 
     testModuleNodes
@@ -188,15 +189,15 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
 
     lines.push("");
     lines.push("");
-    lines.push("main : Program Value (Runner.Model TestPlugin.TestArgs TestPlugin.TestRunner) Runner.Msg");
+    lines.push("main : Program Value (Runner.Model Plugin.TestRunner) Runner.Msg");
     lines.push("main =");
     lines.push(indent + "Runner.run plugin");
     lines.push("");
     lines.push("");
-    lines.push("plugin : Runner.Plugin TestPlugin.TestArgs TestPlugin.TestRunner");
+    lines.push("plugin : Runner.Plugin Plugin.TestRunner");
     lines.push("plugin =");
-    lines.push(indent + "{ findTests = TestPlugin.findTests all");
-    lines.push(indent + ", runTest = TestPlugin.runTest");
+    lines.push(indent + "{ findTests = Plugin.findTests all");
+    lines.push(indent + ", runTest = Plugin.runTest");
     lines.push(indent + ", toArgs = TestPlugin.toArgs");
     lines.push(indent + "}");
 
