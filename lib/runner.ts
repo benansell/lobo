@@ -14,7 +14,7 @@ export interface LoboElmApp {
 }
 
 export interface ElmTestApp {
-  Elm: { UnitTest: { worker: (args: RunArgs) => LoboElmApp } };
+  Elm: { UnitTest: { init: (flags: {flags: RunArgs}) => LoboElmApp } };
 }
 
 export interface Runner {
@@ -136,7 +136,7 @@ export class RunnerImp {
       let initArgs = context.config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
       context.config.reporter.runArgs(initArgs);
-      let app = elmApp.Elm.UnitTest.worker(initArgs);
+      let app = elmApp.Elm.UnitTest.init({flags: initArgs});
       const runNextTest = () => setImmediate(() => app.ports.runNextTest.send(true));
 
       logger.debug("Subscribing to ports");

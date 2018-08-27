@@ -9,7 +9,6 @@ import {Logger} from "../../../lib/logger";
 import {createRunner, ElmTestApp, LoboElmApp, NodeProcessStdout, Runner, RunnerImp} from "../../../lib/runner";
 import {Reporter} from "../../../lib/reporter";
 import {ExecutionContext, LoboConfig, PluginReporter, PluginTestFramework, ProgressReport, TestReportRoot} from "../../../lib/plugin";
-import {set} from "shelljs";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -436,13 +435,13 @@ describe("lib runner", () => {
       mockPluginReporter.runArgs = Sinon.spy();
 
       let mockLoadElmTestApp = Sinon.stub();
-      let mockWorker = Sinon.stub();
+      let mockInit = Sinon.stub();
       mockBegin = Sinon.spy();
       mockEnd = Sinon.spy();
       mockProgress = Sinon.spy();
       mockRunNextTest = Sinon.spy();
       mockStartTestRun = Sinon.spy();
-      mockWorker.returns(<LoboElmApp> {
+      mockInit.returns(<LoboElmApp> {
         ports: {
           begin: {subscribe: mockBegin},
           end: {subscribe: mockEnd},
@@ -451,7 +450,7 @@ describe("lib runner", () => {
           startTestRun: {send: mockStartTestRun}
         }
       });
-      mockLoadElmTestApp.returns(<ElmTestApp> {Elm: {UnitTest: {worker: mockWorker}}});
+      mockLoadElmTestApp.returns(<ElmTestApp> {Elm: {UnitTest: {init: mockInit}}});
       runner.loadElmTestApp = mockLoadElmTestApp;
     });
 
@@ -473,8 +472,8 @@ describe("lib runner", () => {
       let context = <ExecutionContext> {config};
       let complete = undefined;
       let end = (x) => complete = x;
-      let worker = Sinon.stub();
-      worker.returns(<LoboElmApp> {
+      let init = Sinon.stub();
+      init.returns(<LoboElmApp> {
         ports: {
           begin: {subscribe: mockBegin},
           end: {subscribe: end},
@@ -483,7 +482,7 @@ describe("lib runner", () => {
           startTestRun: {send: mockStartTestRun}
         }
       });
-      (<SinonStub>runner.loadElmTestApp).returns(<ElmTestApp> {Elm: {UnitTest: {worker: worker}}});
+      (<SinonStub>runner.loadElmTestApp).returns(<ElmTestApp> {Elm: {UnitTest: {init: init}}});
       mockReporter.finish = Sinon.stub();
       (<SinonStub>mockReporter.finish).returns({
         then: func => {
