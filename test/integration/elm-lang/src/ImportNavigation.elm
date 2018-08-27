@@ -3,8 +3,9 @@ module ImportNavigation exposing (..)
 {--
  Test for a file that contains Navigation.program
 
- Note: Internally Browser.application calls Browser.geUrl that assumes the
- global object document.location exists
+ Note: Internally Browser.application assumes:
+  * window & window.navigator.userAgent exists
+  * document.location exists in call to Browser.geUrl
  --}
 
 import Html exposing (Html, div)
