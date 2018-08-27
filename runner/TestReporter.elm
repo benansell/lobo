@@ -1,4 +1,4 @@
-module TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
+module TestReporter exposing (TestReport, encodeError, encodeReports, toProgressMessage, toTestReport)
 
 import Json.Encode exposing (Value, encode, float, int, list, null, object, string)
 import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(..), TestRunType(..))
@@ -220,22 +220,22 @@ type alias DetachedNode =
     }
 
 
-toTestReportNode : List TestReport -> Maybe SuiteNode
+toTestReportNode : List TestReport -> Result String SuiteNode
 toTestReportNode reports =
     let
-        detachedNode =
+        detachedNodeResult =
             List.map toDetachedNode reports
                 |> attachNode
     in
-    case detachedNode of
-        Nothing ->
-            Nothing
+    case detachedNodeResult of
+        Ok node ->
+            toSuiteNode node
 
-        Just node ->
-            toSuiteNode node |> Just
+        Err message ->
+            Err message
 
 
-toSuiteNode : DetachedNode -> SuiteNode
+toSuiteNode : DetachedNode -> Result String SuiteNode
 toSuiteNode node =
     case node.report of
         Failed failedLeaf ->
@@ -246,28 +246,29 @@ toSuiteNode node =
             , startTime = Just failedLeaf.startTime
             , endTime = Just failedLeaf.endTime
             }
+            |> Ok
 
         Ignored _ ->
-            Debug.todo "Impossible to have ignored node as root"
+            Err "Impossible to have ignored node as root"
 
         Passed _ ->
-            Debug.todo "Impossible to have passed node as root"
+            Err "Impossible to have passed node as root"
 
         Skipped _ ->
-            Debug.todo "Impossible to have skipped node as root"
+            Err "Impossible to have skipped node as root"
 
         Suite suiteNode ->
-            suiteNode
+            Ok suiteNode
 
         Todoed _ ->
-            Debug.todo "Impossible to have todo node as root"
+            Err "Impossible to have todo node as root"
 
 
-attachNode : List DetachedNode -> Maybe DetachedNode
+attachNode : List DetachedNode -> Result String DetachedNode
 attachNode nodes =
     case findByLongestTestIds nodes of
         Nothing ->
-            Nothing
+            Err "No results"
 
         Just next ->
             let
@@ -280,28 +281,90 @@ attachNode nodes =
                     case next.id.parents of
                         [] ->
                             -- done when run out of parents
-                            Just next
+                            Ok next
 
                         x :: xs ->
                             -- create new parent with next as a child and repeat
-                            { id = { current = x, parents = xs }, report = fromDetachedNode x next }
-                                :: others
-                                |> attachNode
+                            let attachResult = Suite
+                                    { id = x.uniqueId
+                                    , runType = Normal
+                                    , label = x.label
+                                    , reports = []
+                                    , startTime = Nothing
+                                    , endTime = Nothing
+                                    }
+                                    |> attachChild next.report
+                            in
+                            case attachResult of
+                                Ok report ->
+                                    { id = { current = x, parents = xs }, report = report }
+                                        :: others
+                                        |> attachNode
+
+                                Err message ->
+                                    Err message
 
                 [ x ] ->
                     -- add next to it's parent and repeat
-                    { x | report = attachChild next.report x.report }
-                        :: others
-                        |> attachNode
+                    attachDetachedNode others x next.report x.report
 
                 x :: xs ->
                     -- merge parents into single parent and add next to it's parent and repeat
                     let
-                        merged = List.foldl (\a b -> { a | report = attachChild b.report a.report }) x xs
+                        -- merged = List.foldl (\a b -> { a | report = attachChild b.report a.report }) x xs
+                        merged = List.foldl mergeParent (Ok x) xs
                     in
-                    { merged | report = attachChild next.report merged.report }
-                        :: others
-                        |> attachNode
+                    case merged of
+                        Ok node ->
+                            let
+                                -- todo move attach child into func as repeated atleast twice
+                                child = attachChild next.report node.report
+                            in
+                            case child of
+                                Ok childNode ->
+                                    { node | report = childNode }
+                                    :: others
+                                    |> attachNode
+
+                                Err message ->
+                                    Err message
+
+                        Err message ->
+                            Err message
+
+
+mergeParent : DetachedNode -> Result String DetachedNode -> Result String DetachedNode
+mergeParent detachedNode result =
+    case result of
+        Ok node ->
+            let
+                child = attachChild node.report detachedNode.report
+            in
+            case child of
+                Ok childNode ->
+                    { node | report = childNode }
+                    |> Ok
+
+                Err message ->
+                    Err message
+
+        Err message ->
+            Err message
+
+
+attachDetachedNode : List DetachedNode -> DetachedNode -> TestReportNode -> TestReportNode -> Result String DetachedNode
+attachDetachedNode others x child parent =
+    let
+        attachResult = attachChild child parent
+    in
+    case attachResult of
+        Ok report ->
+            { x | report = report }
+                :: others
+                |> attachNode
+
+        Err message ->
+            Err message
 
 
 byTestIds : List TestIdentifier -> DetachedNode -> Bool
@@ -391,20 +454,7 @@ toDetachedNode testReport =
             }
 
 
-fromDetachedNode : TestIdentifier -> DetachedNode -> TestReportNode
-fromDetachedNode parentId node =
-    Suite
-        { id = parentId.uniqueId
-        , runType = Normal
-        , label = parentId.label
-        , reports = []
-        , startTime = Nothing
-        , endTime = Nothing
-        }
-        |> attachChild node.report
-
-
-attachChild : TestReportNode -> TestReportNode -> TestReportNode
+attachChild : TestReportNode -> TestReportNode -> Result String TestReportNode
 attachChild child parent =
     case parent of
         Failed node ->
@@ -416,22 +466,23 @@ attachChild child parent =
                 , startTime = Just node.startTime
                 , endTime = Just node.endTime
                 }
+                |> Ok
 
         Ignored _ ->
-            Debug.todo "Impossible to attach a child to a ignored test"
+            Err "Impossible to attach a child to a ignored test"
 
         Passed _ ->
-            Debug.todo "Impossible to attach a child to a passed test"
+            Err "Impossible to attach a child to a passed test"
 
         Skipped _ ->
-            Debug.todo "Impossible to attach a child to a skipped test"
+            Err "Impossible to attach a child to a skipped test"
 
         Todoed node ->
             let
                 todoNode =
                     { node | label = List.map (\x -> x.message) node.messages |> String.concat }
             in
-            Suite
+                Suite
                 { id = node.id
                 , runType = Normal
                 , label = node.label
@@ -443,7 +494,7 @@ attachChild child parent =
 
         Suite node ->
             let
-                runType =
+                runTypeResult =
                     extractRunType child
                         |> improveRunType node.runType
 
@@ -455,38 +506,44 @@ attachChild child parent =
                     extractEndTime child
                         |> improveTime (>) node.endTime
             in
-            Suite
-                { node
-                    | reports = child :: node.reports
-                    , runType = runType
-                    , startTime = startTime
-                    , endTime = endTime
-                }
+            case runTypeResult of
+                Ok runType ->
+                    Suite
+                        { node
+                            | reports = child :: node.reports
+                            , runType = runType
+                            , startTime = startTime
+                            , endTime = endTime
+                        }
+                        |> Ok
+
+                Err message ->
+                    Err message
 
 
-improveRunType : TestRunType -> TestRunType -> TestRunType
+improveRunType : TestRunType -> TestRunType -> Result String TestRunType
 improveRunType x y =
     case ( x, y ) of
         ( Normal, Normal ) ->
-            Normal
+            Ok Normal
 
         ( Normal, _ ) ->
-            y
+            Ok y
 
         ( _, Normal ) ->
-            x
+            Ok x
 
         ( Focusing, Focusing ) ->
-            x
+            Ok x
 
         ( Skipping _, Skipping _ ) ->
-            x
+            Ok x
 
         ( Focusing, Skipping _ ) ->
-            Debug.todo "Impossible to have different TestRunTypes: Focusing & Skipping"
+            Err "Impossible to have different TestRunTypes: Focusing & Skipping"
 
         ( Skipping _, Focusing ) ->
-            Debug.todo "Impossible to have different TestRunTypes: Skipping & Focusing"
+            Err "Impossible to have different TestRunTypes: Skipping & Focusing"
 
 
 extractRunType : TestReportNode -> TestRunType
@@ -574,11 +631,26 @@ extractEndTime result =
 
 -- ENCODE
 
+encodeError : String -> Value
+encodeError message =
+    string message
+
 
 encodeReports : Value -> List TestReport -> Value
 encodeReports config reports =
-    toTestReportNode reports
-        |> encodeRootNode config
+    case (toTestReportNode reports) of
+        Ok testReportNode ->
+            encodeRootNode config testReportNode
+
+        Err message ->
+            object
+                [ ( "id", int 0 )
+                , ( "runType", string <| toRunType Normal )
+                , ( "config", config )
+                , ( "runError", encodeError message )
+                , ( "startTime", encodeMaybeTime Nothing )
+                , ( "endTime", encodeMaybeTime Nothing )
+                ]
 
 
 encodeTestReportNodeList : List TestReportNode -> Value
@@ -650,28 +722,16 @@ encodeSkippedLeaf leaf =
         ]
 
 
-encodeRootNode : Value -> Maybe SuiteNode -> Value
-encodeRootNode config maybeNode =
-    case maybeNode of
-        Nothing ->
-            object
-                [ ( "id", int 0 )
-                , ( "runType", string <| toRunType Normal )
-                , ( "config", config )
-                , ( "runResults", encodeTestReportNodeList [] )
-                , ( "startTime", encodeMaybeTime Nothing )
-                , ( "endTime", encodeMaybeTime Nothing )
-                ]
-
-        Just node ->
-            object
-                [ ( "id", int node.id )
-                , ( "runType", string <| toRunType node.runType )
-                , ( "config", config )
-                , ( "runResults", encodeTestReportNodeList node.reports )
-                , ( "startTime", encodeMaybeTime node.startTime )
-                , ( "endTime", encodeMaybeTime node.endTime )
-                ]
+encodeRootNode : Value -> SuiteNode -> Value
+encodeRootNode config node =
+    object
+        [ ( "id", int node.id )
+        , ( "runType", string <| toRunType node.runType )
+        , ( "config", config )
+        , ( "runResults", encodeTestReportNodeList node.reports )
+        , ( "startTime", encodeMaybeTime node.startTime )
+        , ( "endTime", encodeMaybeTime node.endTime )
+        ]
 
 
 encodeSuiteNode : SuiteNode -> Value

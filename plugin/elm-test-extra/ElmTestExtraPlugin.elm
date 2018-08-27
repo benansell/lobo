@@ -1,7 +1,6 @@
-module ElmTestExtraPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
+module ElmTestExtraPlugin exposing (TestRunner, findTests, runTest)
 
 import ElmTest.Runner as Extra exposing (Test(..))
-import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
 import Json.Encode as Encode exposing (Value, int, object, string)
 import Random
 import Test.Runner as ElmTestRunner exposing (Runner, SeededRunners(..), fromTest, getFailureReason)
@@ -10,11 +9,6 @@ import TestPlugin as Plugin
 import Time
 import Tuple
 
-
-type alias TestArgs =
-    { initialSeed : Maybe Int
-    , runCount : Maybe Int
-    }
 
 
 type TestRunner
@@ -44,31 +38,10 @@ type alias ElmTestFailure =
     }
 
 
--- INIT
-
-
-toArgs : Decode.Value -> TestArgs
-toArgs args =
-    case (decodeValue decodeArgs args) of
-        Ok value ->
-            value
-
-        Err error ->
-            Debug.todo "Invalid args"
-
-
-decodeArgs : Decode.Decoder TestArgs
-decodeArgs =
-    Decode.map2 TestArgs
-        (Decode.maybe (Decode.field "seed" Decode.int))
-        (Decode.maybe (Decode.field "runCount" Decode.int))
-
-
-
 -- QUEUE
 
 
-findTests : Extra.Test -> TestArgs -> Time.Posix -> TestRun
+findTests : Extra.Test -> Plugin.TestArgs -> Time.Posix -> TestRun
 findTests test args time =
     let
         runCount =

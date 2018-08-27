@@ -4,12 +4,12 @@ import Json.Decode as Decode exposing (Decoder, Value, bool, decodeValue, field,
 import Json.Encode as Encode exposing (Value, null)
 import Platform
 import Task exposing (perform)
-import TestPlugin exposing (Args, FailureMessage, TestId, TestIdentifier, TestItem, TestResult(..), TestRun, TestRunType(..))
-import TestReporter exposing (TestReport, encodeReports, toProgressMessage, toTestReport)
+import TestPlugin exposing (Args, FailureMessage, TestArgs, TestId, TestIdentifier, TestItem, TestResult(..), TestRun, TestRunType(..), toArgs)
+import TestReporter exposing (TestReport, encodeError, encodeReports, toProgressMessage, toTestReport)
 import Time
 
 
-run : Plugin a b -> Program Decode.Value (Model a b) Msg
+run : Plugin a -> Program Decode.Value (Model a) Msg
 run plugin =
     Platform.worker
         { init = init plugin
@@ -22,12 +22,12 @@ run plugin =
 -- MODEL
 
 
-type alias Model a b =
-    { args : Args a
+type alias Model a =
+    { args : Args
     , runArgs : TestRunArgs
     , runConfig : Encode.Value
-    , plugin : Plugin a b
-    , queue : List (TestItem b)
+    , plugin : Plugin a
+    , queue : List (TestItem a)
     , reports : List TestReport
     }
 
@@ -37,30 +37,44 @@ type alias TestRunArgs =
     }
 
 
-type alias Plugin a b =
-    { findTests : a -> Time.Posix -> TestRun b
-    , runTest : TestItem b -> Time.Posix -> TestResult
-    , toArgs : Decode.Value -> a
+type alias Plugin a =
+    { findTests : TestArgs -> Time.Posix -> TestRun a
+    , runTest : TestItem a -> Time.Posix -> TestResult
+    , toArgs : Decode.Value -> Result String TestArgs
     }
 
 
-type alias RunQueue b =
-    { queue : List (TestItem b)
+type alias RunQueue a =
+    { queue : List (TestItem a)
     , reports : List TestReport
     }
 
 
-init : Plugin a b -> Decode.Value -> ( Model a b, Cmd Msg )
+init : Plugin a -> Decode.Value -> ( Model a, Cmd Msg )
 init plugin rawArgs =
-    ( { args = { pluginArgs = plugin.toArgs rawArgs }
-      , runArgs = { reportProgress = False }
-      , runConfig = Encode.null
-      , plugin = plugin
-      , queue = []
-      , reports = []
-      }
-    , Cmd.none
-    )
+    case (toArgs rawArgs) of
+
+        Ok pluginArgs ->
+            ( { args = { pluginArgs = pluginArgs }
+              , runArgs = { reportProgress = False }
+              , runConfig = Encode.null
+              , plugin = plugin
+              , queue = []
+              , reports = []
+              }
+            , Cmd.none
+            )
+
+        Err message ->
+            ( { args = { pluginArgs = { initialSeed = Nothing, runCount = Nothing } }
+              , runArgs = { reportProgress = False }
+              , runConfig = Encode.null
+              , plugin = plugin
+              , queue = []
+              , reports = []
+              }
+            , error <| encodeError message
+            )
 
 
 
@@ -70,6 +84,7 @@ init plugin rawArgs =
 type Msg
     = StartTestRun TestRunArgs
     | FinishedTestRun
+    | OnError String
     | QueueTest Time.Posix
     | RunNextTest Bool
     | StartTest Time.Posix
@@ -79,16 +94,19 @@ type Msg
 
 port begin : Int -> Cmd msg
 
-
 port progress : Decode.Value -> Cmd msg
 
+port error: Decode.Value -> Cmd msg
 
 port end : Decode.Value -> Cmd msg
 
 
-update : Msg -> Model a b -> ( Model a b, Cmd Msg )
+update : Msg -> Model a -> ( Model a, Cmd Msg )
 update msg model =
     case msg of
+        OnError message ->
+            (model, error <| encodeError message)
+
         StartTestRun runArgs ->
             QueueTest
                 |> timeThenUpdate { model | runArgs = runArgs }
@@ -152,12 +170,12 @@ updateTime next =
     Task.perform next Time.now
 
 
-timeThenUpdate : Model args testItem -> (Time.Posix -> Msg) -> ( Model args testItem, Cmd Msg )
+timeThenUpdate : Model a -> (Time.Posix -> Msg) -> ( Model a, Cmd Msg )
 timeThenUpdate model next =
     ( model, updateTime next )
 
 
-queueTests : Plugin a b -> Args a -> Time.Posix -> ( Encode.Value, RunQueue b )
+queueTests : Plugin a -> Args -> Time.Posix -> ( Encode.Value, RunQueue a )
 queueTests plugin args time =
     let
         testRun =
@@ -228,12 +246,14 @@ port startTestRun : (TestRunArgs -> msg) -> Sub msg
 port runNextTest : (Bool -> msg) -> Sub msg
 
 
-subscriptions : Model args testItem -> Sub Msg
+subscriptions : Model a -> Sub Msg
 subscriptions model =
     Sub.batch [ startTestRun StartTestRun, runNextTest RunNextTest ]
 
+-- todo: decode test run args and runNext test messages
 
-toTestRunArgs : Decode.Value -> TestRunArgs
+{-
+toTestRunArgs : Decode.Value -> Result String TestRunArgs
 toTestRunArgs value =
     let
         result =
@@ -244,10 +264,11 @@ toTestRunArgs value =
                 runArgs
 
             Err _ ->
-                Debug.todo "Failed to decode runArgs"
+                Err "Failed to decode runArgs"
 
 
 testRunArgsDecoder : Decode.Decoder TestRunArgs
 testRunArgsDecoder =
     Decode.map TestRunArgs
         (field "reportProgress" Decode.bool)
+-}
