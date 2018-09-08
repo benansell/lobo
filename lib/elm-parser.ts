@@ -140,7 +140,7 @@ export class ElmParserImp implements ElmParser {
 
       if (this.elmNodeHelper.isFunctionNode(result.node)) {
         const node = result.node;
-        node.dependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name.length);
+        node.srcDependencies = this.parseFunction(result.codeHelper, typeHelper, result.node.name.length);
         complete.push(node);
       }
     }

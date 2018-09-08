@@ -6,11 +6,19 @@ import * as path from "path";
 import rewire = require("rewire");
 import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
-import {createElmPackageHelper, ElmPackageHelper, ElmPackageHelperImp, ElmPackageJson} from "../../../lib/elm-package-helper";
+import {createElmPackageHelper, ElmPackageHelper, ElmPackageHelperImp, ElmJson, RawDependencyGroup} from "../../../lib/elm-package-helper";
 import {Logger} from "../../../lib/logger";
 import {Util} from "../../../lib/util";
 import {SinonStub} from "sinon";
-import {Dependencies, PluginTestFrameworkWithConfig} from "../../../lib/plugin";
+import {
+  ApplicationDependencies,
+  DependencyGroup,
+  VersionSpecification,
+  VersionSpecificationExact,
+  VersionSpecificationInvalid,
+  VersionSpecificationRange
+} from "../../../lib/plugin";
+import {makeVersion} from "../../../lib/version";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -30,6 +38,7 @@ describe("lib elm-package-helper", () => {
     mockRead = Sinon.stub();
     mockUtil = <Util><{}> { read: mockRead };
     mockUtil.resolveDir = Sinon.spy();
+    mockUtil.sortObject = (x) => x;
     helper = new rewiredImp(mockLogger, mockUtil);
   });
 
@@ -49,7 +58,7 @@ describe("lib elm-package-helper", () => {
       let expected = ["abc"];
 
       // act
-      let actual = helper.addSourceDirectories(undefined, "foo", "bar", expected);
+      let actual = helper.addSourceDirectories("bar", expected, "foo", undefined);
 
       // assert
       expect(actual).to.equal(expected);
@@ -60,7 +69,7 @@ describe("lib elm-package-helper", () => {
       mockUtil.resolveDir = (...dirs) => dirs.join();
 
       // act
-      let actual = helper.addSourceDirectories(["foo"], "bar", "bar", ["qux"]);
+      let actual = helper.addSourceDirectories("bar", ["qux"], "bar", ["foo"]);
 
       // assert
       expect(actual).to.include("qux");
@@ -72,7 +81,7 @@ describe("lib elm-package-helper", () => {
       mockUtil.resolveDir = (...dirs) => dirs.join();
 
       // act
-      let actual = helper.addSourceDirectories(["foo"], "bar", "baz", ["qux"]);
+      let actual = helper.addSourceDirectories("baz", ["qux"], "bar", ["foo"]);
 
       // assert
       expect(actual).to.include("qux");
@@ -84,7 +93,7 @@ describe("lib elm-package-helper", () => {
       mockUtil.resolveDir = (...dirs) => dirs.join();
 
       // act
-      let actual = helper.addSourceDirectories(["foo"], "bar", "bar/baz", ["qux"]);
+      let actual = helper.addSourceDirectories("bar/baz", ["qux"], "bar", ["foo"]);
 
       // assert
       expect(actual).to.include("qux");
@@ -92,183 +101,438 @@ describe("lib elm-package-helper", () => {
     });
   });
 
+  describe("convertFromRawDependencies", () => {
+    it("should not call convertFromRawDependencyGroup when dependencies is undefined", () => {
+      // arrange
+      helper.convertFromRawDependencyGroup = Sinon.stub();
+
+      // act
+      helper.convertFromRawDependencies(undefined);
+
+      // assert
+      expect(helper.convertFromRawDependencyGroup).not.to.have.been.called;
+    });
+
+    it("should call convertFromRawDependencyGroup for direct dependencies", () => {
+      // arrange
+      const direct = <RawDependencyGroup> {foo: "bar"};
+      const indirect = {};
+      helper.convertFromRawDependencyGroup = Sinon.stub();
+
+      // act
+      helper.convertFromRawDependencies({direct, indirect});
+
+      // assert
+      expect(helper.convertFromRawDependencyGroup).to.have.been.calledWith(direct);
+    });
+
+    it("should call convertFromRawDependencyGroup for direct dependencies", () => {
+      // arrange
+      const direct = {};
+      const indirect = <RawDependencyGroup> {foo: "bar"};
+      helper.convertFromRawDependencyGroup = Sinon.stub();
+
+      // act
+      helper.convertFromRawDependencies({direct, indirect});
+
+      // assert
+      expect(helper.convertFromRawDependencyGroup).to.have.been.calledWith(indirect);
+    });
+  });
+
+  describe("convertFromRawDependencyGroup", () => {
+    it("should return empty group when supplied dependencies is undefined", () => {
+      // act
+      let actual = helper.convertFromRawDependencyGroup(undefined);
+
+      // assert
+      expect(actual).to.deep.equal({});
+    });
+
+    it("should ignore dependencies than are not own", () => {
+      // arrange
+      const parentDeps = <RawDependencyGroup> {"foo": "bar"};
+      const dependencies = Object.create(parentDeps);
+
+      // act
+      let actual = helper.convertFromRawDependencyGroup(dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({});
+    });
+
+    it("should convert to invalid dependency when version is invalid", () => {
+      // arrange
+      let expected = <DependencyGroup<VersionSpecification>> {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      let dependencies = <RawDependencyGroup> {"foo": "bar"};
+
+      // act
+      let actual = helper.convertFromRawDependencyGroup(dependencies);
+
+      // assert
+      expect(actual).to.deep.equal(expected);
+    });
+
+    it("should convert to invalid dependency when version is not numeric", () => {
+      // arrange
+      let expected = <DependencyGroup<VersionSpecification>> {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "a.2.3"}};
+      let dependencies = <RawDependencyGroup> {"foo": "a.2.3"};
+
+      // act
+      let actual = helper.convertFromRawDependencyGroup(dependencies);
+
+      // assert
+      expect(actual).to.deep.equal(expected);
+    });
+
+    it("should convert to application version when version is a single version", () => {
+      // arrange
+      let expected = <DependencyGroup<VersionSpecification>> {
+        "foo": <VersionSpecificationExact> {type: "application", version: makeVersion(1, 2, 3)}
+      };
+      let dependencies = <RawDependencyGroup> {"foo": "1.2.3"};
+
+      // act
+      let actual = helper.convertFromRawDependencyGroup(dependencies);
+
+      // assert
+      expect(actual).to.deep.equal(expected);
+    });
+
+    it("should convert dependency to explicit version from min when isApplication is true and version spec is package", () => {
+      // arrange
+      let expected = <DependencyGroup<VersionSpecification>> {
+        "foo": <VersionSpecificationRange> {
+          canEqualMax: false,
+          canEqualMin: true,
+          maxVersion: makeVersion(4, 5, 6),
+          minVersion: makeVersion(1, 2, 3),
+          type: "package"
+        }
+      };
+      let dependencies = <RawDependencyGroup> {"foo": "1.2.3 <= v < 4.5.6"};
+
+      // act
+      let actual = helper.convertFromRawDependencyGroup(dependencies);
+
+      // assert
+      expect(actual).to.deep.equal(expected);
+    });
+  });
+
+  describe("convertToRawDependencies", () => {
+    it("should not call convertToRawDependencyGroup when dependencies is undefined", () => {
+      // arrange
+      helper.convertToRawDependencyGroup = Sinon.stub();
+
+      // act
+      helper.convertToRawDependencies(true, undefined);
+
+      // assert
+      expect(helper.convertToRawDependencyGroup).not.to.have.been.called;
+    });
+
+    it("should call convertToRawDependencyGroup with isApplication", () => {
+      // arrange
+      helper.convertToRawDependencyGroup = Sinon.stub();
+
+      // act
+      helper.convertToRawDependencies(true, {direct: {}, indirect: {}});
+
+      // assert
+      expect(helper.convertToRawDependencyGroup).to.have.been.calledWith(true, Sinon.match.any);
+    });
+
+    it("should call convertToRawDependencyGroup for direct dependencies", () => {
+      // arrange
+      const direct = <DependencyGroup<VersionSpecification>> {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      const indirect = {};
+      helper.convertToRawDependencyGroup = Sinon.stub();
+
+      // act
+      helper.convertToRawDependencies(true, {direct, indirect});
+
+      // assert
+      expect(helper.convertToRawDependencyGroup).to.have.been.calledWith(Sinon.match.any, direct);
+    });
+
+    it("should call convertToRawDependencyGroup for direct dependencies", () => {
+      // arrange
+      const direct = {};
+      const indirect = <DependencyGroup<VersionSpecification>> {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      helper.convertToRawDependencyGroup = Sinon.stub();
+
+      // act
+      helper.convertToRawDependencies(true, {direct, indirect});
+
+      // assert
+      expect(helper.convertToRawDependencyGroup).to.have.been.calledWith(Sinon.match.any, indirect);
+    });
+  });
+
+  describe("convertToRawDependencyGroup", () => {
+    it("should return empty group when supplied dependencies is undefined", () => {
+      // act
+      let actual = helper.convertToRawDependencyGroup(true, undefined);
+
+      // assert
+      expect(actual).to.deep.equal({});
+    });
+
+    it("should ignore dependencies than are not own", () => {
+      // arrange
+      const parentDeps = <DependencyGroup<VersionSpecification>> {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      const dependencies = Object.create(parentDeps);
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(true, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({});
+    });
+
+    it("should convert dependency to invalid version when isApplication is true and version spec is invalid", () => {
+      // arrange
+      let dependencies = <DependencyGroup<VersionSpecification>> {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(true, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({foo: "bar"});
+    });
+
+    it("should convert dependency to explicit version when isApplication is true and version spec is application", () => {
+      // arrange
+      let dependencies = <DependencyGroup<VersionSpecification>> {
+        "foo": <VersionSpecificationExact> {type: "application", version: makeVersion(1, 2, 3)}
+      };
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(true, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({foo: "1.2.3"});
+    });
+
+    it("should convert dependency to explicit version from min when isApplication is true and version spec is package", () => {
+      // arrange
+      let dependencies = <DependencyGroup<VersionSpecification>> {
+        "foo": <VersionSpecificationRange> {
+          canEqualMax: false,
+          canEqualMin: true,
+          maxVersion: makeVersion(4, 5, 6),
+          minVersion: makeVersion(1, 2, 3),
+          type: "package"
+        }
+      };
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(true, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({foo: "1.2.3"});
+    });
+
+    it("should convert dependency to invalid version when isApplication is false and version spec is invalid", () => {
+      // arrange
+      let dependencies = <DependencyGroup<VersionSpecification>> {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(false, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({foo: "bar"});
+    });
+
+    it("should convert dependency to version range with next major version when isApplication is false and version spec is app", () => {
+      // arrange
+      let dependencies = <DependencyGroup<VersionSpecification>> {
+        "foo": <VersionSpecificationExact> {type: "application", version: makeVersion(1, 2, 3)}
+      };
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(false, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({foo: "1.2.3 <= v < 2.0.0"});
+    });
+
+    it("should convert dependency to version range equal to min from min when isApplication is false and version spec is package", () => {
+      // arrange
+      let dependencies = <DependencyGroup<VersionSpecification>> {
+        "foo": <VersionSpecificationRange> {
+          canEqualMax: false,
+          canEqualMin: true,
+          maxVersion: makeVersion(4, 5, 6),
+          minVersion: makeVersion(1, 2, 3),
+          type: "package"
+        }
+      };
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(false, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({foo: "1.2.3 <= v < 4.5.6"});
+    });
+
+    it("should convert dependency to version range equal to max from min when isApplication is false and version spec is package", () => {
+      // arrange
+      let dependencies = <DependencyGroup<VersionSpecification>> {
+        "foo": <VersionSpecificationRange> {
+          canEqualMax: true,
+          canEqualMin: false,
+          maxVersion: makeVersion(4, 5, 6),
+          minVersion: makeVersion(1, 2, 3),
+          type: "package"
+        }
+      };
+
+      // act
+      let actual = helper.convertToRawDependencyGroup(false, dependencies);
+
+      // assert
+      expect(actual).to.deep.equal({foo: "1.2.3 < v <= 4.5.6"});
+    });
+  });
+
   describe("isImprovedMinimumConstraint", () => {
     it("should return false when the dependency and the candidate constraints are the same", () => {
+      // arrange
+      const dependency = <VersionSpecificationRange> {
+        canEqualMax: false,
+        canEqualMin: true,
+        maxVersion: makeVersion(2, 0, 0),
+        minVersion: makeVersion(1, 0, 0),
+        type: "package"
+      };
+
+      const candidate = <VersionSpecificationRange> {
+        canEqualMax: false,
+        canEqualMin: true,
+        maxVersion: makeVersion(2, 0, 0),
+        minVersion: makeVersion(1, 0, 0),
+        type: "package"
+      };
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("1.0.0 <= v < 2.0.0", "1.0.0 <= v < 2.0.0");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.false;
     });
 
-    it("should return false when the dependency is not a valid constraint", () => {
+    it("should return true when the dependency is not a valid constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationInvalid> {type: "invalid", version: "foo"};
+      const candidate = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("foo", "1.0.0");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
-      expect(actual).to.be.false;
+      expect(actual).to.be.true;
     });
 
     it("should return false when the candidate is not a valid constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+      const candidate = <VersionSpecificationInvalid> {type: "invalid", version: "foo"};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("1.0.0", "foo");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.false;
     });
 
     it("should return false when the candidate is not an improved major constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationExact> {type: "application", version: makeVersion(2, 0, 0)};
+      const candidate = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("2.0.0", "1.0.0");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.false;
     });
 
     it("should return false when the candidate is not an improved minor constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 1, 0)};
+      const candidate = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("1.1.0", "1.0.0");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.false;
     });
 
     it("should return false when the candidate is not an improved patch constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 1)};
+      const candidate = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("1.0.1", "1.0.0");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.false;
     });
 
     it("should return true when the candidate is an improved major constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+      const candidate = <VersionSpecificationExact> {type: "application", version: makeVersion(2, 0, 0)};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("1.0.0", "2.0.0");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.true;
     });
 
     it("should return true when the candidate is an improved minor constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+      const candidate = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 1, 0)};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("1.0.0", "1.1.0");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.true;
     });
 
     it("should return true when the candidate is an improved patch constraint", () => {
+      // arrange
+      const dependency = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 0)};
+      const candidate = <VersionSpecificationExact> {type: "application", version: makeVersion(1, 0, 1)};
+
       // act
-      let actual = helper.isImprovedMinimumConstraint("1.0.0", "1.0.1");
+      let actual = helper.isImprovedMinimumConstraint(dependency, candidate);
 
       // assert
       expect(actual).to.be.true;
-    });
-  });
-
-  describe("isNotExistingDependency", () => {
-    it("should return false when the candidate exists in the dependencies", () => {
-      // act
-      let actual = helper.isNotExistingDependency([["foo", "bar"]], ["foo", "bar"]);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-
-    it("should return true when the candidate does not exist in the dependencies", () => {
-      // act
-      let actual = helper.isNotExistingDependency([["foo", "bar"]], ["baz", "qux"]);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return true when the candidate is an improved constraint", () => {
-      // arrange
-      helper.isImprovedMinimumConstraint = () => true;
-
-      // act
-      let actual = helper.isNotExistingDependency([["foo", "1.0.0"]], ["foo", "2.0.0"]);
-
-      // assert
-      expect(actual).to.be.true;
-    });
-
-    it("should return false when the candidate is not an improved constraint", () => {
-      // arrange
-      helper.isImprovedMinimumConstraint = () => false;
-
-      // act
-      let actual = helper.isNotExistingDependency([["foo", "2.0.0"]], ["foo", "1.0.0"]);
-
-      // assert
-      expect(actual).to.be.false;
-    });
-  });
-
-  describe("mergeDependencies", () => {
-    it("should return empty dependency list when source, test and framework dependencies do not exist", () => {
-      // arrange
-      let sourcePackageJson = <ElmPackageJson>{};
-      let testPackageJson = <ElmPackageJson>{};
-      let testFramework = <PluginTestFrameworkWithConfig> {config: {}};
-
-      // act
-      let actual = helper.mergeDependencies(sourcePackageJson, testPackageJson, testFramework);
-
-      // assert
-      expect(actual.length).to.equal(0);
-    });
-
-    it("should return the source and test framework dependencies when the test dependencies does not exist", () => {
-      // arrange
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "foo"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> undefined};
-      let testFramework = <PluginTestFrameworkWithConfig> {config: {dependencies: <Dependencies> {framework: "baz"}}};
-
-      // act
-      let actual = helper.mergeDependencies(sourcePackageJson, testPackageJson, testFramework);
-
-      // assert
-      expect(actual.length).to.equal(2);
-      expect(actual).to.include.something.deep.equal(["source", "foo"]);
-      expect(actual).to.include.something.deep.equal(["framework", "baz"]);
-    });
-
-    it("should return the source test and test framework dependencies for the supplied parameters", () => {
-      // arrange
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "foo"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "bar"}};
-      let testFramework = <PluginTestFrameworkWithConfig> {config: {dependencies: <Dependencies> {framework: "baz"}}};
-
-      // act
-      let actual = helper.mergeDependencies(sourcePackageJson, testPackageJson, testFramework);
-
-      // assert
-      expect(actual.length).to.equal(3);
-      expect(actual).to.include.something.deep.equal(["source", "foo"]);
-      expect(actual).to.include.something.deep.equal(["framework", "baz"]);
-    });
-
-    it("should return the source test and test framework without duplicates", () => {
-      // arrange
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {foo: "bar"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {foo: "bar"}};
-      let testFramework = <PluginTestFrameworkWithConfig> {config: {dependencies: <Dependencies> {foo: "bar"}}};
-
-      // act
-      let actual = helper.mergeDependencies(sourcePackageJson, testPackageJson, testFramework);
-
-      // assert
-      expect(actual.length).to.equal(1);
-      expect(actual).to.include.something.deep.equal(["foo", "bar"]);
     });
   });
 
   describe("mergeSourceDirectories", () => {
+    it("should not add current dir when elm json source dir already contains currrent dir", () => {
+      // act
+      let actual = helper.mergeSourceDirectories(".lobo", <ElmJson>{sourceDirectories: ["."]}, "sourceDir", [], []);
+
+      // assert
+      expect(actual.length).to.equal(1);
+      expect(actual).to.include(".");
+    });
+
     it("should return array with current dir only when no other dirs are specified", () => {
       // act
-      let actual = helper.mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{}, ".", []);
+      let actual = helper.mergeSourceDirectories(".lobo", <ElmJson>{}, "sourceDir", ["src"], []);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -278,7 +542,7 @@ describe("lib elm-package-helper", () => {
     it("should return array with current dir only when no other dirs are specified other than the test source directories", () => {
       // act
       let actual = helper
-        .mergeSourceDirectories(<ElmPackageJson>{}, "sourceDir", <ElmPackageJson>{sourceDirectories: ["."]}, ".", []);
+        .mergeSourceDirectories(".lobo", <ElmJson>{}, "sourceDir", ["test"], []);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -287,11 +551,10 @@ describe("lib elm-package-helper", () => {
 
     it("should return array with current dir relative test directory", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let loboPackageJson = <ElmJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "qux", []);
+      let actual = helper.mergeSourceDirectories("qux", loboPackageJson, "sourceDir", ["src"], []);
 
       // assert
       expect(actual).to.include(".");
@@ -299,11 +562,10 @@ describe("lib elm-package-helper", () => {
 
     it("should return array with test directory relative test directory", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let loboPackageJson = <ElmJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "qux", []);
+      let actual = helper.mergeSourceDirectories("qux", loboPackageJson, "sourceDir", ["src"], []);
 
       // assert
       expect(actual).to.include("test");
@@ -312,25 +574,22 @@ describe("lib elm-package-helper", () => {
     it("should return array with base source directories relative test directory", () => {
       // arrange
       mockUtil.resolveDir = (...dirs) => dirs.join();
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let loboPackageJson = <ElmJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "qux", []);
+      let actual = helper.mergeSourceDirectories("qux", loboPackageJson, "sourceDir", ["src"], []);
 
       // assert
-      expect(actual).to.include("../sourceDir/source");
+      expect(actual).to.include("../sourceDir/src");
     });
 
     it("should return array with extra directories relative to parent dir", () => {
       // arrange
       mockUtil.resolveDir = (...dirs) => dirs.join();
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      let extraDir = ["foo"];
+      let loboPackageJson = <ElmJson>{sourceDirectories: ["test"]};
 
       // act
-      let actual = helper.mergeSourceDirectories(sourcePackageJson, "sourceDir", testPackageJson, "qux", extraDir);
+      let actual = helper.mergeSourceDirectories("qux", loboPackageJson, "sourceDir", ["src"], ["foo"]);
 
       // assert
       expect(actual).to.include.something.that.match(/\.\.\/foo$/);
@@ -349,17 +608,17 @@ describe("lib elm-package-helper", () => {
       expect(actual).to.match(new RegExp("^" + _.escapeRegExp(expected)));
     });
 
-    it("should return path ending in elm-package.json path for supplied directory", () => {
+    it("should return path ending in elm.json path for supplied directory", () => {
       // act
       let actual = helper.path("/foo/bar");
 
       // assert
-      expect(actual).to.match(/elm-package\.json$/);
+      expect(actual).to.match(/elm\.json$/);
     });
   });
 
   describe("read", () => {
-    it("should be undefined when elm-package.json does not exist", () => {
+    it("should be undefined when elm.json does not exist", () => {
       // act
       let actual = helper.read("/foo");
 
@@ -378,16 +637,30 @@ describe("lib elm-package-helper", () => {
       expect(actual).to.be.undefined;
     });
 
-    it("should return package json when elm-package.json does exists", () => {
+    it("should return package json with 'dependencies' renamed as 'appDependencies'", () => {
       // arrange
-      mockRead.returns(JSON.stringify({dependencies: ["foo"]}));
+      mockRead.returns(JSON.stringify({dependencies: {direct: {foo: "1.0.0"}}}));
+      const expected = {foo: {version: "1.0.0"}};
+      helper.convertFromRawDependencyGroup = Sinon.stub().returns(expected);
 
       // act
-      let actual = helper.read("/foo");
+      let actual = helper.read("/bar");
 
       // assert
-      expect(actual.dependencies.length).to.equal(1);
-      expect(actual.dependencies).to.include("foo");
+      expect(actual.srcDependencies.direct).to.equal(expected);
+    });
+
+    it("should return package json with 'test-dependencies' renamed as 'testDependencies'", () => {
+      // arrange
+      mockRead.returns(JSON.stringify({"test-dependencies": {direct: {foo: "1.0.0"}}}));
+      const expected = {foo: {version: "1.0.0"}};
+      helper.convertFromRawDependencyGroup = Sinon.stub().returns(expected);
+
+      // act
+      let actual = helper.read("/bar");
+
+      // assert
+      expect(actual.testDependencies.direct).to.equal(expected);
     });
 
     it("should return package json with 'source-directories' renamed as 'sourceDirectories'", () => {
@@ -405,146 +678,139 @@ describe("lib elm-package-helper", () => {
   });
 
   describe("updateSourceDirectories", () => {
-    it("should call mergeSourceDirectories with the specified base package json", () => {
+    it("should call mergeSourceDirectories with the specified elmJsonDir", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      let callback = Sinon.stub();
+      const elmJson = <ElmJson>{sourceDirectories: ["test"]};
+      const callback = Sinon.stub();
       helper.mergeSourceDirectories = Sinon.spy();
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, [], callback);
+      helper.updateSourceDirectories("baz", elmJson, "bar", [], [], callback);
 
       // assert
       expect(helper.mergeSourceDirectories)
-          .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
+          .to.have.been.calledWith("baz", Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
-    it("should call mergeSourceDirectories with the specified base directory", () => {
+    it("should call mergeSourceDirectories with the specified elmJson", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      let callback = Sinon.stub();
+      const elmJson = <ElmJson>{sourceDirectories: ["test"]};
+      const callback = Sinon.stub();
       helper.mergeSourceDirectories = Sinon.spy();
 
       // act
-      helper.updateSourceDirectories( "bar", sourcePackageJson, "baz", testPackageJson, [], callback);
+      helper.updateSourceDirectories("baz", elmJson, "bar", [], [], callback);
 
       // assert
       expect(helper.mergeSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, elmJson, Sinon.match.any, Sinon.match.any, Sinon.match.any);
     });
 
-    it("should call mergeSourceDirectories with the specified test package json", () => {
+    it("should call mergeSourceDirectories with the specified appDir", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      let callback = Sinon.stub();
+      const elmJson = <ElmJson>{sourceDirectories: ["test"]};
+      const callback = Sinon.stub();
       helper.mergeSourceDirectories = Sinon.spy();
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, [], callback);
+      helper.updateSourceDirectories("baz", elmJson, "bar", [], [], callback);
 
       // assert
       expect(helper.mergeSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testPackageJson, Sinon.match.any, Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "bar", Sinon.match.any, Sinon.match.any);
     });
 
-    it("should call mergeSourceDirectories with the specified main test directory", () => {
+    it("should call mergeSourceDirectories with the specified appSourceDirectories", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      let callback = Sinon.stub();
+      const expected = ["source"];
+      const elmJson = <ElmJson>{sourceDirectories: ["test"]};
+      const callback = Sinon.stub();
       helper.mergeSourceDirectories = Sinon.spy();
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, [], callback);
+      helper.updateSourceDirectories("baz", elmJson, "bar", expected, [], callback);
 
       // assert
       expect(helper.mergeSourceDirectories)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "baz", Sinon.match.any);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, expected, Sinon.match.any);
     });
 
-    it("should call mergeSourceDirectories with the specified extraDirectories", () => {
+    it("should call mergeSourceDirectories with the specified pluginDirectories", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
-      let callback = Sinon.stub();
+      const expected = ["plugin"];
+      const elmJson = <ElmJson>{sourceDirectories: ["test"]};
+      const callback = Sinon.stub();
       helper.mergeSourceDirectories = Sinon.spy();
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, ["foo"], callback);
+      helper.updateSourceDirectories("baz", elmJson, "bar", [], expected, callback);
 
       // assert
       expect(helper.mergeSourceDirectories)
-        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, ["foo"]);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, Sinon.match.any, expected);
     });
 
     it("should call supplied callback with the source directory diff", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let elmJson = <ElmJson>{sourceDirectories: ["test"]};
       let callback = Sinon.stub();
       helper.mergeSourceDirectories = Sinon.stub();
-      (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo", "test"]);
+      const expected = ["foo", "test"];
+      (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(expected);
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, ["foo"], callback);
+      helper.updateSourceDirectories("baz", elmJson, "bar", ["src"], ["foo"], callback);
 
       // assert
-      expect(callback)
-        .to.have.been.calledWith(["foo"], Sinon.match.any);
+      expect(callback).to.have.been.calledWith(expected, Sinon.match.any);
     });
 
-    it("should call supplied callback with a function that calls updateDependenciesAction with the merged source directories", () => {
+    it("should call supplied callback with a function that calls updateSourceDirectoriesAction with the merged source directories", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let loboPackageJson = <ElmJson>{sourceDirectories: ["test"]};
       let callback = (diff, updateAction) => updateAction();
       helper.updateSourceDirectoriesAction = Sinon.spy();
       helper.mergeSourceDirectories = Sinon.stub();
       (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo"]);
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, ["foo"], callback);
+      helper.updateSourceDirectories("baz", loboPackageJson, "bar", ["src"], ["foo"], callback);
 
       // assert
       expect(helper.updateSourceDirectoriesAction)
         .to.have.been.calledWith(["foo"], Sinon.match.any, Sinon.match.any);
     });
 
-    it("should call supplied callback with a function that calls updateDependenciesAction with the testElmPackageDir", () => {
+    it("should call supplied callback with a function that calls updateSourceDirectoriesAction with the testElmPackageDir", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let loboPackageJson = <ElmJson>{sourceDirectories: ["test"]};
       let callback = (diff, updateAction) => updateAction();
       helper.updateSourceDirectoriesAction = Sinon.spy();
       helper.mergeSourceDirectories = Sinon.stub();
       (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo"]);
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, ["foo"], callback);
+      helper.updateSourceDirectories("baz", loboPackageJson, "bar", ["src"], ["foo"], callback);
 
       // assert
       expect(helper.updateSourceDirectoriesAction)
         .to.have.been.calledWith(Sinon.match.any, "baz", Sinon.match.any);
     });
 
-    it("should call supplied callback with a function that calls updateDependenciesAction with the testElmPackage", () => {
+    it("should call supplied callback with a function that calls updateSourceDirectoriesAction with the testElmPackage", () => {
       // arrange
-      let sourcePackageJson = <ElmPackageJson>{sourceDirectories: ["source"]};
-      let testPackageJson = <ElmPackageJson>{sourceDirectories: ["test"]};
+      let loboPackageJson = <ElmJson>{sourceDirectories: ["test"]};
       let callback = (diff, updateAction) => updateAction();
       helper.updateSourceDirectoriesAction = Sinon.spy();
       helper.mergeSourceDirectories = Sinon.stub();
       (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo"]);
 
       // act
-      helper.updateSourceDirectories("bar", sourcePackageJson, "baz", testPackageJson, ["foo"], callback);
+      helper.updateSourceDirectories("baz", loboPackageJson, "bar", ["src"], ["foo"], callback);
 
       // assert
       expect(helper.updateSourceDirectoriesAction)
-        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testPackageJson);
+        .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, loboPackageJson);
     });
   });
 
@@ -555,7 +821,7 @@ describe("lib elm-package-helper", () => {
       helper.write = Sinon.stub();
 
       // act
-      let actual = helper.updateSourceDirectoriesAction(expected, "bar", <ElmPackageJson>{});
+      let actual = helper.updateSourceDirectoriesAction(expected, "bar", <ElmJson>{});
 
       // assert
       expect(actual.sourceDirectories).to.equal(expected);
@@ -566,7 +832,7 @@ describe("lib elm-package-helper", () => {
       helper.write = Sinon.spy();
 
       // act
-      helper.updateSourceDirectoriesAction(["foo"], "bar", <ElmPackageJson>{});
+      helper.updateSourceDirectoriesAction(["foo"], "bar", <ElmJson>{});
 
       // assert
       expect(helper.write).to.have.been.calledWith("bar", Sinon.match.any);
@@ -578,7 +844,7 @@ describe("lib elm-package-helper", () => {
       helper.write = Sinon.spy();
 
       // act
-      helper.updateSourceDirectoriesAction(expected, "bar", <ElmPackageJson>{});
+      helper.updateSourceDirectoriesAction(expected, "bar", <ElmJson>{});
 
       // assert
       expect(helper.write).to.have.been.calledWith(Sinon.match.any, {sourceDirectories: expected});
@@ -586,136 +852,63 @@ describe("lib elm-package-helper", () => {
   });
 
   describe("updateDependencies", () => {
-    it("should call mergeDependencies with the specified base package json", () => {
+    it("should call supplied callback with empty object when there are no missing dependencies", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> {};
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let elmJson = <ElmJson>{};
       let callback = Sinon.stub();
-      helper.mergeDependencies = Sinon.spy();
+      helper.updateDependenciesAction = Sinon.stub();
 
       // act
-      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+      helper.updateDependencies("baz", elmJson, {direct: {}, indirect: {}}, {direct: {}, indirect: {}}, callback);
 
       // assert
-      expect(helper.mergeDependencies)
-          .to.have.been.calledWith(sourcePackageJson, Sinon.match.any, Sinon.match.any);
+      expect(callback).to.have.been.calledWith({}, Sinon.match.any);
     });
 
-    it("should call mergeDependencies with the specified test package json", () => {
+    it("should call supplied callback with a function that calls updateDependenciesAction with the merged source directories", () => {
       // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> {};
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      let callback = Sinon.stub();
-      helper.mergeDependencies = Sinon.spy();
-
-      // act
-      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
-
-      // assert
-      expect(helper.mergeDependencies)
-          .to.have.been.calledWith(Sinon.match.any, testPackageJson, Sinon.match.any);
-    });
-
-    it("should call mergeDependencies with the specified testFramework", () => {
-      // arrange
-      let testFramework: PluginTestFrameworkWithConfig = {
-        config: {dependencies: <Dependencies> {foo: "bar"}, sourceDirectories: [], name: "baz", options: []},
-        initArgs: Sinon.stub(),
-        pluginElmModuleName: Sinon.stub(),
-        testFrameworkElmModuleName: Sinon.stub()
-      };
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      let callback = Sinon.stub();
-      helper.mergeDependencies = Sinon.spy();
-
-      // act
-      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
-
-      // assert
-      expect(helper.mergeDependencies)
-          .to.have.been.calledWith(Sinon.match.any, Sinon.match.any, testFramework);
-    });
-
-    it("should call supplied callback with the dependency diff", () => {
-      // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> {};
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      let callback = Sinon.stub();
-      helper.mergeDependencies = Sinon.stub();
-      (<Sinon.SinonStub>helper.mergeDependencies).returns(["foo"]);
-
-      // act
-      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
-
-      // assert
-      expect(callback).to.have.been.calledWith(["foo"], Sinon.match.any);
-    });
-
-    it("should call supplied callback with an update action that calls updateDependenciesAction with the merged dependencies", () => {
-      // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> {};
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
+      let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      let loboPackageJson = <ElmJson>{srcDependencies: {direct: {}, indirect: {}}};
       let callback = (diff, updateAction) => updateAction();
-      helper.updateDependenciesAction = Sinon.spy();
-      helper.mergeDependencies = Sinon.stub();
-      (<Sinon.SinonStub>helper.mergeDependencies).returns(["foo"]);
+      helper.updateDependenciesAction = Sinon.stub();
+      helper.mergeSourceDirectories = Sinon.stub();
+      (<Sinon.SinonStub>helper.mergeSourceDirectories).returns(["foo"]);
 
       // act
-      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
+      helper.updateDependencies("baz", loboPackageJson, expected, {direct: {}, indirect: {}}, callback);
 
       // assert
-      expect(helper.updateDependenciesAction).to.have.been.calledWith(["foo"], Sinon.match.any, Sinon.match.any);
-    });
-
-    it("should call supplied callback with an update action that calls updateDependenciesAction with the testElmPackageDir", () => {
-      // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> {};
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      let callback = (diff, updateAction) => updateAction();
-      helper.updateDependenciesAction = Sinon.spy();
-      helper.mergeDependencies = Sinon.stub();
-
-      // act
-      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
-
-      // assert
-      expect(helper.updateDependenciesAction).to.have.been.calledWith( Sinon.match.any, "baz", Sinon.match.any);
-    });
-
-    it("should call supplied callback with an update action that calls updateDependenciesAction with the testElmPackage", () => {
-      // arrange
-      let testFramework = <PluginTestFrameworkWithConfig> {};
-      let sourcePackageJson = <ElmPackageJson>{dependencies: <Dependencies> {source: "abc"}};
-      let testPackageJson = <ElmPackageJson>{dependencies: <Dependencies> {test: "def"}};
-      let callback = (diff, updateAction) => updateAction();
-      helper.updateDependenciesAction = Sinon.spy();
-      helper.mergeDependencies = Sinon.stub();
-
-      // act
-      helper.updateDependencies(testFramework, sourcePackageJson, "baz", testPackageJson, callback);
-
-      // assert
-      expect(helper.updateDependenciesAction).to.have.been.calledWith( Sinon.match.any, Sinon.match.any, testPackageJson);
+      expect(helper.updateDependenciesAction)
+        .to.have.been.calledWith(expected, Sinon.match.any, Sinon.match.any);
     });
   });
 
   describe("updateDependenciesAction", () => {
-    it("should update the package json dependencies with the supplied value", () => {
+    it("should update the package json app dependencies with the supplied value", () => {
       // arrange
-      let expected = [["foo", "bar"]];
+      let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
       helper.write = Sinon.stub();
 
       // act
-      let actual = helper.updateDependenciesAction(expected, "baz", <ElmPackageJson>{});
+      let actual = helper.updateDependenciesAction(expected,  {direct: {}, indirect: {}}, "baz", <ElmJson>{});
 
       // assert
-      expect(actual.dependencies).to.deep.equal({foo: "bar"});
+      expect(actual.srcDependencies).to.deep.equal(expected);
+    });
+
+    it("should update the package json test dependencies with the supplied value", () => {
+      // arrange
+      let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      helper.write = Sinon.stub();
+
+      // act
+      let actual = helper.updateDependenciesAction({direct: {}, indirect: {}}, expected, "baz", <ElmJson>{});
+
+      // assert
+      expect(actual.testDependencies).to.deep.equal(expected);
     });
 
     it("should write the updated package json to the supplied directory", () => {
@@ -723,22 +916,36 @@ describe("lib elm-package-helper", () => {
       helper.write = Sinon.spy();
 
       // act
-      helper.updateDependenciesAction([["foo", "bar"]], "baz", <ElmPackageJson>{});
+      helper.updateDependenciesAction({direct: {}, indirect: {}}, {direct: {}, indirect: {}}, "baz", <ElmJson>{});
 
       // assert
       expect(helper.write).to.have.been.calledWith("baz", Sinon.match.any);
     });
 
-    it("should write the updated package json to the supplied directory", () => {
+    it("should call write with the updated appDependencies", () => {
       // arrange
-      let expected = [["foo", "baz"]];
-      helper.write = Sinon.spy();
+      let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      helper.write = Sinon.stub();
 
       // act
-      helper.updateDependenciesAction(expected, "baz", <ElmPackageJson>{});
+      helper.updateDependenciesAction(expected, {direct: {}, indirect: {}}, "baz", <ElmJson>{});
 
       // assert
-      expect(helper.write).to.have.been.calledWith(Sinon.match.any, Sinon.match(value => value.dependencies.foo = "bar"));
+      expect(helper.write).to.have.been.calledWith(Sinon.match.any, Sinon.match(value => value.dependencies === expected));
+    });
+
+    it("should call write with the updated testDependencies", () => {
+      // arrange
+      let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      helper.write = Sinon.stub();
+
+      // act
+      helper.updateDependenciesAction({direct: {}, indirect: {}}, expected, "baz", <ElmJson>{});
+
+      // assert
+      expect(helper.write).to.have.been.calledWith(Sinon.match.any, Sinon.match(value => value.testDependencies === expected));
     });
   });
 
@@ -757,7 +964,7 @@ describe("lib elm-package-helper", () => {
 
     it("should write package to supplied directory", () => {
       // arrange
-      let packageJson = <ElmPackageJson> {sourceDirectories: ["foo"]};
+      let packageJson = <ElmJson> {sourceDirectories: ["foo"]};
       let expected = `${path.sep}foo${path.sep}bar`;
 
       // act
@@ -767,27 +974,57 @@ describe("lib elm-package-helper", () => {
       expect(mockWrite).to.have.been.calledWith(Sinon.match(new RegExp("^" + _.escapeRegExp(expected))), Sinon.match.any);
     });
 
-    it("should write package to 'elm-package.json'", () => {
+    it("should write package to 'elm.json'", () => {
       // arrange
-      let packageJson = <ElmPackageJson> {sourceDirectories: ["foo"]};
+      let packageJson = <ElmJson> {sourceDirectories: ["foo"]};
 
       // act
       helper.write("/foo", packageJson);
 
       // assert
-      expect(mockWrite).to.have.been.calledWith(Sinon.match(/\elm-package\.json$/), Sinon.match.any);
+      expect(mockWrite).to.have.been.calledWith(Sinon.match(/\elm\.json$/), Sinon.match.any);
+    });
+
+    it("should write package json with 'appDependencies' renamed as 'dependencies'", () => {
+      // arrange
+      const appDirectDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      const appDependencies = <ApplicationDependencies<VersionSpecification>> {direct: appDirectDependencies, indirect: {}};
+      const packageJson = <ElmJson> {srcDependencies: appDependencies};
+
+      // act
+      helper.write("/foo", packageJson);
+
+      // assert
+      expect(mockWrite).not.to.have.been.calledWith(Sinon.match.any, Sinon.match(/"appDependencies":/));
+      expect(mockWrite).to.have.been
+        .calledWith(Sinon.match.any, Sinon.match(/"dependencies": {(\r|\n|\s)*"direct": {(\r|\n|\s)*"foo": "bar"/));
+    });
+
+    it("should write package json with 'testDependencies' renamed as 'testDependencies'", () => {
+      // arrange
+      const testDirectDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
+      const testDependencies = <ApplicationDependencies<VersionSpecification>> {direct: testDirectDependencies, indirect: {}};
+      const packageJson = <ElmJson> {testDependencies};
+
+      // act
+      helper.write("/foo", packageJson);
+
+      // assert
+      expect(mockWrite).not.to.have.been.calledWith(Sinon.match.any, Sinon.match(/"testDependencies":/));
+      expect(mockWrite).to.have.been
+        .calledWith(Sinon.match.any, Sinon.match(/"test-dependencies": {(\r|\n|\s)*"direct": {(\r|\n|\s)*"foo": "bar"/));
     });
 
     it("should write package json with 'sourceDirectories' renamed as 'source-directories'", () => {
       // arrange
-      let packageJson = <ElmPackageJson> {sourceDirectories: ["foo"]};
+      const packageJson = <ElmJson> {sourceDirectories: ["foo"]};
 
       // act
       helper.write("/foo", packageJson);
 
       // assert
       expect(mockWrite).not.to.have.been.calledWith(Sinon.match.any, Sinon.match(/"sourceDirectories":/));
-      expect(mockWrite).to.have.been.calledWith(Sinon.match.any, Sinon.match(/"source-directories":/));
+      expect(mockWrite).to.have.been.calledWith(Sinon.match.any, Sinon.match(/"source-directories": \[(\r|\n|\s)*"foo"/));
     });
   });
 });

@@ -1,7 +1,7 @@
 import * as Bluebird from "bluebird";
 import {
   ElmCodeInfo,
-  ElmCodeLookup,
+  ElmCodeLookup, ElmFunctionNode,
   ExecutionContext,
   Reject,
   Resolve
@@ -11,6 +11,7 @@ import {createElmParser, ElmParser} from "./elm-parser";
 import * as path from "path";
 import * as fs from "fs";
 import {Stats} from "fs";
+import {createElmNodeHelper, ElmNodeHelper} from "./elm-node-helper";
 
 export interface FileInfo {
   filePath: string;
@@ -24,10 +25,12 @@ export interface ElmCodeLookupManager {
 
 export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
 
-  private parser: ElmParser;
-  private logger: Logger;
+  private readonly elmNodeHelper: ElmNodeHelper;
+  private readonly parser: ElmParser;
+  private readonly logger: Logger;
 
-  constructor(parser: ElmParser, logger: Logger) {
+  constructor(elmNodeHelper: ElmNodeHelper, parser: ElmParser, logger: Logger) {
+    this.elmNodeHelper = elmNodeHelper;
     this.parser = parser;
     this.logger = logger;
   }
@@ -36,7 +39,7 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
     const stats = fs.lstatSync(p);
 
     if (stats.isDirectory()) {
-      if (p.indexOf("elm-stuff") === -1) {
+      if (p.indexOf("elm-stuff") === -1 && p.indexOf(".lobo") === -1) {
         const fileArray = fs.readdirSync(p).map(f => this.findFiles(path.join(p, f), fileType, isTestFile));
         return Array.prototype.concat(...fileArray);
       } else {
@@ -60,8 +63,42 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
 
     return Bluebird
       .mapSeries(steps, (item: (c: ExecutionContext) => Bluebird<ExecutionContext>) => item(value)
-        .then((result: ExecutionContext) => value = result))
+        .then((result: ExecutionContext) => value = this.syncHasDebugUsage(result)))
       .then(() => value);
+  }
+
+  public syncHasDebugUsage(context: ExecutionContext): ExecutionContext {
+    context.hasDebugUsage = this.containsDebugModuleUsage(context.codeLookup);
+
+    return context;
+  }
+
+  public containsDebugModuleUsage(codeLookup: ElmCodeLookup): boolean {
+    for (const key in codeLookup) {
+      if (codeLookup.hasOwnProperty(key)) {
+        const codeInfo: ElmCodeInfo = codeLookup[key];
+
+        if (!codeInfo || !codeInfo.moduleNode || !codeInfo.moduleNode.children) {
+          continue;
+        }
+
+        for (const child of codeInfo.moduleNode.children) {
+          if (!this.elmNodeHelper.isFunctionNode(child)) {
+            continue;
+          }
+
+          const node = <ElmFunctionNode> child;
+
+          for (const dep of node.dependencies) {
+            if (dep.typeInfo.moduleName === "Debug") {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
   }
 
   public syncElmCodeLookupWithFileChanges(codeLookup: ElmCodeLookup, fileList: FileInfo[], testFrameworkElmModuleName: string)
@@ -106,5 +143,5 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
 }
 
 export function createElmCodeLookupManager(): ElmCodeLookupManager {
-  return new ElmCodeLookupManagerImp(createElmParser(), createLogger());
+  return new ElmCodeLookupManagerImp(createElmNodeHelper(), createElmParser(), createLogger());
 }

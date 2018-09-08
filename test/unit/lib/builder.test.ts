@@ -64,7 +64,7 @@ describe("lib builder", () => {
 
       // assert
       return actual.then(() => {
-        expect(builder.make).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
+        expect(builder.make).to.have.been.calledWith(context, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -104,12 +104,13 @@ describe("lib builder", () => {
   });
 
   describe("make", () => {
-    it("should call util.runElmCommand with the supplied config", () => {
+    it("should call util.runElmCommand with the supplied context", () => {
       // arrange
       let config = <LoboConfig> {compiler: "abc"};
+      let context = <ExecutionContext> {config};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -120,9 +121,10 @@ describe("lib builder", () => {
     it("should call util.runElmCommand with the supplied loboDirectory", () => {
       // arrange
       let config = <LoboConfig> {compiler: "abc", loboDirectory: "foo"};
+      let context = <ExecutionContext> {config};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -133,9 +135,10 @@ describe("lib builder", () => {
     it("should call util.runElmCommand with the action 'make'", () => {
       // arrange
       let config = <LoboConfig> {compiler: "abc"};
+      let context = <ExecutionContext> {config};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -146,9 +149,10 @@ describe("lib builder", () => {
     it("should call util.runElmCommand with the supplied testSuiteOutputFilePath", () => {
       // arrange
       let config = <LoboConfig> {compiler: "abc"};
+      let context = <ExecutionContext> {config};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -159,9 +163,10 @@ describe("lib builder", () => {
     it("should call util.runElmCommand with the specified output file path", () => {
       // arrange
       let config = <LoboConfig> {compiler: "abc"};
+      let context = <ExecutionContext> {config};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -172,9 +177,10 @@ describe("lib builder", () => {
     it("should call util.runElmCommand without --optimize when config.optimize is false", () => {
       // arrange
       let config = <LoboConfig> {optimize: false};
+      let context = <ExecutionContext> {config};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -183,12 +189,13 @@ describe("lib builder", () => {
       });
     });
 
-    it("should call util.runElmCommand with --optimize when config.optimize is true", () => {
+    it("should call util.runElmCommand with --optimize when config.optimize is true and hasDebugUsage is false", () => {
       // arrange
       let config = <LoboConfig> {optimize: true};
+      let context = <ExecutionContext> {config, hasDebugUsage: false};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.finally(() => {
@@ -196,12 +203,41 @@ describe("lib builder", () => {
       });
     });
 
+    it("should call util.runElmCommand without --optimize when config.optimize is true and hasDebugUsage is true", () => {
+      // arrange
+      let config = <LoboConfig> {optimize: true};
+      let context = <ExecutionContext> {config, hasDebugUsage: true};
+
+      // act
+      let actual = builder.make(context, "bar", "baz");
+
+      // assert
+      return actual.finally(() => {
+        expect(mockRunElmCommand).not.to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match(/ --optimize/));
+      });
+    });
+
+    it("should call util.runElmCommand without --optimize when config.optimize is false and hasDebugUsage is true", () => {
+      // arrange
+      let config = <LoboConfig> {optimize: true};
+      let context = <ExecutionContext> {config, hasDebugUsage: true};
+
+      // act
+      let actual = builder.make(context, "bar", "baz");
+
+      // assert
+      return actual.finally(() => {
+        expect(mockRunElmCommand).not.to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match(/ --optimize/));
+      });
+    });
+
     it("should call resolve when there are no elm-make build errors", () => {
       // arrange
       let config = <LoboConfig> {};
+      let context = <ExecutionContext> {config};
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       return actual.then(() => {
@@ -212,10 +248,11 @@ describe("lib builder", () => {
     it("should catch any elm-make build errors and call the specified reject with the error", () => {
       // arrange
       let config = <LoboConfig> {};
+      let context = <ExecutionContext> {config};
       mockRunElmCommand.throws( new Error("qux"));
 
       // act
-      let actual = builder.make(config, "bar", "baz");
+      let actual = builder.make(context, "bar", "baz");
 
       // assert
       actual.catch((err) => {

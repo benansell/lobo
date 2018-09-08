@@ -24,4 +24,4 @@ toGreeting : String -> String
 toGreeting name =
     "Hello "
         ++ name
-        |> Debug.log name
+        -- |> Debug.log name

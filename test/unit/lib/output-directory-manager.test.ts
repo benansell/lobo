@@ -8,10 +8,10 @@ import * as SinonChai from "sinon-chai";
 import {Logger} from "../../../lib/logger";
 import {createOutputDirectoryManager, OutputDirectoryManager, OutputDirectoryManagerImp} from "../../../lib/output-directory-manager";
 import {
-  Dependencies,
+  ApplicationDependencies,
   ExecutionContext,
   LoboConfig, VersionSpecification,
-  VersionSpecificationApplication, VersionSpecificationInvalid
+  VersionSpecificationExact, VersionSpecificationInvalid
 } from "../../../lib/plugin";
 import {ElmPackageHelper, ElmJson, UpdateDependenciesCallback, UpdateSourceDirectoriesCallback} from "../../../lib/elm-package-helper";
 
@@ -464,7 +464,7 @@ describe("lib output-directory-manager", () => {
       // arrange
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
-      outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
+      outputDirectoryManager.syncLoboTestElmJson = Sinon.spy();
       outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
@@ -480,7 +480,7 @@ describe("lib output-directory-manager", () => {
       // arrange
       let context = <ExecutionContext> {config: {appDirectory: "bar", loboDirectory: "foo"}};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
-      outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
+      outputDirectoryManager.syncLoboTestElmJson = Sinon.spy();
       outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
@@ -496,7 +496,7 @@ describe("lib output-directory-manager", () => {
       // arrange
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
-      outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
+      outputDirectoryManager.syncLoboTestElmJson = Sinon.spy();
       outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
@@ -504,7 +504,7 @@ describe("lib output-directory-manager", () => {
 
       // assert
       return actual.then(() => {
-        expect(outputDirectoryManager.syncLoboTestElmPackage)
+        expect(outputDirectoryManager.syncLoboTestElmJson)
           .to.have.been.calledWith(context.config, Sinon.match.any);
       });
     });
@@ -515,7 +515,7 @@ describe("lib output-directory-manager", () => {
       let mockConfigBuildDirectory = Sinon.mock();
       mockConfigBuildDirectory.returns(true);
       outputDirectoryManager.configBuildDirectory = mockConfigBuildDirectory;
-      outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
+      outputDirectoryManager.syncLoboTestElmJson = Sinon.spy();
       outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
@@ -523,7 +523,7 @@ describe("lib output-directory-manager", () => {
 
       // assert
       return actual.then(() => {
-        expect(outputDirectoryManager.syncLoboTestElmPackage)
+        expect(outputDirectoryManager.syncLoboTestElmJson)
           .to.have.been.calledWith(Sinon.match.any, true);
       });
     });
@@ -532,7 +532,7 @@ describe("lib output-directory-manager", () => {
       // arrange
       let context = <ExecutionContext> {config: {loboDirectory: "foo"}, testDirectory: "bar"};
       outputDirectoryManager.configBuildDirectory = Sinon.spy();
-      outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
+      outputDirectoryManager.syncLoboTestElmJson = Sinon.spy();
       let mockUpdateContextForRun = Sinon.mock();
       outputDirectoryManager.updateContextForRun = mockUpdateContextForRun;
 
@@ -551,7 +551,7 @@ describe("lib output-directory-manager", () => {
       let mockConfigBuildDirectory = Sinon.mock();
       mockConfigBuildDirectory.throws(new Error("qux"));
       outputDirectoryManager.configBuildDirectory = mockConfigBuildDirectory;
-      outputDirectoryManager.syncLoboTestElmPackage = Sinon.spy();
+      outputDirectoryManager.syncLoboTestElmJson = Sinon.spy();
       outputDirectoryManager.updateContextForRun = Sinon.spy();
 
       // act
@@ -572,7 +572,7 @@ describe("lib output-directory-manager", () => {
 
       // act
       expect(() => {
-        outputDirectoryManager.syncLoboTestElmPackage(config, false);
+        outputDirectoryManager.syncLoboTestElmJson(config, false);
       }).to.throw("Unable to read the app elm.json file");
     });
 
@@ -584,7 +584,7 @@ describe("lib output-directory-manager", () => {
 
       // act
       expect(() => {
-        outputDirectoryManager.syncLoboTestElmPackage(config, false);
+        outputDirectoryManager.syncLoboTestElmJson(config, false);
       }).to.throw("Unable to read the lobo test elm.json file.");
     });
 
@@ -596,7 +596,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateDependencies = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateDependencies)
@@ -612,7 +612,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateDependencies = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateDependencies)
@@ -628,7 +628,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateDependencies = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateDependencies)
@@ -643,7 +643,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
@@ -659,7 +659,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
@@ -674,7 +674,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
@@ -690,7 +690,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
@@ -706,7 +706,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, true);
+      outputDirectoryManager.syncLoboTestElmJson(config, true);
 
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
@@ -723,7 +723,7 @@ describe("lib output-directory-manager", () => {
       outputDirectoryManager.updateSourceDirectories = Sinon.spy();
 
       // act
-      outputDirectoryManager.syncLoboTestElmPackage(config, false);
+      outputDirectoryManager.syncLoboTestElmJson(config, false);
 
       // assert
       expect(outputDirectoryManager.updateSourceDirectories)
@@ -834,9 +834,9 @@ describe("lib output-directory-manager", () => {
     it("should call helper.updateDependencies with the specified appElmJson.appDependecies", () => {
       // arrange
       let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
-      let expected = <Dependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
       const appElmJson = <ElmJson>{};
-      appElmJson.appDependencies = expected;
+      appElmJson.srcDependencies = expected;
       let updateAction = Sinon.stub();
       mockHelper.updateDependencies = Sinon.spy((...args) => {
         const updateCallback: UpdateDependenciesCallback = args[args.length - 1];
@@ -854,7 +854,7 @@ describe("lib output-directory-manager", () => {
     it("should call helper.updateDependencies with the specified appElmJson.testDependecies", () => {
       // arrange
       let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
-      let expected = <Dependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
       const appElmJson = <ElmJson>{};
       appElmJson.testDependencies = expected;
       let updateAction = Sinon.stub();
@@ -899,7 +899,7 @@ describe("lib output-directory-manager", () => {
       let updateAction = Sinon.stub();
       mockHelper.updateDependencies = (...args) => {
         const updateCallback: UpdateDependenciesCallback = args[args.length - 1];
-        const diff = {"abc": <VersionSpecificationApplication> {}};
+        const diff = {"abc": <VersionSpecificationExact> {}};
         updateCallback(diff, updateAction);
       };
 
@@ -949,9 +949,9 @@ describe("lib output-directory-manager", () => {
     it("should call helper.updateDependencyVersions with the specified appElmJson.appDependecies", () => {
       // arrange
       let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
-      let expected = <Dependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
       const appElmJson = <ElmJson>{};
-      appElmJson.appDependencies = expected;
+      appElmJson.srcDependencies = expected;
       let updateAction = Sinon.stub();
       mockHelper.updateDependencyVersions = Sinon.spy((...args) => {
         const updateCallback: UpdateDependenciesCallback = args[args.length - 1];
@@ -969,7 +969,7 @@ describe("lib output-directory-manager", () => {
     it("should call helper.updateDependencyVersions with the specified appElmJson.testDependecies", () => {
       // arrange
       let directDependencies = { "foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
-      let expected = <Dependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
       const appElmJson = <ElmJson>{};
       appElmJson.testDependencies = expected;
       let updateAction = Sinon.stub();
@@ -1014,7 +1014,7 @@ describe("lib output-directory-manager", () => {
       let updateAction = Sinon.stub();
       mockHelper.updateDependencyVersions = (...args) => {
         const updateCallback: UpdateDependenciesCallback = args[args.length - 1];
-        const diff = {"abc": <VersionSpecificationApplication> {}};
+        const diff = {"abc": <VersionSpecificationExact> {}};
         updateCallback(diff, updateAction);
       };
 

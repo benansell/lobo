@@ -26,7 +26,7 @@ test frameworks
 * Default console reporter that displays a summary of the test run
 * Watch mode that builds and runs the tests when the source code is 
 updated 
-* Checks elm-package.json in base directory and test directory for 
+* Checks elm.json in base directory and test directory for
 missing source directories and packages
 * Friendly error output
 * Test suite generation
@@ -160,14 +160,12 @@ Assuming your application follows the recommended directory structure
 for an elm application:
 ```
 .lobo                 --> lobo temp directory - should be ignored by source control
-elm-package.json      --> definition of the elm required packages
+elm.json              --> definition of the elm required packages
 elm-stuff/            --> elm installed packages
 node_modules/         --> npm installed modules
 package.json          --> definition of the npm required packages
 src/                  --> source code directory
 tests/                --> test code directory
-    elm-package.json  --> definition of the elm required packages for app & testing
-    elm-stuff/        --> elm installed packages for app & testing
 ```
 
 Locally running the following command will start lobo in watch mode:
@@ -267,7 +265,7 @@ Put lobo in a infinite loop that watches for changes and automatically
 reruns the build and tests when the source code has changed.
 
 Note: Currently watch mode does not deal with changes to the 
-elm-package.json source directories. If you change these you will need
+elm.json source directories. If you change these you will need
 to exit watch mode and restart it.
 
     

@@ -81,7 +81,10 @@ export class ReporterImp implements Reporter {
   }
 
   public processResults(rawResults: plugin.TestReportRoot): plugin.TestRun {
-    let summary: PartialTestRunSummary = {
+    const runResults = !rawResults.runResults ? [] : rawResults.runResults;
+
+    // todo: check for runError
+    const summary: PartialTestRunSummary = {
       config: rawResults.config,
       durationMilliseconds: undefined,
       endDateTime: undefined,
@@ -90,7 +93,7 @@ export class ReporterImp implements Reporter {
       onlyCount: 0,
       outcome: undefined,
       passedCount: 0,
-      runResults: rawResults.runResults,
+      runResults,
       runType: rawResults.runType,
       skipped: [],
       skippedCount: 0,
@@ -114,7 +117,7 @@ export class ReporterImp implements Reporter {
       summary.durationMilliseconds = durationDate.getMilliseconds();
     }
 
-    this.processTestResults(rawResults.runResults, summary, []);
+    this.processTestResults(runResults, summary, []);
 
     let failState: plugin.TestRunFailState = {
       only: this.toTestRunState(program.failOnOnly, summary.onlyCount > 0 || summary.runType === "FOCUS"),

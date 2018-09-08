@@ -6,7 +6,7 @@ import rewire = require("rewire");
 import * as Sinon from "sinon";
 import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
-import {createLobo, Lobo, LoboImp} from "../../../lib/main";
+import {createLobo, Lobo, LoboImp, PartialLoboConfig} from "../../../lib/main";
 import {Analyzer} from "../../../lib/analyzer";
 import {Builder} from "../../../lib/builder";
 import {ElmPackageHelper} from "../../../lib/elm-package-helper";
@@ -584,7 +584,7 @@ describe("lib main", () => {
       lobo.watch(context);
 
       // assert
-      expect(mockWatch.firstCall.args[0]).to.include("./elm-package.json");
+      expect(mockWatch.firstCall.args[0]).to.include("./elm.json");
     });
 
     it("should watch paths excluding elm-stuff directory", () => {
@@ -829,13 +829,21 @@ describe("lib main", () => {
       expect(mockOption).to.have.been.calledWith("--noInstall", Sinon.match.any);
     });
 
+    /*it("should add the '--optimize' option", () => {
+      // act
+      lobo.configure();
+
+      // assert
+      expect(mockOption).to.have.been.calledWith("--optimize <value>", Sinon.match.any);
+    });
+
     it("should add the '--prompt' option", () => {
       // act
       lobo.configure();
 
       // assert
       expect(mockOption).to.have.been.calledWith("--prompt <value>", Sinon.match.any);
-    });
+    });*/
 
     it("should add the '--quiet' option", () => {
       // act
@@ -1001,7 +1009,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let result: LoboConfig = undefined;
+      let result: PartialLoboConfig = undefined;
       revert(() => result = lobo.configure());
 
       // assert
@@ -1014,50 +1022,11 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let result: LoboConfig = undefined;
+      let result: PartialLoboConfig = undefined;
       revert(() => result = lobo.configure());
 
       // assert
       expect(result.noCleanup).to.be.true;
-    });
-
-    it("should convert program prompt 'y' to true", () => {
-      // arrange
-      (<{ prompt: string }>programMocks).prompt = "y";
-      let revert = rewiredMain.__with__({program: programMocks});
-
-      // act
-      let actual: LoboConfig = undefined;
-      revert(() => actual = lobo.configure());
-
-      // assert
-      expect(actual.prompt).to.be.true;
-    });
-
-    it("should convert program prompt 'Y' to true", () => {
-      // arrange
-      (<{ prompt: string }>programMocks).prompt = "Y";
-      let revert = rewiredMain.__with__({program: programMocks});
-
-      // act
-      let actual: LoboConfig = undefined;
-      revert(() => actual = lobo.configure());
-
-      // assert
-      expect(actual.prompt).to.be.true;
-    });
-
-    it("should convert program prompt 'yes' to true", () => {
-      // arrange
-      (<{ prompt: string }>programMocks).prompt = "yes";
-      let revert = rewiredMain.__with__({program: programMocks});
-
-      // act
-      let actual: LoboConfig = undefined;
-      revert(() => actual = lobo.configure());
-
-      // assert
-      expect(actual.prompt).to.be.true;
     });
 
     it("should silence shelljs when verbose is false", () => {
@@ -1068,7 +1037,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1083,7 +1052,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1098,7 +1067,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1113,11 +1082,76 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
       expect(shelljs.config.silent).to.be.false;
+    });
+
+    it("should convert program optimize 'Yes' to true", () => {
+      // arrange
+      (<{ optimize: string }>programMocks).optimize = "Yes";
+      let revert = rewiredMain.__with__({program: programMocks});
+
+      // act
+      let actual: PartialLoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(actual.optimize).to.be.true;
+    });
+
+    it("should convert program optimize 'n' to false", () => {
+      // arrange
+      (<{ optimize: string }>programMocks).optimize = "n";
+      let revert = rewiredMain.__with__({program: programMocks});
+
+      // act
+      let actual: PartialLoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(actual.optimize).to.be.false;
+    });
+
+    it("should convert program optimize 'N' to false", () => {
+      // arrange
+      (<{ optimize: string }>programMocks).optimize = "N";
+      let revert = rewiredMain.__with__({program: programMocks});
+
+      // act
+      let actual: PartialLoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(actual.optimize).to.be.false;
+    });
+
+    it("should convert program optimize 'no' to false", () => {
+      // arrange
+      (<{ optimize: string }>programMocks).optimize = "no";
+      let revert = rewiredMain.__with__({program: programMocks});
+
+      // act
+      let actual: PartialLoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(actual.optimize).to.be.false;
+    });
+
+    it("should convert program optimize 'No' to false", () => {
+      // arrange
+      (<{ optimize: string }>programMocks).optimize = "No";
+      let revert = rewiredMain.__with__({program: programMocks});
+
+      // act
+      let actual: PartialLoboConfig = undefined;
+      revert(() => actual = lobo.configure());
+
+      // assert
+      expect(actual.optimize).to.be.false;
     });
 
     it("should convert program prompt 'Yes' to true", () => {
@@ -1126,7 +1160,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1139,7 +1173,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1152,7 +1186,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1165,7 +1199,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1178,7 +1212,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1191,7 +1225,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert
@@ -1204,7 +1238,7 @@ describe("lib main", () => {
       let revert = rewiredMain.__with__({program: programMocks});
 
       // act
-      let actual: LoboConfig = undefined;
+      let actual: PartialLoboConfig = undefined;
       revert(() => actual = lobo.configure());
 
       // assert

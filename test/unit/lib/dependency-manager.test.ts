@@ -5,7 +5,7 @@ import rewire = require("rewire");
 import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {DependencyManager, DependencyManagerImp, createDependencyManager} from "../../../lib/dependency-manager";
-import {Dependencies, ExecutionContext, LoboConfig, VersionSpecification, VersionSpecificationInvalid} from "../../../lib/plugin";
+import {ApplicationDependencies, ExecutionContext, LoboConfig, VersionSpecification, VersionSpecificationInvalid} from "../../../lib/plugin";
 import {Logger} from "../../../lib/logger";
 import {ElmJson, ElmPackageHelper} from "../../../lib/elm-package-helper";
 import {Util} from "../../../lib/util";
@@ -38,6 +38,7 @@ describe("lib dependency-manager", () => {
     mockLogger.error = Sinon.spy();
     mockLogger.info = Sinon.spy();
     mockLogger.trace = Sinon.spy();
+    mockLogger.warn = Sinon.spy();
     mockRead = Sinon.stub();
     mockUpdateDependencies = Sinon.stub();
     mockUpdateDependencyVersions = Sinon.stub();
@@ -162,21 +163,6 @@ describe("lib dependency-manager", () => {
         revertShellJs();
       });
 
-      it("should not prompt the user before running elm package install when config.prompt is false", () => {
-        // arrange
-        let config = <LoboConfig> {prompt: false};
-        dependencyManager.runElmInit = Sinon.spy((conf, prompt, resolve) => resolve());
-
-        // act
-        let actual = dependencyManager.ensureAppElmJsonExists(config);
-
-        // assert
-        return actual.finally(() => {
-          expect(mockConfirm).not.to.have.been.called;
-          expect(dependencyManager.runElmInit).to.have.been.called;
-        });
-      });
-
       it("should prompt the user before running elm package install when config.prompt is true", () => {
         // arrange
         let config = <LoboConfig> {prompt: true};
@@ -234,7 +220,7 @@ describe("lib dependency-manager", () => {
         // assert
         return actual.finally(() => {
           expect(dependencyManager.runElmInit).to.have.been
-            .calledWith(Sinon.match.any, false, Sinon.match.any, Sinon.match.any);
+            .calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any);
         });
       });
 
@@ -312,7 +298,7 @@ describe("lib dependency-manager", () => {
     it("should call elmPackageHelper.updateDependencies with the test framework dependencies", () => {
       // arrange
       let directDependencies = {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
-      let expected = <Dependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
       let config = <LoboConfig> {appDirectory: "foo", testFramework: {config: {dependencies: expected}}};
       mockRead.returns({});
       mockUpdateDependencies.callsFake((addDir, elmJson, testDeps, extraDeps, callback) => {
@@ -331,7 +317,7 @@ describe("lib dependency-manager", () => {
 
     it("should call elmPackageHelper.updateDependencies with empty test dependencies", () => {
       // arrange
-      let expected = <Dependencies<VersionSpecification>> {direct: {}, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: {}, indirect: {}};
       let config = <LoboConfig> {appDirectory: "foo", testFramework: {config: {}}};
       mockRead.returns({});
       mockUpdateDependencies.callsFake((addDir, elmJson, testDeps, extraDeps, callback) => {
@@ -527,7 +513,7 @@ describe("lib dependency-manager", () => {
     it("should call helper.updateDependencyVersions with the test framework dependencies", () => {
       // arrange
       let directDependencies = {"foo": <VersionSpecificationInvalid> {type: "invalid", version: "bar"}};
-      let expected = <Dependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: directDependencies, indirect: {}};
       let config = <LoboConfig> {appDirectory: "foo", testFramework: {config: {dependencies: expected}}};
       mockRead.returns({});
       mockUpdateDependencyVersions.callsFake((addDir, elmJson, testDeps, extraDeps, callback) => {
@@ -546,7 +532,7 @@ describe("lib dependency-manager", () => {
 
     it("should call helper.updateDependencyVersions with empty test dependencies", () => {
       // arrange
-      let expected = <Dependencies<VersionSpecification>> {direct: {}, indirect: {}};
+      let expected = <ApplicationDependencies<VersionSpecification>> {direct: {}, indirect: {}};
       let config = <LoboConfig> {appDirectory: "foo", testFramework: {config: {}}};
       mockRead.returns({});
       mockUpdateDependencyVersions.callsFake((addDir, elmJson, testDeps, extraDeps, callback) => {
