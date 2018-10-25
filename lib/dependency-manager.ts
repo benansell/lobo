@@ -4,9 +4,11 @@ import * as shelljs from "shelljs";
 import * as promptly from "promptly";
 import {createLogger, Logger} from "./logger";
 import {DependencyGroup, ExecutionContext, LoboConfig, Reject, Resolve, VersionSpecification} from "./plugin";
-import {createElmPackageHelper, ElmJson, ElmPackageHelper} from "./elm-package-helper";
-import {createUtil, Util} from "./util";
+import {createElmPackageHelper, ElmApplicationJson, ElmJson, ElmPackageHelper} from "./elm-package-helper";
 import * as _ from "lodash";
+import * as fs from "fs";
+import {createElmCommandRunner, ElmCommandRunner} from "./elm-command-runner";
+import {createUtil, Util} from "./util";
 
 export interface DependencyManager {
   sync(context: ExecutionContext): Bluebird<ExecutionContext>;
@@ -14,39 +16,28 @@ export interface DependencyManager {
 
 export class DependencyManagerImp implements DependencyManager {
 
-  private readonly logger: Logger;
+  private readonly elmCommandRunner: ElmCommandRunner;
   private readonly elmPackageHelper: ElmPackageHelper;
+  private readonly logger: Logger;
   private readonly util: Util;
   private readonly yOrN: string = chalk.dim(" [Y/n]");
 
-  constructor(elmPackageHelper: ElmPackageHelper, logger: Logger, util: Util) {
+  constructor(elmCommandRunner: ElmCommandRunner, elmPackageHelper: ElmPackageHelper, logger: Logger, util: Util) {
+    this.elmCommandRunner = elmCommandRunner;
     this.elmPackageHelper = elmPackageHelper;
     this.logger = logger;
     this.util = util;
   }
 
-  public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
-    let steps: Array<() => Bluebird<void>> = [];
-
-    steps = steps.concat([
-        () => this.ensureAppElmJsonExists(context.config),
-        () => this.syncDependencies(context.config),
-        () => this.syncDependencyVersions(context.config)
-    ]);
-
-    return Bluebird.mapSeries(steps, (item: () => Bluebird<ExecutionContext>) => item())
-      .return(context);
-  }
-
   public ensureAppElmJsonExists(config: LoboConfig): Bluebird<void> {
     return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
-      if (shelljs.test("-e", this.elmPackageHelper.path(config.appDirectory))) {
+      if (shelljs.test("-e", this.elmPackageHelper.pathElmJson(config.appDirectory))) {
         resolve();
         return;
       }
 
       if (!config.prompt) {
-        this.runElmInit(config, config.prompt, resolve, reject);
+        this.elmCommandRunner.init(config, config.appDirectory, config.prompt, resolve, reject);
         return;
       }
 
@@ -58,7 +49,7 @@ export class DependencyManagerImp implements DependencyManager {
           if (err) {
             reject(err);
           } else if (value && value.toString() === "true") {
-            this.runElmInit(config, config.prompt, resolve, reject);
+            this.elmCommandRunner.init(config, config.appDirectory, config.prompt, resolve, reject);
           } else {
             reject();
           }
@@ -66,39 +57,132 @@ export class DependencyManagerImp implements DependencyManager {
     });
   }
 
-  public syncDependencies(config: LoboConfig): Bluebird<void> {
+  public ensureLoboElmJsonExists(config: LoboConfig): Bluebird<void> {
     return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
-      const elmJson = this.elmPackageHelper.read(config.appDirectory);
+      const loboDirElmJsonPath = this.elmPackageHelper.pathElmJson(config.loboDirectory);
+      const appDirLoboJson = this.elmPackageHelper.pathLoboJson(config.appDirectory);
+
+      if (fs.existsSync(loboDirElmJsonPath)) {
+        shelljs.rm(loboDirElmJsonPath);
+      }
+
+      if (fs.existsSync(appDirLoboJson)) {
+        shelljs.cp(appDirLoboJson, loboDirElmJsonPath);
+        resolve();
+        return;
+      }
+
+      if (!config.prompt) {
+        this.runLoboElmInit(config, config.prompt, resolve, reject);
+        return;
+      }
+
+      promptly.confirm(
+        "Unable to find lobo.json in the current directory" +
+        "\n\nMay I run 'elm init' for you?" + this.yOrN,
+        {"default": "yes"},
+        (err, value) => {
+          if (err) {
+            reject(err);
+          } else if (value && value.toString() === "true") {
+            this.runLoboElmInit(config, config.prompt, resolve, reject);
+          } else {
+            reject();
+          }
+        });
+    });
+  }
+
+  public installDependencies(config: LoboConfig, prompt: boolean, packagesToInstall: string[]): Bluebird<void> {
+    if (config.noInstall) {
+      return new Bluebird((installResolve: Resolve<void>) => {
+        this.util.logStage("INSTALL");
+
+        for (const packageName of packagesToInstall) {
+          this.logger.info(`Ignored running of elm install for '${packageName}' due to configuration`);
+        }
+
+        installResolve();
+      });
+    }
+
+    return Bluebird.mapSeries(packagesToInstall, (packageName: string) => {
+      return new Bluebird((installResolve: Resolve<void>, installReject: Reject) => {
+        this.elmCommandRunner.install(config, packageName, prompt, installResolve, installReject);
+      });
+    }).return();
+  }
+
+  public readElmJson(config: LoboConfig): Bluebird<ElmJson> {
+    return new Bluebird<ElmJson>((resolve: Resolve<ElmJson>, reject: Reject) => {
+      const elmJson = this.elmPackageHelper.read<ElmApplicationJson>(config.appDirectory);
 
       if (!elmJson) {
-        this.logger.error("Unable to read the application elm.json file. Please check that is a valid json file");
+        this.logger.error("Unable to read the elm.json file. Please check that is a valid json file");
         reject();
         return;
       }
 
-      const callback = (missingDependencies: DependencyGroup<VersionSpecification>, updateAction: () => ElmJson) => {
-        const missing: string[] = _.keys(missingDependencies);
+      resolve(elmJson);
+    });
+  }
 
+  public runLoboElmInit(config: LoboConfig, prompt: boolean, resolve: Resolve<void>, reject: Reject): void {
+    const callback = () => {
+      try {
+        this.elmPackageHelper.clean(config.loboDirectory);
+
+        resolve();
+      } catch (err) {
+        const message = "Failed to init lobo app in temp directory. " +
+          `Please try deleting the lobo directory (${config.loboDirectory}) and re-run lobo`;
+        this.logger.error(message, err);
+        reject();
+      }
+    };
+
+    this.elmCommandRunner.init(config, config.loboDirectory, prompt, callback, reject);
+  }
+
+  public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
+    let steps = [
+      () => this.ensureAppElmJsonExists(context.config),
+      () => this.ensureLoboElmJsonExists(context.config)
+    ];
+
+    if (!context.config.noUpdate) {
+      steps.push(() => this.syncUpdate(context.config));
+    }
+
+    return Bluebird
+      .mapSeries(steps, (item: () => Bluebird<void>) => item())
+      .return(context);
+  }
+
+  public syncDependencies(config: LoboConfig, elmJson: ElmJson): Bluebird<void> {
+    return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
+      const callback = (missing: string[]) => {
         if (missing.length === 0) {
           resolve();
           return;
         }
 
         if (!config.prompt) {
-          updateAction();
-          resolve();
+          this.installDependencies(config, false, missing)
+            .then(() => resolve())
+            .catch((e: Error) => reject(e));
           return;
         }
 
         promptly.confirm(
-          "The dependencies of the test elm.json need to be updated to contain:\n" +
+          "The dependencies of the lobo.json need to be updated to contain:\n" +
           missing.join("\n") + "\n\nMay I run elm install for you?" +
           this.yOrN,
           {"default": "yes"}, (err, value) => {
             if (err) {
               reject(err);
             } else if (value && value.toString() === "true") {
-              this.installDependencies(config, missing)
+              this.installDependencies(config, config.prompt, missing)
                 .then(() => resolve())
                 .catch((e: Error) => reject(e));
             } else {
@@ -108,22 +192,13 @@ export class DependencyManagerImp implements DependencyManager {
       };
 
       const testFrameworkConfig = config.testFramework.config;
-      const noDeps = {direct: {}, indirect: {}};
-      this.elmPackageHelper.updateDependencies(config.appDirectory, elmJson, testFrameworkConfig.dependencies, noDeps, callback);
+      this.elmPackageHelper.updateDependencies(config.loboDirectory, elmJson, testFrameworkConfig.dependencies, callback);
     });
   }
 
-  public syncDependencyVersions(config: LoboConfig): Bluebird<void> {
+  public syncDependencyVersions(config: LoboConfig, elmJson: ElmJson): Bluebird<void> {
     return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
-      const elmJson = this.elmPackageHelper.read(config.appDirectory);
-
-      if (!elmJson) {
-        this.logger.error("Unable to read the application elm.json file. Please check that is a valid json file");
-        reject();
-        return;
-      }
-
-      const callback = (updatedDependencies: DependencyGroup<VersionSpecification>, updateAction: () => ElmJson) => {
+      const callback = (updatedDependencies: DependencyGroup<VersionSpecification>, updateAction: () => void) => {
         const updated: string[] = _.keys(updatedDependencies);
 
         if (updated.length === 0) {
@@ -138,8 +213,8 @@ export class DependencyManagerImp implements DependencyManager {
         }
 
         promptly.confirm(
-          "The existing dependency versions of the test elm.json need to be updated for:\n" +
-          updated.join("\n") + "\n\nMay I run elm update the versions for you?" +
+          "The existing dependency versions of lobo.json need to be updated for:\n" +
+          updated.join("\n") + "\n\nMay I update the versions for you?" +
           this.yOrN,
           {"default": "yes"}, (err, value) => {
             if (err) {
@@ -154,50 +229,80 @@ export class DependencyManagerImp implements DependencyManager {
       };
 
       const testFrameworkConfig = config.testFramework.config;
-      const noDeps = {direct: {}, indirect: {}};
-      this.elmPackageHelper.updateDependencyVersions(config.appDirectory, elmJson, testFrameworkConfig.dependencies, noDeps, callback);
+      this.elmPackageHelper.updateDependencyVersions(config.loboDirectory, elmJson, testFrameworkConfig.dependencies, callback);
     });
   }
 
-  public installDependencies(config: LoboConfig, packagesToInstall: string[]): Bluebird<void> {
-    return Bluebird.mapSeries(packagesToInstall, (packageName: string) => {
-      return new Bluebird((installResolve: Resolve<void>, installReject: Reject) => {
-        this.runElmPackageInstall(config, packageName, true, installResolve, installReject);
-      });
-    }).then();
+  public syncSourceDirectories(config: LoboConfig, elmJson: ElmJson): Bluebird<void> {
+    return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
+      try {
+        let appSourceDirectories: string[] = [];
+
+        if (elmJson && this.elmPackageHelper.isApplicationJson(elmJson)) {
+          appSourceDirectories = elmJson.sourceDirectories;
+        }
+
+        const callback = (diff: string[], updateAction: () => void) => {
+          if (diff.length === 0) {
+            return;
+          }
+
+          updateAction();
+        };
+
+        const pluginSourceDirectories = config.testFramework.config.sourceDirectories;
+        this.elmPackageHelper.updateSourceDirectories(config.loboDirectory, config.appDirectory, appSourceDirectories,
+                                                      pluginSourceDirectories, callback);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
-  public runElmInit(config: LoboConfig, prompt: boolean, resolve: Resolve<void>, reject: Reject): void {
-    try {
-      this.util.runElmCommand(config, config.appDirectory, "init");
-      resolve();
-    } catch (err) {
-      this.logger.debug("elm init failed");
-      this.logger.debug(err);
-      reject(err);
-    }
+  public syncUpdate(config: LoboConfig): Bluebird<void> {
+    let steps = [
+      (elmJson: ElmJson) => this.syncSourceDirectories(config, elmJson),
+      (elmJson: ElmJson) => this.syncDependencies(config, elmJson),
+      () => this.updateLoboElmJson(config)
+    ];
+
+    return this.readElmJson(config)
+      .then((result: ElmJson) => {
+        if (!result) {
+          throw new Error("Unable to read elm.json");
+        }
+
+        return Bluebird.mapSeries(steps, (item: (appElmJson: ElmJson) => Bluebird<void>) => item(result))
+          .catch((err: Error) => {
+            throw err;
+          })
+          .return();
+      }).return();
   }
 
-  public runElmPackageInstall(config: LoboConfig, packageName: string, prompt: boolean, resolve: Resolve<void>, reject: Reject): void {
-    if (config.noInstall) {
-      this.logger.info(`Ignored running of elm install for '${packageName}' due to configuration`);
-      resolve();
-      return;
-    }
+  public updateLoboElmJson(config: LoboConfig): Bluebird<void> {
+    return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
+      try {
+        if (config.noUpdate) {
+          resolve();
+          return;
+        }
 
-    let action = "install ";
-
-    try {
-      this.util.runElmCommand(config, config.appDirectory, action + packageName);
-      resolve();
-    } catch (err) {
-      this.logger.debug("elm install failed");
-      this.logger.debug(err);
-      reject(err);
-    }
+        const loboDirectoryElmJson = this.elmPackageHelper.pathElmJson(config.loboDirectory);
+        const loboJson = this.elmPackageHelper.pathLoboJson(config.appDirectory);
+        shelljs.cp(loboDirectoryElmJson, loboJson);
+        resolve();
+      } catch (err) {
+        const message = "Failed to update lobo.json. " +
+          `Please close all usages of lobo.json in the app directory (${config.appDirectory}) and re-run lobo`;
+        this.logger.error(message, err);
+        reject();
+      }
+    });
   }
 }
 
 export function createDependencyManager(): DependencyManager {
-  return new DependencyManagerImp(createElmPackageHelper(), createLogger(), createUtil());
+  return new DependencyManagerImp(createElmCommandRunner(), createElmPackageHelper(), createLogger(), createUtil());
 }

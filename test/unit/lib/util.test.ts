@@ -8,7 +8,7 @@ import {SinonStub} from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createUtil, Util, UtilImp} from "../../../lib/util";
 import {Logger} from "../../../lib/logger";
-import {LoboConfig, PluginConfig} from "../../../lib/plugin";
+import {PluginConfig} from "../../../lib/plugin";
 import {Stats} from "fs";
 
 const expect = chai.expect;
@@ -46,7 +46,6 @@ describe("lib util", () => {
     mockVersions = Sinon.stub();
 
     revert = RewiredUtil.__set__({
-      childProcess: {execSync: mockExec}, console: {log: Sinon.stub()},
       fs: {existsSync: mockExists, lstatSync: mockLstat, readFileSync: mockReadFileSync,
         realpathSync: mockRealPath},
       path: {dirname: mockDirName, join: mockJoin, relative: mockRelativePath, resolve: mockResolvePath},
@@ -79,9 +78,9 @@ describe("lib util", () => {
   describe("availablePlugins", () => {
     it("should return list of plugin directories containing plugins matching filespec", () => {
       // arrange
-      let mockFind = Sinon.stub();
+      const mockFind = Sinon.stub();
       mockFind.returns(["plugin/1/foo.js", "plugin/2/foobar.js"]);
-      let revertShellJs = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
+      const revertShellJs = RewiredUtil.__with__({"__dirname": "baz", shelljs: {find: mockFind}, path: path});
 
       // act
       let actual: string[] = undefined;
@@ -168,10 +167,10 @@ describe("lib util", () => {
   describe("closestMatch", () => {
     it("should return item with min levenshtein distance", () => {
       // arrange
-      let values = ["foo", "bar"];
+      const values = ["foo", "bar"];
 
       // act
-      let actual = util.closestMatch("baz", values);
+      const actual = util.closestMatch("baz", values);
 
       // assert
       expect(actual).to.equal("bar");
@@ -181,11 +180,11 @@ describe("lib util", () => {
   describe("getPlugin", () => {
     it("should call load with supplied type", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = Sinon.stub();
+      const mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -198,11 +197,11 @@ describe("lib util", () => {
 
     it("should call load with supplied pluginName", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = Sinon.stub();
+      const mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -215,11 +214,11 @@ describe("lib util", () => {
 
     it("should call load with supplied fileSpec", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = Sinon.stub();
+      const mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -232,11 +231,11 @@ describe("lib util", () => {
 
     it("should call load with isConfiguration false", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => <Plugin>{}});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = Sinon.stub();
+      const mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
@@ -249,17 +248,17 @@ describe("lib util", () => {
 
     it("should return the loaded the plugin", () => {
       // arrange
-      let expected = {name: "qux"};
-      let mockLoad = Sinon.stub();
+      const expected = {name: "qux"};
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ createPlugin: () => Plugin }> {createPlugin: () => expected});
       util.load = mockLoad;
 
-      let mockGetPluginConfig = Sinon.stub();
+      const mockGetPluginConfig = Sinon.stub();
       mockGetPluginConfig.returns({});
       util.getPluginConfig = mockGetPluginConfig;
 
       // act
-      let actual = util.getPlugin("foo", "bar", "baz");
+      const actual = util.getPlugin("foo", "bar", "baz");
 
       // assert
       expect(actual).to.equal(expected);
@@ -269,7 +268,7 @@ describe("lib util", () => {
   describe("getPluginConfig", () => {
     it("should call load with supplied type", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -282,7 +281,7 @@ describe("lib util", () => {
 
     it("should call load with supplied pluginName", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -295,7 +294,7 @@ describe("lib util", () => {
 
     it("should call load with supplied fileSpec", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -308,7 +307,7 @@ describe("lib util", () => {
 
     it("should call load with isConfiguration true", () => {
       // arrange
-      let mockLoad = Sinon.stub();
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: {}});
       util.load = mockLoad;
 
@@ -321,13 +320,13 @@ describe("lib util", () => {
 
     it("should return the loaded the plugin config", () => {
       // arrange
-      let expected = <PluginConfig> {name: "qux"};
-      let mockLoad = Sinon.stub();
+      const expected = <PluginConfig> {name: "qux"};
+      const mockLoad = Sinon.stub();
       mockLoad.returns(<{ PluginConfig: PluginConfig }> {PluginConfig: expected});
       util.load = mockLoad;
 
       // act
-      let actual = util.getPluginConfig("foo", "bar", "baz");
+      const actual = util.getPluginConfig("foo", "bar", "baz");
 
       // assert
       expect(actual).to.equal(expected);
@@ -337,7 +336,7 @@ describe("lib util", () => {
   describe("isInteger", () => {
     it("should be true when value is integer", () => {
       // act
-      let actual = util.isInteger(1);
+      const actual = util.isInteger(1);
 
       // assert
       expect(actual).to.be.true;
@@ -397,7 +396,7 @@ describe("lib util", () => {
 
     it("should not add padding when input is correct length", () => {
       // act
-      let actual = util.padRight("foo", 3);
+      const actual = util.padRight("foo", 3);
 
       // assert
       expect(actual).to.equal("foo");
@@ -405,7 +404,7 @@ describe("lib util", () => {
 
     it("should add default padding when input is short of length", () => {
       // act
-      let actual = util.padRight("foo", 5);
+      const actual = util.padRight("foo", 5);
 
       // assert
       expect(actual).to.equal("foo  ");
@@ -413,7 +412,7 @@ describe("lib util", () => {
 
     it("should add specified spacer when input is short of length", () => {
       // act
-      let actual = util.padRight("foo", 5, ".");
+      const actual = util.padRight("foo", 5, ".");
 
       // assert
       expect(actual).to.equal("foo..");
@@ -424,7 +423,7 @@ describe("lib util", () => {
     it("should load and return elm-test plugin config", () => {
       // arrange
       mockJoin.returns("../plugin/elm-test/plugin-config");
-      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
+      const revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
       let actual: { PluginConfig: PluginConfig } = undefined;
@@ -437,7 +436,7 @@ describe("lib util", () => {
     it("should catch syntax error in config and log error", () => {
       // arrange
       mockJoin.throws(new SyntaxError("foo"));
-      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
+      const revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
 
       // act
       revertPath(() => util.load("foo", "bar", "baz", true));
@@ -449,7 +448,7 @@ describe("lib util", () => {
     it("should catch other errors in load and log error as 'not found'", () => {
       // arrange
       mockJoin.throws(new Error("foo"));
-      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
+      const revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
       util.closestMatch = Sinon.stub();
 
@@ -463,9 +462,9 @@ describe("lib util", () => {
     it("should catch other errors in load suggest closest plugin name", () => {
       // arrange
       mockJoin.throws(new Error("foo"));
-      let revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
+      const revertPath = RewiredUtil.__with__({path: {join: mockJoin}});
       util.availablePlugins = Sinon.stub();
-      let mockClosestMatch = Sinon.stub();
+      const mockClosestMatch = Sinon.stub();
       util.closestMatch = mockClosestMatch;
 
       // act
@@ -482,7 +481,7 @@ describe("lib util", () => {
       mockExists.returns(false);
 
       // act
-      let actual = util.read("/foo");
+      const actual = util.read("/foo");
 
       // assert
       expect(actual).to.be.undefined;
@@ -494,7 +493,7 @@ describe("lib util", () => {
       mockReadFileSync.throws(new Error("foo"));
 
       // act
-      let actual = util.read("/foo");
+      const actual = util.read("/foo");
 
       // assert
       expect(actual).to.be.undefined;
@@ -506,7 +505,7 @@ describe("lib util", () => {
       mockReadFileSync.returns("bar");
 
       // act
-      let actual = util.read("foo");
+      const actual = util.read("foo");
 
       // assert
       expect(actual).to.equal("bar");
@@ -521,7 +520,7 @@ describe("lib util", () => {
       mockResolvePath.returns("/bar");
 
       // act
-      let actual = util.resolveDir("foo");
+      const actual = util.resolveDir("foo");
 
       // assert
       expect(actual).to.equal("/bar");
@@ -530,13 +529,13 @@ describe("lib util", () => {
     it("should return the resolved path when it exists and is not a symbolic link", () => {
       // arrange
       mockExists.returns(true);
-      let mockStats = <Stats> {};
+      const mockStats = <Stats> {};
       mockStats.isSymbolicLink = () => false;
       mockLstat.returns(mockStats);
       mockResolvePath.returns("/bar");
 
       // act
-      let actual = util.resolveDir("foo");
+      const actual = util.resolveDir("foo");
 
       // assert
       expect(actual).to.equal("/bar");
@@ -545,66 +544,17 @@ describe("lib util", () => {
     it("should return the real path when it exists is a symbolic link", () => {
       // arrange
       mockExists.returns(true);
-      let mockStats = <Stats> {};
+      const mockStats = <Stats> {};
       mockStats.isSymbolicLink = () => true;
       mockLstat.returns(mockStats);
       mockResolvePath.returns("/bar");
       mockRealPath.returns("/baz");
 
       // act
-      let actual = util.resolveDir("foo");
+      const actual = util.resolveDir("foo");
 
       // assert
       expect(actual).to.equal("/baz");
-    });
-  });
-
-  describe("runElmCommand", () => {
-    it("should call elm from the current directory when compiler is not supplied", () => {
-      // arrange
-      let config = <LoboConfig> {};
-
-
-      // act
-      util.runElmCommand(config, "bar", "baz");
-
-      // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^elm /), Sinon.match.any);
-    });
-
-    it("should call elm from the supplied compiler directory", () => {
-      // arrange
-      let config = <LoboConfig> {compiler: "foo"};
-      mockJoin.returns("foo/elm");
-
-      // act
-      util.runElmCommand(config, "bar", "baz");
-
-      // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo\/elm /), Sinon.match.any);
-    });
-
-    it("should call elm with the supplied action", () => {
-      // arrange
-      let config = <LoboConfig> {};
-
-
-      // act
-      util.runElmCommand(config, "bar", "baz");
-
-      // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/ baz$/), Sinon.match.any);
-    });
-
-    it("should call elm with cwd as supplied directory", () => {
-      // arrange
-      let config = <LoboConfig> {compiler: "foo"};
-
-      // act
-      util.runElmCommand(config, "bar", "baz");
-
-      // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "bar"));
     });
   });
 

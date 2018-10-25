@@ -4,8 +4,7 @@ import * as _ from "lodash";
 import * as shelljs from "shelljs";
 import {createLogger, Logger} from "./logger";
 import * as path from "path";
-import {LoboConfig, PluginConfig, PluginReporter, PluginTestFramework} from "./plugin";
-import * as childProcess from "child_process";
+import {PluginConfig, PluginReporter, PluginTestFramework} from "./plugin";
 
 export interface Util {
   availablePlugins(fileSpec: RegExp | string): string[];
@@ -18,7 +17,6 @@ export interface Util {
   padRight(value: string, length: number, spacer?: string): string;
   read(filePath: string): string | undefined;
   resolveDir(...dirs: string[]): string;
-  runElmCommand(config: LoboConfig, directory: string, action: string): void;
   sortObject<T extends {[index: string]: S}, S>(obj: T): T;
   unsafeLoad<T>(filePath: string): T;
 }
@@ -34,9 +32,9 @@ export class UtilImp implements Util {
   public availablePlugins(fileSpec: RegExp | string): string[] {
     let pattern = new RegExp(fileSpec + ".*\.js$");
     let pluginDirectory = path.resolve(__dirname, "..", "plugin");
-    let files = shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
+    let files = <string[]> shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
 
-    return _.map(files, (file: string) => {
+    return files.map((file: string) => {
       let pluginPath = path.relative(pluginDirectory, file);
 
       return path.dirname(pluginPath);
@@ -165,21 +163,6 @@ export class UtilImp implements Util {
     }
 
     return fs.realpathSync(resolved);
-  }
-
-  public runElmCommand(config: LoboConfig, directory: string, action: string): void {
-    let command = "elm";
-
-    if (config.compiler) {
-      command = path.join(config.compiler, command);
-    }
-
-    command += " " + action;
-
-    // run as child process using current process stdio so that colored output is returned
-    let options = {cwd: directory, stdio: [process.stdin, process.stdout, process.stderr]};
-    this.logger.trace(command);
-    childProcess.execSync(command, options);
   }
 
   public sortObject<T extends {[index: string]: S}, S>(obj: T): T {
