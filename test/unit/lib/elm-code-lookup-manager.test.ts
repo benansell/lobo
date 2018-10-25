@@ -1,15 +1,24 @@
 "use strict";
 
 import * as chai from "chai";
-import rewire = require("rewire");
 import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {Logger} from "../../../lib/logger";
 import {Stats} from "fs";
-import {createElmCodeLookupManager, FileInfo, ElmCodeLookupManager, ElmCodeLookupManagerImp} from "../../../lib/elm-code-lookup-manager";
-import {ElmCodeInfo, ElmCodeLookup, ExecutionContext, LoboConfig} from "../../../lib/plugin";
+import {createElmCodeLookupManager, ElmCodeLookupManager, ElmCodeLookupManagerImp, FileInfo} from "../../../lib/elm-code-lookup-manager";
+import {
+  ElmCodeInfo,
+  ElmCodeLookup,
+  ElmFunctionDependency,
+  ElmFunctionNode,
+  ElmNodeType,
+  ExecutionContext,
+  LoboConfig
+} from "../../../lib/plugin";
 import {ElmParser} from "../../../lib/elm-parser";
 import {Util} from "../../../lib/util";
+import {createElmNodeHelper, ElmNodeHelper} from "../../../lib/elm-node-helper";
+import rewire = require("rewire");
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -20,6 +29,7 @@ describe("lib test-suite-generator", () => {
   let manager: ElmCodeLookupManagerImp;
   let mockBasename: Sinon.SinonStub;
   let mockJoin: Sinon.SinonStub;
+  let mockNodeHelper: ElmNodeHelper;
   let mockLogger: Logger;
   let mockLstat: Sinon.SinonStub;
   let mockParse: Sinon.SinonStub;
@@ -49,6 +59,8 @@ describe("lib test-suite-generator", () => {
     });
     let rewiredImp = RewiredElmCodeLookupManager.__get__("ElmCodeLookupManagerImp");
 
+    mockNodeHelper = createElmNodeHelper();
+
     mockLogger = <Logger><{}>Sinon.mock();
     mockLogger.debug = Sinon.stub();
     mockLogger.info = Sinon.stub();
@@ -60,7 +72,7 @@ describe("lib test-suite-generator", () => {
     mockResolveDir = Sinon.stub();
     mockUtil = <Util><{}>{resolveDir: mockResolveDir};
 
-    manager = new rewiredImp(mockParser, mockLogger, mockUtil);
+    manager = new rewiredImp(mockNodeHelper, mockParser, mockLogger, mockUtil);
   });
 
   afterEach(() => {
@@ -194,6 +206,109 @@ describe("lib test-suite-generator", () => {
       });
     });
   });
+
+  describe("syncHasDebugUsage", () => {
+    it("should update hasDebugUsage with the result from calling containsDebugModuleUsage", () => {
+      // arrange
+      const expected = <ExecutionContext> {config: {}, codeLookup: {}, hasDebugUsage: false};
+      const mockContainsDebugModuleUsage = Sinon.stub();
+      mockContainsDebugModuleUsage.returns(true);
+      manager.containsDebugModuleUsage = mockContainsDebugModuleUsage;
+
+      // act
+      manager.syncHasDebugUsage(expected);
+
+      // assert
+      expect(mockContainsDebugModuleUsage).to.have.been.calledWith(expected.codeLookup);
+      expect(expected.hasDebugUsage).to.be.true;
+    });
+  });
+
+  describe("containsDebugModuleUsage", () => {
+    it("should be false when there are empty codeLookup", () => {
+      // arrange
+      const codeLookup = {};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when there are no own codeInfo items", () => {
+      // arrange
+      const parentCodeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: true, moduleNode: {}}};
+      const codeLookup = Object.create(parentCodeLookup);
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when the module node is undefined", () => {
+      // arrange
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: undefined}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when the module node has undefined children", () => {
+      // arrange
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children: undefined}}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when there are no function nodes in the module", () => {
+      // arrange
+      const children = <ElmFunctionNode[]> [{name: "foo", nodeType: ElmNodeType.Type}];
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children }}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when there are no debug usages", () => {
+      // arrange
+      const dependencies = <ElmFunctionDependency[]> [{typeInfo: {moduleName: "Bar"}}];
+      const children = <ElmFunctionNode[]> [{name: "foo", nodeType: ElmNodeType.TypedModuleFunction, dependencies}];
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children }}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be true when there are debug usages", () => {
+      // arrange
+      const dependencies = <ElmFunctionDependency[]> [{typeInfo: {moduleName: "Debug"}}];
+      const children = <ElmFunctionNode[]> [{name: "foo", nodeType: ElmNodeType.TypedModuleFunction, dependencies}];
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children }}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.true;
+    });
+  });
+
 
   describe("syncElmCodeLookupWithFileChanges", () => {
     it("should return an empty lookup when there are no files", () => {
