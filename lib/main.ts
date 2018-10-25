@@ -124,19 +124,18 @@ export class LoboImp implements Lobo {
 
   public launchStages(initialContext: ExecutionContext): Bluebird<ExecutionContext> {
     let logStage = (context: ExecutionContext, stage: string) => {
-      this.logger.info(`-----------------------------------${stage}------------------------------------`);
+      this.util.logStage(stage);
 
       return Bluebird.resolve(context);
     };
 
     let stages = [
-      (context: ExecutionContext) => logStage(context, "[ BUILD ]"),
       (context: ExecutionContext) => this.dependencyManager.sync(context),
       (context: ExecutionContext) => this.outputDirectoryManager.sync(context),
       (context: ExecutionContext) => this.elmCodeLookupManager.sync(context),
       (context: ExecutionContext) => this.testSuiteGenerator.generate(context),
       (context: ExecutionContext) => this.builder.build(context),
-      (context: ExecutionContext) => logStage(context, "[ TEST ]-"),
+      (context: ExecutionContext) => logStage(context, "TEST"),
       (context: ExecutionContext) => this.analyzer.analyze(context),
       (context: ExecutionContext) => this.runner.run(context)
     ];
@@ -181,7 +180,7 @@ export class LoboImp implements Lobo {
   }
 
   public done(context: ExecutionContext): void {
-    this.logger.info("----------------------------------[ WAITING ]-----------------------------------");
+    this.util.logStage("WAITING");
 
     if (this.waiting === true) {
       this.waiting = false;

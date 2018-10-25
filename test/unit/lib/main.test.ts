@@ -83,6 +83,7 @@ describe("lib main", () => {
       getPlugin: Sinon.stub(),
       getPluginConfig: Sinon.stub(),
       isInteger: Sinon.stub(),
+      logStage: Sinon.stub(),
       padRight: Sinon.stub(),
       unsafeLoad: Sinon.stub()
     };

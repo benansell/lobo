@@ -11,7 +11,7 @@ import {Logger} from "../../../lib/logger";
 import {LoboConfig, PluginConfig} from "../../../lib/plugin";
 import {Stats} from "fs";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 chai.use(require("chai-things"));
 
@@ -52,7 +52,7 @@ describe("lib util", () => {
       path: {dirname: mockDirName, join: mockJoin, relative: mockRelativePath, resolve: mockResolvePath},
       process: {exit: mockExit, versions: mockVersions}
     });
-    let rewiredImp = RewiredUtil.__get__("UtilImp");
+    const rewiredImp = RewiredUtil.__get__("UtilImp");
 
     mockLogger = <Logger><{}>Sinon.mock();
     mockLogger.debug = Sinon.stub();
@@ -69,7 +69,7 @@ describe("lib util", () => {
   describe("createUtil", () => {
     it("should return util", () => {
       // act
-      let actual: Util = createUtil();
+      const actual: Util = createUtil();
 
       // assert
       expect(actual).to.exist;
@@ -345,17 +345,51 @@ describe("lib util", () => {
 
     it("should be false when value is float", () => {
       // act
-      let actual = util.isInteger(1.23);
+      const actual = util.isInteger(1.23);
 
       // assert
       expect(actual).to.be.false;
     });
   });
 
+  describe("logStage", () => {
+    it("should call logger.info with message that is 80 long", () => {
+      // act
+      util.logStage("foo");
+
+      // assert
+      expect(mockLogger.info).to.have.been.calledWith(Sinon.match(/.{80}/));
+    });
+
+    it("should call logger.info with the supplied stage surrounded by square brackets", () => {
+      // act
+      util.logStage("foo");
+
+      // assert
+      expect(mockLogger.info).to.have.been.calledWith(Sinon.match(/\[ foo ]/));
+    });
+
+    it("should call logger.info with the supplied stage prefixed by 37 '-'", () => {
+      // act
+      util.logStage("foo");
+
+      // assert
+      expect(mockLogger.info).to.have.been.calledWith(Sinon.match(/^-{37}/));
+    });
+
+    it("should call logger.info with the supplied stage suffixed by 36 '-'", () => {
+      // act
+      util.logStage("foo");
+
+      // assert
+      expect(mockLogger.info).to.have.been.calledWith(Sinon.match(/-{36}$/));
+    });
+  });
+
   describe("padRight", () => {
     it("should not add padding when input is over length", () => {
       // act
-      let actual = util.padRight("foo", 2);
+      const actual = util.padRight("foo", 2);
 
       // assert
       expect(actual).to.equal("foo");
