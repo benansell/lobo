@@ -36,11 +36,11 @@ describe("plugin elm-test plugin-config", () => {
   describe("dependencies", () => {
     it("should have direct 'elm-explorations/test' dependency", () => {
       // act
-      const dependency = config.dependencies.direct["elm-explorations/test"];
+      const dependency = config.dependencies["elm-explorations/test"];
 
       // assert
       expect(dependency).to.exist;
-      expect(dependency.minVersion.toString()).to.equal("1.0.0");
+      expect(dependency.minVersion.toString()).to.equal("1.1.0");
       expect(dependency.canEqualMin).to.be.true;
       expect(dependency.canEqualMax).to.be.false;
       expect(dependency.maxVersion.toString()).to.equal("2.0.0");
@@ -48,7 +48,7 @@ describe("plugin elm-test plugin-config", () => {
 
     it("should have indirect 'elm/random' dependency", () => {
       // act
-      const dependency = config.dependencies.indirect["elm/random"];
+      const dependency = config.dependencies["elm/random"];
 
       // assert
       expect(dependency).to.exist;
@@ -60,7 +60,7 @@ describe("plugin elm-test plugin-config", () => {
 
     it("should have indirect 'elm/time' dependency", () => {
       // act
-      const dependency = config.dependencies.indirect["elm/time"];
+      const dependency = config.dependencies["elm/time"];
 
       // assert
       expect(dependency).to.exist;

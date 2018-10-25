@@ -15,12 +15,10 @@ npm-debug.log
 # elm
 elm-stuff
 
-# elm-test-extra
-plugin/elm-test-extra/ElmTest/
-
 # tests
 .nyc_output/
-test/**/tests/elm.json
+test/integration/**/tests/elm.json
+test/integration/**/lobo.json
 test-result/
 test/integration/elm-test/tests/**/elm.json
 test/integration/elm-test-extra/tests/**/elm.json

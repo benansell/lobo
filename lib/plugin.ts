@@ -5,10 +5,14 @@ export interface CodeLocation {
   lineNumber: number;
 }
 
-export interface Dependencies<T extends VersionSpecification> {
-  direct: DependencyGroup<T>;
-  indirect: DependencyGroup<T>;
+export type Dependencies = ApplicationDependencies | PackageDependencies;
+
+export interface ApplicationDependencies {
+  direct: DependencyGroup<VersionSpecificationExact>;
+  indirect: DependencyGroup<VersionSpecificationExact>;
 }
+
+export type PackageDependencies = DependencyGroup<VersionSpecificationRange>;
 
 export interface DependencyGroup<T extends VersionSpecification> {
   [index: string]: T;
@@ -24,22 +28,25 @@ export interface Version {
   toString(): string;
 }
 
-export type VersionSpecification = VersionSpecificationApplication | VersionSpecificationPackage | VersionSpecificationInvalid;
-
-export type VersionSpecificationType = "application" | "package" | "invalid";
+export type   VersionSpecification = VersionSpecificationExact | VersionSpecificationRange;
 
 export interface VersionSpecificationInvalid {
-  type: VersionSpecificationType;
+  type: "invalid";
   version: string;
 }
 
-export interface VersionSpecificationApplication {
-  type: VersionSpecificationType;
+export type VersionSpecificationExact = VersionSpecificationExactValid | VersionSpecificationInvalid;
+
+
+export interface VersionSpecificationExactValid {
+  type: "exact";
   version: Version;
 }
 
-export interface VersionSpecificationPackage {
-  type: VersionSpecificationType;
+export type VersionSpecificationRange = VersionSpecificationRangeValid | VersionSpecificationInvalid;
+
+export interface VersionSpecificationRangeValid {
+  type: "range";
   canEqualMax: boolean;
   canEqualMin: boolean;
   maxVersion: Version;
@@ -173,7 +180,7 @@ export interface PluginTestFramework {
 
 export interface PluginTestFrameworkConfig extends PluginConfig {
   readonly sourceDirectories: string[];
-  readonly dependencies: Dependencies<VersionSpecificationPackage>;
+  readonly dependencies: DependencyGroup<VersionSpecificationRangeValid>;
 }
 
 export type PluginOptionValue = boolean | object | number | string;
