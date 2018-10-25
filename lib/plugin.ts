@@ -242,11 +242,6 @@ export type RunType =
   | "SKIP";
 
 
-export interface TestArgs {
-  readonly seed: number;
-  readonly testCount: number;
-}
-
 export interface TestReportNode {
   readonly id: number;
   readonly label: string;
@@ -286,7 +281,8 @@ export interface TestReportSkippedLeaf extends TestReportNode {
 export interface TestReportRoot {
   readonly runType: RunType;
   readonly config: TestReportConfig;
-  readonly runResults: TestReportNode[];
+  readonly runError?: string;
+  readonly runResults?: TestReportNode[];
   readonly startTime: number;
   readonly endTime: number;
 }
