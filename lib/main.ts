@@ -17,15 +17,18 @@ import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
 import {Analyzer, createAnalyzer} from "./analyzer";
 import {createTestSuiteGenerator, TestSuiteGenerator} from "./test-suite-generator";
 import {createOutputDirectoryManager, OutputDirectoryManager} from "./output-directory-manager";
-import {createDependencyManager, DependencyManager} from "./dependency-manager";
 import {createElmCodeLookupManager, ElmCodeLookupManager} from "./elm-code-lookup-manager";
+import {createDependencyManager, DependencyManager} from "./dependency-manager";
 
-interface PartialLoboConfig {
+export interface PartialLoboConfig {
+  appDirectory: string | undefined;
   compiler: string | undefined;
   loboDirectory: string | undefined;
   noAnalysis: boolean | undefined;
   noCleanup: boolean | undefined;
   noInstall: boolean | undefined;
+  noUpdate: boolean | undefined;
+  optimize: boolean | undefined;
   prompt: boolean | undefined;
   reportProgress: boolean | undefined;
   reporter: PluginReporter | undefined;
@@ -130,8 +133,8 @@ export class LoboImp implements Lobo {
     };
 
     let stages = [
+      (context: ExecutionContext) => this.outputDirectoryManager.prepare(context),
       (context: ExecutionContext) => this.dependencyManager.sync(context),
-      (context: ExecutionContext) => this.outputDirectoryManager.sync(context),
       (context: ExecutionContext) => this.elmCodeLookupManager.sync(context),
       (context: ExecutionContext) => this.testSuiteGenerator.generate(context),
       (context: ExecutionContext) => this.builder.build(context),
@@ -192,13 +195,14 @@ export class LoboImp implements Lobo {
   }
 
   public watch(context: ExecutionContext): void {
-    let paths = ["./elm-package.json"];
-    let testElmPackage = this.elmPackageHelper.read(program.testDirectory);
+    const appElmJsonPath = this.elmPackageHelper.pathElmJson(context.config.appDirectory);
+    let paths = [appElmJsonPath, "./src", "./tests"];
+    const appElmPackage = this.elmPackageHelper.read(context.config.appDirectory);
 
-    if (testElmPackage && testElmPackage.sourceDirectories) {
-      let dirs = testElmPackage.sourceDirectories;
+    if (appElmPackage && this.elmPackageHelper.isApplicationJson(appElmPackage) && appElmPackage.sourceDirectories) {
+      let dirs = appElmPackage.sourceDirectories;
 
-      paths = _.map(dirs, p => path.normalize(path.join(process.cwd(), program.testDirectory, p)))
+      paths = _.map(dirs, p => path.normalize(path.join(process.cwd(), context.config.appDirectory, p)))
         .filter(p => shelljs.test("-e", p))
         .concat(paths);
     }
@@ -235,7 +239,10 @@ export class LoboImp implements Lobo {
   public configure(): PartialLoboConfig {
     let packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
     let config: PartialLoboConfig = <PartialLoboConfig> {
+      appDirectory: ".",
       loboDirectory: "./.lobo",
+      optimize: false,
+      prompt: true,
       testMainElm: "UnitTest.elm"
     };
 
@@ -244,13 +251,15 @@ export class LoboImp implements Lobo {
     program
       .version(packageJson.version)
       .option("--compiler <value>", "path to compiler")
-      .option("--debug", "disables auto-cleanup of temp files")
+      .option("--debug", "disables optimization and auto-cleanup of temp files")
       .option("--failOnOnly", "exit with non zero exit code when there are any only tests")
       .option("--failOnSkip", "exit with non zero exit code when there are any skip tests")
       .option("--failOnTodo", "exit with non zero exit code when there are any todo tests")
       .option("--framework <value>", "name of the testing framework to use", "elm-test-extra")
       .option("--noAnalysis", "prevents lobo from running analysis on the test suite")
-      .option("--noInstall", "prevents lobo from running elm-package install")
+      .option("--noInstall", "prevents lobo from running elm install")
+      .option("--noUpdate", "prevents lobo from updating lobo.json")
+      .option("--optimize", "builds with optimize flag when there are no usages of debug module")
       .option("--prompt <value>", "default the answer to any questions", /^(y[es])|(n[o])$/i, "yes")
       .option("--quiet", "only outputs build info, test summary and errors")
       .option("--reporter <value>", "name of the reporter to use", "default-reporter")
@@ -289,12 +298,19 @@ export class LoboImp implements Lobo {
     // configure shelljs to throw errors when any command errors
     shelljs.config.fatal = true;
 
-    if (program.prompt) {
-      config.prompt = program.prompt.toLowerCase()[0] === "y";
+    if (program.optimize) {
+      config.optimize = true;
+      this.logger.debug("Disabling optimized build");
+    }
+
+    if (program.prompt && program.prompt.toLowerCase()[0] === "n") {
+      config.prompt = false;
+      this.logger.debug("Disabling user prompts");
     }
 
     config.noAnalysis = program.noAnalysis === true;
     config.noInstall = program.noInstall === true;
+    config.noUpdate = program.noUpdate === true;
     config.reportProgress = true;
 
     if (program.compiler) {

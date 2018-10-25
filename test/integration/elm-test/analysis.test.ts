@@ -27,7 +27,7 @@ describe("elm-test-analysis", () => {
   describe("custom-test-file", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/custom-test-file");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/custom-test-file");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -39,7 +39,7 @@ describe("elm-test-analysis", () => {
   describe("duplicate-name", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/duplicate-name");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/duplicate-name");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -57,7 +57,7 @@ describe("elm-test-analysis", () => {
   describe("empty-suite", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/empty-suite");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/empty-suite");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -78,7 +78,7 @@ describe("elm-test-analysis", () => {
   describe("hidden", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/hidden");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/hidden");
 
       // assert
       reporterExpect(result).analysisSummary(1, 0);
@@ -95,7 +95,7 @@ describe("elm-test-analysis", () => {
   describe("ignore-test-helper", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/ignore-test-helper");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/ignore-test-helper");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -107,7 +107,7 @@ describe("elm-test-analysis", () => {
   describe("over-exposed", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/over-exposed");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/over-exposed");
 
       // assert
       reporterExpect(result).analysisSummary(0, 3);
@@ -129,7 +129,7 @@ describe("elm-test-analysis", () => {
   describe("unisolated", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/unisolated");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/unisolated");
 
       // assert
       reporterExpect(result).analysisSummary(0, 2);
@@ -149,7 +149,7 @@ describe("elm-test-analysis", () => {
   describe("untyped-test", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/analysis/untyped-test");
+      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/untyped-test");
 
       // assert
       reporterExpect(result).summaryPassed();

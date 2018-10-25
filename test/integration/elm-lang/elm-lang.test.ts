@@ -27,7 +27,7 @@ describe("elm-lang", () => {
 
     it("should build and report success test run", () => {
       // act
-      let result = runner.run(testContext, "elm-test");
+      let result = runner.run(testContext, "elm-test", false);
 
       // assert
       reporterExpect(result).summaryPassed();

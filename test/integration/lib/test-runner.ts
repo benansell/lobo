@@ -24,13 +24,17 @@ export class TestRunner {
     this.util.cd("..");
   }
 
-  public run(context: string[], framework: string, testDir?: string, args?: string): ExecOutputReturnValue {
+  public run(context: string[], framework: string, optimize: boolean, testDir?: string, args?: string): ExecOutputReturnValue {
     const baseDir = _.repeat("../", context.length);
     const rootDir = !testDir ? baseDir : path.relative(testDir, baseDir);
     let command = `node ${rootDir}/bin/lobo.js --prompt=no --verbose`;
 
     if (framework) {
       command += " --framework=" + framework;
+    }
+
+    if (optimize) {
+      command += " --optimize";
     }
 
     if (testDir) {

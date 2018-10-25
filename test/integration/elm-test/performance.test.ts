@@ -27,7 +27,7 @@ describe("elm-test-performance", () => {
   describe("1000", () => {
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/performance/1000");
+      let result = runner.run(testContext, "elm-test", false, "./tests/performance/1000");
 
       // assert
       reporterExpect(result).summaryPassed();

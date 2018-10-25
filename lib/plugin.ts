@@ -143,6 +143,7 @@ export interface ExecutionContext {
   buildOutputFilePath: string;
   codeLookup: ElmCodeLookup;
   config: LoboConfig;
+  hasDebugUsage: boolean;
   tempDirectory: string;
   testDirectory: string;
   testSuiteOutputFilePath: string;
@@ -154,12 +155,14 @@ export interface FailureMessage {
 }
 
 export interface LoboConfig {
+  readonly appDirectory: string;
   readonly compiler: string;
   readonly loboDirectory: string;
   readonly noAnalysis: boolean;
   readonly noCleanup: boolean;
   readonly noInstall: boolean;
   readonly noUpdate: boolean;
+  readonly optimize: boolean;
   readonly prompt: boolean;
   readonly reportProgress: boolean;
   readonly reporter: PluginReporter;
