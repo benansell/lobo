@@ -32,7 +32,7 @@
     "commander": "^2.19.0",
     "fast-levenshtein": "^2.0.5",
     "lodash": "^4.17.11",
-    "promptly": "^3.0.3",
+    "promptly": "^2.2.0",
     "shelljs": "^0.8.2",
     "tmp": "^0.0.33",
     "tslib": "^1.9.3"
