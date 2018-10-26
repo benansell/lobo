@@ -96,6 +96,7 @@ export class LoggerImp implements Logger {
       case LogLevel.Debug:
         return console.log;
       case LogLevel.Info:
+        // tslint:disable-next-line:no-console
         return console.info;
       case LogLevel.Warn:
         return console.warn;

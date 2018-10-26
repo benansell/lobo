@@ -350,7 +350,10 @@ describe("lib logger", () => {
 
     let tests = [{level: LogLevel.Trace, expected: console.log},
       {level: LogLevel.Debug, expected: console.log},
+
+      // tslint:disable-next-line:no-console
       {level: LogLevel.Info, expected: console.info},
+
       {level: LogLevel.Warn, expected: console.warn},
       {level: LogLevel.Error, expected: console.error}];
 
