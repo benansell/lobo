@@ -103,7 +103,7 @@
     "test-integration": "cd test/integration && mocha --opts mocha.opts",
     "test": "npm run test-lint && npm run test-unit --silent && npm run test-integration --silent",
     "test-ci": "npm run test-lint && npm run test-unit-ci --silent && npm run test-integration --silent",
-    "verify-elm-test": "cd test/integration/elm-test && rm -f -r tests/elm-stuff/build-artifacts && ../../../bin/lobo.js --framework=elm-test $*",
-    "verify-elm-test-extra": "cd test/integration/elm-test-extra && rm -f -r tests/elm-stuff/build-artifacts && ../../../bin/lobo.js --framework=elm-test-extra $*"
+    "verify-elm-lang": "cd test/integration/elm-lang && rm -f -r ./elm-stuff && rm -f -r ./.lobo && rm -f ./lobo.json && ../../../bin/lobo.js --framework=elm-test $*",
+    "verify-help": "echo 'npm run verify-elm-lang -- --prompt=no'"
   }
 }
