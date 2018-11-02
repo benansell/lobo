@@ -4,6 +4,7 @@ import {createLogger, Logger} from "./logger";
 import * as path from "path";
 import * as childProcess from "child_process";
 import {createUtil, Util} from "./util";
+import { SpawnOptions} from "child_process";
 
 export interface ElmCommandRunner {
   init(config: LoboConfig, directory: string, prompt: boolean, resolve: Resolve<void>, reject: Reject): void;
@@ -43,7 +44,13 @@ export class ElmCommandRunnerImp implements ElmCommandRunner {
 
     action += ` ${testSuiteOutputFilePath} --output=${buildOutputFilePath}`;
     this.util.logStage("BUILD");
-    this.runElmCommand(config, prompt, config.loboDirectory, action, resolve, reject);
+
+    if (prompt === false) {
+      this.logger.debug("Force prompt for elm make");
+    }
+
+    // always use prompt true for colorized output
+    this.runElmCommand(config, true, config.loboDirectory, action, resolve, reject);
   }
 
   public runElmCommand(config: LoboConfig, prompt: boolean, directory: string, action: string, resolve: Resolve<void>, reject: Reject)
@@ -54,25 +61,37 @@ export class ElmCommandRunnerImp implements ElmCommandRunner {
       command = path.join(config.compiler, command);
     }
 
-    command += " " + action;
-    let options = {cwd: directory};
-    this.logger.trace(command);
-    const child = childProcess.exec(command, options);
-    const awaitingInput = "[Y/n]: ";
+    const options = <SpawnOptions> {cwd: directory, shell: true};
 
-    child.stdout.on("data", (data: string) => {
-      process.stdout.write(data);
+    if (prompt === false) {
+      // pipe output to enable interception - but looses colorized output
+      options.stdio = "pipe";
+    } else {
+      // use current process stdio so that colorized output is returned
+      options.stdio = [process.stdin, process.stdout, process.stderr];
+    }
 
-      if (prompt === false && data[data.length - 2] === ":") {
-        const ending = data.slice(data.length - awaitingInput.length);
+    this.logger.trace(command + " " + action);
 
-        if (ending === awaitingInput) {
-          const response = "y\n";
-          child.stdin.write(response);
-          process.stdout.write(response);
+    const child = childProcess.spawn(command, [action], options);
+
+    if (prompt === false) {
+      child.stdout.on("data", (data: Buffer) => {
+        process.stdout.write(data);
+        const message = data ? data.toString() : "";
+
+        if (message[message.length - 2] === ":") {
+          const awaitingInput = "[Y/n]: ";
+          const ending = message.slice(message.length - awaitingInput.length);
+
+          if (ending === awaitingInput) {
+            const response = "y\n";
+            child.stdin.write(response);
+            process.stdout.write(response);
+          }
         }
-      }
-    });
+      });
+    }
 
     child.on("close", (exitCode: number) => {
       if (exitCode === 0) {

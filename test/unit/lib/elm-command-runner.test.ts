@@ -19,7 +19,7 @@ describe("lib elm-command-runner", () => {
   let mockChildOn: Sinon.SinonStub;
   let mockChildStdOutOn: Sinon.SinonStub;
   let mockChildWrite: Sinon.SinonStub;
-  let mockExec: Sinon.SinonStub;
+  let mockSpawn: Sinon.SinonStub;
   let mockProcessWrite: Sinon.SinonStub;
   let mockReject: Reject;
   let mockResolve: Resolve<void>;
@@ -41,11 +41,11 @@ describe("lib elm-command-runner", () => {
     mockChildOn = Sinon.stub();
     mockChildStdOutOn = Sinon.stub();
     mockChildWrite = Sinon.stub();
-    mockExec = Sinon.stub().returns({on: mockChildOn, stdin: {write: mockChildWrite}, stdout: {on: mockChildStdOutOn}});
+    mockSpawn = Sinon.stub().returns({on: mockChildOn, stdin: {write: mockChildWrite}, stdout: {on: mockChildStdOutOn}});
     mockProcessWrite = Sinon.stub();
 
     revert = RewiredCommandRunner.__set__({
-      childProcess: {exec: mockExec}, console: {log: Sinon.stub()},
+      childProcess: {spawn: mockSpawn}, console: {log: Sinon.stub()},
       process: {stdout: {write: mockProcessWrite}}
     });
     const rewiredImp = RewiredCommandRunner.__get__("ElmCommandRunnerImp");
@@ -410,7 +410,7 @@ describe("lib elm-command-runner", () => {
       commandRunner.runElmCommand(config, false, "bar", "baz", mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^elm /), Sinon.match.any);
+      expect(mockSpawn).to.have.been.calledWith(Sinon.match(/^elm/), Sinon.match.any, Sinon.match.any);
     });
 
     it("should call elm from the supplied compiler directory", () => {
@@ -421,7 +421,7 @@ describe("lib elm-command-runner", () => {
       commandRunner.runElmCommand(config, false, "bar", "baz", mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/^foo\/elm /), Sinon.match.any);
+      expect(mockSpawn).to.have.been.calledWith(Sinon.match(/^foo\/elm/), Sinon.match.any, Sinon.match.any);
     });
 
     it("should call elm with the supplied action", () => {
@@ -433,7 +433,7 @@ describe("lib elm-command-runner", () => {
       commandRunner.runElmCommand(config, false, "bar", "baz", mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match(/ baz$/), Sinon.match.any);
+      expect(mockSpawn).to.have.been.calledWith(Sinon.match.any, Sinon.match.array.deepEquals(["baz"]), Sinon.match.any);
     });
 
     it("should call elm with cwd as supplied directory", () => {
@@ -444,7 +444,7 @@ describe("lib elm-command-runner", () => {
       commandRunner.runElmCommand(config, false, "bar", "baz", mockResolve, mockReject);
 
       // assert
-      expect(mockExec).to.have.been.calledWith(Sinon.match.any, Sinon.match(x => x.cwd === "bar"));
+      expect(mockSpawn).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match(x => x.cwd === "bar"));
     });
 
     it("should call process.stdout.write with messages from the child process", () => {
@@ -482,14 +482,25 @@ describe("lib elm-command-runner", () => {
     it("should not output automatic response to child when prompt is true and message is a question", () => {
       // arrange
       const config = <LoboConfig> {compiler: "foo"};
+
+      // act
+      commandRunner.runElmCommand(config, true, "bar", "baz", mockResolve, mockReject);
+
+      // assert
+      expect(mockChildWrite).not.to.have.been.called;
+    });
+
+    it("should not output automatic response when prompt is false and message is undefined", () => {
+      // arrange
+      const config = <LoboConfig> {compiler: "foo"};
       mockChildStdOutOn.callsFake((event, cb) => {
         if (event === "data") {
-          cb("qux [Y/n]: ");
+          cb(undefined);
         }
       });
 
       // act
-      commandRunner.runElmCommand(config, true, "bar", "baz", mockResolve, mockReject);
+      commandRunner.runElmCommand(config, false, "bar", "baz", mockResolve, mockReject);
 
       // assert
       expect(mockChildWrite).not.to.have.been.called;
