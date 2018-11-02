@@ -56,7 +56,7 @@ init plugin rawArgs =
 
         Ok pluginArgs ->
             ( { args = { pluginArgs = pluginArgs }
-              , runArgs = { reportProgress = False }
+              , runArgs = { reportProgress = True }
               , runConfig = Encode.null
               , plugin = plugin
               , queue = []
@@ -127,8 +127,11 @@ update msg model =
                 , begin testCount
                 )
 
-        RunNextTest _ ->
-            (model, StartTest |> updateTime)
+        RunNextTest continue ->
+            if continue then
+                (model, StartTest |> updateTime)
+            else
+                update FinishedTestRun model
 
         StartTest time ->
             let
@@ -152,7 +155,10 @@ update msg model =
                 newModel =
                     { model | reports = testReport :: model.reports }
             in
+            if model.runArgs.reportProgress then
                 ( newModel, progress (toProgressMessage testReport) )
+            else
+                update (RunNextTest True) newModel
 
         FinishedTestRun ->
             let
@@ -249,26 +255,3 @@ port runNextTest : (Bool -> msg) -> Sub msg
 subscriptions : Model a -> Sub Msg
 subscriptions model =
     Sub.batch [ startTestRun StartTestRun, runNextTest RunNextTest ]
-
--- todo: decode test run args and runNext test messages
-
-{-
-toTestRunArgs : Decode.Value -> Result String TestRunArgs
-toTestRunArgs value =
-    let
-        result =
-            decodeValue testRunArgsDecoder value
-    in
-        case result of
-            Ok runArgs ->
-                runArgs
-
-            Err _ ->
-                Err "Failed to decode runArgs"
-
-
-testRunArgsDecoder : Decode.Decoder TestRunArgs
-testRunArgsDecoder =
-    Decode.map TestRunArgs
-        (field "reportProgress" Decode.bool)
--}
