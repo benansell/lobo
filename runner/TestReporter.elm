@@ -311,13 +311,11 @@ attachNode nodes =
                 x :: xs ->
                     -- merge parents into single parent and add next to it's parent and repeat
                     let
-                        -- merged = List.foldl (\a b -> { a | report = attachChild b.report a.report }) x xs
                         merged = List.foldl mergeParent (Ok x) xs
                     in
                     case merged of
                         Ok node ->
                             let
-                                -- todo move attach child into func as repeated atleast twice
                                 child = attachChild next.report node.report
                             in
                             case child of
