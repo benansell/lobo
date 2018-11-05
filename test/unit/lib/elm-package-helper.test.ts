@@ -1042,10 +1042,13 @@ describe("lib elm-package-helper", () => {
   describe("pathElmJson", () => {
     it("should return path starting in supplied directory", () => {
       // arrange
-      const expected = `${path.sep}foo${path.sep}bar`;
+      const expected = `${path}foo${path.sep}bar`;
+      const mockResolve = Sinon.stub().callsFake((x, y) => x + "/" + y);
+      const revertPath = RewiredHelper.__with__({path: {resolve: mockResolve}});
 
       // act
-      const actual = helper.pathElmJson(expected);
+      let actual: string = "";
+      revertPath(() => actual = helper.pathElmJson(expected));
 
       // assert
       expect(actual).to.match(new RegExp("^" + _.escapeRegExp(expected)));
@@ -1064,9 +1067,12 @@ describe("lib elm-package-helper", () => {
     it("should return path starting in supplied directory", () => {
       // arrange
       const expected = `${path.sep}foo${path.sep}bar`;
+      const mockResolve = Sinon.stub().callsFake((x, y) => x + "/" + y);
+      const revertPath = RewiredHelper.__with__({path: {resolve: mockResolve}});
 
       // act
-      const actual = helper.pathLoboJson(expected);
+      let actual = "";
+      revertPath(() => actual = helper.pathLoboJson(expected));
 
       // assert
       expect(actual).to.match(new RegExp("^" + _.escapeRegExp(expected)));
@@ -2221,9 +2227,11 @@ describe("lib elm-package-helper", () => {
       // arrange
       const elmJson = <ElmJson> {sourceDirectories: ["foo"]};
       const expected = `${path.sep}foo${path.sep}bar`;
+      const mockResolve = Sinon.stub().callsFake((x, y) => x + "/" + y);
+      const revertPath = RewiredHelper.__with__({path: {resolve: mockResolve}});
 
       // act
-      helper.write(expected, elmJson);
+      revertPath(() => helper.write(expected, elmJson));
 
       // assert
       expect(mockWrite).to.have.been.calledWith(Sinon.match(new RegExp("^" + _.escapeRegExp(expected))), Sinon.match.any);

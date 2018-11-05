@@ -415,10 +415,12 @@ describe("lib elm-command-runner", () => {
 
     it("should call elm from the supplied compiler directory", () => {
       // arrange
+      const mockJoin = Sinon.stub().callsFake((x, y) => x + "/" + y);
+      const revertPath = RewiredCommandRunner.__with__({path: {join: mockJoin}});
       const config = <LoboConfig> {compiler: "foo"};
 
       // act
-      commandRunner.runElmCommand(config, false, "bar", "baz", mockResolve, mockReject);
+      revertPath(() => commandRunner.runElmCommand(config, false, "bar", "baz", mockResolve, mockReject));
 
       // assert
       expect(mockSpawn).to.have.been.calledWith(Sinon.match(/^foo\/elm/), Sinon.match.any, Sinon.match.any);
