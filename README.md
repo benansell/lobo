@@ -26,8 +26,7 @@ test frameworks
 * Default console reporter that displays a summary of the test run
 * Watch mode that builds and runs the tests when the source code is 
 updated 
-* Checks elm-package.json in base directory and test directory for 
-missing source directories and packages
+* Checks elm.json for missing source directories and packages
 * Friendly error output
 * Test suite generation
 * Test suite analysis that checks for hidden and over exposed tests
@@ -37,7 +36,7 @@ missing source directories and packages
 The installation guide assumes that you already have the following 
 installed:
 * [npm](https://docs.npmjs.com/)
-* [elm](http://elm-lang.org/install) - v18.0 or greater
+* [elm](http://elm-lang.org/install) - v19.0 or greater
 
 ## Install
 It is recommended to install lobo locally for your application and 
@@ -52,18 +51,23 @@ Once they are installed you can run lobo via the following command:
 lobo --help 
 ```
 
-## .lobo directory
-Once lobo has been run once you should see a ".lobo" directory in the
-root of your project - this is the lobo temp directory.
+## lobo.json & .lobo directory
+Once lobo has been run once you should find the "lobo.json" file and
+the ".lobo" directory in the root of your project.
 
-This directory only contains temp files for the running of lobo. You
+The lobo.json file is similar to the elm.json file with the additional
+dependencies and source directories required to run lobo. This file is
+created and managed automatically by lobo. In general you should not
+edit this file by hand. It is recommended that you check this file into
+your source control.
+
+The .lobo directory only contains temp files for the running of lobo. You
 should configure your source control to ignore this directory and its
 contents.
 
 ## Upgrading
 After updating lobo, you may find that elm does not properly find the 
-lobo elm code. To fix this delete your test elm-stuff and .lobo
-directories.
+lobo elm code. To fix this delete lobo.json, .lobo and elm-stuff.
 
 ### Versions of lobo prior to 0.5
 Prior to 0.5 lobo did not generate the test suite and required you to
@@ -160,14 +164,13 @@ Assuming your application follows the recommended directory structure
 for an elm application:
 ```
 .lobo                 --> lobo temp directory - should be ignored by source control
-elm-package.json      --> definition of the elm required packages
+elm.json              --> definition of the elm required packages
+lobo.json             --> lobo configuration file
 elm-stuff/            --> elm installed packages
 node_modules/         --> npm installed modules
 package.json          --> definition of the npm required packages
 src/                  --> source code directory
 tests/                --> test code directory
-    elm-package.json  --> definition of the elm required packages for app & testing
-    elm-stuff/        --> elm installed packages for app & testing
 ```
 
 Locally running the following command will start lobo in watch mode:
@@ -175,9 +178,9 @@ Locally running the following command will start lobo in watch mode:
 lobo --watch 
 ```
 
-Lobo will then check that the elm-package.json files in the application
-directory and tests directory are in-sync. If they are out of sync it
-will ask you if the tests elm-package.json can be updated.
+Lobo will then check that the elm.json and lobo.json files are in-sync.
+If they are out of sync it will ask you if the tests lobo.json can be
+updated.
 
 Lobo will then attempt to generate the test suite and build the tests,
 if this fails the errors from elm make will be displayed
@@ -204,7 +207,7 @@ lobo --framework=elm-test
 ```
 
 ### --compiler
-The path to elm-package and elm-make
+The path to elm executable
 
 ### --debug
 Disables auto-cleanup of temporary files. This can be useful when
@@ -232,8 +235,20 @@ when the analysis is reporting false positives that cause the tests not
 to run.
 
 ### --noInstall
-Prevents lobo from trying to run elm-package when running the tests.
+Prevents lobo from trying to run elm install when running the tests.
 This can be useful when using lobo without an internet connection.
+
+### --noUpdate
+Prevents lobo from trying to update the lobo.json file when running the
+tests.
+
+### --optimize (Experimental)
+Attempts to build with the elm optimize flag. However, setting this flag
+will be ignored if lobo finds usages of the Debug module in the elm.json
+source directories.
+
+Note: The optimizations performed by elm will prevent useful test
+failure messages from being displayed.
 
 ### --prompt
 Prevents lobo and elm tools asking your permission, and always answers
@@ -267,14 +282,14 @@ Put lobo in a infinite loop that watches for changes and automatically
 reruns the build and tests when the source code has changed.
 
 Note: Currently watch mode does not deal with changes to the 
-elm-package.json source directories. If you change these you will need
+elm.json source directories. If you change these you will need
 to exit watch mode and restart it.
 
     
 ## Test Frameworks
 The following test frameworks are supported:
 * [elm-test-extra](http://package.elm-lang.org/packages/benansell/lobo-elm-test-extra/latest)
-* [elm-test](http://package.elm-lang.org/packages/elm-community/elm-test/latest)
+* [elm-test](http://package.elm-lang.org/packages/elm-explorations/test/latest)
 
 ### elm-test-extra
 elm-test-extra is the default framework, it is similar to elm-test with
@@ -336,8 +351,8 @@ html; defaults to text
 * reportFile - the path to save the test run report to
 
 ## Troubleshooting
-In general if lobo quits abnormaly try deleting your test elm-stuff and
-.lobo directories.
+In general if lobo quits abnormally try deleting lobo.json, .lobo and
+elm-stuff.
 
 ### The argument to function `findTests` is causing a mismatch
 If you are seeing an error similar to the following:
