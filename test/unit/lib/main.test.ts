@@ -65,7 +65,7 @@ describe("lib main", () => {
     mockDependencyManager = <DependencyManager> {sync: mockSyncDependencies};
     mockSyncElmCodeLookup = Sinon.stub();
     mockElmCodeLookupManager = <ElmCodeLookupManager> {sync: mockSyncElmCodeLookup};
-    mockHelper = <ElmPackageHelper><{}> {isApplicationJson: Sinon.stub(), pathElmJson: Sinon.stub(), read: Sinon.stub()};
+    mockHelper = <ElmPackageHelper><{}> {isApplicationJson: Sinon.stub(), pathElmJson: Sinon.stub(), tryReadElmJson: Sinon.stub()};
     mockLogger = <Logger> {
       debug: Sinon.stub(), error: Sinon.stub(), info: Sinon.stub(),
       trace: Sinon.stub(), warn: Sinon.stub()
@@ -607,7 +607,7 @@ describe("lib main", () => {
       // arrange
       const config = <LoboConfig>{appDirectory: "."};
       const context = <ExecutionContext>{config};
-      (<SinonStub>mockHelper.read).returns({sourceDirectories: ["./", "./src"]});
+      (<SinonStub>mockHelper.tryReadElmJson).returns({sourceDirectories: ["./", "./src"]});
       (<Sinon.SinonStub>mockHelper.pathElmJson).returns("./elm.json");
       mockHelper.isApplicationJson = function(x: ElmJson): x is ElmApplicationJson { return true; };
       const revert = rewiredMain.__with__({process: {cwd: () => "./"}, program: {testDirectory: "tests"}, shelljs: {test: () => true}});

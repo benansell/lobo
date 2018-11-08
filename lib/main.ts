@@ -197,7 +197,7 @@ export class LoboImp implements Lobo {
   public watch(context: ExecutionContext): void {
     const appElmJsonPath = this.elmPackageHelper.pathElmJson(context.config.appDirectory);
     let paths = [appElmJsonPath, "./src", "./tests"];
-    const appElmPackage = this.elmPackageHelper.read(context.config.appDirectory);
+    const appElmPackage = this.elmPackageHelper.tryReadElmJson(context.config.appDirectory);
 
     if (appElmPackage && this.elmPackageHelper.isApplicationJson(appElmPackage) && appElmPackage.sourceDirectories) {
       let dirs = appElmPackage.sourceDirectories;
@@ -250,7 +250,7 @@ export class LoboImp implements Lobo {
 
     program
       .version(packageJson.version)
-      .option("--compiler <value>", "path to compiler")
+      .option("--compiler <value>", "path to elm executable")
       .option("--debug", "disables optimization and auto-cleanup of temp files")
       .option("--failOnOnly", "exit with non zero exit code when there are any only tests")
       .option("--failOnSkip", "exit with non zero exit code when there are any skip tests")
@@ -462,7 +462,7 @@ export class LoboImp implements Lobo {
           this.logger.info("");
           this.logger.error(errorString);
           this.logger.info("");
-          this.logger.error("Please delete tests/elm-stuff and try again");
+          this.logger.error("Please delete .lobo & elm-stuff directories and try again");
         } else {
           this.logger.error("Error running the tests. This is usually caused by an elm package using objects that " +
             "are found in the browser but not in a node process");
@@ -472,7 +472,7 @@ export class LoboImp implements Lobo {
 
           if (program.veryVerbose || program.verbose) {
             this.logger.error("Please raise an issue against lobo including the above messages to request adding support for the " +
-              "elm-package that caused this issue");
+              "elm package that caused this issue");
           } else {
             this.logger.error("Please rerun lobo with the --verbose option to see the cause of the error");
           }

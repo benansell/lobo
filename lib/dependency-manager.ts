@@ -4,7 +4,7 @@ import * as shelljs from "shelljs";
 import * as promptly from "promptly";
 import {createLogger, Logger} from "./logger";
 import {DependencyGroup, ExecutionContext, LoboConfig, Reject, Resolve, VersionSpecification} from "./plugin";
-import {createElmPackageHelper, ElmApplicationJson, ElmJson, ElmPackageHelper} from "./elm-package-helper";
+import {createElmPackageHelper, ElmJson, ElmPackageHelper} from "./elm-package-helper";
 import * as _ from "lodash";
 import * as fs from "fs";
 import {createElmCommandRunner, ElmCommandRunner} from "./elm-command-runner";
@@ -115,7 +115,7 @@ export class DependencyManagerImp implements DependencyManager {
 
   public readElmJson(config: LoboConfig): Bluebird<ElmJson> {
     return new Bluebird<ElmJson>((resolve: Resolve<ElmJson>, reject: Reject) => {
-      const elmJson = this.elmPackageHelper.read<ElmApplicationJson>(config.appDirectory);
+      const elmJson = this.elmPackageHelper.tryReadElmJson(config.appDirectory);
 
       if (!elmJson) {
         this.logger.error("Unable to read the elm.json file. Please check that is a valid json file");
@@ -134,7 +134,7 @@ export class DependencyManagerImp implements DependencyManager {
 
         resolve();
       } catch (err) {
-        const message = "Failed to init lobo app in temp directory. " +
+        const message = "Failed to init lobo app in the .lobo directory. " +
           `Please try deleting the lobo directory (${config.loboDirectory}) and re-run lobo`;
         this.logger.error(message, err);
         reject();
@@ -151,7 +151,7 @@ export class DependencyManagerImp implements DependencyManager {
     ];
 
     if (!context.config.noUpdate) {
-      steps.push(() => this.syncUpdate(context.config));
+      steps.push(() => this.syncUpdate(context.config, context.testDirectory));
     }
 
     return Bluebird
@@ -233,13 +233,15 @@ export class DependencyManagerImp implements DependencyManager {
     });
   }
 
-  public syncSourceDirectories(config: LoboConfig, elmJson: ElmJson): Bluebird<void> {
+  public syncSourceDirectories(config: LoboConfig, testDirectory: string, elmJson: ElmJson): Bluebird<void> {
     return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
       try {
-        let appSourceDirectories: string[] = [];
+        let appSourceDirectories: string[] = [testDirectory];
 
         if (elmJson && this.elmPackageHelper.isApplicationJson(elmJson)) {
           appSourceDirectories = elmJson.sourceDirectories;
+        } else {
+          appSourceDirectories.push("src");
         }
 
         const callback = (diff: string[], updateAction: () => void) => {
@@ -260,9 +262,9 @@ export class DependencyManagerImp implements DependencyManager {
     });
   }
 
-  public syncUpdate(config: LoboConfig): Bluebird<void> {
+  public syncUpdate(config: LoboConfig, testDirectory: string): Bluebird<void> {
     let steps = [
-      (elmJson: ElmJson) => this.syncSourceDirectories(config, elmJson),
+      (elmJson: ElmJson) => this.syncSourceDirectories(config, testDirectory, elmJson),
       (elmJson: ElmJson) => this.syncDependencies(config, elmJson),
       () => this.updateLoboElmJson(config)
     ];

@@ -111,13 +111,15 @@ describe("lib elm-package-helper", () => {
   describe("clean", () => {
     it("should call read with the supplied loboDir", () => {
       // arrange
-      helper.read = Sinon.stub();
+      const expected = "/bar/foo.json";
+      helper.pathElmJson = Sinon.stub().withArgs("foo").returns(expected);
+      helper.tryRead = Sinon.stub();
 
       // act
       helper.clean("foo");
 
       // assert
-      expect(helper.read).to.have.been.calledWith("foo");
+      expect(helper.tryRead).to.have.been.calledWith(expected);
     });
 
     it("should call write with the elm.json empty sourceDirectories", () => {
@@ -126,7 +128,7 @@ describe("lib elm-package-helper", () => {
       elmJson.sourceDirectories = ["foo", "bar"];
       elmJson.sourceDependencies = {direct: {}, indirect: {}};
       elmJson.testDependencies = {direct: {}, indirect: {}};
-      helper.read = Sinon.stub().returns(elmJson);
+      helper.tryRead = Sinon.stub().returns(elmJson);
       let actual = <ElmApplicationJson> {};
       helper.write = Sinon.stub().callsFake((dir, ej) => actual = ej);
 
@@ -143,7 +145,7 @@ describe("lib elm-package-helper", () => {
       elmJson.sourceDirectories = [];
       elmJson.sourceDependencies = {direct: {foo: {type: "invalid", version: "bar"}}, indirect: {}};
       elmJson.testDependencies = {direct: {}, indirect: {}};
-      helper.read = Sinon.stub().returns(elmJson);
+      helper.tryRead = Sinon.stub().returns(elmJson);
       let actual = <ElmApplicationJson> {};
       helper.write = Sinon.stub().callsFake((dir, ej) => actual = ej);
 
@@ -160,7 +162,7 @@ describe("lib elm-package-helper", () => {
       elmJson.sourceDirectories = [];
       elmJson.sourceDependencies = {direct: {}, indirect: {foo: {type: "invalid", version: "bar"}}};
       elmJson.testDependencies = {direct: {}, indirect: {}};
-      helper.read = Sinon.stub().returns(elmJson);
+      helper.tryRead = Sinon.stub().returns(elmJson);
       let actual = <ElmApplicationJson> {};
       helper.write = Sinon.stub().callsFake((dir, ej) => actual = ej);
 
@@ -177,7 +179,7 @@ describe("lib elm-package-helper", () => {
       elmJson.sourceDirectories = [];
       elmJson.sourceDependencies = {direct: {}, indirect: {}};
       elmJson.testDependencies = {direct: {foo: {type: "invalid", version: "bar"}}, indirect: {}};
-      helper.read = Sinon.stub().returns(elmJson);
+      helper.tryRead = Sinon.stub().returns(elmJson);
       let actual = <ElmApplicationJson> {};
       helper.write = Sinon.stub().callsFake((dir, ej) => actual = ej);
 
@@ -194,7 +196,7 @@ describe("lib elm-package-helper", () => {
       elmJson.sourceDirectories = [];
       elmJson.sourceDependencies = {direct: {}, indirect: {}};
       elmJson.testDependencies = {direct: {}, indirect: {foo: {type: "invalid", version: "bar"}}};
-      helper.read = Sinon.stub().returns(elmJson);
+      helper.tryRead = Sinon.stub().returns(elmJson);
       let actual = <ElmApplicationJson> {};
       helper.write = Sinon.stub().callsFake((dir, ej) => actual = ej);
 
@@ -966,11 +968,10 @@ describe("lib elm-package-helper", () => {
   describe("mergeSourceDirectories", () => {
     it("should not add current dir when elm json source dir already contains current dir", () => {
       // act
-      const actual = helper.mergeSourceDirectories(".lobo", <ElmApplicationJson>{sourceDirectories: ["."]}, "sourceDir", [], []);
+      const actual = helper.mergeSourceDirectories(".lobo", <ElmApplicationJson>{sourceDirectories: []}, "sourceDir", [], []);
 
       // assert
-      expect(actual.length).to.equal(1);
-      expect(actual).to.include(".");
+      expect(actual.length).to.equal(0);
     });
 
     it("should return array with current dir only when no other dirs are specified", () => {
@@ -979,7 +980,6 @@ describe("lib elm-package-helper", () => {
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual).to.include(".");
     });
 
     it("should return array with current dir only when no other dirs are specified other than the test source directories", () => {
@@ -989,18 +989,6 @@ describe("lib elm-package-helper", () => {
 
       // assert
       expect(actual.length).to.equal(1);
-      expect(actual).to.include(".");
-    });
-
-    it("should return array with current dir relative test directory", () => {
-      // arrange
-      const loboPackageJson = <ElmApplicationJson>{sourceDirectories: ["test"]};
-
-      // act
-      const actual = helper.mergeSourceDirectories("qux", loboPackageJson, "sourceDir", ["src"], []);
-
-      // assert
-      expect(actual).to.include(".");
     });
 
     it("should return array with test directory relative test directory", () => {
@@ -1087,10 +1075,68 @@ describe("lib elm-package-helper", () => {
     });
   });
 
-  describe("read", () => {
+  describe("readLoboElmJson", () => {
+    it("should call read with the specified loboDir ", () => {
+      // arrange
+      const expected = "/bar.json";
+      helper.pathElmJson = Sinon.stub().withArgs("foo").returns(expected);
+      helper.tryRead = Sinon.stub().returns({});
+
+      // act
+      helper.readLoboElmJson("foo");
+
+      // assert
+      expect(helper.tryRead).to.have.been.calledWith(expected);
+    });
+
+    it("should throw an error when the returned lobo.json is undefined", () => {
+      // arrange
+      helper.tryRead = Sinon.stub().returns(undefined);
+
+      // act
+      try {
+        helper.readLoboElmJson("foo");
+        expect.fail;
+      } catch (err) {
+        // assert
+        expect(err.toString()).to.match(/Error: Unable to read the .lobo\/elm.json/);
+      }
+    });
+  });
+
+  describe("readLoboJson", () => {
+    it("should call read with the specified loboDir ", () => {
+      // arrange
+      const expected = "/bar.json";
+      helper.pathLoboJson = Sinon.stub().withArgs("foo").returns(expected);
+      helper.tryRead = Sinon.stub().returns({});
+
+      // act
+      helper.readLoboJson("foo");
+
+      // assert
+      expect(helper.tryRead).to.have.been.calledWith(expected);
+    });
+
+    it("should throw an error when the returned lobo.json is undefined", () => {
+      // arrange
+      helper.tryRead = Sinon.stub().returns(undefined);
+
+      // act
+      try {
+        helper.readLoboJson("foo");
+        expect.fail;
+      } catch (err) {
+        // assert
+        expect(err.toString()).to.match(/Error: Unable to read the lobo.json/);
+      }
+    });
+  });
+
+  describe("tryRead", () => {
     it("should be undefined when elm.json does not exist", () => {
       // act
-      const actual = helper.read("/foo");
+      const actual = helper.tryRead("/foo");
 
       // assert
       expect(actual).to.be.undefined;
@@ -1101,7 +1147,7 @@ describe("lib elm-package-helper", () => {
       mockRead.returns("<xml />");
 
       // act
-      const actual = helper.read("/foo");
+      const actual = helper.tryRead("/foo");
 
       // assert
       expect(actual).to.be.undefined;
@@ -1117,7 +1163,7 @@ describe("lib elm-package-helper", () => {
       mockConvertFromRawExactDependencyGroup.onCall(1).returns({});
 
       // act
-      const actual = helper.read("/bar");
+      const actual = helper.tryRead("/bar");
 
       // assert
       expect((<ApplicationDependencies>actual.sourceDependencies).direct).to.equal(expected);
@@ -1130,7 +1176,7 @@ describe("lib elm-package-helper", () => {
       helper.convertFromRawExactDependencyGroup = Sinon.stub().returns(expected);
 
       // act
-      const actual = helper.read("/bar");
+      const actual = helper.tryRead("/bar");
 
       // assert
       expect((<ApplicationDependencies>actual.testDependencies).direct).to.equal(expected);
@@ -1141,7 +1187,7 @@ describe("lib elm-package-helper", () => {
       mockRead.returns(JSON.stringify({type: "application"}));
 
       // act
-      const actual = helper.read<ElmApplicationJson>("/foo");
+      const actual = helper.tryRead<ElmApplicationJson>("/foo");
 
       // assert
       expect(actual["source-directories"]).not.to.exist;
@@ -1153,7 +1199,7 @@ describe("lib elm-package-helper", () => {
       mockRead.returns(JSON.stringify({"source-directories": ["foo"], type: "application"}));
 
       // act
-      const actual = helper.read<ElmApplicationJson>("/foo");
+      const actual = helper.tryRead<ElmApplicationJson>("/foo");
 
       // assert
       expect(actual["source-directories"]).not.to.exist;
@@ -1162,30 +1208,31 @@ describe("lib elm-package-helper", () => {
     });
   });
 
-  describe("readLoboElmJson", () => {
-    it("should call read with the specified loboDir", () => {
+  describe("tryReadElmJson", () => {
+    it("should call read with the specified loboDir ", () => {
       // arrange
-      helper.read = Sinon.stub().returns({});
+      const expected = "/bar.json";
+      helper.pathElmJson = Sinon.stub().withArgs("foo").returns(expected);
+      helper.tryRead = Sinon.stub().returns({});
 
       // act
-      helper.readLoboElmJson("foo");
+      helper.tryReadElmJson("foo");
 
       // assert
-      expect(helper.read).to.have.been.calledWith("foo");
+      expect(helper.tryRead).to.have.been.calledWith(expected);
     });
 
-    it("should throw an error when the returned lobo.json is undefined", () => {
+    it("should return the value returned by tryRead", () => {
       // arrange
-      helper.read = Sinon.stub().returns(undefined);
+      const expected = <ElmJson> {type: "application"};
+      helper.pathElmJson = Sinon.stub().returns("bar");
+      helper.tryRead = Sinon.stub().returns(expected);
 
       // act
-      try {
-        helper.readLoboElmJson("foo");
-        expect.fail;
-      } catch (err) {
-        // assert
-        expect(err.toString()).to.match(/Error: Unable to read the lobo.json/);
-      }
+      const actual = helper.tryReadElmJson("foo");
+
+      // assert
+      expect(actual).to.equal(expected);
     });
   });
 

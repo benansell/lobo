@@ -70,8 +70,10 @@ export interface ElmPackageHelper {
   clean(loboDir: string): void;
   isApplicationJson(elmJson: ElmJson): elmJson is ElmApplicationJson;
   pathElmJson(elmJsonDirectory: string): string;
-  pathLoboJson(elmJsonDirectory: string): string;
-  read<T extends ElmJson>(elmJsonDirectory: string): T | undefined;
+  pathLoboJson(loboJsonDirectory: string): string;
+  tryReadElmJson<T extends ElmJson>(elmJsonDir: string): T | undefined;
+  readLoboElmJson(loboDir: string): ElmApplicationJson;
+  readLoboJson(loboJsonDir: string): ElmApplicationJson;
   updateDependencies(loboDir: string, appElmJson: ElmJson, testDependencies: DependencyGroup<VersionSpecificationRangeValid>,
                      callback: UpdateDependenciesCallback): void;
   updateDependencyVersions(loboDir: string, appElmJson: ElmJson, testDependencies: DependencyGroup<VersionSpecificationRangeValid>,
@@ -107,7 +109,8 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
   }
 
   public clean(loboDir: string): void {
-    const elmJson = this.read<ElmApplicationJson>(loboDir);
+    const loboElmJsonPath = this.pathElmJson(loboDir);
+    const elmJson = this.tryRead<ElmApplicationJson>(loboElmJsonPath);
 
     if (elmJson) {
       elmJson.sourceDirectories = [];
@@ -365,10 +368,6 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
       sourceDirs = [];
     }
 
-    if (sourceDirs.indexOf(".") === -1) {
-      sourceDirs.push(".");
-    }
-
     sourceDirs = this.addSourceDirectories(loboElmJsonDir, sourceDirs, applicationDir, appSourceDirectories);
 
     if (extraDirectories.length > 0) {
@@ -379,18 +378,39 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
     return sourceDirs;
   }
 
-  public pathElmJson(elmPackageJsonDirectory: string): string {
-    return path.resolve(elmPackageJsonDirectory, "elm.json");
+  public pathElmJson(elmJsonDirectory: string): string {
+    return path.resolve(elmJsonDirectory, "elm.json");
   }
 
-  public pathLoboJson(elmPackageJsonDirectory: string): string {
-    return path.resolve(elmPackageJsonDirectory, "lobo.json");
+  public pathLoboJson(loboJsonDirectory: string): string {
+    return path.resolve(loboJsonDirectory, "lobo.json");
   }
 
-  public read<T extends ElmJson>(elmPackageJsonDirectory: string): T | undefined {
+  public readLoboElmJson(loboDir: string): ElmApplicationJson {
+    let loboElmJsonPath = this.pathElmJson(loboDir);
+    const loboElmJson = this.tryRead<ElmApplicationJson>(loboElmJsonPath);
+
+    if (!loboElmJson) {
+      throw new Error("Unable to read the .lobo/elm.json file. Please check that is a valid json file");
+    }
+
+    return loboElmJson;
+  }
+
+  public readLoboJson(loboJsonDir: string): ElmApplicationJson {
+    let elmJsonPath = this.pathLoboJson(loboJsonDir);
+    const elmJson = this.tryRead<ElmApplicationJson>(elmJsonPath);
+
+    if (!elmJson) {
+      throw new Error("Unable to read the lobo.json file. Please check that is a valid json file");
+    }
+
+    return elmJson;
+  }
+
+  public tryRead<T extends ElmJson>(elmJsonPath: string): T | undefined {
     try {
-      let packagePath = this.pathElmJson(elmPackageJsonDirectory);
-      let raw = this.util.read(packagePath);
+      let raw = this.util.read(elmJsonPath);
 
       if (!raw) {
         return undefined;
@@ -420,14 +440,10 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
     }
   }
 
-  public readLoboElmJson(loboDir: string): ElmApplicationJson {
-    const loboElmJson = this.read<ElmApplicationJson>(loboDir);
+  public tryReadElmJson<T extends ElmJson>(elmJsonDir: string): T | undefined {
+    let elmJsonPath = this.pathElmJson(elmJsonDir);
 
-    if (!loboElmJson) {
-      throw new Error("Unable to read the lobo.json file. Please check that is a valid json file");
-    }
-
-    return loboElmJson;
+    return this.tryRead<T>(elmJsonPath);
   }
 
   public updateDependencies(loboDir: string, appElmJson: ElmJson, testDependencies: DependencyGroup<VersionSpecificationRangeValid>,

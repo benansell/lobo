@@ -25,7 +25,7 @@ describe("lib dependency-manager", () => {
   let mockHelper: ElmPackageHelper;
   let mockInit: Sinon.SinonStub;
   let mockLogger: Logger;
-  let mockRead: Sinon.SinonStub;
+  let mockReadElmJson: Sinon.SinonStub;
   let mockUtil: Util;
   let mockLogStage: Sinon.SinonStub;
   let mockElmCommandRunner: ElmCommandRunner;
@@ -61,7 +61,7 @@ describe("lib dependency-manager", () => {
     mockLogger.info = Sinon.spy();
     mockLogger.trace = Sinon.spy();
     mockLogger.warn = Sinon.spy();
-    mockRead = Sinon.stub();
+    mockReadElmJson = Sinon.stub();
     mockHelper = <ElmPackageHelper> {};
     mockClean = Sinon.stub();
     mockHelper.clean = mockClean;
@@ -69,7 +69,7 @@ describe("lib dependency-manager", () => {
     mockHelper.pathElmJson = mockPathElmJson;
     mockPathLoboJson = Sinon.stub().callsFake(x => x);
     mockHelper.pathLoboJson = mockPathLoboJson;
-    mockHelper.read = mockRead;
+    mockHelper.tryReadElmJson = mockReadElmJson;
     mockUpdateDependencies = Sinon.stub();
     mockHelper.updateDependencies = mockUpdateDependencies;
     mockUpdateDependencyVersions = Sinon.stub();
@@ -436,14 +436,14 @@ describe("lib dependency-manager", () => {
     it("should call elmPackageHelper.read with the supplied appDirectory", () => {
       // arrange
       const config = <LoboConfig> {appDirectory: "foo"};
-      mockRead.returns({});
+      mockReadElmJson.returns({});
 
       // act
       const actual = dependencyManager.readElmJson(config);
 
       // assert
       actual.then(() => {
-        expect(mockRead).to.have.been.calledWith("foo");
+        expect(mockReadElmJson).to.have.been.calledWith("foo");
       });
     });
 
@@ -451,7 +451,7 @@ describe("lib dependency-manager", () => {
       // arrange
       const config = <LoboConfig> {appDirectory: "foo"};
       const expected = {type: "application"};
-      mockRead.returns(expected);
+      mockReadElmJson.returns(expected);
 
       // act
       const actual = dependencyManager.readElmJson(config);
@@ -465,7 +465,7 @@ describe("lib dependency-manager", () => {
     it("should call reject and log error when elmPackageHelper.read returns undefined", () => {
       // arrange
       const config = <LoboConfig> {appDirectory: "foo"};
-      mockRead.returns(undefined);
+      mockReadElmJson.returns(undefined);
 
       // act
       const actual = dependencyManager.readElmJson(config);
@@ -989,7 +989,7 @@ describe("lib dependency-manager", () => {
       mockHelper.isApplicationJson = function(x: ElmJson): x is ElmApplicationJson { return true; };
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.then(() => {
@@ -1005,7 +1005,7 @@ describe("lib dependency-manager", () => {
       mockHelper.isApplicationJson = function(x: ElmJson): x is ElmApplicationJson { return true; };
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.then(() => {
@@ -1014,19 +1014,19 @@ describe("lib dependency-manager", () => {
       });
     });
 
-    it("should call elmPackageHelper.updateSourceDirectories with empty appSourceDirectories when package elm.json", () => {
+    it("should call elmPackageHelper.updateSourceDirectories with default source and test directories when package elm.json", () => {
       // arrange
       const config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {sourceDirectories: []}}};
       const appElmJson = <ElmPackageJson> {};
       mockHelper.isApplicationJson = function(x: ElmJson): x is ElmApplicationJson { return false; };
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.then(() => {
         expect(mockUpdateSourceDirectories).to.have.been
-          .calledWith( Sinon.match.any, Sinon.match.any, Sinon.match.array.deepEquals([]), Sinon.match.any, Sinon.match.any);
+          .calledWith( Sinon.match.any, Sinon.match.any, Sinon.match.array.deepEquals(["baz", "src"]), Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -1037,7 +1037,7 @@ describe("lib dependency-manager", () => {
       mockHelper.isApplicationJson = function(x: ElmJson): x is ElmApplicationJson { return true; };
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.then(() => {
@@ -1053,7 +1053,7 @@ describe("lib dependency-manager", () => {
       mockHelper.isApplicationJson = function(x: ElmJson): x is ElmApplicationJson { return true; };
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.then(() => {
@@ -1064,7 +1064,7 @@ describe("lib dependency-manager", () => {
 
     it("should call elmPackageHelper.updateSourceDirectories with callback that does nothing when diff is empty", () => {
       // arrange
-      const config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {sourceDirectories: []}}};
+      const config = <LoboConfig> {loboDirectory: "foo", testFramework: {config: {sourceDirectories: ["baz"]}}};
       const appElmJson = <ElmApplicationJson> {};
       mockHelper.isApplicationJson = function(x: ElmJson): x is ElmApplicationJson { return true; };
       const mockUpdateAction = Sinon.stub();
@@ -1073,7 +1073,7 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.then(() => {
@@ -1092,7 +1092,7 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.then(() => {
@@ -1112,7 +1112,7 @@ describe("lib dependency-manager", () => {
       });
 
       // act
-      const actual = dependencyManager.syncSourceDirectories(config, appElmJson);
+      const actual = dependencyManager.syncSourceDirectories(config, "baz", appElmJson);
 
       // assert
       actual.catch((err) => {
@@ -1132,7 +1132,7 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve({})));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.then(() => {
@@ -1149,7 +1149,7 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve(undefined)));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.catch((err) => {
@@ -1166,11 +1166,28 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve({})));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.then(() => {
-        expect(dependencyManager.syncSourceDirectories).to.have.been.calledWith(config, Sinon.match.any);
+        expect(dependencyManager.syncSourceDirectories).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
+      });
+    });
+
+    it("should call syncSourceDirectories with the supplied test directory", () => {
+      // arrange
+      const config = <LoboConfig> {noCleanup: false};
+      dependencyManager.syncSourceDirectories = Sinon.stub();
+      dependencyManager.syncDependencies = Sinon.stub();
+      dependencyManager.updateLoboElmJson = Sinon.stub();
+      dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve({})));
+
+      // act
+      const actual = dependencyManager.syncUpdate(config, "bar");
+
+      // assert
+      return actual.then(() => {
+        expect(dependencyManager.syncSourceDirectories).to.have.been.calledWith(config, "bar", Sinon.match.any);
       });
     });
 
@@ -1184,11 +1201,11 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve(expected)));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.then(() => {
-        expect(dependencyManager.syncSourceDirectories).to.have.been.calledWith(Sinon.match.any, expected);
+        expect(dependencyManager.syncSourceDirectories).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected);
       });
     });
 
@@ -1201,7 +1218,7 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve({})));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.then(() => {
@@ -1219,7 +1236,7 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve(expected)));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.then(() => {
@@ -1236,11 +1253,11 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve({})));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.then(() => {
-        expect(dependencyManager.syncSourceDirectories).to.have.been.calledWith(config, Sinon.match.any);
+        expect(dependencyManager.syncSourceDirectories).to.have.been.calledWith(config, Sinon.match.any, Sinon.match.any);
       });
     });
 
@@ -1253,7 +1270,7 @@ describe("lib dependency-manager", () => {
       dependencyManager.readElmJson = Sinon.stub().returns(new Bluebird((resolve) => resolve({})));
 
       // act
-      const actual = dependencyManager.syncUpdate(config);
+      const actual = dependencyManager.syncUpdate(config, "bar");
 
       // assert
       return actual.catch((err) => {
