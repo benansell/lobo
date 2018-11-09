@@ -621,6 +621,44 @@ describe("lib elm-tokenizer", () => {
   });
 
   describe("tokenizeFunction", () => {
+    it("should ignore extra spaces in typed function declaration", () => {
+      // arrange
+      let mockCodeHelper = <ElmCodeHelper> {};
+      let nextWord = { nextIndex: 3, word: ":"};
+      const mockFindNextWord = Sinon.stub();
+      mockCodeHelper.findNextWord = mockFindNextWord;
+      mockFindNextWord.withArgs(1).returns({ nextIndex: 2, word: " "});
+      mockFindNextWord.returns(nextWord);
+      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
+
+      // act
+      tokenizerImp.tokenizeFunction(mockCodeHelper, 123, wordResult);
+
+      // assert
+      expect(tokenizerImp.tokenizeUntilEndOfBlock)
+        .to.have.been.calledWith(mockCodeHelper, 123, wordResult, ElmTokenType.TypedModuleFunction, "=");
+    });
+
+    it("should ignore new line in typed function declaration", () => {
+      // arrange
+      let mockCodeHelper = <ElmCodeHelper> {};
+      let nextWord = { nextIndex: 3, word: ":"};
+      const mockFindNextWord = Sinon.stub();
+      mockCodeHelper.findNextWord = mockFindNextWord;
+      mockFindNextWord.withArgs(1).returns({ nextIndex: 2, word: "\n"});
+      mockFindNextWord.returns(nextWord);
+      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
+
+      // act
+      tokenizerImp.tokenizeFunction(mockCodeHelper, 123, wordResult);
+
+      // assert
+      expect(tokenizerImp.tokenizeUntilEndOfBlock)
+        .to.have.been.calledWith(mockCodeHelper, 123, wordResult, ElmTokenType.TypedModuleFunction, "=");
+    });
+
     it("should call tokenizeUntilEndOfBlock with token type TypedModuleFunction when the next word is ':'", () => {
       // arrange
       let mockCodeHelper = <ElmCodeHelper> {};

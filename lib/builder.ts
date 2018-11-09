@@ -1,9 +1,6 @@
 import * as Bluebird from "bluebird";
-import chalk from "chalk";
-import * as path from "path";
-import * as childProcess from "child_process";
-import {createLogger, Logger} from "./logger";
-import {ExecutionContext, LoboConfig, Reject, Resolve} from "./plugin";
+import {ExecutionContext, Reject, Resolve} from "./plugin";
+import {createElmCommandRunner, ElmCommandRunner} from "./elm-command-runner";
 
 export interface Builder {
   build(context: ExecutionContext): Bluebird<ExecutionContext>;
@@ -11,53 +8,20 @@ export interface Builder {
 
 export class BuilderImp implements Builder {
 
-  private readonly logger: Logger;
+ private readonly elmCommand: ElmCommandRunner;
 
-  constructor(logger: Logger) {
-    this.logger = logger;
+  constructor(elmCommand: ElmCommandRunner) {
+    this.elmCommand = elmCommand;
   }
 
   public build(context: ExecutionContext): Bluebird<ExecutionContext> {
-    return this.make(context.config, context.testSuiteOutputFilePath, context.buildOutputFilePath)
-      .then(() => context);
-  }
-
-  public make(config: LoboConfig, testSuiteOutputFilePath: string, buildOutputFilePath: string)
-    : Bluebird<void> {
-    return new Bluebird((resolve: Resolve<void>, reject: Reject) => {
-      let command = "elm-make";
-
-      if (config.compiler) {
-        command = path.join(config.compiler, command);
-      }
-
-      command += ` ${testSuiteOutputFilePath} --output=${buildOutputFilePath}`;
-
-      if (!config.prompt) {
-        command += " --yes";
-      }
-
-      if (!config.noWarn) {
-        command += " --warn";
-      }
-
-      try {
-        // run as child process using current process stdio so that colored output is returned
-        let options = {cwd: config.loboDirectory, stdio: [process.stdin, process.stdout, process.stderr]};
-        this.logger.trace(command);
-        childProcess.execSync(command, options);
-        resolve();
-      } catch (err) {
-        this.logger.error("");
-        this.logger.error(chalk.bold("  BUILD FAILED"));
-        this.logger.error("");
-        this.logger.debug(err);
-        reject(new Error("Build Failed"));
-      }
+    return new Bluebird<ExecutionContext>((resolve: Resolve<ExecutionContext>, reject: Reject) => {
+      this.elmCommand.make(context.config, context.config.prompt, context.hasDebugUsage, context.testSuiteOutputFilePath,
+                           context.buildOutputFilePath, () => resolve(context), reject);
     });
   }
 }
 
 export function createBuilder(): Builder {
-  return new BuilderImp(createLogger());
+  return new BuilderImp(createElmCommandRunner());
 }

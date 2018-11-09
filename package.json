@@ -1,6 +1,6 @@
 {
   "name": "lobo",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Elm test runner",
   "keywords": [
     "elm",
@@ -26,50 +26,50 @@
   },
   "license": "BSD-3-Clause",
   "dependencies": {
-    "bluebird": "^3.5.1",
+    "bluebird": "^3.5.2",
     "chalk": "^2.4.1",
-    "chokidar": "^2.0.3",
-    "commander": "^2.15.1",
+    "chokidar": "^2.0.4",
+    "commander": "^2.19.0",
     "fast-levenshtein": "^2.0.5",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.11",
     "promptly": "^2.2.0",
     "shelljs": "^0.8.2",
     "tmp": "^0.0.33",
-    "tslib": "^1.9.2"
+    "tslib": "^1.9.3"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.20",
-    "@types/chai": "^4.1.3",
+    "@types/bluebird": "^3.5.24",
+    "@types/chai": "^4.1.6",
     "@types/chai-things": "0.0.33",
     "@types/chokidar": "^1.7.4",
     "@types/commander": "^2.11.0",
     "@types/fast-levenshtein": "0.0.1",
-    "@types/lodash": "^4.14.109",
-    "@types/mocha": "^5.2.1",
-    "@types/node": "^10.3.1",
+    "@types/lodash": "^4.14.117",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.12.0",
     "@types/promptly": "^1.1.28",
     "@types/rewire": "^2.5.28",
     "@types/shelljs": "^0.8.0",
-    "@types/sinon": "^5.0.1",
-    "@types/sinon-chai": "^2.7.32",
+    "@types/sinon": "^5.0.5",
+    "@types/sinon-chai": "^3.2.0",
     "@types/tmp": "^0.0.33",
     "@types/wallabyjs": "^0.0.6",
-    "chai": "^4.1.1",
+    "chai": "^4.2.0",
     "chai-things": "^0.2.0",
-    "coveralls": "^3.0.1",
+    "coveralls": "^3.0.2",
     "istanbul": "^0.4.5",
     "mocha": "^5.2.0",
-    "mocha-junit-reporter": "^1.17.0",
+    "mocha-junit-reporter": "^1.18.0",
     "mocha-lcov-reporter": "^1.2.0",
-    "nyc": "^12.0.2",
+    "nyc": "^13.1.0",
     "rewire": "^4.0.1",
     "rimraf": "^2.6.2",
-    "sinon": "^5.0.10",
-    "sinon-chai": "^3.1.0",
-    "source-map-support": "^0.5.6",
-    "ts-node": "^6.1.0",
-    "tslint": "^5.10.0",
-    "typescript": "^2.9.1"
+    "sinon": "^7.1.0",
+    "sinon-chai": "^3.2.0",
+    "source-map-support": "^0.5.9",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.3"
   },
   "nyc": {
     "exclude": [
@@ -83,7 +83,7 @@
       "lcov",
       "text-summary"
     ],
-    "report-dir": "../../test-result/unit/coverage",
+    "report-dir": "test-result/unit/coverage",
     "require": [
       "ts-node/register"
     ]
@@ -103,7 +103,7 @@
     "test-integration": "cd test/integration && mocha --opts mocha.opts",
     "test": "npm run test-lint && npm run test-unit --silent && npm run test-integration --silent",
     "test-ci": "npm run test-lint && npm run test-unit-ci --silent && npm run test-integration --silent",
-    "verify-elm-test": "cd test/integration/elm-test && rm -f -r tests/elm-stuff/build-artifacts && ../../../bin/lobo.js --framework=elm-test $*",
-    "verify-elm-test-extra": "cd test/integration/elm-test-extra && rm -f -r tests/elm-stuff/build-artifacts && ../../../bin/lobo.js --framework=elm-test-extra $*"
+    "verify-elm-lang": "cd test/integration/elm-lang && rm -f -r ./elm-stuff && rm -f -r ./.lobo && rm -f ./lobo.json && ../../../bin/lobo.js --framework=elm-test $*",
+    "verify-help": "echo 'npm run verify-elm-lang -- --prompt=no'"
   }
 }

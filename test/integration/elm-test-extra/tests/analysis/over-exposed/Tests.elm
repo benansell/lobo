@@ -12,7 +12,7 @@ all =
         ]
 
 
-suiteTwo: Test
+suiteTwo : Test
 suiteTwo =
     describe "Suite Two"
         [ testTwo ]

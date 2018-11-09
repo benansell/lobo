@@ -5,8 +5,52 @@ export interface CodeLocation {
   lineNumber: number;
 }
 
-export interface Dependencies {
-  [index: string]: string;
+export type Dependencies = ApplicationDependencies | PackageDependencies;
+
+export interface ApplicationDependencies {
+  direct: DependencyGroup<VersionSpecificationExact>;
+  indirect: DependencyGroup<VersionSpecificationExact>;
+}
+
+export type PackageDependencies = DependencyGroup<VersionSpecificationRange>;
+
+export interface DependencyGroup<T extends VersionSpecification> {
+  [index: string]: T;
+}
+
+export interface Version {
+  readonly major: number;
+  readonly minor: number;
+  readonly patch: number;
+  isEqual(version: Version): boolean;
+  isGreaterThan(version: Version): boolean;
+  isLessThan(version: Version): boolean;
+  toString(): string;
+}
+
+export type   VersionSpecification = VersionSpecificationExact | VersionSpecificationRange;
+
+export interface VersionSpecificationInvalid {
+  type: "invalid";
+  version: string;
+}
+
+export type VersionSpecificationExact = VersionSpecificationExactValid | VersionSpecificationInvalid;
+
+
+export interface VersionSpecificationExactValid {
+  type: "exact";
+  version: Version;
+}
+
+export type VersionSpecificationRange = VersionSpecificationRangeValid | VersionSpecificationInvalid;
+
+export interface VersionSpecificationRangeValid {
+  type: "range";
+  canEqualMax: boolean;
+  canEqualMin: boolean;
+  maxVersion: Version;
+  minVersion: Version;
 }
 
 export interface ElmCodeLookup {
@@ -99,6 +143,7 @@ export interface ExecutionContext {
   buildOutputFilePath: string;
   codeLookup: ElmCodeLookup;
   config: LoboConfig;
+  hasDebugUsage: boolean;
   tempDirectory: string;
   testDirectory: string;
   testSuiteOutputFilePath: string;
@@ -110,13 +155,14 @@ export interface FailureMessage {
 }
 
 export interface LoboConfig {
+  readonly appDirectory: string;
   readonly compiler: string;
   readonly loboDirectory: string;
   readonly noAnalysis: boolean;
   readonly noCleanup: boolean;
   readonly noInstall: boolean;
   readonly noUpdate: boolean;
-  readonly noWarn: boolean;
+  readonly optimize: boolean;
   readonly prompt: boolean;
   readonly reportProgress: boolean;
   readonly reporter: PluginReporter;
@@ -137,7 +183,7 @@ export interface PluginTestFramework {
 
 export interface PluginTestFrameworkConfig extends PluginConfig {
   readonly sourceDirectories: string[];
-  readonly dependencies: Dependencies;
+  readonly dependencies: DependencyGroup<VersionSpecificationRangeValid>;
 }
 
 export type PluginOptionValue = boolean | object | number | string;
@@ -199,11 +245,6 @@ export type RunType =
   | "SKIP";
 
 
-export interface TestArgs {
-  readonly seed: number;
-  readonly testCount: number;
-}
-
 export interface TestReportNode {
   readonly id: number;
   readonly label: string;
@@ -243,7 +284,8 @@ export interface TestReportSkippedLeaf extends TestReportNode {
 export interface TestReportRoot {
   readonly runType: RunType;
   readonly config: TestReportConfig;
-  readonly runResults: TestReportNode[];
+  readonly runError?: string;
+  readonly runResults?: TestReportNode[];
   readonly startTime: number;
   readonly endTime: number;
 }

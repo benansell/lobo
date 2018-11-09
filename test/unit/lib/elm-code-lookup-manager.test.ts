@@ -1,15 +1,25 @@
 "use strict";
 
 import * as chai from "chai";
-import rewire = require("rewire");
 import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {Logger} from "../../../lib/logger";
 import {Stats} from "fs";
-import {createElmCodeLookupManager, FileInfo, ElmCodeLookupManager, ElmCodeLookupManagerImp} from "../../../lib/elm-code-lookup-manager";
-import {ElmCodeInfo, ElmCodeLookup, ExecutionContext, LoboConfig} from "../../../lib/plugin";
+import {createElmCodeLookupManager, ElmCodeLookupManager, ElmCodeLookupManagerImp, FileInfo} from "../../../lib/elm-code-lookup-manager";
+import {
+  ElmCodeInfo,
+  ElmCodeLookup,
+  ElmFunctionDependency,
+  ElmFunctionNode,
+  ElmNodeType,
+  ExecutionContext,
+  LoboConfig
+} from "../../../lib/plugin";
 import {ElmParser} from "../../../lib/elm-parser";
 import {Util} from "../../../lib/util";
+import {createElmNodeHelper, ElmNodeHelper} from "../../../lib/elm-node-helper";
+import rewire = require("rewire");
+import {ElmApplicationJson, ElmPackageHelper} from "../../../lib/elm-package-helper";
 
 let expect = chai.expect;
 chai.use(SinonChai);
@@ -19,7 +29,9 @@ describe("lib test-suite-generator", () => {
   let RewiredElmCodeLookupManager = rewire("../../../lib/elm-code-lookup-manager");
   let manager: ElmCodeLookupManagerImp;
   let mockBasename: Sinon.SinonStub;
+  let mockHelper: ElmPackageHelper;
   let mockJoin: Sinon.SinonStub;
+  let mockNodeHelper: ElmNodeHelper;
   let mockLogger: Logger;
   let mockLstat: Sinon.SinonStub;
   let mockParse: Sinon.SinonStub;
@@ -49,6 +61,10 @@ describe("lib test-suite-generator", () => {
     });
     let rewiredImp = RewiredElmCodeLookupManager.__get__("ElmCodeLookupManagerImp");
 
+    mockNodeHelper = createElmNodeHelper();
+
+    mockHelper = <ElmPackageHelper> {};
+    mockHelper.tryReadElmJson = Sinon.stub();
     mockLogger = <Logger><{}>Sinon.mock();
     mockLogger.debug = Sinon.stub();
     mockLogger.info = Sinon.stub();
@@ -60,7 +76,7 @@ describe("lib test-suite-generator", () => {
     mockResolveDir = Sinon.stub();
     mockUtil = <Util><{}>{resolveDir: mockResolveDir};
 
-    manager = new rewiredImp(mockParser, mockLogger, mockUtil);
+    manager = new rewiredImp(mockNodeHelper, mockHelper, mockParser, mockLogger, mockUtil);
   });
 
   afterEach(() => {
@@ -78,6 +94,85 @@ describe("lib test-suite-generator", () => {
   });
 
   describe("findFiles", () => {
+    it("should call elmPackageHelper.readLoboJson with the supplied appDirectory", () => {
+      // arrange
+      mockHelper.readLoboJson = Sinon.stub().returns(undefined);
+
+      // act
+      manager.findFiles("foo", "bar", ["baz"]);
+
+      // assert
+      expect(mockHelper.readLoboJson).to.have.been.calledWith("foo");
+    });
+
+    it("should return an empty array when the lobo.json file is undefined", () => {
+      // arrange
+      mockHelper.readLoboJson = Sinon.stub().returns(undefined);
+
+      // act
+      const actual = manager.findFiles("foo", "bar", ["baz"]);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
+    it("should return an empty array when the lobo.json file source directories is undefined", () => {
+      // arrange
+      const elmJson = <ElmApplicationJson> {sourceDirectories: undefined};
+      mockHelper.readLoboJson = Sinon.stub().returns(elmJson);
+
+      // act
+      const actual = manager.findFiles("foo", "bar", ["baz"]);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
+    it("should return an empty array when the lobo.json file source directories is undefined", () => {
+      // arrange
+      const elmJson = <ElmApplicationJson> {sourceDirectories: ["qux"]};
+      mockHelper.readLoboJson = Sinon.stub().returns(elmJson);
+
+      // act
+      const actual = manager.findFiles("foo", "bar", ["baz"]);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
+    it("should return an array with none of the ignored directories", () => {
+      // arrange
+      const elmJson = <ElmApplicationJson> {sourceDirectories: ["../baz"]};
+      mockHelper.readLoboJson = Sinon.stub().returns(elmJson);
+      mockJoin.callsFake((_, x) => ".lobo/" + x);
+      mockResolvePath.callsFake((x, y) => x + "/" +  y);
+      manager.findFilesInPath = Sinon.stub();
+
+      // act
+      const actual = manager.findFiles("foo", "bar", ["baz"]);
+
+      // assert
+      expect(actual).to.deep.equal([]);
+    });
+
+    it("should return an array with fileInfos returned by findFilesInPath", () => {
+      // arrange
+      const expected = [{filePath: "qux"}];
+      const elmJson = <ElmApplicationJson> {sourceDirectories: ["../baz"]};
+      mockHelper.readLoboJson = Sinon.stub().returns(elmJson);
+      mockJoin.callsFake((_, x) => ".lobo/" + x);
+      mockResolvePath.callsFake((x, y) => x + "/" +  y);
+      manager.findFilesInPath = Sinon.stub().returns(expected);
+
+      // act
+      const actual = manager.findFiles("foo", "bar", []);
+
+      // assert
+      expect(actual).to.deep.equal(expected);
+    });
+  });
+
+  describe("findFilesInPath", () => {
     it("should return empty list when the supplied item is not a matching file", () => {
       // arrange
       let mockStats = <Stats> {};
@@ -85,7 +180,7 @@ describe("lib test-suite-generator", () => {
       mockLstat.returns(mockStats);
 
       // act
-      let actual = manager.findFiles("foo.exe", ".txt", true);
+      let actual = manager.findFilesInPath("foo.exe", ".txt", true);
 
       // assert
       expect(actual.length).to.equal(0);
@@ -98,7 +193,7 @@ describe("lib test-suite-generator", () => {
       mockLstat.returns(mockStats);
 
       // act
-      let actual = manager.findFiles("foo.txt", ".txt", true);
+      let actual = manager.findFilesInPath("foo.txt", ".txt", true);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -113,7 +208,7 @@ describe("lib test-suite-generator", () => {
       mockReadDirSync.onFirstCall().returns(["foo.txt"]);
 
       // act
-      let actual = manager.findFiles("./bar/elm-stuff", ".txt", true);
+      let actual = manager.findFilesInPath("./bar/elm-stuff", ".txt", true);
 
       // assert
       expect(actual.length).to.equal(0);
@@ -132,7 +227,7 @@ describe("lib test-suite-generator", () => {
 
       // act
       let actual: FileInfo[] = [];
-      revertPath(() => actual = manager.findFiles("abc", ".txt", true));
+      revertPath(() => actual = manager.findFilesInPath("abc", ".txt", true));
 
       // assert
       expect(actual.length).to.equal(2);
@@ -152,7 +247,7 @@ describe("lib test-suite-generator", () => {
       mockReadDirSync.onSecondCall().returns(["qux.txt"]);
 
       // act
-      let actual = manager.findFiles("abc", ".txt", true);
+      let actual = manager.findFilesInPath("abc", ".txt", true);
 
       // assert
       expect(actual.length).to.equal(2);
@@ -194,6 +289,109 @@ describe("lib test-suite-generator", () => {
       });
     });
   });
+
+  describe("syncHasDebugUsage", () => {
+    it("should update hasDebugUsage with the result from calling containsDebugModuleUsage", () => {
+      // arrange
+      const expected = <ExecutionContext> {config: {}, codeLookup: {}, hasDebugUsage: false};
+      const mockContainsDebugModuleUsage = Sinon.stub();
+      mockContainsDebugModuleUsage.returns(true);
+      manager.containsDebugModuleUsage = mockContainsDebugModuleUsage;
+
+      // act
+      manager.syncHasDebugUsage(expected);
+
+      // assert
+      expect(mockContainsDebugModuleUsage).to.have.been.calledWith(expected.codeLookup);
+      expect(expected.hasDebugUsage).to.be.true;
+    });
+  });
+
+  describe("containsDebugModuleUsage", () => {
+    it("should be false when there are empty codeLookup", () => {
+      // arrange
+      const codeLookup = {};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when there are no own codeInfo items", () => {
+      // arrange
+      const parentCodeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "./foo", isTestFile: true, moduleNode: {}}};
+      const codeLookup = Object.create(parentCodeLookup);
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when the module node is undefined", () => {
+      // arrange
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: undefined}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when the module node has undefined children", () => {
+      // arrange
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children: undefined}}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when there are no function nodes in the module", () => {
+      // arrange
+      const children = <ElmFunctionNode[]> [{name: "foo", nodeType: ElmNodeType.Type}];
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children }}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be false when there are no debug usages", () => {
+      // arrange
+      const dependencies = <ElmFunctionDependency[]> [{typeInfo: {moduleName: "Bar"}}];
+      const children = <ElmFunctionNode[]> [{name: "foo", nodeType: ElmNodeType.TypedModuleFunction, dependencies}];
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children }}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.false;
+    });
+
+    it("should be true when there are debug usages", () => {
+      // arrange
+      const dependencies = <ElmFunctionDependency[]> [{typeInfo: {moduleName: "Debug"}}];
+      const children = <ElmFunctionNode[]> [{name: "foo", nodeType: ElmNodeType.TypedModuleFunction, dependencies}];
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: { children }}};
+
+      // act
+      const actual = manager.containsDebugModuleUsage(codeLookup);
+
+      // assert
+      expect(actual).to.be.true;
+    });
+  });
+
 
   describe("syncElmCodeLookupWithFileChanges", () => {
     it("should return an empty lookup when there are no files", () => {
@@ -318,13 +516,13 @@ describe("lib test-suite-generator", () => {
       expect(actual.filePath).to.equal(info.filePath);
     });
 
-    it("should return info with isTestFile to be true", () => {
+    it("should return info with isTestFile to equal the fileInfo.isTestFile value", () => {
       // arrange
-      let info = <FileInfo> {filePath: "foo/bar.txt", stats: {}};
+      const info = <FileInfo> {filePath: "foo/bar.txt", isTestFile: true, stats: {}};
       mockBasename.returns("bar.txt");
 
       // act
-      let actual = manager.toElmCodeInfo("baz", info);
+      const actual = manager.toElmCodeInfo("baz", info);
 
       // assert
       expect(actual.isTestFile).to.equal(true);
@@ -345,51 +543,52 @@ describe("lib test-suite-generator", () => {
   });
 
   describe("updateTests", () => {
+    it("should return a promise that calls findFiles with the appDirectory", () => {
+      // arrange
+      const context = <ExecutionContext> {testDirectory: "foo"};
+      context.config = <LoboConfig> { testFramework: { config: {sourceDirectories: []}, testFrameworkElmModuleName: () => "baz"} };
+      manager.findFiles = Sinon.spy();
+      manager.syncElmCodeLookupWithFileChanges = Sinon.stub();
+
+      // act
+      const actual = manager.updateTests(context);
+
+      // assert
+      return actual.then(() => {
+        expect(manager.findFiles).to.have.been.calledWith(context.config.appDirectory, Sinon.match.any, Sinon.match.any);
+      });
+    });
+
     it("should return a promise that calls findFiles with the testDirectory", () => {
       // arrange
-      let context = <ExecutionContext> {testDirectory: "foo"};
-      context.config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
+      const context = <ExecutionContext> {testDirectory: "foo"};
+      context.config = <LoboConfig> { testFramework: { config: {sourceDirectories: []}, testFrameworkElmModuleName: () => "baz"} };
       manager.findFiles = Sinon.spy();
       manager.syncElmCodeLookupWithFileChanges = Sinon.stub();
 
       // act
-      let actual = manager.updateTests(context);
+      const actual = manager.updateTests(context);
 
       // assert
       return actual.then(() => {
-        expect(manager.findFiles).to.have.been.calledWith(context.testDirectory, Sinon.match.any, Sinon.match.any);
+        expect(manager.findFiles).to.have.been.calledWith(Sinon.match.any, context.testDirectory, Sinon.match.any);
       });
     });
 
-    it("should return a promise that calls findFiles with file type '.elm'", () => {
+    it("should return a promise that calls findFiles with the testFramework sourceDirectories", () => {
       // arrange
-      let context = <ExecutionContext> {testDirectory: "foo"};
-      context.config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
+      const expected = ["bar"];
+      const context = <ExecutionContext> {testDirectory: "foo"};
+      context.config = <LoboConfig> { testFramework: { config: {sourceDirectories: expected}, testFrameworkElmModuleName: () => "baz"} };
       manager.findFiles = Sinon.spy();
       manager.syncElmCodeLookupWithFileChanges = Sinon.stub();
 
       // act
-      let actual = manager.updateTests(context);
+      const actual = manager.updateTests(context);
 
       // assert
       return actual.then(() => {
-        expect(manager.findFiles).to.have.been.calledWith(Sinon.match.any, ".elm", Sinon.match.any);
-      });
-    });
-
-    it("should return a promise that calls findFiles with isTestFile true", () => {
-      // arrange
-      let context = <ExecutionContext> {testDirectory: "foo"};
-      context.config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
-      manager.findFiles = Sinon.spy();
-      manager.syncElmCodeLookupWithFileChanges = Sinon.stub();
-
-      // act
-      let actual = manager.updateTests(context);
-
-      // assert
-      return actual.then(() => {
-        expect(manager.findFiles).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, true);
+        expect(manager.findFiles).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected);
       });
     });
 
@@ -398,7 +597,7 @@ describe("lib test-suite-generator", () => {
       let expected = {foo: <ElmCodeInfo> {}};
       let context = <ExecutionContext> {testDirectory: null};
       context.codeLookup = expected;
-      context.config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
+      context.config = <LoboConfig> { testFramework: { config: {sourceDirectories: []}, testFrameworkElmModuleName: () => "baz"} };
       let mockFindFiles = Sinon.stub();
       mockFindFiles.returns([]);
       manager.findFiles = mockFindFiles;
@@ -419,7 +618,7 @@ describe("lib test-suite-generator", () => {
       let expected = ["foo", "bar"];
       let context = <ExecutionContext> {testDirectory: null};
       context.codeLookup = {};
-      context.config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
+      context.config = <LoboConfig> { testFramework: { config: {sourceDirectories: []}, testFrameworkElmModuleName: () => "baz"} };
       let mockFindFiles = Sinon.stub();
       mockFindFiles.returns(expected);
       manager.findFiles = mockFindFiles;
@@ -440,7 +639,7 @@ describe("lib test-suite-generator", () => {
       let expected = ["foo", "bar"];
       let context = <ExecutionContext> {testDirectory: null};
       context.codeLookup = {};
-      context.config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
+      context.config = <LoboConfig> { testFramework: { config: {sourceDirectories: []}, testFrameworkElmModuleName: () => "baz"} };
       let mockFindFiles = Sinon.stub();
       mockFindFiles.returns(expected);
       manager.findFiles = mockFindFiles;
@@ -461,7 +660,7 @@ describe("lib test-suite-generator", () => {
       let expected = <ExecutionContext> {testDirectory: "foo"};
       let codeLookup = {foo: <ElmCodeInfo>{}};
       expected.codeLookup = codeLookup;
-      let config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
+      let config = <LoboConfig> { testFramework: { config: {sourceDirectories: []}, testFrameworkElmModuleName: () => "baz"} };
       expected.config = config;
       let context = <ExecutionContext> {testDirectory: "foo"};
       context.codeLookup = {};
@@ -486,7 +685,7 @@ describe("lib test-suite-generator", () => {
       // arrange
       let context = <ExecutionContext> {testDirectory: "foo"};
       context.codeLookup = {};
-      context.config = <LoboConfig> { testFramework: { testFrameworkElmModuleName: () => "baz"} };
+      context.config = <LoboConfig> { testFramework: { config: {sourceDirectories: []}, testFrameworkElmModuleName: () => "baz"} };
       let mockFindFiles = Sinon.stub();
       mockFindFiles.throws(new Error("qux"));
       manager.findFiles = mockFindFiles;

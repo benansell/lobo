@@ -17,17 +17,18 @@ import {createElmPackageHelper, ElmPackageHelper} from "./elm-package-helper";
 import {Analyzer, createAnalyzer} from "./analyzer";
 import {createTestSuiteGenerator, TestSuiteGenerator} from "./test-suite-generator";
 import {createOutputDirectoryManager, OutputDirectoryManager} from "./output-directory-manager";
-import {createDependencyManager, DependencyManager} from "./dependency-manager";
 import {createElmCodeLookupManager, ElmCodeLookupManager} from "./elm-code-lookup-manager";
+import {createDependencyManager, DependencyManager} from "./dependency-manager";
 
-interface PartialLoboConfig {
+export interface PartialLoboConfig {
+  appDirectory: string | undefined;
   compiler: string | undefined;
   loboDirectory: string | undefined;
   noAnalysis: boolean | undefined;
   noCleanup: boolean | undefined;
   noInstall: boolean | undefined;
   noUpdate: boolean | undefined;
-  noWarn: boolean | undefined;
+  optimize: boolean | undefined;
   prompt: boolean | undefined;
   reportProgress: boolean | undefined;
   reporter: PluginReporter | undefined;
@@ -126,19 +127,18 @@ export class LoboImp implements Lobo {
 
   public launchStages(initialContext: ExecutionContext): Bluebird<ExecutionContext> {
     let logStage = (context: ExecutionContext, stage: string) => {
-      this.logger.info(`-----------------------------------${stage}------------------------------------`);
+      this.util.logStage(stage);
 
       return Bluebird.resolve(context);
     };
 
     let stages = [
-      (context: ExecutionContext) => logStage(context, "[ BUILD ]"),
+      (context: ExecutionContext) => this.outputDirectoryManager.prepare(context),
       (context: ExecutionContext) => this.dependencyManager.sync(context),
-      (context: ExecutionContext) => this.outputDirectoryManager.sync(context),
       (context: ExecutionContext) => this.elmCodeLookupManager.sync(context),
       (context: ExecutionContext) => this.testSuiteGenerator.generate(context),
       (context: ExecutionContext) => this.builder.build(context),
-      (context: ExecutionContext) => logStage(context, "[ TEST ]-"),
+      (context: ExecutionContext) => logStage(context, "TEST"),
       (context: ExecutionContext) => this.analyzer.analyze(context),
       (context: ExecutionContext) => this.runner.run(context)
     ];
@@ -183,7 +183,7 @@ export class LoboImp implements Lobo {
   }
 
   public done(context: ExecutionContext): void {
-    this.logger.info("----------------------------------[ WAITING ]-----------------------------------");
+    this.util.logStage("WAITING");
 
     if (this.waiting === true) {
       this.waiting = false;
@@ -195,13 +195,14 @@ export class LoboImp implements Lobo {
   }
 
   public watch(context: ExecutionContext): void {
-    let paths = ["./elm-package.json"];
-    let testElmPackage = this.elmPackageHelper.read(program.testDirectory);
+    const appElmJsonPath = this.elmPackageHelper.pathElmJson(context.config.appDirectory);
+    let paths = [appElmJsonPath, "./src", "./tests"];
+    const appElmPackage = this.elmPackageHelper.tryReadElmJson(context.config.appDirectory);
 
-    if (testElmPackage && testElmPackage.sourceDirectories) {
-      let dirs = testElmPackage.sourceDirectories;
+    if (appElmPackage && this.elmPackageHelper.isApplicationJson(appElmPackage) && appElmPackage.sourceDirectories) {
+      let dirs = appElmPackage.sourceDirectories;
 
-      paths = _.map(dirs, p => path.normalize(path.join(process.cwd(), program.testDirectory, p)))
+      paths = _.map(dirs, p => path.normalize(path.join(process.cwd(), context.config.appDirectory, p)))
         .filter(p => shelljs.test("-e", p))
         .concat(paths);
     }
@@ -238,7 +239,10 @@ export class LoboImp implements Lobo {
   public configure(): PartialLoboConfig {
     let packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
     let config: PartialLoboConfig = <PartialLoboConfig> {
+      appDirectory: ".",
       loboDirectory: "./.lobo",
+      optimize: false,
+      prompt: true,
       testMainElm: "UnitTest.elm"
     };
 
@@ -246,16 +250,16 @@ export class LoboImp implements Lobo {
 
     program
       .version(packageJson.version)
-      .option("--compiler <value>", "path to compiler")
-      .option("--debug", "disables auto-cleanup of temp files")
+      .option("--compiler <value>", "path to elm executable")
+      .option("--debug", "disables optimization and auto-cleanup of temp files")
       .option("--failOnOnly", "exit with non zero exit code when there are any only tests")
       .option("--failOnSkip", "exit with non zero exit code when there are any skip tests")
       .option("--failOnTodo", "exit with non zero exit code when there are any todo tests")
       .option("--framework <value>", "name of the testing framework to use", "elm-test-extra")
       .option("--noAnalysis", "prevents lobo from running analysis on the test suite")
-      .option("--noInstall", "prevents lobo from running elm-package install")
-      .option("--noUpdate", "prevents lobo updating the test elm-package.json")
-      .option("--noWarn", "hides elm make build warnings")
+      .option("--noInstall", "prevents lobo from running elm install")
+      .option("--noUpdate", "prevents lobo from updating lobo.json")
+      .option("--optimize", "builds with optimize flag when there are no usages of debug module")
       .option("--prompt <value>", "default the answer to any questions", /^(y[es])|(n[o])$/i, "yes")
       .option("--quiet", "only outputs build info, test summary and errors")
       .option("--reporter <value>", "name of the reporter to use", "default-reporter")
@@ -294,14 +298,19 @@ export class LoboImp implements Lobo {
     // configure shelljs to throw errors when any command errors
     shelljs.config.fatal = true;
 
-    if (program.prompt) {
-      config.prompt = program.prompt.toLowerCase()[0] === "y";
+    if (program.optimize) {
+      config.optimize = true;
+      this.logger.debug("Disabling optimized build");
+    }
+
+    if (program.prompt && program.prompt.toLowerCase()[0] === "n") {
+      config.prompt = false;
+      this.logger.debug("Disabling user prompts");
     }
 
     config.noAnalysis = program.noAnalysis === true;
     config.noInstall = program.noInstall === true;
     config.noUpdate = program.noUpdate === true;
-    config.noWarn = program.noWarn === true;
     config.reportProgress = true;
 
     if (program.compiler) {
@@ -453,7 +462,7 @@ export class LoboImp implements Lobo {
           this.logger.info("");
           this.logger.error(errorString);
           this.logger.info("");
-          this.logger.error("Please delete tests/elm-stuff and try again");
+          this.logger.error("Please delete .lobo & elm-stuff directories and try again");
         } else {
           this.logger.error("Error running the tests. This is usually caused by an elm package using objects that " +
             "are found in the browser but not in a node process");
@@ -463,7 +472,7 @@ export class LoboImp implements Lobo {
 
           if (program.veryVerbose || program.verbose) {
             this.logger.error("Please raise an issue against lobo including the above messages to request adding support for the " +
-              "elm-package that caused this issue");
+              "elm package that caused this issue");
           } else {
             this.logger.error("Please rerun lobo with the --verbose option to see the cause of the error");
           }

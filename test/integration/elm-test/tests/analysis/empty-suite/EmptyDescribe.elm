@@ -1,11 +1,6 @@
-module Tests exposing (..)
-
+module EmptyDescribe exposing (..)
 
 import Test exposing (Test, concat, describe, test)
-
-testConcat: Test
-testConcat =
-    concat []
 
 
 testDescribe : Test

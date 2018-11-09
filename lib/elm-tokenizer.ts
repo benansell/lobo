@@ -183,8 +183,12 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeFunction(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next =  codeHelper.findNextWord(wordResult.nextIndex + 1);
     let tokenType: ElmTokenType = ElmTokenType.UntypedModuleFunction;
+    let next: FindWordResult = wordResult;
+
+    do {
+      next = codeHelper.findNextWord(next.nextIndex);
+    } while (next.word === " " || next.word === "\n");
 
     if (next.word === ":") {
       tokenType = ElmTokenType.TypedModuleFunction;

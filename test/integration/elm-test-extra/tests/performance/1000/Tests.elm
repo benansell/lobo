@@ -19,7 +19,7 @@ all =
 toTest : Int -> Test
 toTest num =
     "test "
-        ++ toString num
+        ++ String.fromInt num
         |> repeatedTest
 
 

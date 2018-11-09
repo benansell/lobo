@@ -1,13 +1,14 @@
 module ImportWebGL exposing (truthy, vertexShader)
 
-import Math.Vector2 as Vec2 exposing (Vec2)
-import Math.Vector3 as Vec3 exposing (vec3, Vec3)
 import Math.Matrix4 as Mat4 exposing (Mat4)
-
+import Math.Vector2 as Vec2 exposing (Vec2)
+import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import WebGL exposing (Shader)
 
-vertexShader : Shader { position:Vec3, coord:Vec3 } { u | view:Mat4 } { vcoord:Vec2 }
-vertexShader = [glsl|
+
+vertexShader : Shader { position : Vec3, coord : Vec3 } { u | view : Mat4 } { vcoord : Vec2 }
+vertexShader =
+    [glsl|
 
 attribute vec3 position;
 attribute vec3 coord;
@@ -20,6 +21,7 @@ void main () {
 }
 
 |]
+
 
 truthy : Bool
 truthy =

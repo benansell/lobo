@@ -34,28 +34,40 @@ describe("plugin elm-test-extra plugin-config", () => {
   });
 
   describe("dependencies", () => {
-    it("should have 'benansell/lobo-elm-test-extra' dependency", () => {
+    it("should have direct 'benansell/lobo-elm-test-extra' dependency", () => {
       // act
-      let dependencies = config.dependencies;
+      const dependency = config.dependencies["benansell/lobo-elm-test-extra"];
 
       // assert
-      expect(dependencies).to.have.property("benansell/lobo-elm-test-extra", "2.0.0 <= v < 3.0.0");
+      expect(dependency).to.exist;
+      expect(dependency.minVersion.toString()).to.equal("3.0.0");
+      expect(dependency.canEqualMin).to.be.true;
+      expect(dependency.canEqualMax).to.be.false;
+      expect(dependency.maxVersion.toString()).to.equal("4.0.0");
     });
 
-    it("should have 'elm-community/elm-test' dependency", () => {
+    it("should have indirect 'elm/random' dependency", () => {
       // act
-      let dependencies = config.dependencies;
+      const dependency = config.dependencies["elm/random"];
 
       // assert
-      expect(dependencies).to.have.property("elm-community/elm-test", "4.2.0 <= v < 5.0.0");
+      expect(dependency).to.exist;
+      expect(dependency.minVersion.toString()).to.equal("1.0.0");
+      expect(dependency.canEqualMin).to.be.true;
+      expect(dependency.canEqualMax).to.be.false;
+      expect(dependency.maxVersion.toString()).to.equal("2.0.0");
     });
 
-    it("should have 'mgold/elm-random-pcg' dependency", () => {
+    it("should have indirect 'elm/time' dependency", () => {
       // act
-      let dependencies = config.dependencies;
+      const dependency = config.dependencies["elm/time"];
 
       // assert
-      expect(dependencies).to.have.property("mgold/elm-random-pcg", "5.0.0 <= v < 6.0.0");
+      expect(dependency).to.exist;
+      expect(dependency.minVersion.toString()).to.equal("1.0.0");
+      expect(dependency.canEqualMin).to.be.true;
+      expect(dependency.canEqualMax).to.be.false;
+      expect(dependency.maxVersion.toString()).to.equal("2.0.0");
     });
   });
 

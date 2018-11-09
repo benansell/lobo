@@ -32,7 +32,7 @@ testExpectErr : Test
 testExpectErr =
     test "Expect.err test" <|
         \() ->
-            String.toInt "123"
+            Result.Ok "All Good"
                 |> Expect.err
 
 

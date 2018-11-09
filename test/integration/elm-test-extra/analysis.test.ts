@@ -27,7 +27,7 @@ describe("elm-test-extra-analysis", () => {
   describe("custom-test-file", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/custom-test-file");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/custom-test-file");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -39,7 +39,7 @@ describe("elm-test-extra-analysis", () => {
   describe("duplicate-name", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/duplicate-name");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/duplicate-name");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -51,7 +51,7 @@ describe("elm-test-extra-analysis", () => {
   describe("empty-suite", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/empty-suite");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/empty-suite");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -63,7 +63,7 @@ describe("elm-test-extra-analysis", () => {
   describe("hidden", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/hidden");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/hidden");
 
       // assert
       reporterExpect(result).analysisSummary(1, 0);
@@ -73,14 +73,14 @@ describe("elm-test-extra-analysis", () => {
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
-      expect(failureMessage).to.match(/hiddenTest \(tests[\\/]analysis[\\/]hidden[\\/]Tests\.elm:14:1\)/);
+      expect(failureMessage).to.match(/hiddenTest \(Tests\.elm:14:1\)/);
     });
   });
 
   describe("ignore-test-helper", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/ignore-test-helper");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/ignore-test-helper");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -92,27 +92,29 @@ describe("elm-test-extra-analysis", () => {
   describe("over-exposed", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/over-exposed");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/over-exposed");
 
       // assert
-      reporterExpect(result).analysisSummary(0, 2);
+      reporterExpect(result).analysisSummary(0, 3);
       reporterExpect(result).analysisOverExposed();
       expect(result.code).to.equal(1);
 
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
-      expect(failureMessage).to.match(/1\) (.\[\d\dm)?testOne \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:21:1\)/g);
-      expect(failureMessage).to.match(/all \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:7:1\)/);
-      expect(failureMessage).to.match(/2\) (.\[\d\dm)?testTwo \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:28:1\)/g);
-      expect(failureMessage).to.match(/suiteTwo \(tests[\\/]analysis[\\/]over-exposed[\\/]Tests\.elm:15:1\)/);
+      expect(failureMessage).to.match(/1\) (.\[\d\dm)?suiteTwo \(Tests\.elm:15:1\)/g);
+      expect(failureMessage).to.match(/all \(Tests\.elm:7:1\)/);
+      expect(failureMessage).to.match(/2\) (.\[\d\dm)?testOne \(Tests\.elm:21:1\)/g);
+      expect(failureMessage).to.match(/all \(Tests\.elm:7:1\)/);
+      expect(failureMessage).to.match(/3\) (.\[\d\dm)?testTwo \(Tests\.elm:28:1\)/g);
+      expect(failureMessage).to.match(/suiteTwo \(Tests\.elm:15:1\)/);
     });
   });
 
   describe("unisolated", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/unisolated");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/unisolated");
 
       // assert
       reporterExpect(result).analysisSummary(0, 2);
@@ -122,17 +124,17 @@ describe("elm-test-extra-analysis", () => {
       let startIndex = result.stdout
         .indexOf("================================================================================");
       let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
-      expect(failureMessage).to.match(/1\) (.\[\d\dm)?all \(tests[\\/]analysis[\\/]unisolated[\\/]ChildTest\.elm:7:1\)/g);
-      expect(failureMessage).to.match(/all \(tests[\\/]analysis[\\/]unisolated[\\/]Tests\.elm:7:1\)/);
-      expect(failureMessage).to.match(/2\) (.\[\d\dm)?all \(tests[\\/]analysis[\\/]unisolated[\\/]GrandChildTest\.elm:7:1\)/g);
-      expect(failureMessage).to.match(/all \(tests[\\/]analysis[\\/]unisolated[\\/]ChildTest\.elm:7:1\)/);
+      expect(failureMessage).to.match(/1\) (.\[\d\dm)?all \(ChildTest\.elm:7:1\)/g);
+      expect(failureMessage).to.match(/all \(Tests\.elm:7:1\)/);
+      expect(failureMessage).to.match(/2\) (.\[\d\dm)?all \(GrandChildTest\.elm:7:1\)/g);
+      expect(failureMessage).to.match(/all \(ChildTest\.elm:7:1\)/);
     });
   });
 
   describe("untyped-test", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test-extra", "./tests/analysis/untyped-test");
+      let result = runner.run(testContext, "elm-test-extra", false, "./tests/analysis/untyped-test");
 
       // assert
       reporterExpect(result).summaryPassed();

@@ -17,6 +17,7 @@ import {createUtil, Util} from "./util";
 import {Chalk} from "chalk";
 import chalk from "chalk";
 import {makeElmCodeHelper} from "./elm-code-helper";
+import * as path from "path";
 
 export type AnalysisIssueType = "Hidden" | "OverExposed";
 
@@ -55,7 +56,7 @@ export class AnalyzerImp implements Analyzer {
       }
 
       const summary = this.testSuiteAnalyzer.buildSummary(context);
-      const issueCount = this.report(context.codeLookup, summary);
+      const issueCount = this.report(context.config.appDirectory, context.codeLookup, summary);
 
       if (issueCount === 0) {
         resolve(context);
@@ -120,7 +121,7 @@ export class AnalyzerImp implements Analyzer {
     }
   }
 
-  public logLabels(codeInfo: ElmCodeInfo, functionNode: AnalyzedTestFunctionNode, index: number, context: string,
+  public logLabels(appDirectory: string, codeInfo: ElmCodeInfo, functionNode: AnalyzedTestFunctionNode, index: number, context: string,
                    itemStyle: (x: string) => string): string {
     if (!functionNode) {
       return context;
@@ -131,7 +132,7 @@ export class AnalyzerImp implements Analyzer {
       this.paddedLog(" " + context);
     }
 
-    this.paddedLog("    " + index + ") " + itemStyle(this.toNameAndStartLocation(codeInfo.filePath, functionNode)));
+    this.paddedLog("    " + index + ") " + itemStyle(this.toNameAndStartLocation(appDirectory,  codeInfo.filePath, functionNode)));
 
     return context;
   }
@@ -145,15 +146,15 @@ export class AnalyzerImp implements Analyzer {
     this.logger.log(this.defaultIndentation() + message);
   }
 
-  public report(codeLookup: ElmCodeLookup, analysis: AnalysisTestSummary): number {
+  public report(appDirectory: string, codeLookup: ElmCodeLookup, analysis: AnalysisTestSummary): number {
     const issueCount = this.reportAnalysisSummary(analysis);
     this.reportAnalysisFailure(codeLookup, analysis);
-    this.reportAnalysisDetail(codeLookup, analysis);
+    this.reportAnalysisDetail(appDirectory, codeLookup, analysis);
 
     return issueCount;
   }
 
-  public reportAnalysisDetail(codeLookup: ElmCodeLookup, analysis: AnalysisTestSummary): void {
+  public reportAnalysisDetail(appDirectory: string, codeLookup: ElmCodeLookup, analysis: AnalysisTestSummary): void {
     this.logger.log("");
 
     if (analysis.hiddenTestCount > 0) {
@@ -161,7 +162,7 @@ export class AnalyzerImp implements Analyzer {
       const message = this.fixStyle("Please add the following to the modules exposing list:");
       this.paddedLog(message);
       this.logger.log("");
-      this.reportAnalysisDetailForIssue(codeLookup, analysis.hiddenTests, "Hidden");
+      this.reportAnalysisDetailForIssue(appDirectory, codeLookup, analysis.hiddenTests, "Hidden");
       this.logger.log("");
     }
 
@@ -170,23 +171,24 @@ export class AnalyzerImp implements Analyzer {
       const message = "Please update the modules exposing list or test suites such that each test is exposed once by a single module";
       this.paddedLog(this.fixStyle(message));
       this.logger.log("");
-      this.reportAnalysisDetailForIssue(codeLookup, analysis.overExposedTests, "OverExposed");
+      this.reportAnalysisDetailForIssue(appDirectory, codeLookup, analysis.overExposedTests, "OverExposed");
       this.logger.log("");
     }
   }
 
-  public reportAnalysisDetailForIssue(codeLookup: ElmCodeLookup, items: AnalyzedTestFunctionNode[], issueType: AnalysisIssueType): void {
+  public reportAnalysisDetailForIssue(appDirectory: string, codeLookup: ElmCodeLookup, items: AnalyzedTestFunctionNode[],
+                                      issueType: AnalysisIssueType): void {
     let sortedItemList = this.sortItemsByLabel(items);
     let context: string = "";
 
     for (let i = 0; i < sortedItemList.length; i++) {
       let item = sortedItemList[i];
       const codeInfo = codeLookup[item.codeInfoModuleKey];
-      context = this.logLabels(codeInfo, item, i + 1, context, this.failedStyle);
+      context = this.logLabels(appDirectory, codeInfo, item, i + 1, context, this.failedStyle);
 
       switch (issueType) {
         case "OverExposed":
-          this.reportOverExposedTest(codeLookup, item);
+          this.reportOverExposedTest(appDirectory, codeLookup, item);
           break;
         default:
           this.logger.log("");
@@ -234,7 +236,7 @@ export class AnalyzerImp implements Analyzer {
     return issueCount;
   }
 
-  public reportOverExposedTest(codeLookup: ElmCodeLookup, functionNode: AnalyzedTestFunctionNode): void {
+  public reportOverExposedTest(appDirectory: string, codeLookup: ElmCodeLookup, functionNode: AnalyzedTestFunctionNode): void {
     if (!functionNode.isExposedDirectly && functionNode.isExposedIndirectlyBy.length === 0) {
       return;
     }
@@ -269,7 +271,7 @@ export class AnalyzerImp implements Analyzer {
 
     for (const i of functionNode.isExposedIndirectlyBy) {
       const issueCodeInfo = codeLookup[i.codeInfoKey];
-      this.paddedLog("       " + this.failedStyle(this.toNameAndStartLocation(issueCodeInfo.filePath, i.functionNode)));
+      this.paddedLog("       " + this.failedStyle(this.toNameAndStartLocation(appDirectory, issueCodeInfo.filePath, i.functionNode)));
       const issues: IssueLocation[] = [];
 
       for (const occursIndex of i.occurs) {
@@ -353,8 +355,9 @@ export class AnalyzerImp implements Analyzer {
     return pathDepth + moduleName + location;
   }
 
-  public toNameAndStartLocation(filePath: string, functionNode: AnalyzedTestFunctionNode): string {
-    return `${functionNode.node.name} (${filePath}:${functionNode.node.start.lineNumber}:${functionNode.node.start.columnNumber})`;
+  public toNameAndStartLocation(appDirectory: string, filePath: string, functionNode: AnalyzedTestFunctionNode): string {
+    const relativePath = path.relative(appDirectory, filePath);
+    return `${functionNode.node.name} (${relativePath}:${functionNode.node.start.lineNumber}:${functionNode.node.start.columnNumber})`;
   }
 }
 

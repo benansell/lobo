@@ -3,7 +3,8 @@ module Tests exposing (..)
 import Expect exposing (equal)
 import Fuzz exposing (int, list, string)
 import String exposing (reverse)
-import Test exposing (Test, describe, fuzz, fuzzWith, fuzz2)
+import Test exposing (Test, describe, fuzz, fuzz2, fuzzWith)
+
 
 stringReverseTest : Test
 stringReverseTest =

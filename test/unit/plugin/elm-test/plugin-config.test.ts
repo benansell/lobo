@@ -34,20 +34,40 @@ describe("plugin elm-test plugin-config", () => {
   });
 
   describe("dependencies", () => {
-    it("should have 'elm-community/elm-test' dependency", () => {
+    it("should have direct 'elm-explorations/test' dependency", () => {
       // act
-      let dependencies = config.dependencies;
+      const dependency = config.dependencies["elm-explorations/test"];
 
       // assert
-      expect(dependencies).to.have.property("elm-community/elm-test", "4.2.0 <= v < 5.0.0");
+      expect(dependency).to.exist;
+      expect(dependency.minVersion.toString()).to.equal("1.1.0");
+      expect(dependency.canEqualMin).to.be.true;
+      expect(dependency.canEqualMax).to.be.false;
+      expect(dependency.maxVersion.toString()).to.equal("2.0.0");
     });
 
-    it("should have 'mgold/elm-random-pcg' dependency", () => {
+    it("should have indirect 'elm/random' dependency", () => {
       // act
-      let dependencies = config.dependencies;
+      const dependency = config.dependencies["elm/random"];
 
       // assert
-      expect(dependencies).to.have.property("mgold/elm-random-pcg", "5.0.0 <= v < 6.0.0");
+      expect(dependency).to.exist;
+      expect(dependency.minVersion.toString()).to.equal("1.0.0");
+      expect(dependency.canEqualMin).to.be.true;
+      expect(dependency.canEqualMax).to.be.false;
+      expect(dependency.maxVersion.toString()).to.equal("2.0.0");
+    });
+
+    it("should have indirect 'elm/time' dependency", () => {
+      // act
+      const dependency = config.dependencies["elm/time"];
+
+      // assert
+      expect(dependency).to.exist;
+      expect(dependency.minVersion.toString()).to.equal("1.0.0");
+      expect(dependency.canEqualMin).to.be.true;
+      expect(dependency.canEqualMax).to.be.false;
+      expect(dependency.maxVersion.toString()).to.equal("2.0.0");
     });
   });
 

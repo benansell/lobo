@@ -1,11 +1,16 @@
-module TestPlugin exposing (Args, FailureMessage, FailureReason(Expectation, Invalid, TodoTest, Unknown), TestId, TestIdentifier, TestItem, TestResult(Fail, Ignore, Pass, Skip, Todo), TestRun, TestRunType(Focusing, Normal, Skipping))
+module TestPlugin exposing (Args, FailureMessage, FailureReason(..), TestArgs, TestId, TestIdentifier, TestItem, TestResult(..), TestRun, TestRunType(..), toArgs)
 
+import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
 import Json.Encode as Encode exposing (Value)
-import Time exposing (Time)
+import Time
 
+type alias TestArgs =
+    { initialSeed : Maybe Int
+    , runCount : Maybe Int
+    }
 
-type alias Args a =
-    { pluginArgs : a
+type alias Args =
+    { pluginArgs : TestArgs
     }
 
 
@@ -65,7 +70,7 @@ type TestResult
 type alias FailResult =
     { id : TestId
     , runType : TestRunType
-    , startTime : Time
+    , startTime : Time.Posix
     , messages : List FailureMessage
     }
 
@@ -78,7 +83,7 @@ type alias IgnoreResult =
 type alias PassResult =
     { id : TestId
     , runType : TestRunType
-    , startTime : Time
+    , startTime : Time.Posix
     }
 
 
@@ -92,3 +97,22 @@ type alias TodoResult =
     { id : TestId
     , messages : List FailureMessage
     }
+
+
+-- INIT
+
+toArgs : Decode.Value -> Result String TestArgs
+toArgs args =
+    case (decodeValue decodeArgs args) of
+        Ok value ->
+            Ok value
+
+        Err error ->
+            Err "Invalid args"
+
+
+decodeArgs : Decode.Decoder TestArgs
+decodeArgs =
+    Decode.map2 TestArgs
+        (Decode.maybe (Decode.field "seed" Decode.int))
+        (Decode.maybe (Decode.field "runCount" Decode.int))

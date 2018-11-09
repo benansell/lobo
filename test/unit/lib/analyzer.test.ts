@@ -20,11 +20,18 @@ describe("lib analyzer", () => {
   let mockLog: Sinon.SinonStub;
   let mockLogger: PluginReporterLogger;
   let mockPadRight: Sinon.SinonStub;
+  let mockRelativePath: Sinon.SinonStub;
   let mockTestSuiteAnalyzer: TestSuiteAnalyzer;
   let mockUtil: Util;
+  let revert: () => void;
 
   beforeEach(() => {
-    let rewiredImp = RewiredAnalyzer.__get__("AnalyzerImp");
+    mockRelativePath = Sinon.stub();
+
+    revert = RewiredAnalyzer.__set__({
+      path: {relative: mockRelativePath}
+    });
+    const rewiredImp = RewiredAnalyzer.__get__("AnalyzerImp");
 
     mockLog = Sinon.stub();
     mockLogger = <PluginReporterLogger> {log: mockLog};
@@ -34,6 +41,10 @@ describe("lib analyzer", () => {
     mockUtil = <Util> {};
     mockUtil.padRight = mockPadRight;
     analyzerImp = new rewiredImp(mockLogger, mockTestSuiteAnalyzer, mockUtil);
+  });
+
+  afterEach(() => {
+    revert();
   });
 
   describe("createAnalyzer", () => {
@@ -98,6 +109,24 @@ describe("lib analyzer", () => {
       });
     });
 
+    it("should return a promise that calls report with the config.appDirectory", () => {
+      // arrange
+      let expected = <ElmCodeLookup> {};
+      let context = <ExecutionContext> {codeLookup: expected, config: {appDirectory: "foo"}};
+      mockBuildSummary.returns({});
+      let mockReport = Sinon.stub();
+      mockReport.returns(0);
+      analyzerImp.report = mockReport;
+
+      // act
+      let actual = analyzerImp.analyze(context);
+
+      // assert
+      return actual.then(() => {
+        expect(analyzerImp.report).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any);
+      });
+    });
+
     it("should return a promise that calls report with the context.codeLookup", () => {
       // arrange
       let expected = <ElmCodeLookup> {};
@@ -112,7 +141,7 @@ describe("lib analyzer", () => {
 
       // assert
       return actual.then(() => {
-        expect(analyzerImp.report).to.have.been.calledWith(expected, Sinon.match.any);
+        expect(analyzerImp.report).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
       });
     });
 
@@ -130,7 +159,7 @@ describe("lib analyzer", () => {
 
       // assert
       return actual.then(() => {
-        expect(analyzerImp.report).to.have.been.calledWith(Sinon.match.any, expected);
+        expect(analyzerImp.report).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected);
       });
     });
 
@@ -281,7 +310,7 @@ describe("lib analyzer", () => {
       let style = Sinon.stub();
 
       // act
-      analyzerImp.logLabels(codeInfo, undefined, 123, "abc", style);
+      analyzerImp.logLabels("foo", codeInfo, undefined, 123, "abc", style);
 
       // assert
       expect(mockLog).not.to.have.been.called;
@@ -296,7 +325,7 @@ describe("lib analyzer", () => {
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
-      analyzerImp.logLabels(codeInfo, functionNode, 123, "abc", style);
+      analyzerImp.logLabels("bar", codeInfo, functionNode, 123, "abc", style);
 
       // assert
       expect(mockPaddedLog).to.have.been.calledWith(" foo");
@@ -311,10 +340,26 @@ describe("lib analyzer", () => {
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
-      analyzerImp.logLabels(codeInfo, functionNode, 123, "foo", style);
+      analyzerImp.logLabels("bar", codeInfo, functionNode, 123, "foo", style);
 
       // assert
       expect(mockPaddedLog).not.to.have.been.calledWith(" foo");
+    });
+
+    it("should call toNameAndStartLocation with the supplied appDireectory", () => {
+      // arrange
+      let codeInfo = <ElmCodeInfo> {filePath: "./somewhere"};
+      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      let style = Sinon.stub();
+      let mockToNameAndStartLocation = Sinon.stub();
+      analyzerImp.toNameAndStartLocation = mockToNameAndStartLocation;
+      analyzerImp.paddedLog = Sinon.stub();
+
+      // act
+      analyzerImp.logLabels("bar", codeInfo, functionNode, 123, "abc", style);
+
+      // assert
+      expect(mockToNameAndStartLocation).to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call toNameAndStartLocation with the codeInfo.filePath", () => {
@@ -327,10 +372,10 @@ describe("lib analyzer", () => {
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
-      analyzerImp.logLabels(codeInfo, functionNode, 123, "abc", style);
+      analyzerImp.logLabels("bar", codeInfo, functionNode, 123, "abc", style);
 
       // assert
-      expect(mockToNameAndStartLocation).to.have.been.calledWith("./somewhere", Sinon.match.any);
+      expect(mockToNameAndStartLocation).to.have.been.calledWith(Sinon.match.any, "./somewhere", Sinon.match.any);
     });
 
     it("should call toNameAndStartLocation with the functionNode", () => {
@@ -343,10 +388,10 @@ describe("lib analyzer", () => {
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
-      analyzerImp.logLabels(codeInfo, functionNode, 123, "abc", style);
+      analyzerImp.logLabels("bar", codeInfo, functionNode, 123, "abc", style);
 
       // assert
-      expect(mockToNameAndStartLocation).to.have.been.calledWith(Sinon.match.any, functionNode);
+      expect(mockToNameAndStartLocation).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, functionNode);
     });
 
     it("should call padded log with the stylized name and start location", () => {
@@ -362,7 +407,7 @@ describe("lib analyzer", () => {
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
-      analyzerImp.logLabels(codeInfo, functionNode, 123, "abc", style);
+      analyzerImp.logLabels("bar", codeInfo, functionNode, 123, "abc", style);
 
       // assert
       expect(mockPaddedLog).to.have.been.calledWith("    123) styled");
@@ -402,7 +447,7 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail = Sinon.stub();
 
       // act
-      analyzerImp.report(codeLookup, analysis);
+      analyzerImp.report("foo", codeLookup, analysis);
 
       // assert
       expect(analyzerImp.reportAnalysisSummary).to.have.been.calledWith(analysis);
@@ -419,7 +464,7 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail = Sinon.stub();
 
       // act
-      let actual = analyzerImp.report(codeLookup, analysis);
+      let actual = analyzerImp.report("foo", codeLookup, analysis);
 
       // assert
       expect(actual).to.equal(123);
@@ -434,7 +479,7 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail = Sinon.stub();
 
       // act
-      analyzerImp.report(codeLookup, analysis);
+      analyzerImp.report("foo", codeLookup, analysis);
 
       // assert
       expect(analyzerImp.reportAnalysisFailure).to.have.been.calledWith(codeLookup, Sinon.match.any);
@@ -449,10 +494,25 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail = Sinon.stub();
 
       // act
-      analyzerImp.report(codeLookup, analysis);
+      analyzerImp.report("foo", codeLookup, analysis);
 
       // assert
       expect(analyzerImp.reportAnalysisFailure).to.have.been.calledWith(Sinon.match.any, analysis);
+    });
+
+    it("should call reportAnalysisDetail with the supplied appDirectory", () => {
+      // arrange
+      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      analyzerImp.reportAnalysisSummary = Sinon.stub();
+      analyzerImp.reportAnalysisFailure = Sinon.stub();
+      analyzerImp.reportAnalysisDetail = Sinon.stub();
+
+      // act
+      analyzerImp.report("foo", codeLookup, analysis);
+
+      // assert
+      expect(analyzerImp.reportAnalysisDetail).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call reportAnalysisDetail with the codeLookup", () => {
@@ -464,10 +524,10 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail = Sinon.stub();
 
       // act
-      analyzerImp.report(codeLookup, analysis);
+      analyzerImp.report("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetail).to.have.been.calledWith(codeLookup, Sinon.match.any);
+      expect(analyzerImp.reportAnalysisDetail).to.have.been.calledWith(Sinon.match.any, codeLookup, Sinon.match.any);
     });
 
     it("should call reportAnalysisDetail with the analysis", () => {
@@ -479,10 +539,10 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetail = Sinon.stub();
 
       // act
-      analyzerImp.report(codeLookup, analysis);
+      analyzerImp.report("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetail).to.have.been.calledWith(Sinon.match.any, analysis);
+      expect(analyzerImp.reportAnalysisDetail).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, analysis);
     });
   });
 
@@ -493,7 +553,7 @@ describe("lib analyzer", () => {
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
       expect(mockLog).to.have.been.calledWith(Sinon.match(/Hidden Tests/));
@@ -505,10 +565,23 @@ describe("lib analyzer", () => {
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
       expect(mockLog).to.have.been.calledWith(Sinon.match(/Please add the following to the modules exposing list:/));
+    });
+
+    it("should call reportAnalysisDetailForIssue with the supplied appDirectory when hiddenTestCount is greater than zero", () => {
+      // arrange
+      let analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
+
+      // act
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
+
+      // assert
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call reportAnalysisDetailForIssue with the codeLookup when hiddenTestCount is greater than zero", () => {
@@ -518,10 +591,11 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(codeLookup, Sinon.match.any, Sinon.match.any);
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been
+        .calledWith(Sinon.match.any, codeLookup, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call reportAnalysisDetailForIssue with the hiddenTests when hiddenTestCount is greater than zero", () => {
@@ -532,10 +606,10 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected, Sinon.match.any);
     });
 
     it("should call reportAnalysisDetailForIssue with 'Hidden' when hiddenTestCount is greater than zero", () => {
@@ -545,10 +619,10 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "Hidden");
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "Hidden");
     });
 
     it("should log the 'Over Exposed Tests' detail when overExposedTestCount is greater than zero", () => {
@@ -557,7 +631,7 @@ describe("lib analyzer", () => {
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
       expect(mockLog).to.have.been.calledWith(Sinon.match(/Over Exposed Tests/));
@@ -570,12 +644,25 @@ describe("lib analyzer", () => {
         let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
         // act
-        analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+        analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
         // assert
         const matcher = /Please update the modules exposing list or test suites such that each test is exposed once by a single module/;
         expect(mockLog).to.have.been.calledWith(Sinon.match(matcher));
       });
+
+    it("should call reportAnalysisDetailForIssue with the supplied appDirectory when overExposedTestCount is greater than zero", () => {
+      // arrange
+      let analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
+      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
+
+      // act
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
+
+      // assert
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith("foo", Sinon.match.any, Sinon.match.any);
+    });
 
     it("should call reportAnalysisDetailForIssue with the codeLookup when overExposedTestCount is greater than zero", () => {
       // arrange
@@ -584,10 +671,11 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(codeLookup, Sinon.match.any, Sinon.match.any);
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been
+        .calledWith(Sinon.match.any, codeLookup, Sinon.match.any, Sinon.match.any);
     });
 
     it("should call reportAnalysisDetailForIssue with the overExposedTests when overExposedTestCount is greater than zero", () => {
@@ -598,10 +686,10 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, expected, Sinon.match.any);
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, expected, Sinon.match.any);
     });
 
     it("should call reportAnalysisDetailForIssue with 'OverExposed' when overExposedTestCount is greater than zero", () => {
@@ -611,10 +699,11 @@ describe("lib analyzer", () => {
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetail(codeLookup, analysis);
+      analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
 
       // assert
-      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, "OverExposed");
+      expect(analyzerImp.reportAnalysisDetailForIssue).to.have.been
+        .calledWith(Sinon.match.any, Sinon.match.any, Sinon.match.any, "OverExposed");
     });
   });
 
@@ -628,10 +717,23 @@ describe("lib analyzer", () => {
       analyzerImp.sortItemsByLabel = mockSortItemsByLabel;
 
       // act
-      analyzerImp.reportAnalysisDetailForIssue(codeLookup, items, "Hidden");
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "Hidden");
 
       // assert
       expect(analyzerImp.sortItemsByLabel).to.have.been.calledWith(items);
+    });
+
+    it("should call logLabels with the supplied appDirectory", () => {
+      // arrange
+      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      analyzerImp.logLabels = Sinon.stub();
+
+      // act
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "Hidden");
+
+      // assert
+      expect(analyzerImp.logLabels).to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call logLabels with the codeInfo for the item", () => {
@@ -641,10 +743,10 @@ describe("lib analyzer", () => {
       analyzerImp.logLabels = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetailForIssue(codeLookup, items, "Hidden");
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "Hidden");
 
       // assert
-      expect(analyzerImp.logLabels).to.have.been.calledWith(codeLookup.baz, Sinon.match.any);
+      expect(analyzerImp.logLabels).to.have.been.calledWith(Sinon.match.any, codeLookup.baz, Sinon.match.any);
     });
 
     it("should call logLabels with the item", () => {
@@ -654,10 +756,10 @@ describe("lib analyzer", () => {
       analyzerImp.logLabels = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetailForIssue(codeLookup, items, "Hidden");
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "Hidden");
 
       // assert
-      expect(analyzerImp.logLabels).to.have.been.calledWith(Sinon.match.any, items[0]);
+      expect(analyzerImp.logLabels).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, items[0]);
     });
 
     it("should call log with empty string when the issue type is 'Hidden'", () => {
@@ -666,10 +768,23 @@ describe("lib analyzer", () => {
       let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
 
       // act
-      analyzerImp.reportAnalysisDetailForIssue(codeLookup, items, "Hidden");
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "Hidden");
 
       // assert
       expect(mockLog).to.have.been.calledWith("");
+    });
+
+    it("should call reportOverExposedTest with codeLookup when the supplied appDirectory", () => {
+      // arrange
+      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      analyzerImp.reportOverExposedTest = Sinon.stub();
+
+      // act
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "OverExposed");
+
+      // assert
+      expect(analyzerImp.reportOverExposedTest).to.have.been.calledWith("bar", Sinon.match.any, Sinon.match.any);
     });
 
     it("should call reportOverExposedTest with codeLookup when the issue type is 'OverExposed'", () => {
@@ -679,10 +794,10 @@ describe("lib analyzer", () => {
       analyzerImp.reportOverExposedTest = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetailForIssue(codeLookup, items, "OverExposed");
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "OverExposed");
 
       // assert
-      expect(analyzerImp.reportOverExposedTest).to.have.been.calledWith(codeLookup, Sinon.match.any);
+      expect(analyzerImp.reportOverExposedTest).to.have.been.calledWith(Sinon.match.any, codeLookup, Sinon.match.any);
     });
 
     it("should call reportOverExposedTest with item when the issue type is 'OverExposed'", () => {
@@ -692,10 +807,10 @@ describe("lib analyzer", () => {
       analyzerImp.reportOverExposedTest = Sinon.stub();
 
       // act
-      analyzerImp.reportAnalysisDetailForIssue(codeLookup, items, "OverExposed");
+      analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "OverExposed");
 
       // assert
-      expect(analyzerImp.reportOverExposedTest).to.have.been.calledWith(Sinon.match.any, items[0]);
+      expect(analyzerImp.reportOverExposedTest).to.have.been.calledWith(Sinon.match.any, Sinon.match.any, items[0]);
     });
   });
 
@@ -867,7 +982,7 @@ describe("lib analyzer", () => {
       let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("bar", codeLookup, functionNode);
 
       // assert
       expect(mockLog).not.to.have.been.called;
@@ -882,7 +997,7 @@ describe("lib analyzer", () => {
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("baz", codeLookup, functionNode);
 
       // assert
       expect(analyzerImp.paddedLog).to.have.been.calledWith(Sinon.match(/foo.*bar/));
@@ -897,7 +1012,7 @@ describe("lib analyzer", () => {
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("qux", codeLookup, functionNode);
 
       // assert
       expect(analyzerImp.highlightIssues).to.have.been.calledWith("baz", Sinon.match.any);
@@ -912,7 +1027,7 @@ describe("lib analyzer", () => {
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("baz", codeLookup, functionNode);
 
       // assert
       const issueMatcher = x => x[0].index === 21 && x[0].issue === "..";
@@ -928,7 +1043,7 @@ describe("lib analyzer", () => {
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("baz", codeLookup, functionNode);
 
       // assert
       const issueMatcher = x => x[0].index === 21 && x[0].issue === "bar";
@@ -944,7 +1059,7 @@ describe("lib analyzer", () => {
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("baz", codeLookup, functionNode);
 
       // assert
       let issueMatcher = x => x[0].index === 21 && x[0].issue === "bar";
@@ -963,7 +1078,7 @@ describe("lib analyzer", () => {
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("baz", codeLookup, functionNode);
 
       // assert
       expect(analyzerImp.highlightIssues).to.have.been.calledWith(indirectFunctionNode.node.code, Sinon.match.any);
@@ -980,7 +1095,7 @@ describe("lib analyzer", () => {
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("baz", codeLookup, functionNode);
 
       // assert
       let issueMatcher = x => x[0].index === 6 && x[0].issue === "bar";
@@ -998,7 +1113,7 @@ describe("lib analyzer", () => {
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
-      analyzerImp.reportOverExposedTest(codeLookup, functionNode);
+      analyzerImp.reportOverExposedTest("qux", codeLookup, functionNode);
 
       // assert
       let issueMatcher = x => x[0].index === 7 && x[0].issue === "bar";
@@ -1291,21 +1406,22 @@ describe("lib analyzer", () => {
       let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", functionNode);
+      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/^bar/);
     });
 
-    it("should return value containing the file path", () => {
+    it("should return value containing the relative file path", () => {
       // arrange
       let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
+      mockRelativePath.returns("abc");
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", functionNode);
+      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
-      expect(actual).to.match(/baz/);
+      expect(actual).to.match(/abc/);
     });
 
     it("should return value containing the lineNumber", () => {
@@ -1313,7 +1429,7 @@ describe("lib analyzer", () => {
       let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", functionNode);
+      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/456/);
@@ -1324,21 +1440,22 @@ describe("lib analyzer", () => {
       let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", functionNode);
+      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/123/);
     });
 
-    it("should return value in the format 'name (filePath:lineNumber:columnNumber)'", () => {
+    it("should return value in the format 'name (relativeFilePath:lineNumber:columnNumber)'", () => {
       // arrange
       let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
+      mockRelativePath.returns("abc");
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", functionNode);
+      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
-      expect(actual).to.match(/bar \(baz:456:123\)/);
+      expect(actual).to.match(/bar \(abc:456:123\)/);
     });
   });
 });

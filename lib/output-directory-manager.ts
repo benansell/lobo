@@ -1,24 +1,21 @@
 import * as Bluebird from "bluebird";
-import {ExecutionContext, LoboConfig, PluginTestFrameworkWithConfig, Reject, Resolve} from "./plugin";
+import {ExecutionContext, Reject, Resolve} from "./plugin";
 import {createLogger, Logger} from "./logger";
 import * as shelljs from "shelljs";
 import * as path from "path";
 import * as fs from "fs";
-import {createElmPackageHelper, ElmPackageHelper, ElmPackageJson} from "./elm-package-helper";
 import * as tmp from "tmp";
 
 export interface OutputDirectoryManager {
   cleanup(context: ExecutionContext): Bluebird<ExecutionContext>;
-  sync(context: ExecutionContext): Bluebird<ExecutionContext>;
+  prepare(context: ExecutionContext): Bluebird<ExecutionContext>;
 }
 
 export class OutputDirectoryManagerImp implements OutputDirectoryManager {
 
-  private elmPackageHelper: ElmPackageHelper;
-  private logger: Logger;
+  private readonly logger: Logger;
 
-  constructor(elmPackageHelper: ElmPackageHelper, logger: Logger) {
-    this.elmPackageHelper = elmPackageHelper;
+  constructor(logger: Logger) {
     this.logger = logger;
   }
 
@@ -40,30 +37,6 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     this.deleteTempDir(context.tempDirectory);
 
     return Bluebird.resolve(context);
-  }
-
-  public configBuildDirectory(loboDirectory: string, testDirectory: string): boolean {
-    if (!fs.existsSync(loboDirectory)) {
-      shelljs.mkdir(loboDirectory);
-    }
-
-    const loboDirectoryElmStuff = path.resolve(loboDirectory, "elm-stuff");
-    const testElmStuffDirectory = path.resolve(testDirectory, "elm-stuff");
-
-    if (fs.existsSync(testElmStuffDirectory) && !fs.existsSync(loboDirectoryElmStuff)) {
-      shelljs.ln("-s", testElmStuffDirectory, loboDirectoryElmStuff);
-    }
-
-    const loboDirectoryElmPackage = path.resolve(loboDirectory, "elm-package.json");
-    const testElmPackage = path.resolve(testDirectory, "elm-package.json");
-
-    if (fs.existsSync(testElmPackage) && !fs.existsSync(loboDirectoryElmPackage)) {
-      shelljs.cp(testElmPackage, loboDirectoryElmPackage);
-
-      return true;
-    }
-
-    return false;
   }
 
   public deleteTempDir(tempDir: string): void {
@@ -105,42 +78,25 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     }
   }
 
-  public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
+  public ensureBuildDirectory(context: ExecutionContext): void {
+    if (!fs.existsSync(context.config.loboDirectory)) {
+      shelljs.mkdir(context.config.loboDirectory);
+    }
+  }
+
+  public prepare(context: ExecutionContext): Bluebird<ExecutionContext> {
     return new Bluebird<ExecutionContext>((resolve: Resolve<ExecutionContext>, reject: Reject) => {
       try {
-        const loboElmPackageIsCopy = this.configBuildDirectory(context.config.loboDirectory, context.testDirectory);
-        this.syncLoboTestElmPackage(context.config, context.testDirectory, loboElmPackageIsCopy);
+        this.ensureBuildDirectory(context);
         this.updateContextForRun(context);
         resolve(context);
       } catch (err) {
-        const message = "Failed to configure lobo. " +
+        const message = "Failed to configure lobo temp directory. " +
           `Please try deleting the lobo directory (${context.config.loboDirectory}) and re-run lobo`;
         this.logger.error(message, err);
         reject();
       }
     });
-  }
-
-  public syncLoboTestElmPackage(config: LoboConfig, testElmPackageDir: string, loboElmPackageIsCopy: boolean): void {
-    const base = this.elmPackageHelper.read(testElmPackageDir);
-
-    if (!base) {
-      throw new Error("Unable to read the test elm-package.json file.");
-    }
-
-    const target = this.elmPackageHelper.read(config.loboDirectory);
-
-    if (!target) {
-      throw new Error("Unable to read the lobo test elm-package.json file.");
-    }
-
-    if (loboElmPackageIsCopy) {
-      target.sourceDirectories = [];
-    }
-
-    const testFramework = config.testFramework;
-    this.updateDependencies(testFramework, base, config.loboDirectory, target);
-    this.updateSourceDirectories(testElmPackageDir, base, config.loboDirectory, target, testFramework.config.sourceDirectories);
   }
 
   public updateContextForRun(context: ExecutionContext): void {
@@ -149,35 +105,8 @@ export class OutputDirectoryManagerImp implements OutputDirectoryManager {
     context.buildOutputFilePath = path.join(context.tempDirectory, "UnitTest.js");
     context.testSuiteOutputFilePath = path.join(context.tempDirectory, context.config.testMainElm);
   }
-
-  public updateDependencies(testFramework: PluginTestFrameworkWithConfig, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                            testElmPackage: ElmPackageJson): void {
-    const callback = (diff: string[][], updateAction: () => ElmPackageJson) => {
-      if (diff.length === 0) {
-        return;
-      }
-
-      updateAction();
-    };
-
-    this.elmPackageHelper.updateDependencies(testFramework, baseElmPackage, testElmPackageDir, testElmPackage, callback);
-  }
-
-  public updateSourceDirectories(baseElmPackageDir: string, baseElmPackage: ElmPackageJson, testElmPackageDir: string,
-                                 testElmPackage: ElmPackageJson, loboTestPluginSourceDirectories: string[]): void {
-    const callback = (diff: string[], updateAction: () => ElmPackageJson) => {
-      if (diff.length === 0) {
-        return;
-      }
-
-      updateAction();
-    };
-
-    this.elmPackageHelper.updateSourceDirectories(baseElmPackageDir, baseElmPackage, testElmPackageDir,
-                                                  testElmPackage, loboTestPluginSourceDirectories, callback);
-  }
 }
 
 export function createOutputDirectoryManager(): OutputDirectoryManager {
-  return new OutputDirectoryManagerImp(createElmPackageHelper(), createLogger());
+  return new OutputDirectoryManagerImp(createLogger());
 }

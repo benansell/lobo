@@ -13,9 +13,11 @@ export interface Util {
   getPlugin<T extends PluginReporter | PluginTestFramework>(type: string, pluginName: string, fileSpec: string): T;
   getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T;
   isInteger(value: number): boolean;
+  logStage(stage: string): void;
   padRight(value: string, length: number, spacer?: string): string;
   read(filePath: string): string | undefined;
   resolveDir(...dirs: string[]): string;
+  sortObject<T extends {[index: string]: S}, S>(obj: T): T;
   unsafeLoad<T>(filePath: string): T;
 }
 
@@ -30,9 +32,9 @@ export class UtilImp implements Util {
   public availablePlugins(fileSpec: RegExp | string): string[] {
     let pattern = new RegExp(fileSpec + ".*\.js$");
     let pluginDirectory = path.resolve(__dirname, "..", "plugin");
-    let files = shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
+    let files = <string[]> shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
 
-    return _.map(files, (file: string) => {
+    return files.map((file: string) => {
       let pluginPath = path.relative(pluginDirectory, file);
 
       return path.dirname(pluginPath);
@@ -90,14 +92,6 @@ export class UtilImp implements Util {
     return parseInt(value.toString(), 10) === value;
   }
 
-  public padRight(value: string, length: number, spacer?: string): string {
-    if (!spacer) {
-      spacer = " ";
-    }
-
-    return (value.length < length) ? this.padRight(value + spacer, length, spacer) : value;
-  }
-
   public load<T>(type: string, pluginName: string, fileSpec: string, isConfiguration: boolean): T {
     try {
       let filePath: string;
@@ -122,6 +116,24 @@ export class UtilImp implements Util {
       process.exit(1);
       return <T> {};
     }
+  }
+
+  public logStage(stage: string): void {
+    const length = 80;
+    const label = `[ ${stage} ]`;
+    const prefixLength = Math.ceil((length - label.length) / 2);
+    const prefix = _.repeat("-", prefixLength);
+    const suffix = _.repeat("-", length - prefixLength - label.length);
+    const result =  `${prefix}[ ${stage} ]${suffix}`;
+    this.logger.info(result);
+  }
+
+  public padRight(value: string, length: number, spacer?: string): string {
+    if (!spacer) {
+      spacer = " ";
+    }
+
+    return (value.length < length) ? this.padRight(value + spacer, length, spacer) : value;
   }
 
   public read(filePath: string): string | undefined {
@@ -151,6 +163,17 @@ export class UtilImp implements Util {
     }
 
     return fs.realpathSync(resolved);
+  }
+
+  public sortObject<T extends {[index: string]: S}, S>(obj: T): T {
+    const sortedKeys = Object.keys(obj).sort();
+    const result = <T> {};
+
+    for (const k of sortedKeys) {
+      result[k] = obj[k];
+    }
+
+    return result;
   }
 
   public unsafeLoad<T>(filePath: string): T {

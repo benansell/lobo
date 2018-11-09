@@ -66,4 +66,3 @@ skipFuzzTest =
 skipTodoTest : Test
 skipTodoTest =
     skip <| todo "todoTest"
-

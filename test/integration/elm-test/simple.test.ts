@@ -27,7 +27,7 @@ describe("elm-test-simple", () => {
   describe("pass", () => {
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/simple/pass");
+      let result = runner.run(testContext, "elm-test", false, "./tests/simple/pass");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -45,7 +45,7 @@ describe("elm-test-simple", () => {
 
     it("should show Debug.log messages by default", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDir);
+      let result = runner.run(testContext, "elm-test", false, testDir);
 
       // assert
       let firstTestIndex = /1\) (.\[\d\dm)?failing Debug\.log test/g.exec(result.stdout);
@@ -59,7 +59,7 @@ describe("elm-test-simple", () => {
 
     it("should not show Debug.log messages when --hideDebugMessages is supplied", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDir, "--hideDebugMessages");
+      let result = runner.run(testContext, "elm-test", false, testDir, "--hideDebugMessages");
 
       // assert
       let startIndex = result.stdout
@@ -81,7 +81,7 @@ describe("elm-test-simple", () => {
 
     it("should report failure", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDir);
+      let result = runner.run(testContext, "elm-test", false, testDir);
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -91,7 +91,7 @@ describe("elm-test-simple", () => {
 
     it("should update message to use ┌ └  instead of ╷ ╵", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDir);
+      let result = runner.run(testContext, "elm-test", false, testDir);
 
       // assert
       let startIndex = result.stdout
@@ -106,7 +106,7 @@ describe("elm-test-simple", () => {
 
     it("should update string equals to show diff hint", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDir);
+      let result = runner.run(testContext, "elm-test", false, testDir);
 
       // assert
       let startIndex = result.stdout
@@ -130,7 +130,7 @@ describe("elm-test-simple", () => {
 
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test", testDir);
+      let result = runner.run(testContext, "elm-test", false, testDir);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -143,7 +143,7 @@ describe("elm-test-simple", () => {
       let expectedRunCount = 11;
 
       // act
-      let result = runner.run(testContext, "elm-test", testDir, "--runCount=" + expectedRunCount);
+      let result = runner.run(testContext, "elm-test", false, testDir, "--runCount=" + expectedRunCount);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -165,7 +165,7 @@ describe("elm-test-simple", () => {
       let initialSeed = 101;
 
       // act
-      let result = runner.run(testContext, "elm-test", testDir, "--seed=" + initialSeed);
+      let result = runner.run(testContext, "elm-test", false, testDir, "--seed=" + initialSeed);
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -178,7 +178,7 @@ describe("elm-test-simple", () => {
   describe("nested", () => {
     it("should report success", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/simple/nested");
+      let result = runner.run(testContext, "elm-test", false, "./tests/simple/nested");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -190,7 +190,7 @@ describe("elm-test-simple", () => {
   describe("tree", () => {
     it("should report failure", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/simple/tree");
+      let result = runner.run(testContext, "elm-test", false, "./tests/simple/tree");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -210,7 +210,7 @@ describe("elm-test-simple", () => {
   describe("only", () => {
     it("should report only passed", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/simple/only", "--runCount=5");
+      let result = runner.run(testContext, "elm-test", false, "./tests/simple/only", "--runCount=5");
 
       // assert
       reporterExpect(result).summaryPartial();
@@ -223,7 +223,7 @@ describe("elm-test-simple", () => {
   describe("skip", () => {
     it("should report inconclusive", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/simple/skip");
+      let result = runner.run(testContext, "elm-test", false, "./tests/simple/skip");
 
       // assert
       reporterExpect(result).summaryPartial();
@@ -236,7 +236,7 @@ describe("elm-test-simple", () => {
   describe("todo", () => {
     it("should report inconclusive", () => {
       // act
-      let result = runner.run(testContext, "elm-test", "./tests/simple/todo");
+      let result = runner.run(testContext, "elm-test", false, "./tests/simple/todo");
 
       // assert
       reporterExpect(result).summaryInconclusive();

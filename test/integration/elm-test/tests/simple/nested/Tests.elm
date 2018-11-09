@@ -9,4 +9,3 @@ passingTest =
     test "passingTest" <|
         \() ->
             Expect.pass
-

@@ -9,7 +9,7 @@ testDebugPass =
     test "passing Debug.log test" <|
         \() ->
             toGreeting "Foo"
-            |> Expect.equal "Hello Foo"
+                |> Expect.equal "Hello Foo"
 
 
 testDebugFail : Test
@@ -17,10 +17,11 @@ testDebugFail =
     test "failing Debug.log test" <|
         \() ->
             toGreeting "Bar"
-            |> Expect.equal "Hello Foo"
+                |> Expect.equal "Hello Foo"
 
 
-toGreeting: String -> String
+toGreeting : String -> String
 toGreeting name =
-    "Hello " ++ name
-    |> Debug.log name
+    "Hello "
+        ++ name
+        |> Debug.log name

@@ -5,7 +5,6 @@
     <working-directory>$PROJECT_DIR$/test/integration</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <envs>
-      <env name="PATH" value="/Users/ben/.nvm/versions/node/v6.11.2/bin:/usr/bin:/usr/local/bin" />
       <env name="disableClean" value="true" />
       <env name="noisyTestRun" value="true" />
     </envs>

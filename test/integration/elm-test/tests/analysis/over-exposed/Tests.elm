@@ -1,8 +1,8 @@
 module Tests exposing (..)
 
-
 import Expect
 import Test exposing (Test, describe, test)
+
 
 all : Test
 all =
@@ -12,7 +12,7 @@ all =
         ]
 
 
-suiteTwo: Test
+suiteTwo : Test
 suiteTwo =
     describe "Suite Two"
         [ testTwo ]

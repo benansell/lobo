@@ -715,7 +715,8 @@ describe("lib test-suite-generator", () => {
       let actual = testSuiteGenerator.generateTestSuiteCode(config, []);
 
       // assert
-      expect(actual).to.match(/import Foo as TestPlugin/);
+      expect(actual).to.match(/import TestPlugin/);
+      expect(actual).to.match(/import Foo as Plugin/);
       expect(actual).to.match(/import Bar exposing \(Test, describe\)/);
     });
 
@@ -762,7 +763,7 @@ describe("lib test-suite-generator", () => {
       let actual = testSuiteGenerator.generateTestSuiteCode(config, []);
 
       // assert
-      expect(actual).to.match(/main : Program Value \(Runner\.Model TestPlugin\.TestArgs TestPlugin\.TestRunner\) Runner\.Msg/);
+      expect(actual).to.match(/main : Program Value \(Runner\.Model Plugin\.TestRunner\) Runner\.Msg/);
       expect(actual).to.match(/main =\n\s{4}Runner\.run plugin/);
     });
 
@@ -775,8 +776,8 @@ describe("lib test-suite-generator", () => {
       let actual = testSuiteGenerator.generateTestSuiteCode(config, []);
 
       // assert
-      expect(actual).to.match(/plugin : Runner\.Plugin TestPlugin\.TestArgs TestPlugin\.TestRunner/);
-      expect(actual).to.match(/plugin =\n\s{4}{ findTests = TestPlugin.findTests all/);
+      expect(actual).to.match(/plugin : Runner\.Plugin Plugin\.TestRunner/);
+      expect(actual).to.match(/plugin =\n\s{4}{ findTests = Plugin.findTests all/);
     });
 
     it("should return code with plugin function definition for runTest", () => {
@@ -788,8 +789,8 @@ describe("lib test-suite-generator", () => {
       let actual = testSuiteGenerator.generateTestSuiteCode(config, []);
 
       // assert
-      expect(actual).to.match(/plugin : Runner\.Plugin TestPlugin\.TestArgs TestPlugin\.TestRunner/);
-      expect(actual).to.match(/plugin =\n\s{4}.*\n\s{4}, runTest = TestPlugin.runTest/);
+      expect(actual).to.match(/plugin : Runner\.Plugin Plugin\.TestRunner/);
+      expect(actual).to.match(/plugin =\n\s{4}.*\n\s{4}, runTest = Plugin.runTest/);
     });
 
     it("should return code with plugin function definition for toArgs", () => {
@@ -801,7 +802,7 @@ describe("lib test-suite-generator", () => {
       let actual = testSuiteGenerator.generateTestSuiteCode(config, []);
 
       // assert
-      expect(actual).to.match(/plugin : Runner\.Plugin TestPlugin\.TestArgs TestPlugin\.TestRunner/);
+      expect(actual).to.match(/plugin : Runner\.Plugin Plugin\.TestRunner/);
       expect(actual).to.match(/plugin =(\n\s{4}.*){2}\n\s{4}, toArgs = TestPlugin.toArgs\n\s{4}}/);
     });
   });

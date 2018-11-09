@@ -4,7 +4,7 @@ import Dict
 import Expect exposing (atLeast, atMost, equal, fail, false, greaterThan, notEqual, true)
 import Fuzz exposing (string)
 import Set
-import Test exposing (Test, describe, fuzz, fuzzWith, fuzz2, test)
+import Test exposing (Test, describe, fuzz, fuzz2, fuzzWith, test)
 
 
 testExpectFail : Test
@@ -29,11 +29,12 @@ testExpectFalse =
             True
                 |> Expect.false "Expected false"
 
+
 testExpectErr : Test
 testExpectErr =
     test "Expect.err test" <|
         \() ->
-            String.toInt "123"
+            Result.Ok "All Good"
                 |> Expect.err
 
 
@@ -153,15 +154,17 @@ testExpectNotEqual =
 
 testExpectAllEmptyList : Test
 testExpectAllEmptyList =
-     test "Expect.all empty test" <|
+    test "Expect.all empty test" <|
         \() ->
             Expect.all [] (List.length [])
 
+
 testExpectAllFirstFails : Test
 testExpectAllFirstFails =
-     test "Expect.all first fails test" <|
+    test "Expect.all first fails test" <|
         \() ->
-            Expect.all [Expect.equal 123, Expect.equal 456] (456)
+            Expect.all [ Expect.equal 123, Expect.equal 456 ] 456
+
 
 testExpectLessThan : Test
 testExpectLessThan =
@@ -259,4 +262,4 @@ testMultiLine : Test
 testMultiLine =
     test "multiline record test" <|
         \() ->
-            Expect.equal ({ outstanding = [ { id = 1, name = "foo", description = "read a book", status = NotStarted }, { id = 2, name = "bar", description = "sleep", status = NotStarted } ], archived = [ { id = 3, name = "baz", description = "watch tv", status = NotStarted } ], active = Nothing }) ({ outstanding = [ { id = 1, name = "foo", description = "read a book", status = Done }, { id = 4, name = "baz", description = "sleep!", status = Done } ], archived = [], active = Just True })
+            Expect.equal { outstanding = [ { id = 1, name = "foo", description = "read a book", status = NotStarted }, { id = 2, name = "bar", description = "sleep", status = NotStarted } ], archived = [ { id = 3, name = "baz", description = "watch tv", status = NotStarted } ], active = Nothing } { outstanding = [ { id = 1, name = "foo", description = "read a book", status = Done }, { id = 4, name = "baz", description = "sleep!", status = Done } ], archived = [], active = Just True }

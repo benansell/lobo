@@ -1,20 +1,14 @@
-module ElmTestExtraPlugin exposing (TestArgs, TestRunner, toArgs, findTests, runTest)
+module ElmTestExtraPlugin exposing (TestRunner, findTests, runTest)
 
-import ElmTest.Runner as Extra exposing (Test(Test, Labeled, Batch, Only, Skipped, Todo))
-import Json.Decode as Decode exposing (Decoder, Value, decodeValue, field, int, map2, maybe)
+import ElmTest.Runner as Extra exposing (Test(..))
 import Json.Encode as Encode exposing (Value, int, object, string)
-import Random.Pcg exposing (initialSeed)
-import Test.Runner as ElmTestRunner exposing (Runner, SeededRunners(Plain, Only, Skipping, Invalid), fromTest, getFailureReason)
+import Random
+import Test.Runner as ElmTestRunner exposing (Runner, SeededRunners(..), fromTest, getFailureReason)
 import Test.Runner.Failure as ElmTestFailure
 import TestPlugin as Plugin
-import Time exposing (Time)
+import Time
 import Tuple
 
-
-type alias TestArgs =
-    { initialSeed : Maybe Int
-    , runCount : Maybe Int
-    }
 
 
 type TestRunner
@@ -44,41 +38,20 @@ type alias ElmTestFailure =
     }
 
 
--- INIT
-
-
-toArgs : Decode.Value -> TestArgs
-toArgs args =
-    case (decodeValue decodeArgs args) of
-        Ok value ->
-            value
-
-        Err error ->
-            Debug.crash "Invalid args"
-
-
-decodeArgs : Decode.Decoder TestArgs
-decodeArgs =
-    Decode.map2 TestArgs
-        (Decode.maybe (Decode.field "seed" Decode.int))
-        (Decode.maybe (Decode.field "runCount" Decode.int))
-
-
-
 -- QUEUE
 
 
-findTests : Extra.Test -> TestArgs -> Time -> TestRun
+findTests : Extra.Test -> Plugin.TestArgs -> Time.Posix -> TestRun
 findTests test args time =
     let
         runCount =
             Maybe.withDefault 100 args.runCount
 
         initialSeed =
-            Maybe.withDefault (round time) args.initialSeed
+            Maybe.withDefault (Time.posixToMillis time) args.initialSeed
 
         seed =
-            Random.Pcg.initialSeed initialSeed
+            Random.initialSeed initialSeed
 
         config =
             encodeConfig runCount initialSeed
@@ -103,7 +76,7 @@ findTestItem runner testId runType testQueue =
         Runnable runnable ->
             { testQueue | tests = { id = testId, test = runnable, runType = runType } :: testQueue.tests }
 
-        Labeled label runner ->
+        Labeled label labeledRunner ->
             let
                 newTestId =
                     { current = { uniqueId = testQueue.nextUniqueId, label = label }
@@ -113,24 +86,24 @@ findTestItem runner testId runType testQueue =
                 newTestQueue =
                     { testQueue | nextUniqueId = testQueue.nextUniqueId + 1 }
             in
-                findTestItem runner newTestId runType newTestQueue
+                findTestItem labeledRunner newTestId runType newTestQueue
 
         Batch runners ->
             List.foldl (\r nq -> findTestItem r testId runType nq) testQueue runners
 
-        Skipped reason runner ->
-            findTestItem runner testId (Plugin.Skipping (Just reason)) testQueue
+        Skipped reason skippedRunner ->
+            findTestItem skippedRunner testId (Plugin.Skipping (Just reason)) testQueue
 
-        Only runner ->
+        Only onlyRunner ->
             case runType of
                 Plugin.Normal ->
-                    findTestItem runner testId Plugin.Focusing testQueue
+                    findTestItem onlyRunner testId Plugin.Focusing testQueue
 
                 Plugin.Focusing ->
-                    findTestItem runner testId runType testQueue
+                    findTestItem onlyRunner testId runType testQueue
 
                 Plugin.Skipping _ ->
-                    findTestItem runner testId runType testQueue
+                    findTestItem onlyRunner testId runType testQueue
 
         Todo reason ->
             let
@@ -146,7 +119,7 @@ findTestItem runner testId runType testQueue =
 -- RUN
 
 
-runTest : TestItem -> Time -> Plugin.TestResult
+runTest : TestItem -> Time.Posix -> Plugin.TestResult
 runTest testItem time =
     case testItem.test of
         ValidRunner runner ->
@@ -165,7 +138,7 @@ runTest testItem time =
                 }
 
 
-runValidTest : Plugin.TestId -> ElmTestRunner.Runner -> Time -> Plugin.TestResult
+runValidTest : Plugin.TestId -> ElmTestRunner.Runner -> Time.Posix -> Plugin.TestResult
 runValidTest testId runner time =
     let
         messages =
@@ -264,11 +237,11 @@ toExtraRunner runner =
             |> Labeled label
 
 
-fromTest : Int -> Random.Pcg.Seed -> Extra.Test -> ExtraRunner
+fromTest : Int -> Random.Seed -> Extra.Test -> ExtraRunner
 fromTest runs seed test =
     case test of
-        Extra.Test test ->
-            ElmTestRunner.fromTest runs seed test
+        Extra.Test ordinaryTest ->
+            ElmTestRunner.fromTest runs seed ordinaryTest
                 |> toRunner
 
         Extra.Labeled label subTest ->
@@ -297,13 +270,13 @@ fromTest runs seed test =
                 |> Runnable
 
 
-distributeSeeds : Int -> Extra.Test -> ( Random.Pcg.Seed, List ExtraRunner ) -> ( Random.Pcg.Seed, List ExtraRunner )
+distributeSeeds : Int -> Extra.Test -> ( Random.Seed, List ExtraRunner ) -> ( Random.Seed, List ExtraRunner )
 distributeSeeds runs test ( startingSeed, runners ) =
     case test of
         Extra.Test subTest ->
             let
                 ( seed, nextSeed ) =
-                    Random.Pcg.step Random.Pcg.independentSeed startingSeed
+                    Random.step Random.independentSeed startingSeed
 
                 runner =
                     ElmTestRunner.fromTest runs seed subTest

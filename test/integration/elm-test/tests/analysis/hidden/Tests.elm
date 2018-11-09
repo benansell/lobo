@@ -1,6 +1,5 @@
 module Tests exposing (passingTest)
 
-
 import Expect
 import Test exposing (Test, describe, test)
 
@@ -11,10 +10,11 @@ passingTest =
         \() ->
             Expect.pass
 
+
 hiddenTest : Test
 hiddenTest =
     test "Hidden" <|
-       \() ->
+        \() ->
             Expect.pass
 
 
@@ -26,9 +26,9 @@ expectationHelper text =
 testHelper : String -> Test
 testHelper text =
     test text <|
-     \() -> expectationHelper text
+        \() -> expectationHelper text
 
 
-testArgCheck : {foo: String, bar: String} -> String
-testArgCheck {foo, bar} =
+testArgCheck : { foo : String, bar : String } -> String
+testArgCheck { foo, bar } =
     "foo"
