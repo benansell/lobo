@@ -145,7 +145,7 @@ export class DependencyManagerImp implements DependencyManager {
   }
 
   public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
-    let steps = [
+    const steps = [
       () => this.ensureAppElmJsonExists(context.config),
       () => this.ensureLoboElmJsonExists(context.config)
     ];
@@ -263,7 +263,7 @@ export class DependencyManagerImp implements DependencyManager {
   }
 
   public syncUpdate(config: LoboConfig, testDirectory: string): Bluebird<void> {
-    let steps = [
+    const steps = [
       (elmJson: ElmJson) => this.syncSourceDirectories(config, testDirectory, elmJson),
       (elmJson: ElmJson) => this.syncDependencies(config, elmJson),
       () => this.updateLoboElmJson(config)

@@ -133,7 +133,7 @@ export class ElmParserImp implements ElmParser {
   }
 
   public parseSecondPass(typeHelper: ElmTypeHelper, partial: ElmNodeResult<ElmNode>[]): ElmNode[] {
-    let complete: ElmNode[] = [];
+    const complete: ElmNode[] = [];
 
     for (let j = 0; j < partial.length; j++) {
       const result = partial[j];
@@ -171,7 +171,7 @@ export class ElmParserImp implements ElmParser {
     let beforeFunctionDeclaration = isTypedFunction;
 
     while (nextIndex < functionStartIndex) {
-      let next = codeHelper.findNextWord(nextIndex, true, delimiters);
+      const next = codeHelper.findNextWord(nextIndex, true, delimiters);
 
       if (beforeFunctionDeclaration) {
         if (next.word === identifier) {
@@ -216,7 +216,7 @@ export class ElmParserImp implements ElmParser {
           nextIndex = codeHelper.maxIndex;
         }
       } else if (codeHelper.delimitersFunction.indexOf(next.word) === -1 && keywords.indexOf(next.word) === -1) {
-        let typeInfo = typeHelper.resolveType(next.word);
+        const typeInfo = typeHelper.resolveType(next.word);
 
         if (typeInfo) {
           let dep: ElmFunctionDependency | undefined = undefined;
@@ -316,7 +316,7 @@ export class ElmParserImp implements ElmParser {
     let currentParentTypeName = undefined;
 
     while (nextIndex < codeHelper.maxIndex) {
-      let next = codeHelper.findNextWord(nextIndex, true, codeHelper.delimitersTypeList);
+      const next = codeHelper.findNextWord(nextIndex, true, codeHelper.delimitersTypeList);
 
       if (next.word !== " " && next.word !== "\n" && next.word !== ",") {
         if (next.word === "(") {
@@ -379,7 +379,7 @@ export class ElmParserImp implements ElmParser {
     typeHelper.addModule(result.name, result.alias);
     const codeHelper = this.makeElmCodeHelper(token.code);
     const exposing = this.parseTypeList(codeHelper, typeHelper, result.name, startOffset);
-    let node = {...this.toBaseNode(token, result.name), alias: result.alias, exposing: exposing};
+    const node = {...this.toBaseNode(token, result.name), alias: result.alias, exposing: exposing};
 
     return {codeHelper, node};
   }
@@ -401,7 +401,7 @@ export class ElmParserImp implements ElmParser {
   public toTypeNode(typeHelper: ElmTypeHelper, moduleName: string, token: ElmToken): ElmNodeResult<ElmTypeNode> {
     const codeHelper = this.makeElmCodeHelper(token.code);
     const types = this.parseType(codeHelper, typeHelper, moduleName, token.identifier, 5 + token.identifier.length);
-    let node: ElmTypeNode = {...this.toBaseNode(token, token.identifier), dependencies: types};
+    const node: ElmTypeNode = {...this.toBaseNode(token, token.identifier), dependencies: types};
 
     return {codeHelper, node};
   }
@@ -425,7 +425,7 @@ export class ElmParserImp implements ElmParser {
 
     const args = this.parseArguments(codeHelper, token.identifier, true);
     typeHelper.resolve(token.identifier, undefined, moduleName);
-    let node = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: [], returnType: returnType};
+    const node = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: [], returnType: returnType};
 
     return {codeHelper, node};
   }
@@ -435,7 +435,7 @@ export class ElmParserImp implements ElmParser {
     const codeHelper = this.makeElmCodeHelper(token.code);
     const args = this.parseArguments(codeHelper, token.identifier, false);
     typeHelper.resolve(token.identifier, undefined, moduleName);
-    let node: ElmUntypedModuleFunctionNode = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: []};
+    const node: ElmUntypedModuleFunctionNode = {...this.toBaseNode(token, token.identifier), arguments: args, dependencies: []};
 
     return {codeHelper, node};
   }

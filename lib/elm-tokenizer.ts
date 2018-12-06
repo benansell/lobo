@@ -173,7 +173,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeEffect(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
+    const next = codeHelper.findNextWord(wordResult.nextIndex + 1);
 
     if (next.word === "module") {
       return this.tokenizeWord(codeHelper, startWordIndex, next);
@@ -198,7 +198,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeImport(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1);
+    const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1);
     let identifier = identifierResult.word;
     let endIndex = identifierResult.nextIndex - 1;
     let next = codeHelper.findNextWord(identifierResult.nextIndex + 1);
@@ -238,7 +238,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizePort(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    let next = codeHelper.findNextWord(wordResult.nextIndex + 1);
+    const next = codeHelper.findNextWord(wordResult.nextIndex + 1);
 
     if (next.word === "module") {
       return this.tokenizeWord(codeHelper, startWordIndex, next);
@@ -274,7 +274,7 @@ export class ElmTokenizerImp implements ElmTokenizer {
       return undefined;
     }
 
-    let blockResult = codeHelper.findUntilEndOfBlock(searchAfterCharIndex, wordResult);
+    const blockResult = codeHelper.findUntilEndOfBlock(searchAfterCharIndex, wordResult);
 
     if (!blockResult) {
       return { tokenType: tokenType, startIndex: startWordIndex, endIndex: codeHelper.maxIndex, identifier: wordResult.word };

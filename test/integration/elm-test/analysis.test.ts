@@ -5,7 +5,7 @@ import {TestRunner} from "../lib/test-runner";
 import reporterExpect from "../lib/default-reporter-expect";
 import {Util} from "../lib/util";
 
-let expect = chai.expect;
+const expect = chai.expect;
 
 describe("elm-test-analysis", () => {
   let runner: TestRunner;
@@ -27,7 +27,7 @@ describe("elm-test-analysis", () => {
   describe("custom-test-file", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/custom-test-file");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/custom-test-file");
 
       // assert
       reporterExpect(result).summaryPassed();
@@ -39,16 +39,16 @@ describe("elm-test-analysis", () => {
   describe("duplicate-name", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/duplicate-name");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/duplicate-name");
 
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(3, 1);
       expect(result.code).to.equal(1);
 
-      let startIndex = result.stdout
+      const startIndex = result.stdout
         .indexOf("================================================================================");
-      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      const failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
       expect(failureMessage)
         .to.have.string("The test 'Duplicate' contains a child test of the same name. Let's rename them so we know which is which.");
     });
@@ -57,16 +57,16 @@ describe("elm-test-analysis", () => {
   describe("empty-suite", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/empty-suite");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/empty-suite");
 
       // assert
       reporterExpect(result).summaryFailed();
       reporterExpect(result).summaryCounts(0, 2);
       expect(result.code).to.equal(1);
 
-      let startIndex = result.stdout
+      const startIndex = result.stdout
         .indexOf("================================================================================");
-      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      const failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
       expect(failureMessage).to.match(/1\) (.\[\d\dm)?EmptyConcat/g);
       expect(failureMessage).to.have.string("This `concat` has no tests in it. Let's give it some!");
       expect(failureMessage).to.match(/2\) (.\[\d\dm)?EmptyDescribe/g);
@@ -78,16 +78,16 @@ describe("elm-test-analysis", () => {
   describe("hidden", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/hidden");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/hidden");
 
       // assert
       reporterExpect(result).analysisSummary(1, 0);
       reporterExpect(result).analysisHidden();
       expect(result.code).to.equal(1);
 
-      let startIndex = result.stdout
+      const startIndex = result.stdout
         .indexOf("================================================================================");
-      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      const failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
       expect(failureMessage).to.match(/hiddenTest \(Tests\.elm:14:1\)/);
     });
   });
@@ -95,7 +95,7 @@ describe("elm-test-analysis", () => {
   describe("ignore-test-helper", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/ignore-test-helper");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/ignore-test-helper");
 
       // assert
       reporterExpect(result).summaryFailed();
@@ -107,16 +107,16 @@ describe("elm-test-analysis", () => {
   describe("over-exposed", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/over-exposed");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/over-exposed");
 
       // assert
       reporterExpect(result).analysisSummary(0, 3);
       reporterExpect(result).analysisOverExposed();
       expect(result.code).to.equal(1);
 
-      let startIndex = result.stdout
+      const startIndex = result.stdout
         .indexOf("================================================================================");
-      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      const failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
       expect(failureMessage).to.match(/1\) (.\[\d\dm)?suiteTwo \(Tests\.elm:15:1\)/g);
       expect(failureMessage).to.match(/all \(Tests\.elm:7:1\)/);
       expect(failureMessage).to.match(/2\) (.\[\d\dm)?testOne \(Tests\.elm:21:1\)/g);
@@ -129,16 +129,16 @@ describe("elm-test-analysis", () => {
   describe("unisolated", () => {
     it("should fail analysis and report", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/unisolated");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/unisolated");
 
       // assert
       reporterExpect(result).analysisSummary(0, 2);
       reporterExpect(result).analysisOverExposed();
       expect(result.code).to.equal(1);
 
-      let startIndex = result.stdout
+      const startIndex = result.stdout
         .indexOf("================================================================================");
-      let failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
+      const failureMessage = result.stdout.substring(startIndex, result.stdout.length - 1);
       expect(failureMessage).to.match(/1\) (.\[\d\dm)?all \(ChildTest\.elm:7:1\)/g);
       expect(failureMessage).to.match(/all \(Tests\.elm:7:1\)/);
       expect(failureMessage).to.match(/2\) (.\[\d\dm)?all \(GrandChildTest\.elm:7:1\)/g);
@@ -149,7 +149,7 @@ describe("elm-test-analysis", () => {
   describe("untyped-test", () => {
     it("should pass analysis and run tests", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false, "./tests/analysis/untyped-test");
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/untyped-test");
 
       // assert
       reporterExpect(result).summaryPassed();

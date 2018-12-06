@@ -6,22 +6,22 @@ import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 import {createLogger, Logger, LoggerImp, LogLevel} from "../../../lib/logger";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib logger", () => {
-  let RewiredLogger = rewire("../../../lib/logger");
+  const RewiredLogger = rewire("../../../lib/logger");
   let logger: LoggerImp;
 
   beforeEach(() => {
-    let rewiredImp = RewiredLogger.__get__("LoggerImp");
+    const rewiredImp = RewiredLogger.__get__("LoggerImp");
     logger = new rewiredImp();
   });
 
   describe("createLogger", () => {
     it("should return logger", () => {
       // act
-      let actual: Logger = createLogger();
+      const actual: Logger = createLogger();
 
       // assert
       expect(actual).to.exist;
@@ -31,7 +31,7 @@ describe("lib logger", () => {
   describe("trace", () => {
     it("should call log with the level 'trace'", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -43,7 +43,7 @@ describe("lib logger", () => {
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -57,7 +57,7 @@ describe("lib logger", () => {
   describe("debug", () => {
     it("should call log with the level 'debug'", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -69,7 +69,7 @@ describe("lib logger", () => {
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -83,7 +83,7 @@ describe("lib logger", () => {
   describe("info", () => {
     it("should call log with the level 'info'", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -95,7 +95,7 @@ describe("lib logger", () => {
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -109,7 +109,7 @@ describe("lib logger", () => {
   describe("warn", () => {
     it("should call log with the level 'warn'", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -121,7 +121,7 @@ describe("lib logger", () => {
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -135,7 +135,7 @@ describe("lib logger", () => {
   describe("error", () => {
     it("should call log with the level 'error'", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -147,7 +147,7 @@ describe("lib logger", () => {
 
     it("should call log with the supplied args", () => {
       // arrange
-      let mockLog = Sinon.spy();
+      const mockLog = Sinon.spy();
       logger.log = mockLog;
 
       // act
@@ -161,11 +161,11 @@ describe("lib logger", () => {
   describe("log", () => {
     it("should do nothing when showLogMessage is false", () => {
       // arrange
-      let mockShowMassage = Sinon.stub();
+      const mockShowMassage = Sinon.stub();
       mockShowMassage.returns(false);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = Sinon.spy();
+      const mockLevelToLogger = Sinon.spy();
       logger.levelToLogger = mockLevelToLogger;
 
       // act
@@ -177,16 +177,16 @@ describe("lib logger", () => {
 
     it("should log the message with the level style when there is no data", () => {
       // arrange
-      let mockShowMassage = Sinon.stub();
+      const mockShowMassage = Sinon.stub();
       mockShowMassage.returns(true);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = Sinon.stub();
+      const mockLevelToLogger = Sinon.stub();
       logger.levelToLogger = mockLevelToLogger;
-      let mockLogger = Sinon.spy();
+      const mockLogger = Sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      let mockLevelToStyle = Sinon.stub();
+      const mockLevelToStyle = Sinon.stub();
       mockLevelToStyle.returns(() => {
         return "baz";
       });
@@ -201,16 +201,16 @@ describe("lib logger", () => {
 
     it("should log the stringified data with the level style when there is data", () => {
       // arrange
-      let mockShowMassage = Sinon.stub();
+      const mockShowMassage = Sinon.stub();
       mockShowMassage.returns(true);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = Sinon.stub();
+      const mockLevelToLogger = Sinon.stub();
       logger.levelToLogger = mockLevelToLogger;
-      let mockLogger = Sinon.spy();
+      const mockLogger = Sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      let mockLevelToStyle = Sinon.stub();
+      const mockLevelToStyle = Sinon.stub();
       mockLevelToStyle.returns((value: {}) => value);
       logger.levelToStyle = mockLevelToStyle;
 
@@ -223,19 +223,19 @@ describe("lib logger", () => {
 
     it("should log instances of error with the level style when there is data", () => {
       // arrange
-      let mockShowMassage = Sinon.stub();
+      const mockShowMassage = Sinon.stub();
       mockShowMassage.returns(true);
       logger.showLogMessage = mockShowMassage;
 
-      let mockLevelToLogger = Sinon.stub();
+      const mockLevelToLogger = Sinon.stub();
       logger.levelToLogger = mockLevelToLogger;
-      let mockLogger = Sinon.spy();
+      const mockLogger = Sinon.spy();
       mockLevelToLogger.returns(mockLogger);
 
-      let mockLevelToStyle = Sinon.stub();
+      const mockLevelToStyle = Sinon.stub();
       mockLevelToStyle.returns((value: {}) => value);
       logger.levelToStyle = mockLevelToStyle;
-      let error = new Error("foo");
+      const error = new Error("foo");
 
       // act
       logger.log(LogLevel.Trace, "foo", error);
@@ -253,7 +253,7 @@ describe("lib logger", () => {
     });
 
     describe("veryVerbose", () => {
-      let tests = [{level: LogLevel.Trace, expected: true},
+      const tests = [{level: LogLevel.Trace, expected: true},
         {level: LogLevel.Debug, expected: true},
         {level: LogLevel.Info, expected: true},
         {level: LogLevel.Warn, expected: true},
@@ -262,7 +262,7 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          let revertVeryVerbose = RewiredLogger.__with__({program: {veryVerbose: true}});
+          const revertVeryVerbose = RewiredLogger.__with__({program: {veryVerbose: true}});
 
           // act
           let actual: boolean = undefined;
@@ -275,7 +275,7 @@ describe("lib logger", () => {
     });
 
     describe("verbose", () => {
-      let tests = [{level: LogLevel.Trace, expected: false},
+      const tests = [{level: LogLevel.Trace, expected: false},
         {level: LogLevel.Debug, expected: true},
         {level: LogLevel.Info, expected: true},
         {level: LogLevel.Warn, expected: true},
@@ -284,7 +284,7 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          let revertVerbose = RewiredLogger.__with__({program: {verbose: true}});
+          const revertVerbose = RewiredLogger.__with__({program: {verbose: true}});
 
           // act
           let actual: boolean = undefined;
@@ -297,7 +297,7 @@ describe("lib logger", () => {
     });
 
     describe("normal", () => {
-      let tests = [{level: LogLevel.Trace, expected: false},
+      const tests = [{level: LogLevel.Trace, expected: false},
         {level: LogLevel.Debug, expected: false},
         {level: LogLevel.Info, expected: true},
         {level: LogLevel.Warn, expected: true},
@@ -306,7 +306,7 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          let revertNormal = RewiredLogger.__with__({program: {normal: true}});
+          const revertNormal = RewiredLogger.__with__({program: {normal: true}});
 
           // act
           let actual: boolean = undefined;
@@ -319,7 +319,7 @@ describe("lib logger", () => {
     });
 
     describe("quiet", () => {
-      let tests = [{level: LogLevel.Trace, expected: false},
+      const tests = [{level: LogLevel.Trace, expected: false},
         {level: LogLevel.Debug, expected: false},
         {level: LogLevel.Info, expected: false},
         {level: LogLevel.Warn, expected: false},
@@ -328,7 +328,7 @@ describe("lib logger", () => {
       tests.forEach(test => {
         it("should be true when level is '" + test.level + "'", () => {
           // arrange
-          let revertQuiet = RewiredLogger.__with__({program: {quiet: true}});
+          const revertQuiet = RewiredLogger.__with__({program: {quiet: true}});
 
           // act
           let actual: boolean = undefined;
@@ -348,7 +348,7 @@ describe("lib logger", () => {
       }).to.throw("Unknown log level: -1");
     });
 
-    let tests = [{level: LogLevel.Trace, expected: console.log},
+    const tests = [{level: LogLevel.Trace, expected: console.log},
       {level: LogLevel.Debug, expected: console.log},
 
       // tslint:disable-next-line:no-console
@@ -360,7 +360,7 @@ describe("lib logger", () => {
     tests.forEach(test => {
       it("should be true when level is '" + test.level + "'", () => {
         // act
-        let actual = logger.levelToLogger(test.level);
+        const actual = logger.levelToLogger(test.level);
 
         // assert
         expect(actual).to.equal(test.expected);
@@ -375,11 +375,11 @@ describe("lib logger", () => {
       revertChalk = RewiredLogger.__set__({
         chalk_1: {
           "default": {
-            dim: {gray: x => "dim gray"},
-            gray: x => "gray",
-            red: x => "red",
-            reset: x => "reset",
-            yellow: x => "yellow"
+            dim: {gray: () => "dim gray"},
+            gray: () => "gray",
+            red: () => "red",
+            reset: () => "reset",
+            yellow: () => "yellow"
           }
         }
       });
@@ -395,7 +395,7 @@ describe("lib logger", () => {
       }).to.throw("Unknown log level: -1");
     });
 
-    let tests = [{level: LogLevel.Trace, expected: "dim gray"},
+    const tests = [{level: LogLevel.Trace, expected: "dim gray"},
       {level: LogLevel.Debug, expected: "gray"},
       {level: LogLevel.Info, expected: "reset"},
       {level: LogLevel.Warn, expected: "yellow"},
@@ -404,7 +404,7 @@ describe("lib logger", () => {
     tests.forEach(test => {
       it("should be true when level is '" + test.level + "'", () => {
         // act
-        let actual = logger.levelToStyle(test.level);
+        const actual = logger.levelToStyle(test.level);
 
         // assert
         expect(actual()).to.equal(test.expected);

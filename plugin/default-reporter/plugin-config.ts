@@ -10,6 +10,6 @@ export class DefaultReporterConfig implements PluginConfig {
   ];
 }
 
-let config = new DefaultReporterConfig();
+const config = new DefaultReporterConfig();
 
 export {config as PluginConfig};

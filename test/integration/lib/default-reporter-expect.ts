@@ -4,7 +4,7 @@ import * as _ from "lodash";
 import * as chai from "chai";
 import {ExecOutputReturnValue} from "shelljs";
 
-let expect = chai.expect;
+const expect = chai.expect;
 
 function analysisHidden(result: ExecOutputReturnValue): void {
   expect(result.stdout).to.match(/Hidden Tests/);

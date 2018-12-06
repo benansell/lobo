@@ -6,7 +6,7 @@ import {TestRunner} from "../lib/test-runner";
 import reporterExpect from "../lib/default-reporter-expect";
 import {Util} from "../lib/util";
 
-let expect = chai.expect;
+const expect = chai.expect;
 
 describe("elm-lang", () => {
   let runner: TestRunner;
@@ -27,7 +27,7 @@ describe("elm-lang", () => {
 
     it("should build and report success test run", () => {
       // act
-      let result = runner.run(testContext, "elm-test", false);
+      const result = runner.run(testContext, "elm-test", false);
 
       // assert
       reporterExpect(result).summaryPassed();

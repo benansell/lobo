@@ -13,7 +13,7 @@ const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib output-directory-manager", () => {
-  let RewiredOutputDirectoryManager = rewire("../../../lib/output-directory-manager");
+  const RewiredOutputDirectoryManager = rewire("../../../lib/output-directory-manager");
   let rewiredImp;
   let outputDirectoryManager: OutputDirectoryManagerImp;
   let mockBasename: Sinon.SinonStub;

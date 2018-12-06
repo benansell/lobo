@@ -104,10 +104,10 @@ export class LoboImp implements Lobo {
     this.waiting = false;
 
     try {
-      let config = this.configure();
+      const config = this.configure();
       this.validateConfiguration();
 
-      let context: ExecutionContext = <ExecutionContext> {
+      const context: ExecutionContext = <ExecutionContext> {
         codeLookup: {},
         config: <LoboConfig> config,
         testDirectory: program.testDirectory
@@ -126,13 +126,13 @@ export class LoboImp implements Lobo {
   }
 
   public launchStages(initialContext: ExecutionContext): Bluebird<ExecutionContext> {
-    let logStage = (context: ExecutionContext, stage: string) => {
+    const logStage = (context: ExecutionContext, stage: string) => {
       this.util.logStage(stage);
 
       return Bluebird.resolve(context);
     };
 
-    let stages = [
+    const stages = [
       (context: ExecutionContext) => this.outputDirectoryManager.prepare(context),
       (context: ExecutionContext) => this.dependencyManager.sync(context),
       (context: ExecutionContext) => this.elmCodeLookupManager.sync(context),
@@ -200,7 +200,7 @@ export class LoboImp implements Lobo {
     const appElmPackage = this.elmPackageHelper.tryReadElmJson(context.config.appDirectory);
 
     if (appElmPackage && this.elmPackageHelper.isApplicationJson(appElmPackage) && appElmPackage.sourceDirectories) {
-      let dirs = appElmPackage.sourceDirectories;
+      const dirs = appElmPackage.sourceDirectories;
 
       paths = _.map(dirs, p => path.normalize(path.join(process.cwd(), context.config.appDirectory, p)))
         .filter(p => shelljs.test("-e", p))
@@ -237,8 +237,8 @@ export class LoboImp implements Lobo {
   // ------------------------------------------------------
 
   public configure(): PartialLoboConfig {
-    let packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
-    let config: PartialLoboConfig = <PartialLoboConfig> {
+    const packageJson = this.util.unsafeLoad<{version: string}>("../package.json");
+    const config: PartialLoboConfig = <PartialLoboConfig> {
       appDirectory: ".",
       loboDirectory: "./.lobo",
       optimize: false,
@@ -271,8 +271,8 @@ export class LoboImp implements Lobo {
     // parse args with allow unknown to find & load plugins with additional options
     program.allowUnknownOption(true);
     program.parse(process.argv);
-    let reporterConfig = this.loadReporterConfig(program.reporter);
-    let testFrameworkConfig = this.loadTestFrameworkConfig(program.framework);
+    const reporterConfig = this.loadReporterConfig(program.reporter);
+    const testFrameworkConfig = this.loadTestFrameworkConfig(program.framework);
 
     // re-parse args with plugins loaded
     program.allowUnknownOption(false);
@@ -323,7 +323,7 @@ export class LoboImp implements Lobo {
   }
 
   public showCustomHelp(): void {
-    let maxOptionLength = 29;
+    const maxOptionLength = 29;
     this.logger.info("  Testing Frameworks:");
     this.logger.info("");
     this.showCustomHelpForPlugins(this.pluginType.testFramework, maxOptionLength);
@@ -334,16 +334,16 @@ export class LoboImp implements Lobo {
   }
 
   public showCustomHelpForPlugins(pluginTypeDetail: PluginTypeDetail, maxOptionLength: number): void {
-    let plugins = this.util.availablePlugins(pluginTypeDetail.fileSpec);
+    const plugins = this.util.availablePlugins(pluginTypeDetail.fileSpec);
 
     _.forEach(plugins, (name: string) => {
       this.logger.info("   " + chalk.underline(name) + ":");
       this.logger.info("");
-      let config = this.util.getPluginConfig(pluginTypeDetail.type, name, pluginTypeDetail.fileSpec);
+      const config = this.util.getPluginConfig(pluginTypeDetail.type, name, pluginTypeDetail.fileSpec);
 
       if (config && config.options && config.options.length > 0) {
         _.forEach(config.options, (option) => {
-          let prefix = this.util.padRight("    " + option.flags, maxOptionLength);
+          const prefix = this.util.padRight("    " + option.flags, maxOptionLength);
           this.logger.info(prefix + option.description);
         });
       }
@@ -407,8 +407,8 @@ export class LoboImp implements Lobo {
   }
 
   public loadReporter(pluginName: string, config: PluginConfig): PluginReporterWithConfig {
-    let plugin = this.util.getPlugin<PluginReporterWithConfig>(this.pluginType.reporter.type, pluginName,
-                                                               this.pluginType.reporter.fileSpec);
+    const plugin = this.util.getPlugin<PluginReporterWithConfig>(this.pluginType.reporter.type, pluginName,
+                                                                 this.pluginType.reporter.fileSpec);
     (<PluginWithConfig><PluginReporterWithConfig>plugin).config = config;
 
     return plugin;
@@ -419,8 +419,8 @@ export class LoboImp implements Lobo {
   }
 
   public loadTestFramework(pluginName: string, config: PluginTestFrameworkConfig): PluginTestFrameworkWithConfig {
-    let plugin = this.util.getPlugin<PluginTestFrameworkWithConfig>(this.pluginType.testFramework.type, pluginName,
-                                                                    this.pluginType.testFramework.fileSpec);
+    const plugin = this.util.getPlugin<PluginTestFrameworkWithConfig>(this.pluginType.testFramework.type, pluginName,
+                                                                      this.pluginType.testFramework.fileSpec);
     (<PluginWithConfig><PluginTestFrameworkWithConfig>plugin).config = config;
 
     return plugin;
@@ -431,7 +431,7 @@ export class LoboImp implements Lobo {
   }
 
   public loadPluginConfig<T extends PluginConfig>(pluginTypeDetail: PluginTypeDetail, pluginName: string): T {
-    let config = this.util.getPluginConfig<T>(pluginTypeDetail.type, pluginName, pluginTypeDetail.fileSpec);
+    const config = this.util.getPluginConfig<T>(pluginTypeDetail.type, pluginName, pluginTypeDetail.fileSpec);
 
     if (!config || !config.options) {
       return config;

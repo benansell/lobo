@@ -4,8 +4,7 @@ import * as chai from "chai";
 import {PluginTestFrameworkConfig} from "../../../../lib/plugin";
 import {ElmTestExtraConfig} from "../../../../plugin/elm-test-extra/plugin-config";
 
-
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(require("chai-things"));
 
 describe("plugin elm-test-extra plugin-config", () => {
@@ -18,7 +17,7 @@ describe("plugin elm-test-extra plugin-config", () => {
   describe("options", () => {
     it("should have '--seed' option", () => {
       // act
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--seed <value>");
@@ -26,7 +25,7 @@ describe("plugin elm-test-extra plugin-config", () => {
 
     it("should have '--runCount' option", () => {
       // act
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--runCount <value>");
@@ -74,7 +73,7 @@ describe("plugin elm-test-extra plugin-config", () => {
   describe("sourceDirectories", () => {
     it("should have 'runner' directory", () => {
       // act
-      let dirs = config.sourceDirectories;
+      const dirs = config.sourceDirectories;
 
       // assert
       expect(dirs).to.include("runner");
@@ -82,7 +81,7 @@ describe("plugin elm-test-extra plugin-config", () => {
 
     it("should have 'plugin/elm-test-extra' directory", () => {
       // act
-      let dirs = config.sourceDirectories;
+      const dirs = config.sourceDirectories;
 
       // assert
       expect(dirs).to.include("plugin/elm-test-extra");

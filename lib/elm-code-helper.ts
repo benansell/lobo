@@ -147,7 +147,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
   }
 
   public findChar(startIndex: number, searchChar: string, includeComments: boolean = false): number | undefined {
-    let isMatch: (index: number) => number | undefined = (index) => {
+    const isMatch: (index: number) => number | undefined = (index) => {
       if (this.existsAt(index, searchChar)) {
         return index;
       } else {
@@ -165,7 +165,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
   public findClose(startIndex: number, open: string, close: string, includeComments: boolean = false)
     : number | undefined {
     let contextCount: number = 0;
-    let isMatch: (index: number) => number | undefined = (index) => {
+    const isMatch: (index: number) => number | undefined = (index) => {
       if (this.existsAt(index, close)) {
         contextCount--;
 
@@ -207,7 +207,7 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
   }
 
   public findNextWord(startIndex: number, skipComments: boolean = true, delimiters: string[] = [" ", "\n", ":", "="]): FindWordResult {
-    let isMatch: (index: number) => FindWordResult | undefined = (index) => {
+    const isMatch: (index: number) => FindWordResult | undefined = (index) => {
       if (this.exists(index, delimiters) >= 0) {
         if (startIndex === index) {
           return {nextIndex: index + 1, word: this.codeBetween(startIndex, index)};
@@ -249,9 +249,9 @@ export class ElmCodeHelperImp implements ElmCodeHelper {
   }
 
   public findUntilEndOfBlock(startIndex: number, wordResult: FindWordResult): FindWordResult | undefined {
-    let currentStartIndex = startIndex;
+    const currentStartIndex = startIndex;
     let endIndex = startIndex;
-    let isMatch: (index: number) => FindWordResult | undefined = (index) => {
+    const isMatch: (index: number) => FindWordResult | undefined = (index) => {
       if (this.code[index] === "\n") {
         if (this.code[index - 1] !== "\n") {
           endIndex = index - 1;

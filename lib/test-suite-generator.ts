@@ -226,13 +226,13 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
       const restTestIndent = indent + indent + ", ";
 
       for (const child of suite.childNodes) {
-        let prefix = isFirst ? firstTestIndent : restTestIndent;
+        const prefix = isFirst ? firstTestIndent : restTestIndent;
         lines.push(`${prefix}${child.name}`);
         isFirst = false;
       }
 
       for (const child of suite.childTests) {
-        let prefix = isFirst ? firstTestIndent : restTestIndent;
+        const prefix = isFirst ? firstTestIndent : restTestIndent;
         lines.push(`${prefix}${this.toSuiteNameForTestModule(child)}`);
         isFirst = false;
       }
@@ -262,7 +262,7 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
 
       for (let j = 0; j < testModuleNode.tests.length; j++) {
         const t = testModuleNode.tests[j];
-        let prefix = j === 0 ? firstTestIndent : restTestIndent;
+        const prefix = j === 0 ? firstTestIndent : restTestIndent;
         lines.push(`${prefix}${testModuleNode.moduleNode.name}.${t.name}`);
       }
 

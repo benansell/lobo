@@ -16,6 +16,6 @@ export class JUnitReporterConfig implements PluginConfig {
   }
 }
 
-let config = new JUnitReporterConfig();
+const config = new JUnitReporterConfig();
 
 export {config as PluginConfig};

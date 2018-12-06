@@ -34,6 +34,6 @@ export class ElmTestExtraConfig implements PluginTestFrameworkConfig {
   }
 }
 
-let config = new ElmTestExtraConfig();
+const config = new ElmTestExtraConfig();
 
 export {config as PluginConfig};

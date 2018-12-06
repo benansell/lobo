@@ -29,7 +29,7 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
     const unlistedTypes = [{name: "Bool", values: ["False", "True"]}, "Float", "Int"];
 
     // ref: http://package.elm-lang.org/packages/elm-lang/core/latest/
-    let basicsExposing = [
+    const basicsExposing = [
       "==", "/=", "<", ">", "<=", " >=", " max", "min", {name: "Order", values: ["LT", "EQ", "GT"]}, "compare", "not", "&&", "||",
       "xor", "+", "-", "*", "/", "^", "//", "remainderBy", "modBy", "negate", "abs", "sqrt", "clamp", "logBase", "e", "pi", "cos", "sin",
       "tan", "acos", "asin", "atan", "atan2", "round", "floor", "ceiling", "truncate", "toFloat", "degrees", "radians", "turns", "toPolar",
@@ -104,7 +104,7 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
   }
 
   public resolve(name: string, parentTypeName: string | undefined, moduleName: string | undefined): ElmTypeInfo {
-    let existingType = this.resolveExistingType(name, moduleName);
+    const existingType = this.resolveExistingType(name, moduleName);
 
     if (existingType) {
       return existingType;
@@ -170,13 +170,13 @@ export class ElmTypeHelperImp implements ElmTypeHelper {
       return undefined;
     }
 
-    let parts = name.split(".");
+    const parts = name.split(".");
 
     if (parts.length <= 1) {
       return this.resolve(name, undefined, undefined);
     }
 
-    let typeName = parts.pop()!;
+    const typeName = parts.pop()!;
     let parentName: string | undefined = undefined;
     let moduleName: string | undefined = undefined;
 

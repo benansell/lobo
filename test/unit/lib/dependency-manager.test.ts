@@ -17,7 +17,7 @@ chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib dependency-manager", () => {
-  let RewiredDependencyManager = rewire("../../../lib/dependency-manager");
+  const RewiredDependencyManager = rewire("../../../lib/dependency-manager");
   let dependencyManager: DependencyManagerImp;
   let mockClean: Sinon.SinonStub;
   let mockConfirm: Sinon.SinonStub;

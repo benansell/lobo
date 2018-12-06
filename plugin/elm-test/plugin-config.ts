@@ -33,6 +33,6 @@ export class ElmTestConfig implements PluginTestFrameworkConfig {
   }
 }
 
-let config = new ElmTestConfig();
+const config = new ElmTestConfig();
 
 export {config as PluginConfig};

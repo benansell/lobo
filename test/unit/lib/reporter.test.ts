@@ -12,17 +12,17 @@ import {
   TestRunSummary
 } from "../../../lib/plugin";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib reporter", () => {
-  let RewiredReporter = rewire("./../../../lib/reporter");
+  const RewiredReporter = rewire("./../../../lib/reporter");
   let reporter: ReporterImp;
   let mockReporterPlugin: PluginReporter;
 
   beforeEach(() => {
-    let rewiredImp = RewiredReporter.__get__("ReporterImp");
+    const rewiredImp = RewiredReporter.__get__("ReporterImp");
     reporter = new rewiredImp();
     mockReporterPlugin = <PluginReporter> {finish: Sinon.stub(), init: Sinon.spy(), runArgs: Sinon.spy(), update: Sinon.spy()};
     reporter.configure(mockReporterPlugin);
@@ -32,7 +32,7 @@ describe("lib reporter", () => {
   describe("createReporter", () => {
     it("should return reporter", () => {
       // act
-      let actual: Reporter = createReporter();
+      const actual: Reporter = createReporter();
 
       // assert
       expect(actual).to.exist;
@@ -42,7 +42,7 @@ describe("lib reporter", () => {
   describe("runArgs", () => {
     it("should call plugin.runArgs with the supplied args", () => {
       // arrange
-      let expected = <RunArgs> {runCount: 123};
+      const expected = <RunArgs> {runCount: 123};
 
       // act
       reporter.runArgs(expected);
@@ -55,7 +55,7 @@ describe("lib reporter", () => {
   describe("init", () => {
     it("should call plugin.init with the supplied args", () => {
       // arrange
-      let expected = 123;
+      const expected = 123;
 
       // act
       reporter.init(expected);
@@ -68,7 +68,7 @@ describe("lib reporter", () => {
   describe("update", () => {
     it("should report nothing when program.quiet is true", () => {
       // arrange
-      let revertProgram = RewiredReporter.__with__({program: {quiet: true}});
+      const revertProgram = RewiredReporter.__with__({program: {quiet: true}});
 
       // act
       revertProgram(() => reporter.update(<ProgressReport> {resultType: "PASSED"}, []));
@@ -79,7 +79,7 @@ describe("lib reporter", () => {
 
     it("should call reporter.update when program.quiet is false", () => {
       // arrange
-      let revertProgram = RewiredReporter.__with__({program: {quiet: false}});
+      const revertProgram = RewiredReporter.__with__({program: {quiet: false}});
 
       // act
       revertProgram(() => reporter.update(<ProgressReport> {resultType: "PASSED"}, []));
@@ -90,8 +90,8 @@ describe("lib reporter", () => {
 
     it("should add the supplied debugLogMessages to the testDebugLogMessages list with the result id", () => {
       // arrange
-      let revertProgram = RewiredReporter.__with__({program: {quiet: false}});
-      let messages = ["foo"];
+      const revertProgram = RewiredReporter.__with__({program: {quiet: false}});
+      const messages = ["foo"];
 
       // act
       revertProgram(() => reporter.update(<ProgressReport> {id: 123, resultType: "PASSED"}, messages));
@@ -104,7 +104,7 @@ describe("lib reporter", () => {
   describe("finish", () => {
     it("should call processResults with the supplied raw results", () => {
       // arrange
-      let expected = <TestReportRoot>{runType: "NORMAL"};
+      const expected = <TestReportRoot>{runType: "NORMAL"};
       reporter.processResults = Sinon.stub();
       (<SinonStub>reporter.processResults).returns(<TestRun>{summary: {}});
       (<SinonStub>mockReporterPlugin.finish).returns({then: Sinon.stub(), return: Sinon.stub()});
@@ -118,7 +118,7 @@ describe("lib reporter", () => {
 
     it("should call plugin.finish with the processed results", () => {
       // arrange
-      let expected = <TestRun> {summary: {outcome: "PASSED"}};
+      const expected = <TestRun> {summary: {outcome: "PASSED"}};
       reporter.processResults = Sinon.stub();
       (<SinonStub>reporter.processResults).returns(expected);
       (<SinonStub>mockReporterPlugin.finish).returns({then: Sinon.stub()});
@@ -132,7 +132,7 @@ describe("lib reporter", () => {
 
     it("should return a promise that resolves when the results are a success", () => {
       // arrange
-      let expected = <TestRun> {summary: {success: true}};
+      const expected = <TestRun> {summary: {success: true}};
       reporter.processResults = Sinon.stub();
       (<SinonStub>reporter.processResults).returns(expected);
       let onFulfill: Function = undefined;
@@ -147,7 +147,7 @@ describe("lib reporter", () => {
 
     it("should return a promise that rejects when the results are a failure", () => {
       // arrange
-      let expected = <TestRun> {summary: {success: false}};
+      const expected = <TestRun> {summary: {success: false}};
       reporter.processResults = Sinon.stub();
       (<SinonStub>reporter.processResults).returns(expected);
       let onFulfill: Function = undefined;
@@ -164,7 +164,7 @@ describe("lib reporter", () => {
   describe("processResults", () => {
     it("should return a summary with durationMilliseconds calculated from start and end times", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {startTime: 150, endTime: 200});
+      const actual = reporter.processResults(<TestReportRoot> {startTime: 150, endTime: 200});
 
       // assert
       expect(actual.summary.durationMilliseconds).to.equal(50);
@@ -172,7 +172,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with only exists false when the only count is zero", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.failState.only.exists).to.be.false;
@@ -180,7 +180,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with only exists true when the only count is greater than zero", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "IGNORED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "IGNORED"}]});
 
       // assert
       expect(actual.failState.only.exists).to.be.true;
@@ -188,7 +188,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with only exists false when the only count is zero and runType is not 'FOCUS'", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runType: "NORMAL", runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runType: "NORMAL", runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.failState.only.exists).to.be.false;
@@ -196,7 +196,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with only exists true when the only count is zero and runType is 'FOCUS'", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runType: "FOCUS", runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runType: "FOCUS", runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.failState.only.exists).to.be.true;
@@ -204,7 +204,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with skip exists false when the skip count is zero", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.failState.skip.exists).to.be.false;
@@ -212,7 +212,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with skip exists true when the skip count is greater than zero", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "SKIPPED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "SKIPPED"}]});
 
       // assert
       expect(actual.failState.skip.exists).to.be.true;
@@ -220,7 +220,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with skip exists false when the skip count is zero and runType is not 'SKIP'", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runType: "NORMAL", runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runType: "NORMAL", runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.failState.skip.exists).to.be.false;
@@ -228,7 +228,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with skip exists true when the skip count is zero and runType is 'SKIP'", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runType: "SKIP", runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runType: "SKIP", runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.failState.skip.exists).to.be.true;
@@ -236,7 +236,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with todo exists false when the todo count is zero", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.failState.todo.exists).to.be.false;
@@ -244,7 +244,7 @@ describe("lib reporter", () => {
 
     it("should return a failState with todo exists true when the todo count is greater than zero", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "TODO"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "TODO"}]});
 
       // assert
       expect(actual.failState.todo.exists).to.be.true;
@@ -252,7 +252,7 @@ describe("lib reporter", () => {
 
     it("should return a summary with success true when there are no failed tests", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "PASSED"}]});
 
       // assert
       expect(actual.summary.success).to.be.true;
@@ -260,7 +260,7 @@ describe("lib reporter", () => {
 
     it("should return a summary with success false when there are failed tests", () => {
       // act
-      let actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "FAILED"}]});
+      const actual = reporter.processResults(<TestReportRoot> {runResults: [{resultType: "FAILED"}]});
 
       // assert
       expect(actual.summary.success).to.be.false;
@@ -268,7 +268,7 @@ describe("lib reporter", () => {
 
     it("should return a summary with success false when fail on only is true and focused tests exist", () => {
       // arrange
-      let revert = RewiredReporter.__with__({program: {failOnOnly: true}});
+      const revert = RewiredReporter.__with__({program: {failOnOnly: true}});
 
       // act
       let actual: TestRun = undefined;
@@ -280,7 +280,7 @@ describe("lib reporter", () => {
 
     it("should return a summary with success false when fail on skip is true and skipped tests exist", () => {
       // arrange
-      let revert = RewiredReporter.__with__({program: {failOnSkip: true}});
+      const revert = RewiredReporter.__with__({program: {failOnSkip: true}});
 
       // act
       let actual: TestRun = undefined;
@@ -292,7 +292,7 @@ describe("lib reporter", () => {
 
     it("should return a summary with success false when fail on skip is true and todo tests exist", () => {
       // arrange
-      let revert = RewiredReporter.__with__({program: {failOnTodo: true}});
+      const revert = RewiredReporter.__with__({program: {failOnTodo: true}});
 
       // act
       let actual: TestRun = undefined;
@@ -306,7 +306,7 @@ describe("lib reporter", () => {
   describe("processTestResults", () => {
     it("should not update the summary when the results do not exist", () => {
       // arrange
-      let expected = <TestRunSummary> {};
+      const expected = <TestRunSummary> {};
 
       // act
       reporter.processTestResults(undefined, expected, []);
@@ -317,7 +317,7 @@ describe("lib reporter", () => {
 
     it("should update the summary failedCount when results contains a failed result", () => {
       // arrange
-      let expected = <TestRunSummary> {failedCount: 0, failures: []};
+      const expected = <TestRunSummary> {failedCount: 0, failures: []};
 
       // act
       reporter.processTestResults([<TestReportNode>{resultType: "FAILED"}], expected, []);
@@ -328,8 +328,8 @@ describe("lib reporter", () => {
 
     it("should update the summary failures when results contains the failed result with labels", () => {
       // arrange
-      let expected = <TestRunSummary> {failedCount: 0, failures: []};
-      let result = <TestReportNode>{resultType: "FAILED"};
+      const expected = <TestRunSummary> {failedCount: 0, failures: []};
+      const result = <TestReportNode>{resultType: "FAILED"};
 
       // act
       reporter.processTestResults([result], expected, ["foo"]);
@@ -340,11 +340,11 @@ describe("lib reporter", () => {
 
     it("should update the summary failures when results contains the failed result with log messages", () => {
       // arrange
-      let summary = <TestRunSummary> {failedCount: 0, failures: []};
+      const summary = <TestRunSummary> {failedCount: 0, failures: []};
       reporter.toLoggedResult = Sinon.stub();
-      let expected = <TestReportFailedLeaf>{resultType: "FAILED", logMessages: ["bar"]};
+      const expected = <TestReportFailedLeaf>{resultType: "FAILED", logMessages: ["bar"]};
       (<SinonStub>reporter.toLoggedResult).returns(expected);
-      let result = <TestReportNode>{resultType: "FAILED"};
+      const result = <TestReportNode>{resultType: "FAILED"};
 
       // act
       reporter.processTestResults([result], summary, ["foo"]);
@@ -355,7 +355,7 @@ describe("lib reporter", () => {
 
     it("should update the summary onlyCount when results contains an ignored result", () => {
       // arrange
-      let expected = <TestRunSummary> {onlyCount: 0, successes: []};
+      const expected = <TestRunSummary> {onlyCount: 0, successes: []};
 
       // act
       reporter.processTestResults([<TestReportNode>{resultType: "IGNORED"}], expected, []);
@@ -366,7 +366,7 @@ describe("lib reporter", () => {
 
     it("should update the summary passedCount when results contains an passed result", () => {
       // arrange
-      let expected = <TestRunSummary> {passedCount: 0, successes: []};
+      const expected = <TestRunSummary> {passedCount: 0, successes: []};
 
       // act
       reporter.processTestResults([<TestReportNode>{resultType: "PASSED"}], expected, []);
@@ -377,11 +377,11 @@ describe("lib reporter", () => {
 
     it("should update the summary successes when results contains the passed result with log messages", () => {
       // arrange
-      let summary = <TestRunSummary> {passedCount: 0, successes: []};
+      const summary = <TestRunSummary> {passedCount: 0, successes: []};
       reporter.toLoggedResult = Sinon.stub();
-      let expected = <TestReportFailedLeaf>{resultType: "PASSED", logMessages: ["bar"]};
+      const expected = <TestReportFailedLeaf>{resultType: "PASSED", logMessages: ["bar"]};
       (<SinonStub>reporter.toLoggedResult).returns(expected);
-      let result = <TestReportNode>{resultType: "PASSED"};
+      const result = <TestReportNode>{resultType: "PASSED"};
 
       // act
       reporter.processTestResults([result], summary, ["foo"]);
@@ -392,7 +392,7 @@ describe("lib reporter", () => {
 
     it("should update the summary skippedCount when results contains a skipped result", () => {
       // arrange
-      let expected = <TestRunSummary> {skippedCount: 0, skipped: []};
+      const expected = <TestRunSummary> {skippedCount: 0, skipped: []};
 
       // act
       reporter.processTestResults([<TestReportNode>{resultType: "SKIPPED"}], expected, []);
@@ -403,8 +403,8 @@ describe("lib reporter", () => {
 
     it("should update the summary failures when results contains the skipped result with labels", () => {
       // arrange
-      let expected = <TestRunSummary> {skippedCount: 0, skipped: []};
-      let result = <TestReportNode>{resultType: "SKIPPED"};
+      const expected = <TestRunSummary> {skippedCount: 0, skipped: []};
+      const result = <TestReportNode>{resultType: "SKIPPED"};
 
       // act
       reporter.processTestResults([result], expected, ["foo"]);
@@ -415,7 +415,7 @@ describe("lib reporter", () => {
 
     it("should update the summary todoCount when results contains a todo result", () => {
       // arrange
-      let expected = <TestRunSummary> {todoCount: 0, todo: []};
+      const expected = <TestRunSummary> {todoCount: 0, todo: []};
 
       // act
       reporter.processTestResults([<TestReportNode>{resultType: "TODO"}], expected, []);
@@ -426,8 +426,8 @@ describe("lib reporter", () => {
 
     it("should update the summary failures when results contains the todo result with labels", () => {
       // arrange
-      let expected = <TestRunSummary> {todoCount: 0, todo: []};
-      let result = <TestReportNode>{resultType: "TODO"};
+      const expected = <TestRunSummary> {todoCount: 0, todo: []};
+      const result = <TestReportNode>{resultType: "TODO"};
 
       // act
       reporter.processTestResults([result], expected, ["foo"]);
@@ -438,9 +438,9 @@ describe("lib reporter", () => {
 
     it("should update the summary with child results and the labels containing the parent", () => {
       // arrange
-      let expected = <TestRunSummary> {failedCount: 0, failures: []};
-      let childResult = <TestReportNode> {resultType: "FAILED"};
-      let result = <TestReportSuiteNode>{label: "bar", results: [childResult]};
+      const expected = <TestRunSummary> {failedCount: 0, failures: []};
+      const childResult = <TestReportNode> {resultType: "FAILED"};
+      const result = <TestReportSuiteNode>{label: "bar", results: [childResult]};
 
       // act
       reporter.processTestResults([result], expected, ["foo"]);
@@ -453,7 +453,7 @@ describe("lib reporter", () => {
   describe("toLoggedResult", () => {
     it("should return a result with an empty array of logMessages when no log messages are found", () => {
       // act
-      let actual = reporter.toLoggedResult(<TestReportFailedLeaf> {});
+      const actual = reporter.toLoggedResult(<TestReportFailedLeaf> {});
 
       // assert
       expect(actual.logMessages).to.be.empty;
@@ -466,7 +466,7 @@ describe("lib reporter", () => {
       reporter.testDebugLogMessages.push({id: 3, debugLogMessages: ["baz"]});
 
       // act
-      let actual = reporter.toLoggedResult(<TestReportFailedLeaf> {id: 2});
+      const actual = reporter.toLoggedResult(<TestReportFailedLeaf> {id: 2});
 
       // assert
       expect(actual.logMessages).to.deep.equal(["bar"]);
@@ -480,7 +480,7 @@ describe("lib reporter", () => {
       reporter.testDebugLogMessages.push({id: 2, debugLogMessages: ["qux"]});
 
       // act
-      let actual = reporter.toLoggedResult(<TestReportFailedLeaf> {id: 2});
+      const actual = reporter.toLoggedResult(<TestReportFailedLeaf> {id: 2});
 
       // assert
       expect(actual.logMessages).to.deep.equal(["bar", "qux"]);
@@ -490,7 +490,7 @@ describe("lib reporter", () => {
   describe("toTestRunState", () => {
     it("should return exists as supplied exists value", () => {
       // act
-      let actual = reporter.toTestRunState(false, true);
+      const actual = reporter.toTestRunState(false, true);
 
       // assert
       expect(actual.exists).to.be.true;
@@ -498,7 +498,7 @@ describe("lib reporter", () => {
 
     it("should return isFailOn as true when flag is true", () => {
       // act
-      let actual = reporter.toTestRunState(true, false);
+      const actual = reporter.toTestRunState(true, false);
 
       // assert
       expect(actual.isFailOn).to.be.true;
@@ -506,7 +506,7 @@ describe("lib reporter", () => {
 
     it("should return isFailOn as false when flag is false", () => {
       // act
-      let actual = reporter.toTestRunState(false, false);
+      const actual = reporter.toTestRunState(false, false);
 
       // assert
       expect(actual.isFailOn).to.be.false;
@@ -514,7 +514,7 @@ describe("lib reporter", () => {
 
     it("should return isFailOn as false when flag is undefined", () => {
       // act
-      let actual = reporter.toTestRunState(undefined, false);
+      const actual = reporter.toTestRunState(undefined, false);
 
       // assert
       expect(actual.isFailOn).to.be.false;
@@ -522,7 +522,7 @@ describe("lib reporter", () => {
 
     it("should return isFailOn as true when exists and flag are true", () => {
       // act
-      let actual = reporter.toTestRunState(true, true);
+      const actual = reporter.toTestRunState(true, true);
 
       // assert
       expect(actual.isFailure).to.be.true;
@@ -530,7 +530,7 @@ describe("lib reporter", () => {
 
     it("should return isFailOn as false when exists is false", () => {
       // act
-      let actual = reporter.toTestRunState(true, false);
+      const actual = reporter.toTestRunState(true, false);
 
       // assert
       expect(actual.isFailure).to.be.false;
@@ -538,7 +538,7 @@ describe("lib reporter", () => {
 
     it("should return isFailOn as false when flag is false", () => {
       // act
-      let actual = reporter.toTestRunState(false, true);
+      const actual = reporter.toTestRunState(false, true);
 
       // assert
       expect(actual.isFailure).to.be.false;
@@ -548,7 +548,7 @@ describe("lib reporter", () => {
   describe("calculateOutcome", () => {
     it("should return outcome with 'PARTIAL' prefix for a non 'NORMAL' test run", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 1, runType: "FOCUS"}, <TestRunFailState> {});
+      const actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 1, runType: "FOCUS"}, <TestRunFailState> {});
 
       // assert
       expect(actual).to.match(/PARTIAL /);
@@ -556,7 +556,7 @@ describe("lib reporter", () => {
 
     it("should return outcome with 'FOCUSED' prefix for a 'NORMAL' test run with only count greater than zero", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 1, onlyCount: 1}, <TestRunFailState> {});
+      const actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 1, onlyCount: 1}, <TestRunFailState> {});
 
       // assert
       expect(actual).to.match(/FOCUSED /);
@@ -564,7 +564,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN FAILED' for a 'NORMAL' test run when failedCount is greater than zero", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 1}, <TestRunFailState> {});
+      const actual = reporter.calculateOutcome(<TestRunSummary> {runType: "NORMAL", failedCount: 1}, <TestRunFailState> {});
 
       // assert
       expect(actual).to.equal("TEST RUN FAILED");
@@ -572,8 +572,8 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN FAILED' for a 'NORMAL' test run when failedCount is zero and only isFailure is true", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> { failedCount: 0, runType: "NORMAL" },
-                                             <TestRunFailState> {only: {isFailure: true}, skip: {}, todo: {}});
+      const actual = reporter.calculateOutcome(<TestRunSummary> { failedCount: 0, runType: "NORMAL" },
+                                               <TestRunFailState> {only: {isFailure: true}, skip: {}, todo: {}});
 
       // assert
       expect(actual).to.equal("TEST RUN FAILED");
@@ -581,7 +581,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN FAILED' for a 'NORMAL' test run when failedCount is zero and skip isFailure is true", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
+      const actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {isFailure: true},
         todo: {}
@@ -593,7 +593,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN FAILED' for a 'NORMAL' test run when failedCount is zero and todo isFailure is true", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
+      const actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {},
         todo: {isFailure: true}
@@ -605,7 +605,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN INCONCLUSIVE' for a 'NORMAL' test run when failedCount is zero and there is a skipped test", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
+      const actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {exists: true},
         todo: {}
@@ -617,7 +617,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN INCONCLUSIVE' for a 'NORMAL' test run when failedCount is zero and there is a todo test", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
+      const actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {},
         todo: {exists: true}
@@ -629,7 +629,7 @@ describe("lib reporter", () => {
 
     it("should return 'TEST RUN PASSED' for a 'NORMAL' test run when failedCount is zero and all tests ran", () => {
       // act
-      let actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
+      const actual = reporter.calculateOutcome(<TestRunSummary> {failedCount: 0, runType: "NORMAL"}, <TestRunFailState> {
         only: {},
         skip: {},
         todo: {}

@@ -39,7 +39,7 @@ export class JUnitReporter implements plugin.PluginReporter {
       return 0;
     }
 
-    let durationDate = new Date(node.endTime - node.startTime);
+    const durationDate = new Date(node.endTime - node.startTime);
 
     return durationDate.getSeconds();
   }
@@ -98,7 +98,7 @@ export class JUnitReporter implements plugin.PluginReporter {
   }
 
   public enrichResultChildren(node: plugin.TestReportSuiteNode): MeasuredNode {
-    let measuredNode = <MeasuredNode><{}> node;
+    const measuredNode = <MeasuredNode><{}> node;
     measuredNode.failedCount = 0;
     measuredNode.ignoredCount = 0;
     measuredNode.passedCount = 0;
@@ -107,7 +107,7 @@ export class JUnitReporter implements plugin.PluginReporter {
     measuredNode.todoCount = 0;
 
     _.forEach(node.results, (child: plugin.TestReportNode) => {
-      let measuredChild = this.enrichResult(child);
+      const measuredChild = this.enrichResult(child);
       measuredNode.failedCount += measuredChild.failedCount;
       measuredNode.ignoredCount += measuredChild.ignoredCount;
       measuredNode.passedCount += measuredChild.passedCount;
@@ -132,11 +132,11 @@ export class JUnitReporter implements plugin.PluginReporter {
   }
 
   public finish(results: plugin.TestRun): Bluebird<void> {
-    let steps: Array<() => Bluebird<void>> = [];
+    const steps: Array<() => Bluebird<void>> = [];
     steps.push(() => this.standardConsole.finish(results));
 
     steps.push(() => {
-      let measuredRoots = this.build(results.summary);
+      const measuredRoots = this.build(results.summary);
 
       return this.write(program.reportFile, measuredRoots);
     });
@@ -147,9 +147,9 @@ export class JUnitReporter implements plugin.PluginReporter {
 
   public writeResult(writeLine: WriteLine, measuredRoot: MeasuredNode): void {
     writeLine(`<?xml version="1.0" encoding="UTF-8"?>`);
-    let line = `<testsuites name="${measuredRoot.label}">`;
+    const line = `<testsuites name="${measuredRoot.label}">`;
     writeLine(line);
-    let node = <plugin.TestReportSuiteNode><{}> measuredRoot;
+    const node = <plugin.TestReportSuiteNode><{}> measuredRoot;
 
     if (!node.results || node.results.length === 0) {
       this.writeResultList(writeLine, measuredRoot.label, [node], this.paddingUnit);
@@ -195,7 +195,7 @@ export class JUnitReporter implements plugin.PluginReporter {
             break;
           default:
             this.writeTestSuiteStart(writeLine, testSuite, padding);
-            let newPadding = padding + this.paddingUnit;
+            const newPadding = padding + this.paddingUnit;
             this.writeResultList(writeLine, testSuite.label, testSuite.results, newPadding);
             this.writeTestSuiteEnd(writeLine, padding);
         }
@@ -208,7 +208,7 @@ export class JUnitReporter implements plugin.PluginReporter {
       + ` classname="${parentLabel}">`);
 
     writeLine(`${padding}${this.paddingUnit}<failure>`);
-    let failureMessage = this.toFailureLogMessage(leaf);
+    const failureMessage = this.toFailureLogMessage(leaf);
     this.writeMessage(writeLine, failureMessage, padding);
     writeLine(`${padding}${this.paddingUnit}</failure>`);
     this.writeDebugLogMessage(writeLine, leaf, padding);
@@ -229,7 +229,7 @@ export class JUnitReporter implements plugin.PluginReporter {
     }
 
     writeLine(`${padding}${this.paddingUnit}<system-out>`);
-    let debugLogMessages = this.toDebugLogMessage(leaf);
+    const debugLogMessages = this.toDebugLogMessage(leaf);
     this.writeMessage(writeLine, debugLogMessages, padding);
     writeLine(`${padding}${this.paddingUnit}</system-out>`);
   }
@@ -284,8 +284,8 @@ export class JUnitReporter implements plugin.PluginReporter {
   }
 
   public writeTestSuiteStart(writeLine: WriteLine, suite: plugin.TestReportSuiteNode, padding: string): void {
-    let measuredNode = <MeasuredNode><{}>suite;
-    let timestamp = suite.startTime ? new Date(suite.startTime).toISOString() : null;
+    const measuredNode = <MeasuredNode><{}>suite;
+    const timestamp = suite.startTime ? new Date(suite.startTime).toISOString() : null;
     writeLine(`${padding}<testsuite name="${suite.label}" timestamp="${timestamp}" `
       + `tests="${measuredNode.testCount}" failures="${measuredNode.failedCount}" `
       + `time="${JUnitReporter.getDurationSecondsFrom(suite)}">`);
@@ -304,8 +304,8 @@ export class JUnitReporter implements plugin.PluginReporter {
   public write(reportPath: string, measuredRoots: MeasuredNode[]): Bluebird<void> {
     return new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       try {
-        let stream = fs.createWriteStream(reportPath);
-        let writeLine = this.createLineWriter(stream);
+        const stream = fs.createWriteStream(reportPath);
+        const writeLine = this.createLineWriter(stream);
         measuredRoots.forEach((mn: MeasuredNode) => this.writeResult(writeLine, mn));
         stream.end(null, () => {
           this.logger.log("JUnit report successfully written to: " + reportPath);
@@ -324,8 +324,8 @@ export class JUnitReporter implements plugin.PluginReporter {
 }
 
 export function createPlugin(): plugin.PluginReporter {
-  let htmlFormatter = createTestResultFormatter(createTestResultDecoratorHtml());
-  let textFormatter = createTestResultFormatter(createTestResultDecoratorText());
+  const htmlFormatter = createTestResultFormatter(createTestResultDecoratorHtml());
+  const textFormatter = createTestResultFormatter(createTestResultDecoratorText());
 
   return new JUnitReporter(console, "  ", createReporterStandardConsole(), htmlFormatter, textFormatter);
 }

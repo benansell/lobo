@@ -4,7 +4,7 @@ import * as chai from "chai";
 import {PluginConfig} from "../../../../lib/plugin";
 import {JUnitReporterConfig} from "../../../../plugin/junit-reporter/plugin-config";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(require("chai-things"));
 
 describe("plugin junit-reporter plugin-config", () => {
@@ -18,7 +18,7 @@ describe("plugin junit-reporter plugin-config", () => {
   describe("options", () => {
     it("should have optional '--diffMaxLength' option", () => {
       // act'
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--diffMaxLength [value]");
@@ -26,7 +26,7 @@ describe("plugin junit-reporter plugin-config", () => {
 
     it("should have '--diffMaxLength' option with default of 150", () => {
       // act'
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("defaultValue", 150);
@@ -34,7 +34,7 @@ describe("plugin junit-reporter plugin-config", () => {
 
     it("should have optional '--junitFormat' option", () => {
       // act'
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--junitFormat [value]");
@@ -42,7 +42,7 @@ describe("plugin junit-reporter plugin-config", () => {
 
     it("should have '--junitFormat' option with default of text", () => {
       // act'
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("defaultValue", "text");
@@ -50,7 +50,7 @@ describe("plugin junit-reporter plugin-config", () => {
 
     it("should have '--reportFile' option", () => {
       // act'
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--reportFile <value>");
@@ -60,7 +60,7 @@ describe("plugin junit-reporter plugin-config", () => {
   describe("parseDiffMaxLength", () => {
     it("should parse string value to int", () => {
       // act
-      let actual = JUnitReporterConfig.parseDiffMaxLength("123");
+      const actual = JUnitReporterConfig.parseDiffMaxLength("123");
 
       // assert
       expect(actual).to.equal(123);

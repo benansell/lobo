@@ -14,7 +14,7 @@ chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib elm-command-runner", () => {
-  let RewiredCommandRunner = rewire("../../../lib/elm-command-runner");
+  const RewiredCommandRunner = rewire("../../../lib/elm-command-runner");
   let commandRunner: ElmCommandRunnerImp;
   let mockChildOn: Sinon.SinonStub;
   let mockChildStdOutOn: Sinon.SinonStub;
@@ -72,7 +72,7 @@ describe("lib elm-command-runner", () => {
   describe("init", () => {
     it("should call runElmCommand to init with the supplied config", () => {
       // arrange
-      let config = <LoboConfig> {appDirectory: "foo"};
+      const config = <LoboConfig> {appDirectory: "foo"};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -85,7 +85,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call runElmCommand to init with the supplied prompt", () => {
       // arrange
-      let config = <LoboConfig> {appDirectory: "foo"};
+      const config = <LoboConfig> {appDirectory: "foo"};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -98,7 +98,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call runElmCommand to init with the supplied directory", () => {
       // arrange
-      let config = <LoboConfig> {appDirectory: "foo"};
+      const config = <LoboConfig> {appDirectory: "foo"};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -111,7 +111,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call util.runElmCommand to init the app with the init action", () => {
       // arrange
-      let config = <LoboConfig> {};
+      const config = <LoboConfig> {};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -124,7 +124,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call util.runElmCommand to init the app with the supplied resolve", () => {
       // arrange
-      let config = <LoboConfig> {};
+      const config = <LoboConfig> {};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -137,7 +137,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call util.runElmCommand to init the app with the supplied reject", () => {
       // arrange
-      let config = <LoboConfig> {};
+      const config = <LoboConfig> {};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -152,7 +152,7 @@ describe("lib elm-command-runner", () => {
   describe("install", () => {
     it("should call runElmCommand to install with the supplied config", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "foo"};
+      const config = <LoboConfig> {loboDirectory: "foo"};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -165,7 +165,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call runElmCommand to install with the supplied prompt", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "foo"};
+      const config = <LoboConfig> {loboDirectory: "foo"};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -178,7 +178,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call runElmCommand to install with the supplied lobo directory", () => {
       // arrange
-      let config = <LoboConfig> {loboDirectory: "foo"};
+      const config = <LoboConfig> {loboDirectory: "foo"};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -191,7 +191,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call util.runElmCommand to install the app with the install action", () => {
       // arrange
-      let config = <LoboConfig> {};
+      const config = <LoboConfig> {};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -204,7 +204,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call util.runElmCommand to install the app with the supplied package name", () => {
       // arrange
-      let config = <LoboConfig> {};
+      const config = <LoboConfig> {};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -217,7 +217,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call util.runElmCommand to install the app with the supplied resolve", () => {
       // arrange
-      let config = <LoboConfig> {};
+      const config = <LoboConfig> {};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act
@@ -230,7 +230,7 @@ describe("lib elm-command-runner", () => {
 
     it("should call util.runElmCommand to install the app with the supplied reject", () => {
       // arrange
-      let config = <LoboConfig> {};
+      const config = <LoboConfig> {};
       commandRunner.runElmCommand = Sinon.stub();
 
       // act

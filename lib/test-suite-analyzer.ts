@@ -96,7 +96,7 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
 
   public buildAnalyzedFunctionNodes(codeInfoKey: string, moduleNode: ElmModuleNode, testImportNodes: ElmImportNode[])
     : AnalyzedTestFunctionNode[] {
-    let tests: AnalyzedTestFunctionNode[] = [];
+    const tests: AnalyzedTestFunctionNode[] = [];
 
     for (const child of moduleNode.children) {
       if (!this.elmNodeHelper.isFunctionNode(child)) {
@@ -124,8 +124,8 @@ export class TestSuiteAnalyzerImp implements TestSuiteAnalyzer {
   }
 
   public buildSummary(context: ExecutionContext): AnalysisTestSummary {
-    let testFrameworkElmModuleName = context.config.testFramework.testFrameworkElmModuleName();
-    let results = this.buildAnalyzedModuleNodes(context.codeLookup, testFrameworkElmModuleName);
+    const testFrameworkElmModuleName = context.config.testFramework.testFrameworkElmModuleName();
+    const results = this.buildAnalyzedModuleNodes(context.codeLookup, testFrameworkElmModuleName);
     this.updateExposedIndirectly(results);
 
     return this.toAnalysisTestSummary(results);

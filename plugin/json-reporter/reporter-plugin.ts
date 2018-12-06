@@ -42,8 +42,8 @@ export class JsonReporter implements plugin.PluginReporter {
 
   public finish(results: plugin.TestRun): Bluebird<void> {
     return new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
-      let toFile: boolean = program.reportFile !== undefined && program.reportFile !== null && program.reportFile.length > 0;
-      let data = this.toString(results, toFile);
+      const toFile: boolean = program.reportFile !== undefined && program.reportFile !== null && program.reportFile.length > 0;
+      const data = this.toString(results, toFile);
 
       if (toFile) {
         fs.writeFile(program.reportFile, data, err => {
@@ -62,7 +62,7 @@ export class JsonReporter implements plugin.PluginReporter {
   }
 
   public toFull(summary: plugin.TestRunSummary): object {
-    let output: object = JsonReporter.toCommonOutput(summary);
+    const output: object = JsonReporter.toCommonOutput(summary);
     (<{ runResults: object }>output).runResults = summary.runResults;
 
     return output;

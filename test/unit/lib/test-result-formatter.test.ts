@@ -11,11 +11,11 @@ import {
   FailureMessage, ProgressReport, ResultType, TestReportFailedLeaf, TestReportLogged, TestReportSkippedLeaf, TestResultDecorator
 } from "../../../lib/plugin";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib test-result-formatter", () => {
-  let RewiredFormatter = rewire("../../../lib/test-result-formatter");
+  const RewiredFormatter = rewire("../../../lib/test-result-formatter");
   let formatter: TestResultFormatterImp;
   let mockComparer: Comparer;
   let mockDecorator: TestResultDecorator;
@@ -24,7 +24,7 @@ describe("lib test-result-formatter", () => {
 
   beforeEach(() => {
     revert = RewiredFormatter.__set__({os: {EOL: "\n"}});
-    let rewiredImp = RewiredFormatter.__get__("TestResultFormatterImp");
+    const rewiredImp = RewiredFormatter.__get__("TestResultFormatterImp");
     mockComparer = <Comparer> {diff: Sinon.stub()};
     mockDecorator = <TestResultDecorator><{}>{
       bulletPoint: Sinon.stub(),
@@ -52,7 +52,7 @@ describe("lib test-result-formatter", () => {
   describe("createTestResultFormatter", () => {
     it("should return formatter", () => {
       // act
-      let actual: TestResultFormatter = createTestResultFormatter();
+      const actual: TestResultFormatter = createTestResultFormatter();
 
       // assert
       expect(actual).to.exist;
@@ -66,7 +66,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
 
       // act
-      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo", "bar"]}, "?");
+      const actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo", "bar"]}, "?");
 
       // assert
       expect(actual).to.match(/foo(\n|.)*bar/);
@@ -78,7 +78,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
 
       // act
-      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
+      const actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
 
       // assert
       expect(actual).to.match(/^\?::/);
@@ -90,7 +90,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
 
       // act
-      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
+      const actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
 
       // assert
       expect(actual).to.match(/:: foo/);
@@ -102,7 +102,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
 
       // act
-      let actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
+      const actual = formatter.formatDebugLogMessages(<TestReportFailedLeaf> {logMessages: ["foo"]}, "?");
 
       // assert
       expect(actual).to.match(/-foo-/);
@@ -114,7 +114,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.rightArrow).callsFake(() => "::");
 
       // act
-      let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: ["foo"]}, "?");
+      const actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: ["foo"]}, "?");
 
       // assert
       expect(actual).to.match(/\n\n$/);
@@ -122,7 +122,7 @@ describe("lib test-result-formatter", () => {
 
     it("should return empty when logMessages is undefined", () => {
       // act
-      let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: undefined}, "?");
+      const actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: undefined}, "?");
 
       // assert
       expect(actual).to.equal("");
@@ -130,7 +130,7 @@ describe("lib test-result-formatter", () => {
 
     it("should return empty when logMessages is empty", () => {
       // act
-      let actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: []}, "?");
+      const actual = formatter.formatDebugLogMessages(<TestReportLogged> {logMessages: []}, "?");
 
       // assert
       expect(actual).to.equal("");
@@ -140,7 +140,7 @@ describe("lib test-result-formatter", () => {
   describe("formatFailure", () => {
     it("should call formatFailure for supplied failure message", () => {
       // arrange
-      let expected = <FailureMessage>{message: ""};
+      const expected = <FailureMessage>{message: ""};
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
@@ -152,8 +152,8 @@ describe("lib test-result-formatter", () => {
 
     it("should call formatFailure with supplied columns value", () => {
       // arrange
-      let revertStdOut = RewiredFormatter.__with__({process: {stdout: undefined}});
-      let expected = <FailureMessage>{message: ""};
+      const revertStdOut = RewiredFormatter.__with__({process: {stdout: undefined}});
+      const expected = <FailureMessage>{message: ""};
       formatter.formatFailureMessage = Sinon.spy();
 
       // act
@@ -165,12 +165,12 @@ describe("lib test-result-formatter", () => {
 
     it("should return the formatted failure message from the supplied failure", () => {
       // arrange
-      let expected = <FailureMessage>{message: "foo"};
+      const expected = <FailureMessage>{message: "foo"};
       formatter.formatFailureMessage = x => x;
       formatter.formatMessage = (message, padding) => message;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).to.match(/foo/);
@@ -179,11 +179,11 @@ describe("lib test-result-formatter", () => {
     it("should return the failure given from the supplied failure with padding of 2", () => {
       // arrange
       (<SinonStub>mockDecorator.line).callsFake(x => x);
-      let expected = <FailureMessage>{given: "foo", message: ""};
+      const expected = <FailureMessage>{given: "foo", message: ""};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).to.match(/ {2}foo/);
@@ -194,11 +194,11 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.given).callsFake(x => x);
       (<SinonStub>mockDecorator.line).callsFake(x => x);
       (<SinonStub>mockDecorator.bulletPoint).callsFake(() => "::");
-      let expected = <FailureMessage>{given: "foo", message: ""};
+      const expected = <FailureMessage>{given: "foo", message: ""};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/•/);
@@ -209,11 +209,11 @@ describe("lib test-result-formatter", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
       (<SinonStub>mockDecorator.verticalBarEnd).callsFake(() => "::");
-      let expected = <FailureMessage>{message: "└foo└"};
+      const expected = <FailureMessage>{message: "└foo└"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/└/);
@@ -223,11 +223,11 @@ describe("lib test-result-formatter", () => {
     it("should return the failure with vertical bar middle replaced with decorator value", () => {
       // arrange
       (<SinonStub>mockDecorator.verticalBarMiddle).callsFake(() => "::");
-      let expected = <FailureMessage>{message: "│foo│"};
+      const expected = <FailureMessage>{message: "│foo│"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/│/);
@@ -238,11 +238,11 @@ describe("lib test-result-formatter", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
       (<SinonStub>mockDecorator.verticalBarStart).callsFake(() => "::");
-      let expected = <FailureMessage>{message: "┌foo┌"};
+      const expected = <FailureMessage>{message: "┌foo┌"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/┌/);
@@ -253,11 +253,11 @@ describe("lib test-result-formatter", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
       (<SinonStub>mockDecorator.verticalBarStart).callsFake(() => "::");
-      let expected = <FailureMessage>{message: "┌foo┌"};
+      const expected = <FailureMessage>{message: "┌foo┌"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {logMessages: [],  resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {logMessages: [],  resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).to.match(/\n\n$/);
@@ -267,11 +267,11 @@ describe("lib test-result-formatter", () => {
       // arrange
       (<SinonStub>mockDecorator.expect).callsFake(x => x);
       (<SinonStub>mockDecorator.verticalBarStart).callsFake(() => "::");
-      let expected = <FailureMessage>{message: "┌foo┌"};
+      const expected = <FailureMessage>{message: "┌foo┌"};
       formatter.formatMessage = (x, y) => x;
 
       // act
-      let actual = formatter.formatFailure(<TestReportFailedLeaf> {logMessages: ["bar"], resultMessages: [expected]}, "?", 123);
+      const actual = formatter.formatFailure(<TestReportFailedLeaf> {logMessages: ["bar"], resultMessages: [expected]}, "?", 123);
 
       // assert
       expect(actual).not.to.match(/\n\n$/);
@@ -282,7 +282,7 @@ describe("lib test-result-formatter", () => {
   describe("formatNotRun", () => {
     it("should return the reason padded by the supplied value and 2 spaces", () => {
       // act
-      let actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#");
+      const actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#");
 
       // assert
       expect(actual).to.match(/ {2}#foo/);
@@ -290,7 +290,8 @@ describe("lib test-result-formatter", () => {
 
     it("should return the reason prefixed with a new line", () => {
       // arrange
-      let revertOs = RewiredFormatter.__with__({os: {EOL: "::"}});
+      const revertOs = RewiredFormatter.__with__({os: {EOL: "::"}});
+
       // act
       let actual: string = undefined;
       revertOs(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
@@ -301,7 +302,8 @@ describe("lib test-result-formatter", () => {
 
     it("should return the reason suffixed with a new line", () => {
       // arrange
-      let revertOs = RewiredFormatter.__with__({os: {EOL: "::"}});
+      const revertOs = RewiredFormatter.__with__({os: {EOL: "::"}});
+
       // act
       let actual: string = undefined;
       revertOs(() => actual = formatter.formatNotRun(<TestReportSkippedLeaf> {reason: "foo"}, "#"));
@@ -330,10 +332,10 @@ describe("lib test-result-formatter", () => {
 
     it("should return the message unaltered when there an unexpected number of lines", () => {
       // arrange
-      let expected = "foo\n│ bar\n";
+      const expected = "foo\n│ bar\n";
 
       // act
-      let actual = formatter.formatFailureMessage(expected, 123);
+      const actual = formatter.formatFailureMessage(expected, 123);
 
       // assert
       expect(actual).to.equal(expected);
@@ -352,7 +354,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.line).callsFake(x => x);
 
       // act
-      let actual = formatter.formatFailureMessage("foo\n╷\n│bar\n╵\nbaz", 123);
+      const actual = formatter.formatFailureMessage("foo\n╷\n│bar\n╵\nbaz", 123);
 
       // assert
       expect(actual).to.equal("\nfoo\n╷\n│bar\n╵\nbaz\n");
@@ -364,7 +366,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.line).callsFake(x => x);
 
       // act
-      let actual = formatter.formatFailureMessage("foo\n╷\n│ bar\n╷\nbaz", 123);
+      const actual = formatter.formatFailureMessage("foo\n╷\n│ bar\n╷\nbaz", 123);
 
       // assert
       expect(actual).to.equal("\n┌ foo\n│\n│ bar\n│\n└ baz\n");
@@ -376,7 +378,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.line).callsFake(x => x);
 
       // act
-      let actual = formatter.formatFailureMessage("foo\n╵\n│ bar\n╵\nbaz", 123);
+      const actual = formatter.formatFailureMessage("foo\n╵\n│ bar\n╵\nbaz", 123);
 
       // assert
       expect(actual).to.equal("\n┌ foo\n│\n│ bar\n│\n└ baz\n");
@@ -511,7 +513,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockComparer.diff).returns({left: "^^^", right: "^^^"});
 
       // act
-      let actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
+      const actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
 
       // assert
       expect(actual).to.include("│ ^^^");
@@ -523,7 +525,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockComparer.diff).returns({left: "^^^", right: "^^^"});
 
       // act
-      let actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
+      const actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ Expect.equal bar", "│", "└ baz"], 123);
 
       // assert
       expect(actual).to.include("  ^^^");
@@ -535,7 +537,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockComparer.diff).returns({left: "^^^", right: "^^^"});
 
       // act
-      let actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ bar", "│", "└ baz"], 6);
+      const actual = formatter.formatExpectEqualFailure(["┌ foo", "│", "│ bar", "│", "└ baz"], 6);
 
       // assert
       expect(actual.length).to.equal(6);
@@ -553,7 +555,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockComparer.diff).returns({left: "^^^^^^", right: "^^^"});
 
       // act
-      let actual = formatter.formatExpectEqualFailure(["┌ fooabc", "│", "│ bar", "│", "└ baz"], 6);
+      const actual = formatter.formatExpectEqualFailure(["┌ fooabc", "│", "│ bar", "│", "└ baz"], 6);
 
       // assert
       expect(actual.length).to.equal(8);
@@ -581,7 +583,7 @@ describe("lib test-result-formatter", () => {
   describe("formatMessage", () => {
     it("should return empty string when message is undefined", () => {
       // act
-      let actual = formatter.formatMessage(undefined, "?");
+      const actual = formatter.formatMessage(undefined, "?");
 
       // assert
       expect(actual).to.equal("");
@@ -589,7 +591,7 @@ describe("lib test-result-formatter", () => {
 
     it("should return string with specified padding value added on each line", () => {
       // act
-      let actual = formatter.formatMessage("foo\nbar", "??");
+      const actual = formatter.formatMessage("foo\nbar", "??");
 
       // assert
       expect(actual).to.equal("??foo\n??bar");
@@ -599,7 +601,7 @@ describe("lib test-result-formatter", () => {
   describe("formatUpdate", () => {
     it("should report '.' when a test has 'PASSED'", () => {
       // act
-      let output = formatter.formatUpdate(<ProgressReport>{resultType: "PASSED"});
+      const output = formatter.formatUpdate(<ProgressReport>{resultType: "PASSED"});
 
       // assert
       expect(output).to.equal(".");
@@ -610,7 +612,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.failed).callsFake(x => x + " foo");
 
       // act
-      let output = formatter.formatUpdate(<ProgressReport>{resultType: "FAILED"});
+      const output = formatter.formatUpdate(<ProgressReport>{resultType: "FAILED"});
 
       // assert
       expect(output).to.equal("! foo");
@@ -621,7 +623,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.skip).callsFake(x => x + " foo");
 
       // act
-      let output = formatter.formatUpdate(<ProgressReport>{resultType: "SKIPPED"});
+      const output = formatter.formatUpdate(<ProgressReport>{resultType: "SKIPPED"});
 
       // assert
       expect(output).to.equal("? foo");
@@ -632,7 +634,7 @@ describe("lib test-result-formatter", () => {
       (<SinonStub>mockDecorator.todo).callsFake(x => x + " foo");
 
       // act
-      let output = formatter.formatUpdate(<ProgressReport>{resultType: "TODO"});
+      const output = formatter.formatUpdate(<ProgressReport>{resultType: "TODO"});
 
       // assert
       expect(output).to.equal("- foo");
@@ -640,7 +642,7 @@ describe("lib test-result-formatter", () => {
 
     it("should report ' ' when reportProgress is undefined", () => {
       // act
-      let output = formatter.formatUpdate(undefined);
+      const output = formatter.formatUpdate(undefined);
 
       // assert
       expect(output).to.equal(" ");
@@ -648,7 +650,7 @@ describe("lib test-result-formatter", () => {
 
     it("should report ' ' when a test has unknown resultType", () => {
       // act
-      let output = formatter.formatUpdate(<ProgressReport>{resultType: <ResultType>"foo bar"});
+      const output = formatter.formatUpdate(<ProgressReport>{resultType: <ResultType>"foo bar"});
 
       // assert
       expect(output).to.equal(" ");

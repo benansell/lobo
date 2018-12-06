@@ -35,8 +35,8 @@ export class ReporterStandardConsoleImp implements ReporterStandardConsole {
   public finish(results: plugin.TestRun): Bluebird<void> {
     return new Bluebird((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
       try {
-        let summary = results.summary;
-        let failState = results.failState;
+        const summary = results.summary;
+        const failState = results.failState;
         this.paddedLog("");
 
         if (program.quiet) {
@@ -120,7 +120,7 @@ export class ReporterStandardConsoleImp implements ReporterStandardConsole {
   }
 
   public update(result: plugin.ProgressReport): void {
-    let output = this.testResultFormatter.formatUpdate(result);
+    const output = this.testResultFormatter.formatUpdate(result);
     process.stdout.write(output);
   }
 }

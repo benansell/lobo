@@ -12,9 +12,9 @@ export class Util {
       return;
     }
 
-    let expectedPath = path.resolve(absoluteOrRelativePath);
+    const expectedPath = path.resolve(absoluteOrRelativePath);
     shelljs.cd(absoluteOrRelativePath);
-    let actualPath = shelljs.pwd();
+    const actualPath = shelljs.pwd();
 
     if (actualPath.toString() !== expectedPath) {
       console.log(actualPath);
@@ -28,7 +28,7 @@ export class Util {
   }
 
   public execRaw(command: string, cwd: string): ExecOutputReturnValue | child.ChildProcess {
-    let showExecution = process.env.noisyTestRun === "true";
+    const showExecution = process.env.noisyTestRun === "true";
     return shelljs.exec(command, {cwd, silent: !showExecution});
   }
 
@@ -49,7 +49,7 @@ export class Util {
 
   public initializeTestContext(dirName: string): string[] {
     let dir = dirName;
-    let testContext = [];
+    const testContext = [];
 
     while (/test/.test(dir)) {
       testContext.push(path.basename(dir));

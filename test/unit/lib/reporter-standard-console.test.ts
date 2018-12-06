@@ -18,11 +18,11 @@ import {Util} from "../../../lib/util";
 import {TestResultFormatter} from "../../../lib/test-result-formatter";
 import {createReporterStandardConsole, ReporterStandardConsole, ReporterStandardConsoleImp} from "../../../lib/reporter-standard-console";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib reporter-standard-console", () => {
-  let RewiredPlugin = rewire("../../../lib/reporter-standard-console");
+  const RewiredPlugin = rewire("../../../lib/reporter-standard-console");
   let reporter: ReporterStandardConsoleImp;
   let mockDecorator: TestResultDecorator;
   let mockFormatter: TestResultFormatter;
@@ -30,7 +30,7 @@ describe("lib reporter-standard-console", () => {
   let mockUtil: Util;
 
   beforeEach(() => {
-    let rewiredImp = RewiredPlugin.__get__("ReporterStandardConsoleImp");
+    const rewiredImp = RewiredPlugin.__get__("ReporterStandardConsoleImp");
     mockDecorator = <TestResultDecorator> {
       failed: x => x,
       passed: x => x
@@ -51,7 +51,7 @@ describe("lib reporter-standard-console", () => {
   describe("createReporterStandardConsole", () => {
     it("should return reporter", () => {
       // act
-      let actual: ReporterStandardConsole = createReporterStandardConsole();
+      const actual: ReporterStandardConsole = createReporterStandardConsole();
 
       // assert
       expect(actual).to.exist;
@@ -61,7 +61,7 @@ describe("lib reporter-standard-console", () => {
   describe("runArgs", () => {
     it("should set initArgs to supplied value that is output in summary", () => {
       // arrange
-      let expected = <RunArgs> {runCount: 123};
+      const expected = <RunArgs> {runCount: 123};
       reporter.paddedLog = Sinon.spy();
 
       // act
@@ -76,10 +76,10 @@ describe("lib reporter-standard-console", () => {
   describe("update", () => {
     it("should report output from test result formatter", () => {
       // arrange
-      let mockWrite = Sinon.stub();
-      let revert = RewiredPlugin.__with__({process: {stdout: { write: mockWrite}}});
+      const mockWrite = Sinon.stub();
+      const revert = RewiredPlugin.__with__({process: {stdout: { write: mockWrite}}});
       (<SinonStub>mockFormatter.formatUpdate).returns("foo");
-      let result = <ProgressReport>{resultType: "PASSED"};
+      const result = <ProgressReport>{resultType: "PASSED"};
 
       // act
       revert(() => reporter.update(result));
@@ -93,10 +93,10 @@ describe("lib reporter-standard-console", () => {
   describe("finish", () => {
     it("should only log the summary header info when quiet is true", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {quiet: true}});
+      const revert = RewiredPlugin.__with__({program: {quiet: true}});
       reporter.logSummaryHeader = Sinon.spy();
       reporter.logSummary = Sinon.spy();
-      let summary = <TestRunSummary> {passedCount: 123};
+      const summary = <TestRunSummary> {passedCount: 123};
 
       // act
       let actual: Bluebird<void> = undefined;
@@ -109,10 +109,10 @@ describe("lib reporter-standard-console", () => {
 
     it("should only log the summary header failState when quiet is true", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {quiet: true}});
+      const revert = RewiredPlugin.__with__({program: {quiet: true}});
       reporter.logSummaryHeader = Sinon.spy();
       reporter.logSummary = Sinon.spy();
-      let failState = <TestRunFailState> {only: {exists: true}};
+      const failState = <TestRunFailState> {only: {exists: true}};
 
       // act
       let actual: Bluebird<void> = undefined;
@@ -125,9 +125,9 @@ describe("lib reporter-standard-console", () => {
 
     it("should log the full summary info when quiet is false", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {quiet: false}});
+      const revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logSummary = Sinon.spy();
-      let summary = <TestRunSummary> {passedCount: 123};
+      const summary = <TestRunSummary> {passedCount: 123};
 
       // act
       let actual: Bluebird<void> = undefined;
@@ -139,10 +139,10 @@ describe("lib reporter-standard-console", () => {
 
     it("should only log the summary header failState when quiet is false", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {quiet: false}});
+      const revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logSummary = Sinon.spy();
-      let summary = <TestRunSummary> {passedCount: 123};
-      let failState = <TestRunFailState> {only: {exists: true}};
+      const summary = <TestRunSummary> {passedCount: 123};
+      const failState = <TestRunFailState> {only: {exists: true}};
 
       // act
       let actual: Bluebird<void> = undefined;
@@ -154,8 +154,8 @@ describe("lib reporter-standard-console", () => {
 
     it("should return a promise that calls reject when log summary fails", () => {
       // arrange
-      let expected = new Error("qux");
-      let revert = RewiredPlugin.__with__({program: {quiet: false}});
+      const expected = new Error("qux");
+      const revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logSummary = Sinon.stub();
       (<SinonStub>reporter.logSummary).throws(expected);
 
@@ -174,7 +174,7 @@ describe("lib reporter-standard-console", () => {
     let revertFramework: () => void;
 
     beforeEach(() => {
-      let rewiredImp = RewiredPlugin.__get__("ReporterStandardConsoleImp");
+      const rewiredImp = RewiredPlugin.__get__("ReporterStandardConsoleImp");
       mockDecorator.failed = Sinon.spy();
       mockDecorator.inconclusive = Sinon.spy();
       mockDecorator.only = Sinon.spy();
@@ -404,7 +404,7 @@ describe("lib reporter-standard-console", () => {
 
   describe("logSummaryHeader", () => {
     beforeEach(() => {
-      let rewiredImp = RewiredPlugin.__get__("ReporterStandardConsoleImp");
+      const rewiredImp = RewiredPlugin.__get__("ReporterStandardConsoleImp");
       mockDecorator.failed = Sinon.spy();
       mockDecorator.passed = Sinon.spy();
       mockDecorator.inconclusive = Sinon.spy();

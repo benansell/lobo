@@ -13,7 +13,7 @@ chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib builder", () => {
-  let RewiredBuilder = rewire("../../../lib/builder");
+  const RewiredBuilder = rewire("../../../lib/builder");
   let builder: BuilderImp;
   let mockConfirm: Sinon.SinonStub;
   let mockReject: (error: Error) => void;

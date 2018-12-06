@@ -6,11 +6,11 @@ import * as SinonChai from "sinon-chai";
 import { createTestResultDecoratorHtml,   TestResultDecoratorHtmlImp } from "../../../lib/test-result-decorator-html";
 import {TestResultDecorator} from "../../../lib/plugin";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib test-result-decorator-html", () => {
-  let RewiredDecorator = rewire("../../../lib/test-result-decorator-html");
+  const RewiredDecorator = rewire("../../../lib/test-result-decorator-html");
   let rewiredImp;
   let decorator: TestResultDecoratorHtmlImp;
 
@@ -22,7 +22,7 @@ describe("lib test-result-decorator-html", () => {
   describe("createTestResultDecoratorHtml", () => {
     it("should return reporter", () => {
       // act
-      let actual: TestResultDecorator = createTestResultDecoratorHtml();
+      const actual: TestResultDecorator = createTestResultDecoratorHtml();
 
       // assert
       expect(actual).to.exist;
@@ -32,7 +32,7 @@ describe("lib test-result-decorator-html", () => {
   describe("ctor", () => {
     it("should set onlyStyle to failed style when failOnOnly is true", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnOnly: true}});
+      const revert = RewiredDecorator.__with__({program: {failOnOnly: true}});
 
       // act
       let actual: Function = undefined;
@@ -45,7 +45,7 @@ describe("lib test-result-decorator-html", () => {
 
     it("should set onlyStyle to inconclusive style when failOnOnly is false", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnOnly: false}});
+      const revert = RewiredDecorator.__with__({program: {failOnOnly: false}});
 
       // act
       let actual: Function = undefined;
@@ -57,7 +57,7 @@ describe("lib test-result-decorator-html", () => {
 
     it("should set skipStyle to failed style when failOnSkip is true", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnSkip: true}});
+      const revert = RewiredDecorator.__with__({program: {failOnSkip: true}});
 
       // act
       let actual: Function = undefined;
@@ -69,7 +69,7 @@ describe("lib test-result-decorator-html", () => {
 
     it("should set skipStyle to inconclusive style when failOnSkip is false", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnSkip: false}});
+      const revert = RewiredDecorator.__with__({program: {failOnSkip: false}});
 
       // act
       let actual: Function = undefined;
@@ -81,7 +81,7 @@ describe("lib test-result-decorator-html", () => {
 
     it("should set todoStyle to failed style when failOnTodo is true", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnTodo: true}});
+      const revert = RewiredDecorator.__with__({program: {failOnTodo: true}});
 
       // act
       let actual: Function = undefined;
@@ -93,7 +93,7 @@ describe("lib test-result-decorator-html", () => {
 
     it("should set todoStyle to inconclusive style when failOnTodo is false", () => {
       // arrange
-      let revert = RewiredDecorator.__with__({program: {failOnTodo: false}});
+      const revert = RewiredDecorator.__with__({program: {failOnTodo: false}});
 
       let actual: Function = undefined;
       revert(() => actual = new rewiredImp().todo);
@@ -106,7 +106,7 @@ describe("lib test-result-decorator-html", () => {
   describe("bulletPoint", () => {
     it("should be &bullet;", () => {
       // act
-      let actual = decorator.bulletPoint();
+      const actual = decorator.bulletPoint();
 
       // assert
       expect(actual).to.equal("&bullet;");
@@ -116,7 +116,7 @@ describe("lib test-result-decorator-html", () => {
   describe("rightArrow", () => {
     it("should be &rarr;", () => {
       // act
-      let actual = decorator.rightArrow();
+      const actual = decorator.rightArrow();
 
       // assert
       expect(actual).to.equal("&rarr;");
@@ -126,7 +126,7 @@ describe("lib test-result-decorator-html", () => {
   describe("verticalBarEnd", () => {
     it("should be &boxur;", () => {
       // act
-      let actual = decorator.verticalBarEnd();
+      const actual = decorator.verticalBarEnd();
 
       // assert
       expect(actual).to.equal("&boxur;");
@@ -136,7 +136,7 @@ describe("lib test-result-decorator-html", () => {
   describe("verticalBarMiddle", () => {
     it("should be &boxv;", () => {
       // act
-      let actual = decorator.verticalBarMiddle();
+      const actual = decorator.verticalBarMiddle();
 
       // assert
       expect(actual).to.equal("&boxv;");
@@ -146,7 +146,7 @@ describe("lib test-result-decorator-html", () => {
   describe("verticalBarStart", () => {
     it("should be &boxdr;", () => {
       // act
-      let actual = decorator.verticalBarStart();
+      const actual = decorator.verticalBarStart();
 
       // assert
       expect(actual).to.equal("&boxdr;");
@@ -156,7 +156,7 @@ describe("lib test-result-decorator-html", () => {
   describe("debugLog", () => {
     it("should return value styled with dark cyan span", () => {
       // act
-      let actual = decorator.debugLog("foo");
+      const actual = decorator.debugLog("foo");
 
       // assert
       expect(actual).to.equal("<span style=\"color:darkcyan\">foo</span>");
@@ -166,7 +166,7 @@ describe("lib test-result-decorator-html", () => {
   describe("diff", () => {
     it("should return value styled with red span", () => {
       // act
-      let actual = decorator.diff("foo");
+      const actual = decorator.diff("foo");
 
       // assert
       expect(actual).to.equal("<span style=\"color:red\">foo<\/span>");
@@ -176,7 +176,7 @@ describe("lib test-result-decorator-html", () => {
   describe("expect", () => {
     it("should return value styled with goldenrod span", () => {
       // act
-      let actual = decorator.expect("foo");
+      const actual = decorator.expect("foo");
 
       // assert
       expect(actual).to.equal("<span style=\"color:goldenrod\">foo<\/span>");
@@ -186,7 +186,7 @@ describe("lib test-result-decorator-html", () => {
   describe("failed", () => {
     it("should return value styled with red span", () => {
       // act
-      let actual = decorator.failed("foo");
+      const actual = decorator.failed("foo");
 
       // assert
       expect(actual).to.equal("<span style=\"color:red\">foo<\/span>");
@@ -196,7 +196,7 @@ describe("lib test-result-decorator-html", () => {
   describe("line", () => {
     it("should return value in a span", () => {
       // act
-      let actual = decorator.line("foo");
+      const actual = decorator.line("foo");
 
       // assert
       expect(actual).to.equal("<span>foo<\/span>");
@@ -206,7 +206,7 @@ describe("lib test-result-decorator-html", () => {
   describe("given", () => {
     it("should return value styled with goldenrod span", () => {
       // act
-      let actual = decorator.given("foo");
+      const actual = decorator.given("foo");
 
       // assert
       expect(actual).to.equal("<span style=\"color:goldenrod\">foo<\/span>");
@@ -216,7 +216,7 @@ describe("lib test-result-decorator-html", () => {
   describe("inconclusive", () => {
     it("should return value styled with goldenrod span", () => {
       // act
-      let actual = decorator.inconclusive("foo");
+      const actual = decorator.inconclusive("foo");
 
       // assert
       expect(actual).to.equal("<span style=\"color:goldenrod\">foo<\/span>");
@@ -226,7 +226,7 @@ describe("lib test-result-decorator-html", () => {
   describe("passed", () => {
     it("should return value styled with green span", () => {
       // act
-      let actual = decorator.passed("foo");
+      const actual = decorator.passed("foo");
 
       // assert
       expect(actual).to.equal("<span style=\"color:green\">foo<\/span>");

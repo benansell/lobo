@@ -8,11 +8,11 @@ import * as SinonChai from "sinon-chai";
 import {createTestResultDecoratorConsole, TestResultDecoratorConsoleImp} from "../../../lib/test-result-decorator-console";
 import {TestResultDecorator} from "../../../lib/plugin";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib test-result-decorator-console", () => {
-  let RewiredDecorator = rewire("../../../lib/test-result-decorator-console");
+  const RewiredDecorator = rewire("../../../lib/test-result-decorator-console");
   let rewiredImp;
   let decorator: TestResultDecoratorConsoleImp;
   let mockCyanStyle: SinonStub;
@@ -49,7 +49,7 @@ describe("lib test-result-decorator-console", () => {
   describe("createTestResultDecoratorConsole", () => {
     it("should return reporter", () => {
       // act
-      let actual: TestResultDecorator = createTestResultDecoratorConsole();
+      const actual: TestResultDecorator = createTestResultDecoratorConsole();
 
       // assert
       expect(actual).to.exist;
@@ -59,7 +59,7 @@ describe("lib test-result-decorator-console", () => {
   describe("ctor", () => {
     it("should set onlyStyle to failed style when failOnOnly is true", () => {
       // arrange
-      let revertProgram = RewiredDecorator.__with__({program: {failOnOnly: true}});
+      const revertProgram = RewiredDecorator.__with__({program: {failOnOnly: true}});
 
       // act
       let actual: Function = undefined;
@@ -72,7 +72,7 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set onlyStyle to inconclusive style when failOnOnly is false", () => {
       // arrange
-      let revertProgram = RewiredDecorator.__with__({program: {failOnOnly: false}});
+      const revertProgram = RewiredDecorator.__with__({program: {failOnOnly: false}});
 
       // act
       let actual: Function = undefined;
@@ -84,7 +84,7 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set skipStyle to failed style when failOnSkip is true", () => {
       // arrange
-      let revertProgram = RewiredDecorator.__with__({program: {failOnSkip: true}});
+      const revertProgram = RewiredDecorator.__with__({program: {failOnSkip: true}});
 
       // act
       let actual: Function = undefined;
@@ -96,7 +96,7 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set skipStyle to inconclusive style when failOnSkip is false", () => {
       // arrange
-      let revertProgram = RewiredDecorator.__with__({program: {failOnSkip: false}});
+      const revertProgram = RewiredDecorator.__with__({program: {failOnSkip: false}});
 
       // act
       let actual: Function = undefined;
@@ -108,7 +108,7 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set todoStyle to failed style when failOnTodo is true", () => {
       // arrange
-      let revertProgram = RewiredDecorator.__with__({program: {failOnTodo: true}});
+      const revertProgram = RewiredDecorator.__with__({program: {failOnTodo: true}});
 
       // act
       let actual: Function = undefined;
@@ -120,7 +120,7 @@ describe("lib test-result-decorator-console", () => {
 
     it("should set todoStyle to inconclusive style when failOnTodo is false", () => {
       // arrange
-      let revertProgram = RewiredDecorator.__with__({program: {failOnTodo: false}});
+      const revertProgram = RewiredDecorator.__with__({program: {failOnTodo: false}});
 
       let actual: Function = undefined;
       revertProgram(() => actual = new rewiredImp().todo);
@@ -133,7 +133,7 @@ describe("lib test-result-decorator-console", () => {
   describe("bulletPoint", () => {
     it("should be •", () => {
       // act
-      let actual = decorator.bulletPoint();
+      const actual = decorator.bulletPoint();
 
       // assert
       expect(actual).to.equal("•");
@@ -143,7 +143,7 @@ describe("lib test-result-decorator-console", () => {
   describe("rightArrow", () => {
     it("should be →", () => {
       // act
-      let actual = decorator.rightArrow();
+      const actual = decorator.rightArrow();
 
       // assert
       expect(actual).to.equal("→");
@@ -153,7 +153,7 @@ describe("lib test-result-decorator-console", () => {
   describe("verticalBarEnd", () => {
     it("should be └", () => {
       // act
-      let actual = decorator.verticalBarEnd();
+      const actual = decorator.verticalBarEnd();
 
       // assert
       expect(actual).to.equal("└");
@@ -163,7 +163,7 @@ describe("lib test-result-decorator-console", () => {
   describe("verticalBarMiddle", () => {
     it("should be │", () => {
       // act
-      let actual = decorator.verticalBarMiddle();
+      const actual = decorator.verticalBarMiddle();
 
       // assert
       expect(actual).to.equal("│");
@@ -173,7 +173,7 @@ describe("lib test-result-decorator-console", () => {
   describe("verticalBarStart", () => {
     it("should be ┌", () => {
       // act
-      let actual = decorator.verticalBarStart();
+      const actual = decorator.verticalBarStart();
 
       // assert
       expect(actual).to.equal("┌");
@@ -186,7 +186,7 @@ describe("lib test-result-decorator-console", () => {
       mockCyanStyle.callsFake(x => x + "bar");
 
       // act
-      let actual = decorator.debugLog("foo");
+      const actual = decorator.debugLog("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -199,7 +199,7 @@ describe("lib test-result-decorator-console", () => {
       mockRedStyle.callsFake(x => x + "bar");
 
       // act
-      let actual = decorator.diff("foo");
+      const actual = decorator.diff("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -212,7 +212,7 @@ describe("lib test-result-decorator-console", () => {
       mockYellowStyle.callsFake(x => x + "bar");
 
       // act
-      let actual = decorator.expect("foo");
+      const actual = decorator.expect("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -225,7 +225,7 @@ describe("lib test-result-decorator-console", () => {
       mockRedStyle.callsFake(x => x + "bar");
 
       // act
-      let actual = decorator.failed("foo");
+      const actual = decorator.failed("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -235,7 +235,7 @@ describe("lib test-result-decorator-console", () => {
   describe("line", () => {
     it("should return value without any changes", () => {
       // act
-      let actual = decorator.line("foo");
+      const actual = decorator.line("foo");
 
       // assert
       expect(actual).to.equal("foo");
@@ -248,7 +248,7 @@ describe("lib test-result-decorator-console", () => {
       mockYellowStyle.callsFake(x => x + "bar");
 
       // act
-      let actual = decorator.given("foo");
+      const actual = decorator.given("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -261,7 +261,7 @@ describe("lib test-result-decorator-console", () => {
       mockYellowStyle.callsFake(x => x + "bar");
 
       // act
-      let actual = decorator.inconclusive("foo");
+      const actual = decorator.inconclusive("foo");
 
       // assert
       expect(actual).to.equal("foobar");
@@ -274,7 +274,7 @@ describe("lib test-result-decorator-console", () => {
       mockGreenStyle.callsFake(x => x + "bar");
 
       // act
-      let actual = decorator.passed("foo");
+      const actual = decorator.passed("foo");
 
       // assert
       expect(actual).to.equal("foobar");
