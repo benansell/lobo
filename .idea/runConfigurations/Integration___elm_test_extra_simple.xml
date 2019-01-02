@@ -1,7 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Integration - elm-test-extra-simple" type="mocha-javascript-test-runner" factoryName="Mocha">
+  <configuration default="false" name="Integration - elm-test-extra-simple" type="mocha-javascript-test-runner">
     <node-interpreter>project</node-interpreter>
     <node-options />
+    <mocha-package>$PROJECT_DIR$/node_modules/mocha</mocha-package>
     <working-directory>$PROJECT_DIR$/test/integration</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <envs>
@@ -15,6 +16,6 @@
     <test-names>
       <name value="elm-test-extra-simple" />
     </test-names>
-    <method />
+    <method v="2" />
   </configuration>
 </component>
