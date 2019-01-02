@@ -175,6 +175,18 @@ describe("elm-test-extra-simple", () => {
     });
   });
 
+  describe("html", () => {
+    it("should report failure", () => {
+      // act
+      const result = runner.run(testContext, "elm-test-extra", false, "./tests/simple/html");
+
+      // assert
+      reporterExpect(result).summaryFailed();
+      reporterExpect(result).summaryCounts(0, 7);
+      expect(result.code).to.equal(1);
+    });
+  });
+
   describe("nested", () => {
     it("should report success", () => {
       // act
