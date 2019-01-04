@@ -24,6 +24,28 @@ describe("elm-test-analysis", () => {
     runner.cleanLoboAndBuildArtifacts();
   });
 
+  describe("bad-import", () => {
+    it("should pass analysis and run tests", () => {
+      // act
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/bad-import");
+
+      // assert
+      reporterExpect(result).elmMakeError();
+      expect(result.code).to.equal(1);
+    });
+  });
+
+  describe("bad-module", () => {
+    it("should pass analysis and run tests", () => {
+      // act
+      const result = runner.run(testContext, "elm-test", false, "./tests/analysis/bad-module");
+
+      // assert
+      reporterExpect(result).elmMakeError();
+      expect(result.code).to.equal(1);
+    });
+  });
+
   describe("custom-test-file", () => {
     it("should pass analysis and run tests", () => {
       // act
