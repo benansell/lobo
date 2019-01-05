@@ -720,7 +720,7 @@ describe("lib test-suite-generator", () => {
       expect(actual).to.match(/import Bar exposing \(Test, describe\)/);
     });
 
-    it("should return code without test module node imports with no exposed tests", () => {
+    it("should return code with test module node imports that have no exposed tests", () => {
       // arrange
       const testFramework = <PluginTestFrameworkWithConfig> {pluginElmModuleName: () => "Foo", testFrameworkElmModuleName: () => "Bar"};
       const config = <LoboConfig> {testFramework};
@@ -733,8 +733,8 @@ describe("lib test-suite-generator", () => {
       const actual = testSuiteGenerator.generateTestSuiteCode(config, testModuleNodes);
 
       // assert
-      expect(actual).not.to.match(/import SuiteOne/);
-      expect(actual).not.to.match(/import SuiteTwo/);
+      expect(actual).to.match(/import SuiteOne/);
+      expect(actual).to.match(/import SuiteTwo/);
     });
 
     it("should return code with test module node imports for exposed tests", () => {

@@ -183,8 +183,8 @@ export class TestSuiteGeneratorImp implements TestSuiteGenerator {
     lines.push(`import ${config.testFramework.pluginElmModuleName()} as Plugin`);
     lines.push(`import ${config.testFramework.testFrameworkElmModuleName()} exposing (Test, describe)`);
 
+    // better to include all test modules (even those with no discovered tests) so that syntax errors in test files are reported
     testModuleNodes
-      .filter((tm: TestModuleNode) => tm.tests.length > 0)
       .forEach((tm) => lines.push(`import ${tm.moduleNode.name}`));
 
     lines.push("");
