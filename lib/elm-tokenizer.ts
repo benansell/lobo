@@ -225,11 +225,11 @@ export class ElmTokenizerImp implements ElmTokenizer {
   }
 
   public tokenizeModule(codeHelper: ElmCodeHelper, startWordIndex: number, wordResult: FindWordResult): PartialElmToken | undefined {
-    const endIndex = codeHelper.findClose(wordResult.nextIndex + 1, "(", ")");
+    let endIndex = codeHelper.findClose(wordResult.nextIndex + 1, "(", ")");
 
     if (!endIndex) {
       this.logger.debug("Unable to tokenize module due to missing close bracket after index " + wordResult.nextIndex);
-      return undefined;
+      endIndex = codeHelper.maxIndex;
     }
 
     const identifierResult = codeHelper.findNextWord(wordResult.nextIndex + 1);

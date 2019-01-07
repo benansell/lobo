@@ -802,17 +802,20 @@ describe("lib elm-tokenizer", () => {
   });
 
   describe("tokenizeModule", () => {
-    it("should return undefined when the code helper cannot find the end of the module declaration", () => {
+    it("should return max index when the code helper cannot find the end of the module declaration", () => {
       // arrange
-      const mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 999 };
       mockCodeHelper.findClose = () => undefined;
       const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const nextWord = { nextIndex: 2, word: "bar"};
+      mockCodeHelper.findNextWord = () => nextWord;
 
       // act
       const actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
 
       // assert
-      expect(actual).to.be.undefined;
+      expect(actual.tokenType).to.equal(ElmTokenType.Module);
+      expect(actual.endIndex).to.equal(999);
     });
 
     it("should return module token with token type of module when the code helper finds the end of the module declaration", () => {
