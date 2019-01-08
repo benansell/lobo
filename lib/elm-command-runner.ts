@@ -46,7 +46,7 @@ export class ElmCommandRunnerImp implements ElmCommandRunner {
     this.util.logStage("BUILD");
 
     if (prompt === false) {
-      this.logger.debug("Force prompt for elm make");
+      this.logger.debug("Ignoring no-prompt for elm make");
     }
 
     // always use prompt true for colorized output
