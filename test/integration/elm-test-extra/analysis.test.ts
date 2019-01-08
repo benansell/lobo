@@ -30,7 +30,8 @@ describe("elm-test-extra-analysis", () => {
       const result = runner.run(testContext, "elm-test", false, "./tests/analysis/bad-import");
 
       // assert
-      reporterExpect(result).elmMakeError();
+      reporterExpect(result).elmMakeParseError("../Tests.elm");
+      reporterExpect(result).elmMakeMessage("6| import Test exposing \\(Test, describe, test");
       expect(result.code).to.equal(1);
     });
   });
@@ -41,7 +42,8 @@ describe("elm-test-extra-analysis", () => {
       const result = runner.run(testContext, "elm-test", false, "./tests/analysis/bad-module");
 
       // assert
-      reporterExpect(result).elmMakeError();
+      reporterExpect(result).elmMakeParseError("../Tests.elm");
+      reporterExpect(result).elmMakeMessage("1| module Tests exposing \\(\\.\\.");
       expect(result.code).to.equal(1);
     });
   });

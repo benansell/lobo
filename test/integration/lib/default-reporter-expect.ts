@@ -28,9 +28,12 @@ function analysisSummary(result: ExecOutputReturnValue, hidden: number, overExpo
   }
 }
 
-function elmMakeError(result: ExecOutputReturnValue): void {
-  // unable to capture and examine elm make errors, so all we can do is check that it failed
-  expect(result.stdout).to.match(/Failed to run elm command: make/);
+function elmMakeParseError(result: ExecOutputReturnValue, filePath: string): void {
+  expect(result.stderr).to.match(new RegExp("-- PARSE ERROR (-)+ " + filePath));
+}
+
+function elmMakeMessage(result: ExecOutputReturnValue, message: string): void {
+  expect(result.stderr).to.match(new RegExp(message));
 }
 
 function summaryArgument(result: ExecOutputReturnValue, argName: string, argValue: object): void {
@@ -89,7 +92,8 @@ export interface ReporterExpect {
   analysisOverExposed(): void;
   analysisSummary(hidden: number, overExposed: number): void;
   analysisUnisolated(): void;
-  elmMakeError(): void;
+  elmMakeMessage(message: string): void;
+  elmMakeParseError(filePath: string): void;
   summaryArgument(argName: string, argValue: object): void;
   summaryCounts(pass: number, fail: number, todo?: number, skip?: number, ignore?: number): void;
   summaryFailed(): void;
@@ -104,7 +108,8 @@ export default function(result: ExecOutputReturnValue): ReporterExpect {
     analysisHidden: _.wrap(result, analysisHidden),
     analysisOverExposed: _.wrap(result, analysisOverExposed),
     analysisSummary: _.wrap(result, analysisSummary),
-    elmMakeError: _.wrap(result, elmMakeError),
+    elmMakeMessage: _.wrap(result, elmMakeMessage),
+    elmMakeParseError: _.wrap(result, elmMakeParseError),
     summaryArgument: _.wrap(result, summaryArgument),
     summaryCounts: _.wrap(result, summaryCounts),
     summaryFailed: _.wrap(result, summaryFailed),
