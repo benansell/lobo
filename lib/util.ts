@@ -30,12 +30,12 @@ export class UtilImp implements Util {
   }
 
   public availablePlugins(fileSpec: RegExp | string): string[] {
-    let pattern = new RegExp(fileSpec + ".*\.js$");
-    let pluginDirectory = path.resolve(__dirname, "..", "plugin");
-    let files = <string[]> shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
+    const pattern = new RegExp(fileSpec + ".*\.js$");
+    const pluginDirectory = path.resolve(__dirname, "..", "plugin");
+    const files = <string[]> shelljs.find(pluginDirectory).filter((file: string) => file.match(pattern));
 
     return files.map((file: string) => {
-      let pluginPath = path.relative(pluginDirectory, file);
+      const pluginPath = path.relative(pluginDirectory, file);
 
       return path.dirname(pluginPath);
     });
@@ -54,8 +54,8 @@ export class UtilImp implements Util {
       throw new Error("patch is not an integer" + major);
     }
 
-    let nodeVersionString = process.versions.node;
-    let nodeVersion = _.map(_.split(nodeVersionString, "."), _.parseInt);
+    const nodeVersionString = process.versions.node;
+    const nodeVersion = _.map(_.split(nodeVersionString, "."), _.parseInt);
 
     if ((nodeVersion[0] < major) ||
       (nodeVersion[0] === major && nodeVersion[1] < minor) ||
@@ -71,8 +71,8 @@ export class UtilImp implements Util {
   }
 
   public getPlugin<T extends PluginReporter | PluginTestFramework>(type: string, pluginName: string, fileSpec: string): T {
-    let value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, false);
-    let plugin: T = value.createPlugin();
+    const value = this.load<{createPlugin: () => T}>(type, pluginName, fileSpec, false);
+    const plugin: T = value.createPlugin();
     this.logger.debug("Plugin loaded: "  + pluginName);
     this.logger.trace("plugin", plugin);
 
@@ -80,12 +80,12 @@ export class UtilImp implements Util {
   }
 
   public getPluginConfig<T extends PluginConfig>(type: string, pluginName: string, fileSpec: string): T {
-      let value = this.load<{PluginConfig: T}>(type, pluginName, fileSpec, true);
-      let config = value.PluginConfig;
-      this.logger.debug("Plugin configured: " + pluginName);
-      this.logger.trace("Plugin configuration", config);
+    const value = this.load<{ PluginConfig: T }>(type, pluginName, fileSpec, true);
+    const config = value.PluginConfig;
+    this.logger.debug("Plugin configured: " + pluginName);
+    this.logger.trace("Plugin configuration", config);
 
-      return config;
+    return config;
   }
 
   public isInteger(value: number): boolean {
@@ -107,9 +107,9 @@ export class UtilImp implements Util {
       if (err && err instanceof SyntaxError) {
         this.logger.error("Unable to load " + pluginName + " due to a syntax error in " + pluginName + "/" + fileSpec + ".js");
       } else {
-        let typeName = isConfiguration ? type + " configuration" : type;
+        const typeName = isConfiguration ? type + " configuration" : type;
         this.logger.error(pluginName + " " + typeName + " not found");
-        let plugins = this.availablePlugins(fileSpec);
+        const plugins = this.availablePlugins(fileSpec);
         this.logger.error("Did you mean \"" + this.closestMatch(pluginName, plugins) + "\" ?");
       }
 
@@ -150,13 +150,13 @@ export class UtilImp implements Util {
   }
 
   public resolveDir(...dirs: string[]): string {
-    let resolved = path.resolve(...dirs);
+    const resolved = path.resolve(...dirs);
 
     if (!fs.existsSync(resolved)) {
       return resolved;
     }
 
-    let stats = fs.lstatSync(resolved);
+    const stats = fs.lstatSync(resolved);
 
     if (!stats.isSymbolicLink()) {
       return resolved;

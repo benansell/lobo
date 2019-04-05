@@ -34,7 +34,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       }
 
       for (let j = 0; j < items[i].labels.length; j++) {
-        let label = items[i].labels[j];
+        const label = items[i].labels[j];
 
         if (label.length > maxLabelLength) {
           maxLabelLength = label.length;
@@ -56,7 +56,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     this.messagePrefixPadding = "    ";
 
     // default to a width of 80 when process is not running in a terminal
-    let stdout = <{ columns: number }><{}>process.stdout;
+    const stdout = <{ columns: number }><{}>process.stdout;
     this.diffMaxLength = stdout && stdout.columns ? stdout.columns - this.messagePrefixPadding.length : 80;
   }
 
@@ -73,7 +73,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   }
 
   public finish(results: plugin.TestRun): Bluebird<void> {
-    let steps: Array<() => Bluebird<void>> = [];
+    const steps: Array<() => Bluebird<void>> = [];
     steps.push(() => this.standardConsole.finish(results));
 
     steps.push(() => new Bluebird<void>((resolve: plugin.Resolve<void>, reject: plugin.Reject) => {
@@ -98,18 +98,18 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       return [];
     }
 
-    let maxSize = <number> _.max(_.map(items, x => x.labels.length));
-    let maxLabelLength = DefaultReporterImp.calculateMaxLabelLength(items);
+    const maxSize = <number> _.max(_.map(items, x => x.labels.length));
+    const maxLabelLength = DefaultReporterImp.calculateMaxLabelLength(items);
 
     return _.sortBy(items, (x: LeafItem) => this.toFailureSortKey(maxSize, maxLabelLength, x));
   }
 
   public toFailureSortKey(maxSize: number, maxLabelLength: number, item: LeafItem): string {
-    let maxSizeLength = maxSize.toString.length;
-    let toSortKey = (x: string) => this.util.padRight(x, maxLabelLength);
+    const maxSizeLength = maxSize.toString.length;
+    const toSortKey = (x: string) => this.util.padRight(x, maxLabelLength);
 
-    let prefix = _.map(item.labels, y => toSortKey(y)).join(" " + this.util.padRight("?", maxSizeLength, "?") + ":");
-    let suffix = " " + this.util.padRight(item.labels.length.toString(), maxSizeLength, "?") + ":" + toSortKey(item.result.label);
+    const prefix = _.map(item.labels, y => toSortKey(y)).join(" " + this.util.padRight("?", maxSizeLength, "?") + ":");
+    const suffix = " " + this.util.padRight(item.labels.length.toString(), maxSizeLength, "?") + ":" + toSortKey(item.result.label);
 
     return prefix + suffix;
   }
@@ -118,7 +118,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
     let itemList: LeafItem[] = _.clone(summary.failures);
 
     if (!program.hideDebugMessages) {
-      let passedWithLogs = _.filter(summary.successes, x => x.result.logMessages.length > 0);
+      const passedWithLogs = _.filter(summary.successes, x => x.result.logMessages.length > 0);
       itemList = itemList.concat(passedWithLogs);
     }
 
@@ -130,11 +130,11 @@ export class DefaultReporterImp implements plugin.PluginReporter {
       itemList = itemList.concat(summary.todo);
     }
 
-    let sortedItemList = this.sortItemsByLabel(itemList);
+    const sortedItemList = this.sortItemsByLabel(itemList);
     let context: string[] = [];
 
     for (let i = 0; i < sortedItemList.length; i++) {
-      let item = sortedItemList[i];
+      const item = sortedItemList[i];
       let style: (value: string) => string;
 
       switch (item.result.resultType) {
@@ -188,7 +188,7 @@ export class DefaultReporterImp implements plugin.PluginReporter {
         continue;
       }
 
-      let label = labels[j];
+      const label = labels[j];
       this.standardConsole.paddedLog(this.labelStyle(labelPad + label));
       labelPad += " ";
       context.push(label);
@@ -200,24 +200,24 @@ export class DefaultReporterImp implements plugin.PluginReporter {
   }
 
   public logFailureMessage(item: plugin.TestRunLeaf<plugin.TestReportFailedLeaf>): void {
-    let message = this.testResultFormatter.formatFailure(item.result, this.messagePrefixPadding, this.diffMaxLength);
+    const message = this.testResultFormatter.formatFailure(item.result, this.messagePrefixPadding, this.diffMaxLength);
     this.logger.log(message);
 
     if (!program.hideDebugMessages) {
-      let debugMessage = this.testResultFormatter.formatDebugLogMessages(item.result, this.messagePrefixPadding);
+      const debugMessage = this.testResultFormatter.formatDebugLogMessages(item.result, this.messagePrefixPadding);
       this.logger.log(debugMessage);
     }
   }
 
   public logNotRunMessage(item: plugin.TestRunLeaf<plugin.TestReportSkippedLeaf>): void {
-    let message = this.testResultFormatter.formatNotRun(item.result, this.messagePrefixPadding);
+    const message = this.testResultFormatter.formatNotRun(item.result, this.messagePrefixPadding);
     this.logger.log(message);
   }
 
   public logPassedMessage(item: plugin.TestRunLeaf<plugin.TestReportPassedLeaf>): void {
     if (!program.hideDebugMessages) {
       this.logger.log("");
-      let debugMessage = this.testResultFormatter.formatDebugLogMessages(item.result, this.messagePrefixPadding);
+      const debugMessage = this.testResultFormatter.formatDebugLogMessages(item.result, this.messagePrefixPadding);
       this.logger.log(debugMessage);
     }
   }

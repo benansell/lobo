@@ -24,11 +24,11 @@ import {Chalk} from "chalk";
 import {ReporterStandardConsole} from "../../../../lib/reporter-standard-console";
 import * as plugin from "../../../../lib/plugin";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("plugin default-reporter reporter-plugin", () => {
-  let RewiredPlugin = rewire("../../../../plugin/default-reporter/reporter-plugin");
+  const RewiredPlugin = rewire("../../../../plugin/default-reporter/reporter-plugin");
   let reporter: DefaultReporterImp;
   let mockDecorator: TestResultDecorator;
   let mockFormatter: TestResultFormatter;
@@ -37,7 +37,7 @@ describe("plugin default-reporter reporter-plugin", () => {
   let mockUtil: Util;
 
   beforeEach(() => {
-    let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+    const rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
     mockDecorator = <TestResultDecorator> {};
     mockFormatter = <TestResultFormatter> {
       defaultIndentation: Sinon.stub(),
@@ -61,7 +61,7 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("createPlugin", () => {
     it("should return reporter", () => {
       // act
-      let actual: PluginReporter = createPlugin();
+      const actual: PluginReporter = createPlugin();
 
       // assert
       expect(actual).to.exist;
@@ -71,12 +71,12 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("constructor", () => {
     it("should set diffMaxLength to default of 80 columns when stdout is undefined", () => {
       // arrange
-      let revertStdOut = RewiredPlugin.__with__({process: {stdout: undefined}});
-      let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+      const revertStdOut = RewiredPlugin.__with__({process: {stdout: undefined}});
+      const rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
       revertStdOut(() => {
-        let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
+        const actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
         actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {});
       });
 
@@ -86,12 +86,12 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should set diffMaxLength with default of 80 columns when stdout.columns is undefined", () => {
       // arrange
-      let revertStdOutColumns = RewiredPlugin.__with__({process: {stdout: {columns: undefined}}});
-      let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+      const revertStdOutColumns = RewiredPlugin.__with__({process: {stdout: {columns: undefined}}});
+      const rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
       revertStdOutColumns(() => {
-        let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
+        const actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
         actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {});
       });
 
@@ -101,12 +101,12 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should set diffMaxLength with std.columns minus message prefix padding length when stdout.columns exists", () => {
       // arrange
-      let revertStdOutColumns = RewiredPlugin.__with__({process: {stdout: {columns: 10}}});
-      let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+      const revertStdOutColumns = RewiredPlugin.__with__({process: {stdout: {columns: 10}}});
+      const rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
 
       // act
       revertStdOutColumns(() => {
-        let actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
+        const actual = new rewiredImp(mockLogger, mockStandardConsole, mockDecorator, mockFormatter, mockUtil);
         actual.logFailureMessage(<plugin.TestRunLeaf<plugin.TestReportFailedLeaf>> {});
       });
 
@@ -118,7 +118,7 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("runArgs", () => {
     it("should call reporter standard console with supplied initArgs", () => {
       // arrange
-      let expected = <RunArgs> {runCount: 123};
+      const expected = <RunArgs> {runCount: 123};
 
       // act
       reporter.runArgs(expected);
@@ -138,7 +138,7 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("update", () => {
     it("should call reporter standard console with supplied result", () => {
       // arrange
-      let result = <ProgressReport>{resultType: "PASSED"};
+      const result = <ProgressReport>{resultType: "PASSED"};
 
       // act
       reporter.update(result);
@@ -151,11 +151,11 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("finish", () => {
     it("should return a promise that calls standardConsole.finish", () => {
       // arrange
-      let expected = <TestRun>{summary: {runType: "NORMAL"}};
+      const expected = <TestRun>{summary: {runType: "NORMAL"}};
       reporter.logResults = Sinon.spy();
 
       // act
-      let actual = reporter.finish(expected);
+      const actual = reporter.finish(expected);
 
       // assert
       actual.then(() => {
@@ -165,8 +165,8 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should return a promise that does not call logNonPassed when quiet is true", () => {
       // arrange
-      let expected = <TestRunSummary> {runType: "NORMAL", successes: []};
-      let revert = RewiredPlugin.__with__({program: {quiet: true}});
+      const expected = <TestRunSummary> {runType: "NORMAL", successes: []};
+      const revert = RewiredPlugin.__with__({program: {quiet: true}});
       reporter.logResults = Sinon.spy();
 
       // act
@@ -181,8 +181,8 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should return a promise that calls logNonPassed when quiet is false", () => {
       // arrange
-      let expected = <TestRunSummary> {runType: "NORMAL"};
-      let revert = RewiredPlugin.__with__({program: {quiet: false}});
+      const expected = <TestRunSummary> {runType: "NORMAL"};
+      const revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logResults = Sinon.spy();
 
       // act
@@ -197,8 +197,8 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should return a promise that calls reject when logging fails", () => {
       // arrange
-      let expected = new Error("qux");
-      let revert = RewiredPlugin.__with__({program: {quiet: false}});
+      const expected = new Error("qux");
+      const revert = RewiredPlugin.__with__({program: {quiet: false}});
       reporter.logResults = Sinon.stub();
       (<SinonStub>reporter.logResults).throws(expected);
 
@@ -216,7 +216,7 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("sortItemsByLabel", () => {
     it("should return an empty array when the supplied items are undefined", () => {
       // act
-      let actual = reporter.sortItemsByLabel(undefined);
+      const actual = reporter.sortItemsByLabel(undefined);
 
       // assert
       expect(actual.length).to.equal(0);
@@ -224,14 +224,14 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should return the items sorted by order of labels when they differ by result.label", () => {
       // arrange
-      let items = <TestRunLeaf<TestReportFailedLeaf>[]>[
+      const items = <TestRunLeaf<TestReportFailedLeaf>[]>[
         {labels: [], result: {label: "1"}},
         {labels: [], result: {label: "2"}},
         {labels: [], result: {label: "3"}}
       ];
 
       // act
-      let actual = reporter.sortItemsByLabel(items);
+      const actual = reporter.sortItemsByLabel(items);
 
       // assert
       expect(actual[0].result.label).to.equal("1");
@@ -241,14 +241,14 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should return the items sorted by order of labels when they differ by labels", () => {
       // arrange
-      let items = <TestRunLeaf<TestReportFailedLeaf>[]>[
+      const items = <TestRunLeaf<TestReportFailedLeaf>[]>[
         {labels: ["suite A"], result: {label: "1"}},
         {labels: ["suite B"], result: {label: "1"}},
         {labels: ["suite C"], result: {label: "1"}}
       ];
 
       // act
-      let actual = reporter.sortItemsByLabel(items);
+      const actual = reporter.sortItemsByLabel(items);
 
       // assert
       expect(actual[0].labels).to.include("suite A");
@@ -258,14 +258,14 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should return the items sorted by order of labels when they differ by labels and result.label", () => {
       // arrange
-      let items = <TestRunLeaf<TestReportFailedLeaf>[]>[
+      const items = <TestRunLeaf<TestReportFailedLeaf>[]>[
         {labels: ["suite A", "a"], result: {label: "1"}},
         {labels: ["suite B", "b"], result: {label: "2"}},
         {labels: ["suite A", "b", "c"], result: {label: "3"}}
       ];
 
       // act
-      let actual = reporter.sortItemsByLabel(items);
+      const actual = reporter.sortItemsByLabel(items);
 
       // assert
       expect(actual[0].result.label).to.equal("1");
@@ -278,7 +278,7 @@ describe("plugin default-reporter reporter-plugin", () => {
     it("should log failed items", () => {
       // arrange
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportFailedLeaf>> {labels: [], result: {label: "foo"}};
+      const expected = <TestRunLeaf<TestReportFailedLeaf>> {labels: [], result: {label: "foo"}};
 
       // act
       reporter.logResults(<TestRunSummary>{failures: [expected]});
@@ -289,9 +289,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log passed items when hideDebugMessages is false and resultType is 'PASSED'", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      const revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
       reporter.logPassedMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: ["bar"]}};
+      const expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: ["bar"]}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], successes: [expected]}));
@@ -302,9 +302,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log passed items when hideDebugMessages is false and resultType is 'PASSED' and no log messages", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      const revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
       reporter.logPassedMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: []}};
+      const expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: []}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], successes: [expected]}));
@@ -315,9 +315,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log passed items when hideDebugMessages is true and resultType is 'PASSED'", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
+      const revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
       reporter.logPassedMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: ["bar"]}};
+      const expected = <TestRunLeaf<TestReportPassedLeaf>>{labels: [], result: {label: "foo", resultType: "PASSED", logMessages: ["bar"]}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], successes: [expected]}));
@@ -328,9 +328,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log skipped items when showSkip is false", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {showSkip: false}});
+      const revert = RewiredPlugin.__with__({program: {showSkip: false}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo"}};
+      const expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo"}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], skipped: [expected]}));
@@ -341,9 +341,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log skipped items as failure when showSkip is true and resultType is not 'SKIPPED'", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {showSkip: true}});
+      const revert = RewiredPlugin.__with__({program: {showSkip: true}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
+      const expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], skipped: [expected]}));
@@ -354,9 +354,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log skipped items as not run when showSkip is true and resultType is 'SKIPPED'", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {showSkip: true}});
+      const revert = RewiredPlugin.__with__({program: {showSkip: true}});
       reporter.logNotRunMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "SKIPPED"}};
+      const expected = <TestRunLeaf<TestReportSkippedLeaf>>{labels: [], result: {label: "foo", resultType: "SKIPPED"}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], skipped: [expected]}));
@@ -367,9 +367,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log todo items when showTodo is false", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {showTodo: false}});
+      const revert = RewiredPlugin.__with__({program: {showTodo: false}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo"}};
+      const expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo"}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], todo: [expected]}));
@@ -380,9 +380,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log todo items as failure when showTodo is true and resultType is not 'TODO'", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {showTodo: true}});
+      const revert = RewiredPlugin.__with__({program: {showTodo: true}});
       reporter.logFailureMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
+      const expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "IGNORED"}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], todo: [expected]}));
@@ -393,9 +393,9 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log todo items as not run when showTodo is true and resultType is 'TODO'", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {showTodo: true}});
+      const revert = RewiredPlugin.__with__({program: {showTodo: true}});
       reporter.logNotRunMessage = Sinon.spy();
-      let expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "TODO"}};
+      const expected = <TestRunLeaf<TestReportTodoLeaf>>{labels: [], result: {label: "foo", resultType: "TODO"}};
 
       // act
       revert(() => reporter.logResults(<TestRunSummary>{failures: [], todo: [expected]}));
@@ -410,7 +410,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     beforeEach(() => {
       revertLabelStyle = RewiredPlugin.__set__({chalk_1: { "default": {dim: x => x}}});
-      let rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
+      const rewiredImp = RewiredPlugin.__get__("DefaultReporterImp");
       reporter = new rewiredImp(mockFormatter, mockStandardConsole, mockLogger, mockUtil);
     });
 
@@ -420,7 +420,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not pad top label", () => {
       // arrange
-      let mockStyle = <Chalk><{}> Sinon.stub();
+      const mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
       reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, [], mockStyle);
@@ -431,7 +431,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should pad child label", () => {
       // arrange
-      let mockStyle = <Chalk><{}> Sinon.stub();
+      const mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
       reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, [], mockStyle);
@@ -442,7 +442,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log labels that are in the context", () => {
       // arrange
-      let mockStyle = <Chalk><{}> Sinon.stub();
+      const mockStyle = <Chalk><{}> Sinon.stub();
 
       // act
       reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, ["ignored", "foo"], mockStyle);
@@ -453,7 +453,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should pad item label", () => {
       // arrange
-      let mockStyle = <Chalk><{}> (x => x);
+      const mockStyle = <Chalk><{}> (x => x);
 
       // act
       reporter.logLabels(["ignored", "foo", "bar"], "baz", 1, [], mockStyle);
@@ -464,7 +464,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should add number prefix to item label", () => {
       // arrange
-      let mockStyle = <Chalk><{}> (x => x);
+      const mockStyle = <Chalk><{}> (x => x);
 
       // act
       reporter.logLabels(["ignored", "foo", "bar"], "baz", 123, [], mockStyle);
@@ -488,7 +488,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should log the debug log message returned by formatDebugLogMessages when hideDebugMessages is false", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      const revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
       (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
 
       // act
@@ -500,7 +500,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log the debug log message returned by formatDebugLogMessages when hideDebugMessages is true", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
+      const revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
       (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
 
       // act
@@ -514,7 +514,7 @@ describe("plugin default-reporter reporter-plugin", () => {
   describe("logPassedMessage", () => {
     it("should log the debug log message returned by formatDebugLogMessages when hideDebugMessages is false", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
+      const revert = RewiredPlugin.__with__({program: {hideDebugMessages: false}});
       (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
 
       // act
@@ -526,7 +526,7 @@ describe("plugin default-reporter reporter-plugin", () => {
 
     it("should not log the debug log message returned by formatDebugLogMessages when hideDebugMessages is true", () => {
       // arrange
-      let revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
+      const revert = RewiredPlugin.__with__({program: {hideDebugMessages: true}});
       (<SinonStub>mockFormatter.formatDebugLogMessages).returns("bar");
 
       // act

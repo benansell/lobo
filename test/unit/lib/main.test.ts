@@ -28,7 +28,7 @@ const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib main", () => {
-  let rewiredMain = rewire("../../../lib/main");
+  const rewiredMain = rewire("../../../lib/main");
   let rewiredImp;
   let lobo: LoboImp;
   let mockAnalyze: Sinon.SinonStub;
@@ -99,7 +99,7 @@ describe("lib main", () => {
   describe("createMain", () => {
     it("should return main", () => {
       // act
-      let actual: Lobo = createLobo();
+      const actual: Lobo = createLobo();
 
       // assert
       expect(actual).to.exist;

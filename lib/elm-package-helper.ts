@@ -97,10 +97,10 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
       return sourceDirs;
     }
 
-    let relativePath = path.relative(loboDir, additionDir);
-    let absoluteSourceDirs = _.map(sourceDirs, p => this.util.resolveDir(loboDir, p));
+    const relativePath = path.relative(loboDir, additionDir);
+    const absoluteSourceDirs = _.map(sourceDirs, p => this.util.resolveDir(loboDir, p));
 
-    let relativeSourceDirectories =
+    const relativeSourceDirectories =
       _.map(additions, p => path.join(relativePath, p)
         .replace(/\\/g, "/"))
         .filter(p => absoluteSourceDirs.indexOf(this.util.resolveDir(loboDir, p)) === -1);
@@ -371,7 +371,7 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
     sourceDirs = this.addSourceDirectories(loboElmJsonDir, sourceDirs, applicationDir, appSourceDirectories);
 
     if (extraDirectories.length > 0) {
-      let dirPath = path.join(__dirname, "..");
+      const dirPath = path.join(__dirname, "..");
       sourceDirs = this.addSourceDirectories(loboElmJsonDir, sourceDirs, dirPath, extraDirectories);
     }
 
@@ -387,7 +387,7 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
   }
 
   public readLoboElmJson(loboDir: string): ElmApplicationJson {
-    let loboElmJsonPath = this.pathElmJson(loboDir);
+    const loboElmJsonPath = this.pathElmJson(loboDir);
     const loboElmJson = this.tryRead<ElmApplicationJson>(loboElmJsonPath);
 
     if (!loboElmJson) {
@@ -398,7 +398,7 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
   }
 
   public readLoboJson(loboJsonDir: string): ElmApplicationJson {
-    let elmJsonPath = this.pathLoboJson(loboJsonDir);
+    const elmJsonPath = this.pathLoboJson(loboJsonDir);
     const elmJson = this.tryRead<ElmApplicationJson>(elmJsonPath);
 
     if (!elmJson) {
@@ -410,13 +410,13 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
 
   public tryRead<T extends ElmJson>(elmJsonPath: string): T | undefined {
     try {
-      let raw = this.util.read(elmJsonPath);
+      const raw = this.util.read(elmJsonPath);
 
       if (!raw) {
         return undefined;
       }
 
-      let elmJson = <T & RawElmJson> JSON.parse(raw.toString());
+      const elmJson = <T & RawElmJson> JSON.parse(raw.toString());
 
       if (this.isApplicationJson(elmJson)) {
         if (elmJson["source-directories"]) {
@@ -441,7 +441,7 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
   }
 
   public tryReadElmJson<T extends ElmJson>(elmJsonDir: string): T | undefined {
-    let elmJsonPath = this.pathElmJson(elmJsonDir);
+    const elmJsonPath = this.pathElmJson(elmJsonDir);
 
     return this.tryRead<T>(elmJsonPath);
   }
@@ -550,9 +550,8 @@ export class ElmPackageHelperImp implements ElmPackageHelper {
   }
 
   public write(elmJsonDirectory: string, elmJson: ElmJson): void {
-    let packagePath = this.pathElmJson(elmJsonDirectory);
-
-    let data = <ElmJson & RawElmJson>_.clone(elmJson);
+    const packagePath = this.pathElmJson(elmJsonDirectory);
+    const data = <ElmJson & RawElmJson>_.clone(elmJson);
 
     if (this.isApplicationJson(elmJson) && this.isApplicationJson(data)) {
       data["source-directories"] = elmJson.sourceDirectories;

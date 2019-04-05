@@ -16,7 +16,7 @@ chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib util", () => {
-  let RewiredUtil = rewire("../../../lib/util");
+  const RewiredUtil = rewire("../../../lib/util");
   let util: UtilImp;
   let mockLogger: Logger;
   let mockDirName: SinonStub;

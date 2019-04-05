@@ -4,7 +4,7 @@ import * as main from "../lib/main";
 
 export function run(returnFakeLobo: boolean): void {
   process.title = "lobo";
-  let lobo = main.createLobo(returnFakeLobo);
+  const lobo = main.createLobo(returnFakeLobo);
 
   process.on("uncaughtException", err => {
     lobo.handleUncaughtException(err);

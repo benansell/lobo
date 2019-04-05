@@ -124,19 +124,19 @@ export class RunnerImp {
 
   public run(context: ExecutionContext): Bluebird<ExecutionContext> {
     this.reporter.configure(context.config.reporter);
-    let logger = this.logger;
-    let reporter = this.reporter;
+    const logger = this.logger;
+    const reporter = this.reporter;
 
     return new Bluebird((resolve: Resolve<ExecutionContext>, reject: Reject) => {
       // add to the global scope browser global properties that are used by elm imports
       (<BrowserGlobal>global).document = { location: { hash: "", pathname: "", search: "" } };
       (<BrowserGlobal>global).window = { navigator: {} };
 
-      let elmApp = this.loadElmTestApp(context.buildOutputFilePath, logger);
-      let initArgs = context.config.testFramework.initArgs();
+      const elmApp = this.loadElmTestApp(context.buildOutputFilePath, logger);
+      const initArgs = context.config.testFramework.initArgs();
       logger.debug("Initializing Elm worker", initArgs);
       context.config.reporter.runArgs(initArgs);
-      let app = elmApp.Elm.UnitTest.init({flags: initArgs});
+      const app = elmApp.Elm.UnitTest.init({flags: initArgs});
       const runNextTest = () => setImmediate(() => app.ports.runNextTest.send(true));
 
       logger.debug("Subscribing to ports");

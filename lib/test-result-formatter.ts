@@ -45,24 +45,24 @@ export class TestResultFormatterImp implements TestResultFormatter {
   }
 
   public formatFailure(report: plugin.TestReportFailedLeaf, padding: string, maxLength: number): string {
-    let lines: string[] = [];
+    const lines: string[] = [];
 
     _.forEach(report.resultMessages, (resultMessage: plugin.FailureMessage) => {
       if (resultMessage.given && resultMessage.given.length > 0) {
-        let givenMessageHeader = this.formatMessage(`${TestResultFormatterImp.bulletPoint} ${this.decorator.given("Given")}`, padding);
+        const givenMessageHeader = this.formatMessage(`${TestResultFormatterImp.bulletPoint} ${this.decorator.given("Given")}`, padding);
 
         lines.push(`${os.EOL}${this.decorator.line(givenMessageHeader)}`);
-        let givenMessage = this.formatMessage(this.defaultIndentation() + resultMessage.given, padding);
+        const givenMessage = this.formatMessage(this.defaultIndentation() + resultMessage.given, padding);
         lines.push(`${os.EOL}${this.decorator.line(givenMessage)}${os.EOL}`);
       }
 
-      let message = this.formatFailureMessage(resultMessage.message, maxLength);
+      const message = this.formatFailureMessage(resultMessage.message, maxLength);
       lines.push(this.formatMessage(message, padding));
     });
 
-    let rawOutput = lines.join("");
+    const rawOutput = lines.join("");
 
-    let output = rawOutput
+    const output = rawOutput
       .replace(new RegExp(TestResultFormatterImp.bulletPoint, "g"), this.decorator.bulletPoint())
       .replace(new RegExp(TestResultFormatterImp.verticalBarStart, "g"), this.decorator.verticalBarStart())
       .replace(new RegExp(TestResultFormatterImp.verticalBarMiddle, "g"), this.decorator.verticalBarMiddle())
@@ -76,7 +76,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
   }
 
   public formatNotRun(report: plugin.TestReportSkippedLeaf, padding: string): string {
-    let message = this.formatMessage(report.reason, padding);
+    const message = this.formatMessage(report.reason, padding);
 
     return `${os.EOL}${this.defaultIndentation()}${message}${os.EOL}`;
   }
@@ -89,7 +89,7 @@ export class TestResultFormatterImp implements TestResultFormatter {
     let lines = message.split("\n");
 
     // remove diff lines
-    let diffRegex = /Expect.equal(Dicts|Lists|Sets)/;
+    const diffRegex = /Expect.equal(Dicts|Lists|Sets)/;
 
     if (lines.length > 5 && diffRegex.test(lines[2])) {
       lines.splice(5, lines.length - 5);
@@ -105,33 +105,33 @@ export class TestResultFormatterImp implements TestResultFormatter {
       lines[3] = lines[3].replace(/(╵|╷)/, TestResultFormatterImp.verticalBarMiddle);
       lines[4] = TestResultFormatterImp.verticalBarEnd + " " + lines[4];
 
-      let expectMessage = lines[2].substring(2, lines[2].length);
+      const expectMessage = lines[2].substring(2, lines[2].length);
       lines[2] = lines[2].replace(expectMessage, this.decorator.expect(expectMessage));
     }
 
-    let expectEqualRegex = /Expect.equal(Dicts|Lists|Sets)*/;
+    const expectEqualRegex = /Expect.equal(Dicts|Lists|Sets)*/;
 
     if (expectEqualRegex.test(lines[2])) {
       lines = this.formatExpectEqualFailure(lines, maxLength);
     }
 
-    let output = _.map(lines, x => this.decorator.line(x));
+    const output = _.map(lines, x => this.decorator.line(x));
 
     return `${os.EOL}${output.join(os.EOL)}${os.EOL}`;
   }
 
   public formatExpectEqualFailure(unprocessedLines: string[], maxLength: number): string[] {
-    let lines: Array<string | string[]> = _.clone(unprocessedLines);
+    const lines: Array<string | string[]> = _.clone(unprocessedLines);
     lines.push("   ");
 
-    let end = TestResultFormatterImp.verticalBarEnd + " ";
-    let middle = TestResultFormatterImp.verticalBarMiddle + " ";
-    let start = TestResultFormatterImp.verticalBarStart + " ";
+    const end = TestResultFormatterImp.verticalBarEnd + " ";
+    const middle = TestResultFormatterImp.verticalBarMiddle + " ";
+    const start = TestResultFormatterImp.verticalBarStart + " ";
 
     // remove "┌ " and "└ "
-    let left = (<string>lines[0]).substring(2);
-    let right = (<string>lines[4]).substring(2);
-    let value = this.comparer.diff(left, right);
+    const left = (<string>lines[0]).substring(2);
+    const right = (<string>lines[4]).substring(2);
+    const value = this.comparer.diff(left, right);
     lines[1] = middle + value.left;
     lines[5] = "  " + value.right;
 
@@ -145,18 +145,17 @@ export class TestResultFormatterImp implements TestResultFormatter {
   }
 
   public chunkLine(rawContentLine: string, rawDiffLine: string, length: number, firstPrefix: string, prefix: string): string[] {
-    let contentLine = rawContentLine.substring(firstPrefix.length - 1);
-    let diffLine = rawDiffLine.substring(firstPrefix.length - 1);
-    let size = Math.ceil(contentLine.length / length);
-    let chunks = new Array(size * 2);
-    let offset;
-    let sectionLength = length - prefix.length - 1;
+    const contentLine = rawContentLine.substring(firstPrefix.length - 1);
+    const diffLine = rawDiffLine.substring(firstPrefix.length - 1);
+    const size = Math.ceil(contentLine.length / length);
+    const chunks = new Array(size * 2);
+    const sectionLength = length - prefix.length - 1;
 
     chunks[0] = firstPrefix + contentLine.substring(1, sectionLength + 1);
     chunks[1] = prefix + this.decorator.diff(diffLine.substring(1, sectionLength + 1));
 
     for (let i = 1; i < size; i++) {
-      offset = (i * sectionLength) + 1;
+      const offset = (i * sectionLength) + 1;
       chunks[i * 2] = prefix + contentLine.substring(offset, offset + sectionLength);
       chunks[i * 2 + 1] = prefix + this.decorator.diff(diffLine.substring(offset, offset + sectionLength));
     }

@@ -4,7 +4,7 @@ import * as chai from "chai";
 import {PluginConfig} from "../../../../lib/plugin";
 import {DefaultReporterConfig} from "../../../../plugin/default-reporter/plugin-config";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(require("chai-things"));
 
 describe("plugin default-reporter plugin-config", () => {
@@ -18,7 +18,7 @@ describe("plugin default-reporter plugin-config", () => {
   describe("options", () => {
     it("should have '--hideDebugMessages' option", () => {
       // act'
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--hideDebugMessages");
@@ -26,7 +26,7 @@ describe("plugin default-reporter plugin-config", () => {
 
     it("should have '--showSkip' option", () => {
       // act'
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--showSkip");
@@ -34,7 +34,7 @@ describe("plugin default-reporter plugin-config", () => {
 
     it("should have '--showTodo' option", () => {
       // act
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--showTodo");

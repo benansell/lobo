@@ -4,7 +4,7 @@ import * as _ from "lodash";
 import * as chai from "chai";
 import {ExecOutputReturnValue} from "shelljs";
 
-let expect = chai.expect;
+const expect = chai.expect;
 
 function analysisHidden(result: ExecOutputReturnValue): void {
   expect(result.stdout).to.match(/Hidden Tests/);
@@ -26,6 +26,14 @@ function analysisSummary(result: ExecOutputReturnValue, hidden: number, overExpo
   } else {
     expect(result.stdout).not.to.match(new RegExp("over exposed test"));
   }
+}
+
+function elmMakeParseError(result: ExecOutputReturnValue, filePath: string): void {
+  expect(result.stderr).to.match(new RegExp("-- PARSE ERROR (-)+ " + filePath));
+}
+
+function elmMakeMessage(result: ExecOutputReturnValue, message: string): void {
+  expect(result.stderr).to.match(new RegExp(message));
 }
 
 function summaryArgument(result: ExecOutputReturnValue, argName: string, argValue: object): void {
@@ -84,6 +92,8 @@ export interface ReporterExpect {
   analysisOverExposed(): void;
   analysisSummary(hidden: number, overExposed: number): void;
   analysisUnisolated(): void;
+  elmMakeMessage(message: string): void;
+  elmMakeParseError(filePath: string): void;
   summaryArgument(argName: string, argValue: object): void;
   summaryCounts(pass: number, fail: number, todo?: number, skip?: number, ignore?: number): void;
   summaryFailed(): void;
@@ -98,6 +108,8 @@ export default function(result: ExecOutputReturnValue): ReporterExpect {
     analysisHidden: _.wrap(result, analysisHidden),
     analysisOverExposed: _.wrap(result, analysisOverExposed),
     analysisSummary: _.wrap(result, analysisSummary),
+    elmMakeMessage: _.wrap(result, elmMakeMessage),
+    elmMakeParseError: _.wrap(result, elmMakeParseError),
     summaryArgument: _.wrap(result, summaryArgument),
     summaryCounts: _.wrap(result, summaryCounts),
     summaryFailed: _.wrap(result, summaryFailed),

@@ -5,7 +5,7 @@ import rewire = require("rewire");
 import * as Sinon from "sinon";
 import * as SinonChai from "sinon-chai";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("bin lobo", () => {
@@ -44,14 +44,14 @@ describe("bin lobo", () => {
 
     it("should setup lobo to handle uncaught exceptions'", () => {
       // arrange
-      let expected = new Error("foo");
-      let fakeOn = (eventName, func) => {
+      const expected = new Error("foo");
+      const fakeOn = (eventName, func) => {
         if (eventName === "uncaughtException") {
           func(expected);
         }
       };
 
-      let revertWith = rewiredLobo.__with__({process: { on: fakeOn}});
+      const revertWith = rewiredLobo.__with__({process: { on: fakeOn}});
 
       // act
       revertWith(() => run());

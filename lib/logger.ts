@@ -48,13 +48,13 @@ export class LoggerImp implements Logger {
       return;
     }
 
-    let logger = this.levelToLogger(logLevel);
-    let style = this.levelToStyle(logLevel);
+    const logger = this.levelToLogger(logLevel);
+    const style = this.levelToStyle(logLevel);
 
     if (data === undefined || data === null) {
       logger(style(message));
     } else if (data instanceof Error) {
-      let error = <Error> data;
+      const error = <Error> data;
       logger(style(message + ": "), style(error.toString()));
     } else {
       logger(style(message + ": "), style(JSON.stringify(data)));
@@ -81,7 +81,7 @@ export class LoggerImp implements Logger {
   }
 
   public isOption(name: string): boolean {
-    let value = program[name];
+    const value = program[name];
 
     if (!value) {
       return false;

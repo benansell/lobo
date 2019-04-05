@@ -10,18 +10,18 @@ import {Util} from "../../../lib/util";
 import {Logger} from "../../../lib/logger";
 import {SinonStub} from "sinon";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib elm-tokenizer", () => {
-  let RewiredTokenizer = rewire("../../../lib/elm-tokenizer");
+  const RewiredTokenizer = rewire("../../../lib/elm-tokenizer");
   let mockLogger: Logger;
   let mockUtil: Util;
   let mockMakeElmCodeHelper: SinonStub;
   let tokenizerImp: ElmTokenizerImp;
 
   beforeEach(() => {
-    let rewiredImp = RewiredTokenizer.__get__("ElmTokenizerImp");
+    const rewiredImp = RewiredTokenizer.__get__("ElmTokenizerImp");
     mockLogger = <Logger> {};
     mockLogger.debug = Sinon.spy();
     mockLogger.error = Sinon.spy();
@@ -36,7 +36,7 @@ describe("lib elm-tokenizer", () => {
   describe("createElmTokenizer", () => {
     it("should return elm tokenizer", () => {
       // act
-      let actual: ElmTokenizer = createElmTokenizer();
+      const actual: ElmTokenizer = createElmTokenizer();
 
       // assert
       expect(actual).to.exist;
@@ -46,7 +46,7 @@ describe("lib elm-tokenizer", () => {
   describe("buildLineMap", () => {
     it("should return a list of indexes for each occurrence of '\n'", () => {
       // act
-      let actual = tokenizerImp.buildLineMap("\na\nbc\n");
+      const actual = tokenizerImp.buildLineMap("\na\nbc\n");
 
       // assert
       expect(actual).to.deep.equal([0, 2, 5]);
@@ -56,11 +56,11 @@ describe("lib elm-tokenizer", () => {
   describe("convertToElmToken", () => {
     it("should return token with code returned by codeHelper.codeBetween", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.codeBetween = () => "foo";
 
       // act
-      let actual = tokenizerImp.convertToElmToken(mockCodeHelper, [], <PartialElmToken>{});
+      const actual = tokenizerImp.convertToElmToken(mockCodeHelper, [], <PartialElmToken>{});
 
       // assert
       expect(actual.code).to.equal("foo");
@@ -68,15 +68,15 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with end returned by convertIndexToLocation for endIndex", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.codeBetween = () => "foo";
-      let lineMap = [10];
-      let mockConvertIndex = Sinon.stub();
+      const lineMap = [10];
+      const mockConvertIndex = Sinon.stub();
       mockConvertIndex.withArgs(lineMap, 123).returns(456);
       tokenizerImp.convertIndexToLocation = mockConvertIndex;
 
       // act
-      let actual = tokenizerImp.convertToElmToken(mockCodeHelper, lineMap, <PartialElmToken>{endIndex: 123});
+      const actual = tokenizerImp.convertToElmToken(mockCodeHelper, lineMap, <PartialElmToken>{endIndex: 123});
 
       // assert
       expect(actual.end).to.equal(456);
@@ -84,11 +84,11 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with supplied identifier", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.codeBetween = () => "foo";
 
       // act
-      let actual = tokenizerImp.convertToElmToken(mockCodeHelper, [], <PartialElmToken>{identifier: "bar"});
+      const actual = tokenizerImp.convertToElmToken(mockCodeHelper, [], <PartialElmToken>{identifier: "bar"});
 
       // assert
       expect(actual.identifier).to.equal("bar");
@@ -96,15 +96,15 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with start returned by convertIndexToLocation for startIndex", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.codeBetween = () => "foo";
-      let lineMap = [10];
-      let mockConvertIndex = Sinon.stub();
+      const lineMap = [10];
+      const mockConvertIndex = Sinon.stub();
       mockConvertIndex.withArgs(lineMap, 123).returns(456);
       tokenizerImp.convertIndexToLocation = mockConvertIndex;
 
       // act
-      let actual = tokenizerImp.convertToElmToken(mockCodeHelper, lineMap, <PartialElmToken>{startIndex: 123});
+      const actual = tokenizerImp.convertToElmToken(mockCodeHelper, lineMap, <PartialElmToken>{startIndex: 123});
 
       // assert
       expect(actual.start).to.equal(456);
@@ -112,11 +112,11 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with supplied token type", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.codeBetween = () => "foo";
 
       // act
-      let actual = tokenizerImp.convertToElmToken(mockCodeHelper, [], <PartialElmToken>{tokenType: ElmTokenType.Module});
+      const actual = tokenizerImp.convertToElmToken(mockCodeHelper, [], <PartialElmToken>{tokenType: ElmTokenType.Module});
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Module);
@@ -129,7 +129,7 @@ describe("lib elm-tokenizer", () => {
       // arrange
 
       // act
-      let actual = tokenizerImp.convertIndexToLocation([], 5);
+      const actual = tokenizerImp.convertIndexToLocation([], 5);
 
       // assert
       expect(actual.lineNumber).to.equal(1);
@@ -139,7 +139,7 @@ describe("lib elm-tokenizer", () => {
       // arrange
 
       // act
-      let actual = tokenizerImp.convertIndexToLocation([2 , 10], 11);
+      const actual = tokenizerImp.convertIndexToLocation([2 , 10], 11);
 
       // assert
       expect(actual.lineNumber).to.equal(3);
@@ -149,7 +149,7 @@ describe("lib elm-tokenizer", () => {
       // arrange
 
       // act
-      let actual = tokenizerImp.convertIndexToLocation([2 , 10], 4);
+      const actual = tokenizerImp.convertIndexToLocation([2 , 10], 4);
 
       // assert
       expect(actual.lineNumber).to.equal(2);
@@ -159,7 +159,7 @@ describe("lib elm-tokenizer", () => {
       // arrange
 
       // act
-      let actual = tokenizerImp.convertIndexToLocation([], 5);
+      const actual = tokenizerImp.convertIndexToLocation([], 5);
 
       // assert
       expect(actual.columnNumber).to.equal(4);
@@ -169,7 +169,7 @@ describe("lib elm-tokenizer", () => {
       // arrange
 
       // act
-      let actual = tokenizerImp.convertIndexToLocation([2 , 10], 1);
+      const actual = tokenizerImp.convertIndexToLocation([2 , 10], 1);
 
       // assert
       expect(actual.columnNumber).to.equal(1);
@@ -179,7 +179,7 @@ describe("lib elm-tokenizer", () => {
       // arrange
 
       // act
-      let actual = tokenizerImp.convertIndexToLocation([2 , 10], 11);
+      const actual = tokenizerImp.convertIndexToLocation([2 , 10], 11);
 
       // assert
       expect(actual.columnNumber).to.equal(1);
@@ -189,7 +189,7 @@ describe("lib elm-tokenizer", () => {
       // arrange
 
       // act
-      let actual = tokenizerImp.convertIndexToLocation([2 , 10], 4);
+      const actual = tokenizerImp.convertIndexToLocation([2 , 10], 4);
 
       // assert
       expect(actual.columnNumber).to.equal(2);
@@ -202,7 +202,7 @@ describe("lib elm-tokenizer", () => {
       mockUtil.read = () => undefined;
 
       // act
-      let actual = tokenizerImp.read("abc");
+      const actual = tokenizerImp.read("abc");
 
       // assert
       expect(actual).to.be.undefined;
@@ -213,7 +213,7 @@ describe("lib elm-tokenizer", () => {
       mockUtil.read = () => "";
 
       // act
-      let actual = tokenizerImp.read("abc");
+      const actual = tokenizerImp.read("abc");
 
       // assert
       expect(actual).to.be.undefined;
@@ -224,7 +224,7 @@ describe("lib elm-tokenizer", () => {
       mockUtil.read = () => "foo\r\nbar\r";
 
       // act
-      let actual = tokenizerImp.read("abc");
+      const actual = tokenizerImp.read("abc");
 
       // assert
       expect(actual).to.equal("foo\nbar");
@@ -238,7 +238,7 @@ describe("lib elm-tokenizer", () => {
       tokenizerImp.read = () => undefined;
 
       // act
-      let actual = tokenizerImp.tokenize("abc");
+      const actual = tokenizerImp.tokenize("abc");
 
       // assert
       expect(actual.length).to.equal(0);
@@ -249,7 +249,7 @@ describe("lib elm-tokenizer", () => {
       tokenizerImp.read = () => "";
 
       // act
-      let actual = tokenizerImp.tokenize("abc");
+      const actual = tokenizerImp.tokenize("abc");
 
       // assert
       expect(actual.length).to.equal(0);
@@ -258,10 +258,10 @@ describe("lib elm-tokenizer", () => {
     it("should call tokenizeCode with a line map built from the elm code file", () => {
       // arrange
       tokenizerImp.read = () => "foo";
-      let mockTokenizeCode = Sinon.spy();
+      const mockTokenizeCode = Sinon.spy();
       tokenizerImp.tokenizeCode = mockTokenizeCode;
-      let expected = "bar";
-      let mockBuildLineMap = Sinon.stub();
+      const expected = "bar";
+      const mockBuildLineMap = Sinon.stub();
       mockBuildLineMap.returns("bar");
       tokenizerImp.buildLineMap = mockBuildLineMap;
 
@@ -275,9 +275,9 @@ describe("lib elm-tokenizer", () => {
     it("should call tokenizeCode with the code helper built from the elm code file", () => {
       // arrange
       tokenizerImp.read = () => "foo";
-      let mockTokenizeCode = Sinon.spy();
+      const mockTokenizeCode = Sinon.spy();
       tokenizerImp.tokenizeCode = mockTokenizeCode;
-      let expected = <ElmCodeHelper> { maxIndex: 123 };
+      const expected = <ElmCodeHelper> { maxIndex: 123 };
       mockMakeElmCodeHelper.returns(expected);
 
       // act
@@ -291,10 +291,10 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeCode", () => {
     it("should return empty token list when the makIndex is 0", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {maxIndex: 0};
+      const mockCodeHelper = <ElmCodeHelper> {maxIndex: 0};
 
       // act
-      let actual = tokenizerImp.tokenizeCode(mockCodeHelper, []);
+      const actual = tokenizerImp.tokenizeCode(mockCodeHelper, []);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -302,8 +302,8 @@ describe("lib elm-tokenizer", () => {
 
     it("should call findNextWord to get the next candidate token", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> { maxIndex: 3 };
-      let mockFindNextWord = Sinon.mock();
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 3 };
+      const mockFindNextWord = Sinon.mock();
       mockFindNextWord.returns({nextIndex: 3, word: "foo"});
       mockCodeHelper.findNextWord = mockFindNextWord;
 
@@ -316,8 +316,8 @@ describe("lib elm-tokenizer", () => {
 
     it("should not call tokenizeWord when findNextWord.nextIndex is equal to the maxIndex", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> { maxIndex: 3 };
-      let mockFindNextWord = Sinon.mock();
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 3 };
+      const mockFindNextWord = Sinon.mock();
       mockFindNextWord.returns({nextIndex: 3, word: "foo"});
       mockCodeHelper.findNextWord = mockFindNextWord;
       tokenizerImp.tokenizeWord = Sinon.spy();
@@ -331,8 +331,8 @@ describe("lib elm-tokenizer", () => {
 
     it("should call findNextWord to get the next candidate token", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
-      let mockFindNextWord = Sinon.mock();
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
+      const mockFindNextWord = Sinon.mock();
       mockFindNextWord.returns({nextIndex: 3, word: "foo"});
       mockCodeHelper.findNextWord = mockFindNextWord;
       tokenizerImp.tokenizeWord = () => undefined;
@@ -346,8 +346,8 @@ describe("lib elm-tokenizer", () => {
 
     it("should not call convertToElmToken when tokenizeWord returns undefined", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
-      let mockFindNextWord = Sinon.mock();
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
+      const mockFindNextWord = Sinon.mock();
       mockFindNextWord.returns({nextIndex: 3, word: "foo"});
       mockCodeHelper.findNextWord = mockFindNextWord;
       tokenizerImp.tokenizeWord = () => undefined;
@@ -362,8 +362,8 @@ describe("lib elm-tokenizer", () => {
 
     it("should not call convertToElmToken when token is whitespace", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
-      let mockFindNextWord = Sinon.mock();
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
+      const mockFindNextWord = Sinon.mock();
       mockFindNextWord.returns({nextIndex: 3, word: "foo"});
       mockCodeHelper.findNextWord = mockFindNextWord;
       tokenizerImp.tokenizeWord = () => <PartialElmToken> {tokenType: ElmTokenType.Whitespace};
@@ -378,19 +378,19 @@ describe("lib elm-tokenizer", () => {
 
     it("should return tokens converted by convertToElmToken", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
-      let mockFindNextWord = Sinon.stub();
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 100 };
+      const mockFindNextWord = Sinon.stub();
       mockFindNextWord.withArgs(0, false).returns("module");
       mockCodeHelper.findNextWord = mockFindNextWord;
-      let partialToken = <PartialElmToken> {};
+      const partialToken = <PartialElmToken> {};
       tokenizerImp.tokenizeWord = () => partialToken;
-      let mockConvertToElmToken = Sinon.stub();
-      let expected = <ElmToken> {};
+      const mockConvertToElmToken = Sinon.stub();
+      const expected = <ElmToken> {};
       mockConvertToElmToken.returns(expected);
       tokenizerImp.convertToElmToken = mockConvertToElmToken;
 
       // act
-      let actual = tokenizerImp.tokenizeCode(mockCodeHelper, []);
+      const actual = tokenizerImp.tokenizeCode(mockCodeHelper, []);
 
       // assert
       expect(actual).to.deep.equal([expected]);
@@ -400,7 +400,7 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeWord", () => {
     it("should call tokenizeWhitespace when the word is ' '", () => {
       // arrange
-      let wordResult = <FindWordResult> { nextIndex: 1, word: " "};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: " "};
       tokenizerImp.tokenizeWhitespace = Sinon.spy();
 
       // act
@@ -412,7 +412,7 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeWhitespace when the word is '\n'", () => {
       // arrange
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "\n"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "\n"};
       tokenizerImp.tokenizeWhitespace = Sinon.spy();
 
       // act
@@ -424,9 +424,9 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeComment when the word is a comment", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.isWordComment = () => true;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeComment = Sinon.spy();
 
       // act
@@ -438,9 +438,9 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeType when the word is 'type'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.isWordComment = () => false;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "type"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "type"};
       tokenizerImp.tokenizeType = Sinon.spy();
 
       // act
@@ -452,9 +452,9 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeType when the word is 'import'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.isWordComment = () => false;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "import"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "import"};
       tokenizerImp.tokenizeImport = Sinon.spy();
 
       // act
@@ -466,9 +466,9 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizePort when the word is 'port'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.isWordComment = () => false;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "port"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "port"};
       tokenizerImp.tokenizePort = Sinon.spy();
 
       // act
@@ -480,9 +480,9 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeEffect when the word is 'effect'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.isWordComment = () => false;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "effect"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "effect"};
       tokenizerImp.tokenizeEffect = Sinon.spy();
 
       // act
@@ -494,9 +494,9 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeModule when the word is 'module'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.isWordComment = () => false;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "module"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "module"};
       tokenizerImp.tokenizeModule = Sinon.spy();
 
       // act
@@ -508,9 +508,9 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeFunction when the word is not a elm definition keyword", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.isWordComment = () => false;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeFunction = Sinon.spy();
 
       // act
@@ -524,12 +524,12 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeComment", () => {
     it("should return comment token when the code helper cannot find the end of the comment", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findEndComment = () => 456;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Comment);
@@ -537,12 +537,12 @@ describe("lib elm-tokenizer", () => {
 
     it("should return comment token with token type of comment when the code helper finds the end of the comment", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {maxIndex: 456};
+      const mockCodeHelper = <ElmCodeHelper> {maxIndex: 456};
       mockCodeHelper.findEndComment = () => 456;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Comment);
@@ -550,12 +550,12 @@ describe("lib elm-tokenizer", () => {
 
     it("should return comment token with supplied start index when the code helper finds the end of the comment", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findEndComment = () => 456;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.startIndex).to.equal(123);
@@ -563,12 +563,12 @@ describe("lib elm-tokenizer", () => {
 
     it("should return comment token with end index of comment when the code helper finds the end of the comment", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findEndComment = () => 456;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.endIndex).to.equal(456);
@@ -576,12 +576,12 @@ describe("lib elm-tokenizer", () => {
 
     it("should return comment token with identifier of empty string when the code helper finds the end of the comment", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findEndComment = () => 456;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeComment(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.identifier).to.equal("");
@@ -591,10 +591,10 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeEffect", () => {
     it("should call tokenizeWord when the next word is 'module'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "module"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "module"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeWord = Sinon.spy();
 
       // act
@@ -606,10 +606,10 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeFunction when the next word is not 'module'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeFunction = Sinon.spy();
 
       // act
@@ -623,13 +623,13 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeFunction", () => {
     it("should ignore extra spaces in typed function declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 3, word: ":"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 3, word: ":"};
       const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
       mockFindNextWord.withArgs(1).returns({ nextIndex: 2, word: " "});
       mockFindNextWord.returns(nextWord);
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
 
       // act
@@ -642,13 +642,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should ignore new line in typed function declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 3, word: ":"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 3, word: ":"};
       const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
       mockFindNextWord.withArgs(1).returns({ nextIndex: 2, word: "\n"});
       mockFindNextWord.returns(nextWord);
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
 
       // act
@@ -661,10 +661,10 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeUntilEndOfBlock with token type TypedModuleFunction when the next word is ':'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: ":"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: ":"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
 
       // act
@@ -677,10 +677,10 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeUntilEndOfBlock with token type UntypedModuleFunction when the next word is not ':'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
 
       // act
@@ -695,13 +695,13 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeImport", () => {
     it("should return import token with token type of import", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Import);
@@ -709,13 +709,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should return import token with supplied start index", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.startIndex).to.equal(123);
@@ -723,14 +723,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return undefined when the code helper cannot find the end of the exposed functions", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "exposing"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "exposing"};
       mockCodeHelper.findNextWord = () => nextWord;
       mockCodeHelper.findClose = () => undefined;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual).to.be.undefined;
@@ -738,14 +738,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return import token with end index of exposing when the code helper finds the end of the exposed functions", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "exposing"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "exposing"};
       mockCodeHelper.findNextWord = () => nextWord;
       mockCodeHelper.findClose = () => 456;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.endIndex).to.equal(456);
@@ -753,13 +753,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should return import token with end index", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.endIndex).to.equal(1);
@@ -767,13 +767,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should return import token with identifier as next word", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.identifier).to.equal("bar");
@@ -781,20 +781,20 @@ describe("lib elm-tokenizer", () => {
 
     it("should return import token with formatted identifier when alias exists", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let mockFindNextWord = Sinon.stub();
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
-      let identifierWord = { nextIndex: 2, word: "bar"};
+      const identifierWord = { nextIndex: 2, word: "bar"};
       mockFindNextWord.onFirstCall().returns(identifierWord);
       mockFindNextWord.onSecondCall().returns({nextIndex: 3, word: "as"});
-      let aliasWord = {nextIndex: 4, word: "baz"};
+      const aliasWord = {nextIndex: 4, word: "baz"};
       mockFindNextWord.onThirdCall().returns(aliasWord);
       mockFindNextWord.returns({nextIndex: 5, word: "qux"});
 
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeImport(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.identifier).to.equal("bar as baz");
@@ -802,29 +802,32 @@ describe("lib elm-tokenizer", () => {
   });
 
   describe("tokenizeModule", () => {
-    it("should return undefined when the code helper cannot find the end of the module declaration", () => {
+    it("should return max index when the code helper cannot find the end of the module declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 999 };
       mockCodeHelper.findClose = () => undefined;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const nextWord = { nextIndex: 2, word: "bar"};
+      mockCodeHelper.findNextWord = () => nextWord;
 
       // act
-      let actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
 
       // assert
-      expect(actual).to.be.undefined;
+      expect(actual.tokenType).to.equal(ElmTokenType.Module);
+      expect(actual.endIndex).to.equal(999);
     });
 
     it("should return module token with token type of module when the code helper finds the end of the module declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Module);
@@ -832,14 +835,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return module token with supplied start index when the code helper finds the end of the module declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.startIndex).to.equal(123);
@@ -847,14 +850,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return module token with end index of module when the code helper finds the end of the module declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.endIndex).to.equal(456);
@@ -862,14 +865,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return module token with identifier from next word when the code helper finds the end of the module declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeModule(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.identifier).to.equal("bar");
@@ -879,10 +882,10 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizePort", () => {
     it("should call tokenizeWord with token type Port when the next word is 'module'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "module"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "module"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeWord = Sinon.spy();
 
       // act
@@ -895,10 +898,10 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeUntilEndOfBlock with token type UntypedModulePort when the next word is not 'module'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
 
       // act
@@ -913,18 +916,18 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeType", () => {
     it("should return undefined when the code helper cannot find the end of the type alias declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => undefined;
-      let mockFindNextWord = Sinon.stub();
+      const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
-      let aliasWord = { nextIndex: 2, word: "alias"};
+      const aliasWord = { nextIndex: 2, word: "alias"};
       mockFindNextWord.onFirstCall().returns(aliasWord);
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockFindNextWord.returns(nextWord);
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual).to.be.undefined;
@@ -932,18 +935,18 @@ describe("lib elm-tokenizer", () => {
 
     it("should return type token with token type of TypeAlias when the code helper finds the end of the type declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let mockFindNextWord = Sinon.stub();
+      const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
-      let aliasWord = { nextIndex: 2, word: "alias"};
+      const aliasWord = { nextIndex: 2, word: "alias"};
       mockFindNextWord.onFirstCall().returns(aliasWord);
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockFindNextWord.returns(nextWord);
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.TypeAlias);
@@ -951,18 +954,18 @@ describe("lib elm-tokenizer", () => {
 
     it("should return type token with supplied start index when the code helper finds the end of the type declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let mockFindNextWord = Sinon.stub();
+      const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
-      let aliasWord = { nextIndex: 2, word: "alias"};
+      const aliasWord = { nextIndex: 2, word: "alias"};
       mockFindNextWord.onFirstCall().returns(aliasWord);
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockFindNextWord.returns(nextWord);
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.startIndex).to.equal(123);
@@ -970,18 +973,18 @@ describe("lib elm-tokenizer", () => {
 
     it("should return type token with end index of type when the code helper finds the end of the type declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let mockFindNextWord = Sinon.stub();
+      const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
-      let aliasWord = { nextIndex: 2, word: "alias"};
+      const aliasWord = { nextIndex: 2, word: "alias"};
       mockFindNextWord.onFirstCall().returns(aliasWord);
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockFindNextWord.returns(nextWord);
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.endIndex).to.equal(456);
@@ -989,18 +992,18 @@ describe("lib elm-tokenizer", () => {
 
     it("should return type token with identifier from next word when the code helper finds the end of the type declaration", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findClose = () => 456;
-      let mockFindNextWord = Sinon.stub();
+      const mockFindNextWord = Sinon.stub();
       mockCodeHelper.findNextWord = mockFindNextWord;
-      let aliasWord = { nextIndex: 2, word: "alias"};
+      const aliasWord = { nextIndex: 2, word: "alias"};
       mockFindNextWord.onFirstCall().returns(aliasWord);
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockFindNextWord.returns(nextWord);
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
+      const actual = tokenizerImp.tokenizeType(mockCodeHelper, 123, wordResult);
 
       // assert
       expect(actual.identifier).to.equal("bar");
@@ -1008,10 +1011,10 @@ describe("lib elm-tokenizer", () => {
 
     it("should call tokenizeUntilEndOfBlock with token type of Type when the next word is not 'alias'", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
-      let nextWord = { nextIndex: 2, word: "bar"};
+      const mockCodeHelper = <ElmCodeHelper> {};
+      const nextWord = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findNextWord = () => nextWord;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
       tokenizerImp.tokenizeUntilEndOfBlock = Sinon.spy();
 
       // act
@@ -1026,12 +1029,12 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeUntilEndOfBlock", () => {
     it("should return undefined when the code helper cannot find start char", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => undefined;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual).to.be.undefined;
@@ -1039,13 +1042,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token of supplied token type when the code helper does not find the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => 456;
       mockCodeHelper.findUntilEndOfBlock = () => undefined;
-      let wordResult = <FindWordResult> {nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> {nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Module);
@@ -1053,13 +1056,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with supplied start index when the code helper does not find the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => 456;
       mockCodeHelper.findUntilEndOfBlock = () => undefined;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.startIndex).to.equal(123);
@@ -1067,13 +1070,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with end index of from codeHelper.maxIndex when the code helper does not find the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> { maxIndex: 789};
+      const mockCodeHelper = <ElmCodeHelper> { maxIndex: 789};
       mockCodeHelper.findChar = () => 456;
       mockCodeHelper.findUntilEndOfBlock = () => undefined;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.endIndex).to.equal(789);
@@ -1081,13 +1084,13 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with identifier from supplied word result when the code helper does not find the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => 456;
       mockCodeHelper.findUntilEndOfBlock = () => undefined;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.identifier).to.equal("foo");
@@ -1095,14 +1098,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token of supplied token type when the code helper finds the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => 456;
-      let endOfBlock = { nextIndex: 2, word: "bar"};
+      const endOfBlock = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findUntilEndOfBlock = () => endOfBlock;
-      let wordResult = <FindWordResult> {nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> {nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Module);
@@ -1110,14 +1113,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with supplied start index when the code helper finds the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => 456;
-      let endOfBlock = { nextIndex: 2, word: "bar"};
+      const endOfBlock = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findUntilEndOfBlock = () => endOfBlock;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.startIndex).to.equal(123);
@@ -1125,14 +1128,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with end index of from block result when the code helper finds the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => 456;
-      let endOfBlock = { nextIndex: 2, word: "bar"};
+      const endOfBlock = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findUntilEndOfBlock = () => endOfBlock;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.endIndex).to.equal(2);
@@ -1140,14 +1143,14 @@ describe("lib elm-tokenizer", () => {
 
     it("should return token with identifier from block result when the code helper finds the end of the block", () => {
       // arrange
-      let mockCodeHelper = <ElmCodeHelper> {};
+      const mockCodeHelper = <ElmCodeHelper> {};
       mockCodeHelper.findChar = () => 456;
-      let endOfBlock = { nextIndex: 2, word: "bar"};
+      const endOfBlock = { nextIndex: 2, word: "bar"};
       mockCodeHelper.findUntilEndOfBlock = () => endOfBlock;
-      let wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
+      const wordResult = <FindWordResult> { nextIndex: 1, word: "foo"};
 
       // act
-      let actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
+      const actual = tokenizerImp.tokenizeUntilEndOfBlock(mockCodeHelper, 123, wordResult, ElmTokenType.Module, "~");
 
       // assert
       expect(actual.identifier).to.equal("bar");
@@ -1157,7 +1160,7 @@ describe("lib elm-tokenizer", () => {
   describe("tokenizeWhitespace", () => {
     it("should return whitespace token with token type of whitespace", () => {
       // act
-      let actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
+      const actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
 
       // assert
       expect(actual.tokenType).to.equal(ElmTokenType.Whitespace);
@@ -1165,7 +1168,7 @@ describe("lib elm-tokenizer", () => {
 
     it("should return whitespace token with supplied start index", () => {
       // act
-      let actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
+      const actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
 
       // assert
       expect(actual.startIndex).to.equal(123);
@@ -1173,7 +1176,7 @@ describe("lib elm-tokenizer", () => {
 
     it("should return whitespace token with end index of zero", () => {
       // act
-      let actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
+      const actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
 
       // assert
       expect(actual.endIndex).to.equal(0);
@@ -1181,7 +1184,7 @@ describe("lib elm-tokenizer", () => {
 
     it("should return whitespace token with identifier of empty string", () => {
       // act
-      let actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
+      const actual = tokenizerImp.tokenizeWhitespace(123, { nextIndex: 1, word: "foo"});
 
       // assert
       expect(actual.identifier).to.equal("");

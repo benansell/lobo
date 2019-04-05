@@ -10,11 +10,11 @@ import {Logger} from "../../../lib/logger";
 import {makeElmCodeHelper} from "../../../lib/elm-code-helper";
 import {ElmNode, ElmNodeType} from "../../../lib/plugin";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib elm-node-helper", () => {
-  let RewiredParser = rewire("../../../lib/elm-node-helper");
+  const RewiredParser = rewire("../../../lib/elm-node-helper");
   let parserImp: ElmNodeHelperImp;
   let mockLogger: Logger;
   let mockTokenizer: ElmTokenizer;
@@ -23,7 +23,7 @@ describe("lib elm-node-helper", () => {
   let mockMakeElmTypeHelper: Sinon.SinonStub;
 
   beforeEach(() => {
-    let rewiredImp = RewiredParser.__get__("ElmNodeHelperImp");
+    const rewiredImp = RewiredParser.__get__("ElmNodeHelperImp");
     mockLogger = <Logger> {};
     mockLogger.debug = Sinon.spy();
     mockTokenizer = <ElmTokenizer> {};
@@ -37,7 +37,7 @@ describe("lib elm-node-helper", () => {
   describe("createElmNodeHelper", () => {
     it("should return elm parser", () => {
       // act
-      let actual: ElmNodeHelper = createElmNodeHelper();
+      const actual: ElmNodeHelper = createElmNodeHelper();
 
       // assert
       expect(actual).to.exist;
@@ -47,11 +47,11 @@ describe("lib elm-node-helper", () => {
   describe("isFunctionNode", () => {
     it("should return false when the node is not a function node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.Import;
 
       // act
-      let actual = parserImp.isFunctionNode(node);
+      const actual = parserImp.isFunctionNode(node);
 
       // assert
       expect(actual).to.be.false;
@@ -59,11 +59,11 @@ describe("lib elm-node-helper", () => {
 
     it("should return true when the node is a typed module function node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.TypedModuleFunction;
 
       // act
-      let actual = parserImp.isFunctionNode(node);
+      const actual = parserImp.isFunctionNode(node);
 
       // assert
       expect(actual).to.be.true;
@@ -71,11 +71,11 @@ describe("lib elm-node-helper", () => {
 
     it("should return true when the node is an untyped module function node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.UntypedModuleFunction;
 
       // act
-      let actual = parserImp.isFunctionNode(node);
+      const actual = parserImp.isFunctionNode(node);
 
       // assert
       expect(actual).to.be.true;
@@ -85,11 +85,11 @@ describe("lib elm-node-helper", () => {
   describe("isImportNode", () => {
     it("should return false when the node is not an import node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.Unknown;
 
       // act
-      let actual = parserImp.isImportNode(node);
+      const actual = parserImp.isImportNode(node);
 
       // assert
       expect(actual).to.be.false;
@@ -97,11 +97,11 @@ describe("lib elm-node-helper", () => {
 
     it("should return true when the node is an import node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.Import;
 
       // act
-      let actual = parserImp.isImportNode(node);
+      const actual = parserImp.isImportNode(node);
 
       // assert
       expect(actual).to.be.true;
@@ -111,11 +111,11 @@ describe("lib elm-node-helper", () => {
   describe("isTypedModuleFunctionNode", () => {
     it("should return false when the node is not a typed module function node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.Unknown;
 
       // act
-      let actual = parserImp.isTypedModuleFunctionNode(node);
+      const actual = parserImp.isTypedModuleFunctionNode(node);
 
       // assert
       expect(actual).to.be.false;
@@ -123,11 +123,11 @@ describe("lib elm-node-helper", () => {
 
     it("should return true when the node is a typed module function node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.TypedModuleFunction;
 
       // act
-      let actual = parserImp.isTypedModuleFunctionNode(node);
+      const actual = parserImp.isTypedModuleFunctionNode(node);
 
       // assert
       expect(actual).to.be.true;
@@ -137,11 +137,11 @@ describe("lib elm-node-helper", () => {
   describe("isUntypedModuleFunctionNode", () => {
     it("should return false when the node is not an untyped module function node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.Unknown;
 
       // act
-      let actual = parserImp.isUntypedModuleFunctionNode(node);
+      const actual = parserImp.isUntypedModuleFunctionNode(node);
 
       // assert
       expect(actual).to.be.false;
@@ -149,11 +149,11 @@ describe("lib elm-node-helper", () => {
 
     it("should return true when the node is an untyped module function node", () => {
       // arrange
-      let node = <ElmNode> {};
+      const node = <ElmNode> {};
       node.nodeType = ElmNodeType.UntypedModuleFunction;
 
       // act
-      let actual = parserImp.isUntypedModuleFunctionNode(node);
+      const actual = parserImp.isUntypedModuleFunctionNode(node);
 
       // assert
       expect(actual).to.be.true;

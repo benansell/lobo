@@ -11,16 +11,16 @@ import {
 } from "../../../../lib/plugin";
 import {SinonStub} from "sinon";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("plugin json-reporter reporter-plugin", () => {
-  let RewiredReporter = rewire("../../../../plugin/json-reporter/reporter-plugin");
+  const RewiredReporter = rewire("../../../../plugin/json-reporter/reporter-plugin");
   let reporter: JsonReporter;
   let mockLogger: { log(message: string): void };
 
   beforeEach(() => {
-    let rewiredImp = RewiredReporter.__get__("JsonReporter");
+    const rewiredImp = RewiredReporter.__get__("JsonReporter");
     mockLogger = {log: Sinon.spy()};
     reporter = new rewiredImp(mockLogger);
   });
@@ -28,7 +28,7 @@ describe("plugin json-reporter reporter-plugin", () => {
   describe("createPlugin", () => {
     it("should return reporter", () => {
       // act
-      let actual: PluginReporter = createPlugin();
+      const actual: PluginReporter = createPlugin();
 
       // assert
       expect(actual).to.exist;
@@ -38,10 +38,10 @@ describe("plugin json-reporter reporter-plugin", () => {
   describe("toCommonOutput", () => {
     it("should return object with 'config' set to supplied value", () => {
       // arrange
-      let expected = <TestReportConfig> {framework: "foo"};
+      const expected = <TestReportConfig> {framework: "foo"};
 
       // act
-      let actual = <{ config: TestReportConfig }> JsonReporter.toCommonOutput(<TestRunSummary> {config: expected});
+      const actual = <{ config: TestReportConfig }> JsonReporter.toCommonOutput(<TestRunSummary> {config: expected});
 
       // assert
       expect(actual.config).to.equal(expected);
@@ -49,10 +49,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'durationMilliseconds' set to supplied value", () => {
       // arrange
-      let expected = 123;
+      const expected = 123;
 
       // act
-      let actual = <{ durationMilliseconds: number }> JsonReporter.toCommonOutput(<TestRunSummary> {durationMilliseconds: expected});
+      const actual = <{ durationMilliseconds: number }> JsonReporter.toCommonOutput(<TestRunSummary> {durationMilliseconds: expected});
 
       // assert
       expect(actual.durationMilliseconds).to.equal(expected);
@@ -60,10 +60,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'endDateTime' set to supplied value", () => {
       // arrange
-      let expected = new Date();
+      const expected = new Date();
 
       // act
-      let actual = <{ endDateTime: Date }> JsonReporter.toCommonOutput(<TestRunSummary> {endDateTime: expected});
+      const actual = <{ endDateTime: Date }> JsonReporter.toCommonOutput(<TestRunSummary> {endDateTime: expected});
 
       // assert
       expect(actual.endDateTime).to.equal(expected);
@@ -71,10 +71,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'failedCount' set to supplied value", () => {
       // arrange
-      let expected = 123;
+      const expected = 123;
 
       // act
-      let actual = <{ failedCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {failedCount: expected});
+      const actual = <{ failedCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {failedCount: expected});
 
       // assert
       expect(actual.failedCount).to.equal(expected);
@@ -82,10 +82,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'onlyCount' set to supplied value", () => {
       // arrange
-      let expected = 123;
+      const expected = 123;
 
       // act
-      let actual = <{ onlyCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {onlyCount: expected});
+      const actual = <{ onlyCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {onlyCount: expected});
 
       // assert
       expect(actual.onlyCount).to.equal(expected);
@@ -93,10 +93,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'outcome' set to supplied value", () => {
       // arrange
-      let expected = "foo";
+      const expected = "foo";
 
       // act
-      let actual = <{ outcome: string }> JsonReporter.toCommonOutput(<TestRunSummary> {outcome: expected});
+      const actual = <{ outcome: string }> JsonReporter.toCommonOutput(<TestRunSummary> {outcome: expected});
 
       // assert
       expect(actual.outcome).to.equal(expected);
@@ -104,10 +104,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'passedCount' set to supplied value", () => {
       // arrange
-      let expected = 123;
+      const expected = 123;
 
       // act
-      let actual = <{ passedCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {passedCount: expected});
+      const actual = <{ passedCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {passedCount: expected});
 
       // assert
       expect(actual.passedCount).to.equal(expected);
@@ -115,10 +115,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'runType' set to supplied value", () => {
       // arrange
-      let expected = "FOCUS";
+      const expected = "FOCUS";
 
       // act
-      let actual = <{ runType: RunType }> JsonReporter.toCommonOutput(<TestRunSummary> {runType: expected});
+      const actual = <{ runType: RunType }> JsonReporter.toCommonOutput(<TestRunSummary> {runType: expected});
 
       // assert
       expect(actual.runType).to.equal(expected);
@@ -126,10 +126,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'skippedCount' set to supplied value", () => {
       // arrange
-      let expected = 123;
+      const expected = 123;
 
       // act
-      let actual = <{ skippedCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {skippedCount: expected});
+      const actual = <{ skippedCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {skippedCount: expected});
 
       // assert
       expect(actual.skippedCount).to.equal(expected);
@@ -137,10 +137,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'startDateTime' set to supplied value", () => {
       // arrange
-      let expected = new Date();
+      const expected = new Date();
 
       // act
-      let actual = <{ startDateTime: Date }> JsonReporter.toCommonOutput(<TestRunSummary> {startDateTime: expected});
+      const actual = <{ startDateTime: Date }> JsonReporter.toCommonOutput(<TestRunSummary> {startDateTime: expected});
 
       // assert
       expect(actual.startDateTime).to.equal(expected);
@@ -148,10 +148,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'success' set to supplied value", () => {
       // arrange
-      let expected = true;
+      const expected = true;
 
       // act
-      let actual = <{ success: boolean }> JsonReporter.toCommonOutput(<TestRunSummary> {success: expected});
+      const actual = <{ success: boolean }> JsonReporter.toCommonOutput(<TestRunSummary> {success: expected});
 
       // assert
       expect(actual.success).to.equal(expected);
@@ -159,10 +159,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return object with 'todoCount' set to supplied value", () => {
       // arrange
-      let expected = 123;
+      const expected = 123;
 
       // act
-      let actual = <{ todoCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {todoCount: expected});
+      const actual = <{ todoCount: number }> JsonReporter.toCommonOutput(<TestRunSummary> {todoCount: expected});
 
       // assert
       expect(actual.todoCount).to.equal(expected);
@@ -172,7 +172,7 @@ describe("plugin json-reporter reporter-plugin", () => {
   describe("toSummary", () => {
     it("should log the summary without runResults", () => {
       // act
-      let actual = reporter.toSummary(<TestRunSummary> {outcome: "foo", runResults: []});
+      const actual = reporter.toSummary(<TestRunSummary> {outcome: "foo", runResults: []});
 
       // assert
       expect(actual).not.to.haveOwnProperty("runResults");
@@ -182,7 +182,7 @@ describe("plugin json-reporter reporter-plugin", () => {
   describe("toFull", () => {
     it("should log the summary with runResults", () => {
       // act
-      let actual = reporter.toFull(<TestRunSummary> {outcome: "foo", runResults: []});
+      const actual = reporter.toFull(<TestRunSummary> {outcome: "foo", runResults: []});
 
       // assert
       expect(actual).to.haveOwnProperty("runResults");
@@ -206,7 +206,7 @@ describe("plugin json-reporter reporter-plugin", () => {
   describe("update", () => {
     it("should log stringified result to console", () => {
       // arrange
-      let expected = <ProgressReport> {label: "foo"};
+      const expected = <ProgressReport> {label: "foo"};
 
       // act
       reporter.update(expected);
@@ -219,8 +219,8 @@ describe("plugin json-reporter reporter-plugin", () => {
   describe("finish", () => {
     it("should log the results as string when reportFile does not exist", () => {
       // arrange
-      let expected = <TestRunSummary> {outcome: "foo"};
-      let revert = RewiredReporter.__with__({program: {reportFile: undefined}});
+      const expected = <TestRunSummary> {outcome: "foo"};
+      const revert = RewiredReporter.__with__({program: {reportFile: undefined}});
       reporter.toString = Sinon.stub();
       (<SinonStub>reporter.toString).returns("bar");
 
@@ -236,10 +236,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should write the results to reportFile path when reportFile exists", () => {
       // arrange
-      let expected = <TestRunSummary> {outcome: "foo"};
-      let writeFile = Sinon.stub();
+      const expected = <TestRunSummary> {outcome: "foo"};
+      const writeFile = Sinon.stub();
       writeFile.callsFake((filePath, data, callback) => callback());
-      let revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
+      const revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
       reporter.toString = Sinon.stub();
       (<SinonStub>reporter.toString).returns("baz");
 
@@ -255,10 +255,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should write the results to as string when reportFile exists", () => {
       // arrange
-      let expected = <TestRunSummary> {outcome: "foo"};
-      let writeFile = Sinon.stub();
+      const expected = <TestRunSummary> {outcome: "foo"};
+      const writeFile = Sinon.stub();
       writeFile.callsFake((filePath, data, callback) => callback());
-      let revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
+      const revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
       reporter.toString = Sinon.stub();
       (<SinonStub>reporter.toString).returns("baz");
 
@@ -274,10 +274,10 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return a promise that calls reject when writeFile fails", () => {
       // arrange
-      let expected = new Error("qux");
-      let writeFile = Sinon.stub();
+      const expected = new Error("qux");
+      const writeFile = Sinon.stub();
       writeFile.callsFake((filePath, data, callback) => callback(expected));
-      let revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
+      const revert = RewiredReporter.__with__({program: {reportFile: "bar"}, fs: {writeFile: writeFile}});
       reporter.toString = Sinon.stub();
       (<SinonStub>reporter.toString).returns("baz");
 
@@ -295,8 +295,8 @@ describe("plugin json-reporter reporter-plugin", () => {
   describe("toString", () => {
     it("should return the summary when program.quiet is true", () => {
       // arrange
-      let expected = <TestRunSummary> {outcome: "foo"};
-      let revert = RewiredReporter.__with__({program: {quiet: true}});
+      const expected = <TestRunSummary> {outcome: "foo"};
+      const revert = RewiredReporter.__with__({program: {quiet: true}});
       reporter.toSummary = Sinon.stub();
       (<SinonStub>reporter.toSummary).returns(expected);
 
@@ -310,8 +310,8 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return the full details when program.quiet is false", () => {
       // arrange
-      let expected = <TestRunSummary> {outcome: "foo", runResults: []};
-      let revert = RewiredReporter.__with__({program: {quiet: false, reportFile: "foo"}});
+      const expected = <TestRunSummary> {outcome: "foo", runResults: []};
+      const revert = RewiredReporter.__with__({program: {quiet: false, reportFile: "foo"}});
       reporter.toFull = Sinon.stub();
       (<SinonStub>reporter.toFull).returns(expected);
 
@@ -325,8 +325,8 @@ describe("plugin json-reporter reporter-plugin", () => {
 
     it("should return indented string when prettyPrint is true", () => {
       // arrange
-      let expected = <TestRunSummary> {outcome: "foo", runResults: []};
-      let revert = RewiredReporter.__with__({program: {quiet: false, reportFile: "foo"}});
+      const expected = <TestRunSummary> {outcome: "foo", runResults: []};
+      const revert = RewiredReporter.__with__({program: {quiet: false, reportFile: "foo"}});
       reporter.toFull = Sinon.stub();
       (<SinonStub>reporter.toFull).returns(expected);
 

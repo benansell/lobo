@@ -5,7 +5,7 @@ import {PluginTestFrameworkConfig} from "../../../../lib/plugin";
 import {ElmTestConfig} from "../../../../plugin/elm-test/plugin-config";
 
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(require("chai-things"));
 
 describe("plugin elm-test plugin-config", () => {
@@ -18,7 +18,7 @@ describe("plugin elm-test plugin-config", () => {
   describe("options", () => {
     it("should have '--seed' option", () => {
       // act
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--seed <value>");
@@ -26,7 +26,7 @@ describe("plugin elm-test plugin-config", () => {
 
     it("should have '--runCount' option", () => {
       // act
-      let options = config.options;
+      const options = config.options;
 
       // assert
       expect(options).to.include.something.that.property("flags", "--runCount <value>");
@@ -40,13 +40,13 @@ describe("plugin elm-test plugin-config", () => {
 
       // assert
       expect(dependency).to.exist;
-      expect(dependency.minVersion.toString()).to.equal("1.1.0");
+      expect(dependency.minVersion.toString()).to.equal("1.2.0");
       expect(dependency.canEqualMin).to.be.true;
       expect(dependency.canEqualMax).to.be.false;
       expect(dependency.maxVersion.toString()).to.equal("2.0.0");
     });
 
-    it("should have indirect 'elm/random' dependency", () => {
+    it("should have direct 'elm/random' dependency", () => {
       // act
       const dependency = config.dependencies["elm/random"];
 
@@ -58,7 +58,7 @@ describe("plugin elm-test plugin-config", () => {
       expect(dependency.maxVersion.toString()).to.equal("2.0.0");
     });
 
-    it("should have indirect 'elm/time' dependency", () => {
+    it("should have direct 'elm/time' dependency", () => {
       // act
       const dependency = config.dependencies["elm/time"];
 
@@ -74,7 +74,7 @@ describe("plugin elm-test plugin-config", () => {
   describe("sourceDirectories", () => {
     it("should have 'runner' directory", () => {
       // act
-      let dirs = config.sourceDirectories;
+      const dirs = config.sourceDirectories;
 
       // assert
       expect(dirs).to.include("runner");
@@ -82,7 +82,7 @@ describe("plugin elm-test plugin-config", () => {
 
     it("should have 'plugin/elm-test' directory", () => {
       // act
-      let dirs = config.sourceDirectories;
+      const dirs = config.sourceDirectories;
 
       // assert
       expect(dirs).to.include("plugin/elm-test");

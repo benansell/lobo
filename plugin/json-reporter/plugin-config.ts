@@ -8,6 +8,6 @@ export class JsonReporterConfig implements PluginConfig {
   ];
 }
 
-let config = new JsonReporterConfig();
+const config = new JsonReporterConfig();
 
 export {config as PluginConfig};

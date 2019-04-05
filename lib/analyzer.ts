@@ -178,11 +178,11 @@ export class AnalyzerImp implements Analyzer {
 
   public reportAnalysisDetailForIssue(appDirectory: string, codeLookup: ElmCodeLookup, items: AnalyzedTestFunctionNode[],
                                       issueType: AnalysisIssueType): void {
-    let sortedItemList = this.sortItemsByLabel(items);
+    const sortedItemList = this.sortItemsByLabel(items);
     let context: string = "";
 
     for (let i = 0; i < sortedItemList.length; i++) {
-      let item = sortedItemList[i];
+      const item = sortedItemList[i];
       const codeInfo = codeLookup[item.codeInfoModuleKey];
       context = this.logLabels(appDirectory, codeInfo, item, i + 1, context, this.failedStyle);
 
@@ -289,9 +289,9 @@ export class AnalyzerImp implements Analyzer {
       return [];
     }
 
-    let maxPathDepth = _.max(items.map(x => this.toPathDepth(x.moduleName)))!;
-    let maxLabelLength = _.max(items.map(x => !x.moduleName ? 0 : x.moduleName.length))!;
-    let maxLineNumberLength = _.max(items.map(x => x.node.start.lineNumber))!;
+    const maxPathDepth = _.max(items.map(x => this.toPathDepth(x.moduleName)))!;
+    const maxLabelLength = _.max(items.map(x => !x.moduleName ? 0 : x.moduleName.length))!;
+    const maxLineNumberLength = _.max(items.map(x => x.node.start.lineNumber))!;
 
     return _.sortBy(items, (x: AnalyzedTestFunctionNode) => this.toSortKey(maxPathDepth, maxLabelLength, maxLineNumberLength, x));
   }
@@ -349,8 +349,7 @@ export class AnalyzerImp implements Analyzer {
       moduleName = this.util.padRight(item.moduleName, maxLabelLength);
     }
 
-
-    let location = this.util.padRight(item.node.start.lineNumber.toString(), maxLineNumberLength);
+    const location = this.util.padRight(item.node.start.lineNumber.toString(), maxLineNumberLength);
 
     return pathDepth + moduleName + location;
   }

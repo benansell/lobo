@@ -4,6 +4,8 @@ import * as child from "child_process";
 import * as path from "path";
 import * as shelljs from "shelljs";
 import {ExecOutputReturnValue} from "shelljs";
+import {SpawnSyncOptionsWithStringEncoding} from "child_process";
+import * as childProcess from "child_process";
 
 export class Util {
 
@@ -12,9 +14,9 @@ export class Util {
       return;
     }
 
-    let expectedPath = path.resolve(absoluteOrRelativePath);
+    const expectedPath = path.resolve(absoluteOrRelativePath);
     shelljs.cd(absoluteOrRelativePath);
-    let actualPath = shelljs.pwd();
+    const actualPath = shelljs.pwd();
 
     if (actualPath.toString() !== expectedPath) {
       console.log(actualPath);
@@ -27,9 +29,17 @@ export class Util {
     shelljs.cp("elm.json", testDir);
   }
 
-  public execRaw(command: string, cwd: string): ExecOutputReturnValue | child.ChildProcess {
-    let showExecution = process.env.noisyTestRun === "true";
-    return shelljs.exec(command, {cwd, silent: !showExecution});
+  public execRaw(command: string, cwd: string): ExecOutputReturnValue {
+    const options = <SpawnSyncOptionsWithStringEncoding> {cwd, encoding: "utf8", shell: true};
+    options.stdio = "pipe";
+    const result = childProcess.spawnSync(command, options);
+
+    if (process.env.noisyTestRun === "true") {
+      console.log(result.stdout);
+      console.log(result.stderr);
+    }
+
+    return { code: result.status, stderr: result.stderr, stdout: result.stdout};
   }
 
   public clean(): void {
@@ -49,7 +59,7 @@ export class Util {
 
   public initializeTestContext(dirName: string): string[] {
     let dir = dirName;
-    let testContext = [];
+    const testContext = [];
 
     while (/test/.test(dir)) {
       testContext.push(path.basename(dir));

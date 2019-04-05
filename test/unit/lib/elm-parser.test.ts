@@ -12,11 +12,11 @@ import {ElmCodeHelper, makeElmCodeHelper} from "../../../lib/elm-code-helper";
 import {ElmNode, ElmNodeType} from "../../../lib/plugin";
 import {createElmNodeHelper, ElmNodeHelper} from "../../../lib/elm-node-helper";
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib elm-parser", () => {
-  let RewiredParser = rewire("../../../lib/elm-parser");
+  const RewiredParser = rewire("../../../lib/elm-parser");
   let parserImp: ElmParserImp;
   let mockLogger: Logger;
   let mockNodeHelper: ElmNodeHelper;
@@ -26,7 +26,7 @@ describe("lib elm-parser", () => {
   let mockMakeElmTypeHelper: Sinon.SinonStub;
 
   beforeEach(() => {
-    let rewiredImp = RewiredParser.__get__("ElmParserImp");
+    const rewiredImp = RewiredParser.__get__("ElmParserImp");
     mockLogger = <Logger> {};
     mockLogger.debug = Sinon.spy();
     mockNodeHelper = createElmNodeHelper();
@@ -41,7 +41,7 @@ describe("lib elm-parser", () => {
   describe("createElmParser", () => {
     it("should return elm parser", () => {
       // act
-      let actual: ElmParser = createElmParser();
+      const actual: ElmParser = createElmParser();
 
       // assert
       expect(actual).to.exist;
@@ -51,7 +51,7 @@ describe("lib elm-parser", () => {
   describe("buildElmTypeHelper", () => {
     it("should call makeElmTypeHelper with the supplied module name", () => {
       // arrange
-      let mockTypeHelperResolve = Sinon.stub();
+      const mockTypeHelperResolve = Sinon.stub();
       mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
 
       // act
@@ -63,7 +63,7 @@ describe("lib elm-parser", () => {
 
     it("should call makeElmTypeHelper.resolve for supplied test framework 'Test' type", () => {
       // arrange
-      let mockTypeHelperResolve = Sinon.stub();
+      const mockTypeHelperResolve = Sinon.stub();
       mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
 
       // act
@@ -75,7 +75,7 @@ describe("lib elm-parser", () => {
 
     it("should call makeElmTypeHelper.resolve for supplied test framework 'concat' function", () => {
       // arrange
-      let mockTypeHelperResolve = Sinon.stub();
+      const mockTypeHelperResolve = Sinon.stub();
       mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
 
       // act
@@ -87,7 +87,7 @@ describe("lib elm-parser", () => {
 
     it("should call makeElmTypeHelper.resolve for supplied test framework 'describe' function", () => {
       // arrange
-      let mockTypeHelperResolve = Sinon.stub();
+      const mockTypeHelperResolve = Sinon.stub();
       mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
 
       // act
@@ -99,7 +99,7 @@ describe("lib elm-parser", () => {
 
     it("should call makeElmTypeHelper.resolve for supplied test framework 'fuzz' function", () => {
       // arrange
-      let mockTypeHelperResolve = Sinon.stub();
+      const mockTypeHelperResolve = Sinon.stub();
       mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
 
       // act
@@ -111,7 +111,7 @@ describe("lib elm-parser", () => {
 
     it("should call makeElmTypeHelper.resolve for supplied test framework 'test' function", () => {
       // arrange
-      let mockTypeHelperResolve = Sinon.stub();
+      const mockTypeHelperResolve = Sinon.stub();
       mockMakeElmTypeHelper.returns({resolve: mockTypeHelperResolve});
 
       // act
@@ -125,16 +125,16 @@ describe("lib elm-parser", () => {
   describe("convertToLookup", () => {
     it("should return a lookup based on token type from the supplied tokens", () => {
       // arrange
-      let tokens = [];
-      let commentOne =  <ElmToken> {identifier: "foo", tokenType: ElmTokenType.Comment};
+      const tokens = [];
+      const commentOne =  <ElmToken> {identifier: "foo", tokenType: ElmTokenType.Comment};
       tokens.push(commentOne);
-      let commentTwo = <ElmToken> {identifier: "bar", tokenType: ElmTokenType.Comment};
+      const commentTwo = <ElmToken> {identifier: "bar", tokenType: ElmTokenType.Comment};
       tokens.push(commentTwo);
-      let port = <ElmToken> {identifier: "baz", tokenType: ElmTokenType.Port};
+      const port = <ElmToken> {identifier: "baz", tokenType: ElmTokenType.Port};
       tokens.push(port);
 
       // act
-      let actual = parserImp.convertToLookup(tokens);
+      const actual = parserImp.convertToLookup(tokens);
 
       // assert
       expect(actual[ElmTokenType.Comment]).to.deep.equal([commentOne, commentTwo]);
@@ -156,9 +156,9 @@ describe("lib elm-parser", () => {
 
     it("should call convertToLookup with the tokens returned from ElmTokenizer.tokenize", () => {
       // arrange
-      let expected = <ElmToken[]> [{identifier: "foo", tokenType: ElmTokenType.Comment}];
+      const expected = <ElmToken[]> [{identifier: "foo", tokenType: ElmTokenType.Comment}];
       mockTokenize.returns(expected);
-      let mockConvertToLookup = Sinon.mock();
+      const mockConvertToLookup = Sinon.mock();
       mockConvertToLookup.returns({});
       parserImp.convertToLookup = mockConvertToLookup;
 
@@ -172,13 +172,13 @@ describe("lib elm-parser", () => {
     it("should return undefined when there are no module tokens", () => {
       // arrange
       mockTokenize.returns([{identifier: "foo", tokenType: ElmTokenType.Module}]);
-      let mockConvertToLookup = Sinon.mock();
-      let expected = {};
+      const mockConvertToLookup = Sinon.mock();
+      const expected = {};
       mockConvertToLookup.returns(expected);
       parserImp.convertToLookup = mockConvertToLookup;
 
       // act
-      let actual = parserImp.parse( "foo", "bar");
+      const actual = parserImp.parse( "foo", "bar");
 
       // assert
       expect(actual).to.be.undefined;
@@ -187,8 +187,8 @@ describe("lib elm-parser", () => {
     it("should call parseTokens with the lookup returned from convertToLookup", () => {
       // arrange
       mockTokenize.returns([{identifier: "foo", tokenType: ElmTokenType.Module}]);
-      let mockConvertToLookup = Sinon.mock();
-      let expected = {};
+      const mockConvertToLookup = Sinon.mock();
+      const expected = {};
       expected[ElmTokenType.Module] = {};
       mockConvertToLookup.returns(expected);
       parserImp.convertToLookup = mockConvertToLookup;
@@ -204,8 +204,8 @@ describe("lib elm-parser", () => {
     it("should call parseTokens with the testFrameworkElmModuleName", () => {
       // arrange
       mockTokenize.returns([{identifier: "foo", tokenType: ElmTokenType.Module}]);
-      let mockConvertToLookup = Sinon.mock();
-      let tokenLookup = {};
+      const mockConvertToLookup = Sinon.mock();
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = {};
       mockConvertToLookup.returns(tokenLookup);
       parserImp.convertToLookup = mockConvertToLookup;
@@ -222,15 +222,15 @@ describe("lib elm-parser", () => {
   describe("parseTokens", () => {
     it("should return module node when module token exists", () => {
       // arrange
-      let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
-      let tokenLookup = {};
+      const moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
-      let mockBuildElmTypeHelper = Sinon.stub();
+      const mockBuildElmTypeHelper = Sinon.stub();
       mockBuildElmTypeHelper.returns({});
       parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
 
       // act
-      let actual = parserImp.parseTokens(tokenLookup, "baz");
+      const actual = parserImp.parseTokens(tokenLookup, "baz");
 
       // assert
       expect(actual.nodeType).to.equal(ElmNodeType.Module);
@@ -239,10 +239,10 @@ describe("lib elm-parser", () => {
 
     it("should call buildElmTypeHelper with the module token identifier", () => {
       // arrange
-      let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
-      let tokenLookup = {};
+      const moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
-      let mockBuildElmTypeHelper = Sinon.stub();
+      const mockBuildElmTypeHelper = Sinon.stub();
       mockBuildElmTypeHelper.returns({});
       parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
 
@@ -255,10 +255,10 @@ describe("lib elm-parser", () => {
 
     it("should call buildElmTypeHelper with the testFrameworkElmModuleName", () => {
       // arrange
-      let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
-      let tokenLookup = {};
+      const moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
-      let mockBuildElmTypeHelper = Sinon.stub();
+      const mockBuildElmTypeHelper = Sinon.stub();
       mockBuildElmTypeHelper.returns({});
       parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
 
@@ -271,14 +271,14 @@ describe("lib elm-parser", () => {
 
     it("should call parseFirstPass with the type helper and token lookup", () => {
       // arrange
-      let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
-      let tokenLookup = {};
+      const moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
-      let typeHelper = {};
-      let mockBuildElmTypeHelper = Sinon.stub();
+      const typeHelper = {};
+      const mockBuildElmTypeHelper = Sinon.stub();
       mockBuildElmTypeHelper.returns(typeHelper);
       parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
-      let mockParseFirstPass = Sinon.mock();
+      const mockParseFirstPass = Sinon.mock();
       mockParseFirstPass.returns({complete: [], partial: []});
       parserImp.parseFirstPass = mockParseFirstPass;
 
@@ -291,18 +291,18 @@ describe("lib elm-parser", () => {
 
     it("should call parseSecondPass with the partial results from first pass and the type helper", () => {
       // arrange
-      let moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
-      let tokenLookup = {};
+      const moduleToken = {identifier: "bar", code: "abc", tokenType: ElmTokenType.Module};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Module] = [moduleToken];
-      let typeHelper = {};
-      let mockBuildElmTypeHelper = Sinon.stub();
+      const typeHelper = {};
+      const mockBuildElmTypeHelper = Sinon.stub();
       mockBuildElmTypeHelper.returns(typeHelper);
       parserImp.buildElmTypeHelper = mockBuildElmTypeHelper;
-      let mockParseFirstPass = Sinon.mock();
-      let expected = [{node: {name: "baz"}}];
+      const mockParseFirstPass = Sinon.mock();
+      const expected = [{node: {name: "baz"}}];
       mockParseFirstPass.returns({complete: [], partial: expected});
       parserImp.parseFirstPass = mockParseFirstPass;
-      let mockParseSecondPass = Sinon.mock();
+      const mockParseSecondPass = Sinon.mock();
       parserImp.parseSecondPass = mockParseSecondPass;
 
       // act
@@ -316,17 +316,17 @@ describe("lib elm-parser", () => {
   describe("parseFirstPass", () => {
     it("should return parsed import tokens as complete", () => {
       // arrange
-      let token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.Import};
-      let tokenLookup = {};
+      const token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.Import};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Import] = [token];
-      let typeHelper = <ElmTypeHelper> {};
-      let expected = {name: "baz"};
-      let mockToNode = Sinon.mock();
+      const typeHelper = <ElmTypeHelper> {};
+      const expected = {name: "baz"};
+      const mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
       parserImp.toImportNode = mockToNode;
 
       // act
-      let actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
+      const actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
 
       // assert
       expect(actual.complete).to.deep.equal([expected]);
@@ -334,17 +334,17 @@ describe("lib elm-parser", () => {
 
     it("should return parsed type tokens as complete", () => {
       // arrange
-      let token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.Type};
-      let tokenLookup = {};
+      const token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.Type};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Type] = [token];
-      let typeHelper = <ElmTypeHelper> {};
-      let expected = {name: "baz"};
-      let mockToNode = Sinon.mock();
+      const typeHelper = <ElmTypeHelper> {};
+      const expected = {name: "baz"};
+      const mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
       parserImp.toTypeNode = mockToNode;
 
       // act
-      let actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
+      const actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
 
       // assert
       expect(actual.complete).to.deep.equal([expected]);
@@ -352,17 +352,17 @@ describe("lib elm-parser", () => {
 
     it("should return parsed type alias tokens as complete", () => {
       // arrange
-      let token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.TypeAlias};
-      let tokenLookup = {};
+      const token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.TypeAlias};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.TypeAlias] = [token];
-      let typeHelper = <ElmTypeHelper> {};
-      let expected = {name: "baz"};
-      let mockToNode = Sinon.mock();
+      const typeHelper = <ElmTypeHelper> {};
+      const expected = {name: "baz"};
+      const mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
       parserImp.toTypeAliasNode = mockToNode;
 
       // act
-      let actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
+      const actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
 
       // assert
       expect(actual.complete).to.deep.equal([expected]);
@@ -370,17 +370,17 @@ describe("lib elm-parser", () => {
 
     it("should return parsed port tokens as complete", () => {
       // arrange
-      let token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.Port};
-      let tokenLookup = {};
+      const token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.Port};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.Port] = [token];
-      let typeHelper = <ElmTypeHelper> {};
-      let expected = {name: "baz"};
-      let mockToNode = Sinon.mock();
+      const typeHelper = <ElmTypeHelper> {};
+      const expected = {name: "baz"};
+      const mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
       parserImp.toPortNode = mockToNode;
 
       // act
-      let actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
+      const actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
 
       // assert
       expect(actual.complete).to.deep.equal([expected]);
@@ -388,17 +388,17 @@ describe("lib elm-parser", () => {
 
     it("should return parsed typed module function tokens as partial", () => {
       // arrange
-      let token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.TypedModuleFunction};
-      let tokenLookup = {};
+      const token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.TypedModuleFunction};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.TypedModuleFunction] = [token];
-      let typeHelper = <ElmTypeHelper> {};
-      let expected = {name: "baz"};
-      let mockToNode = Sinon.mock();
+      const typeHelper = <ElmTypeHelper> {};
+      const expected = {name: "baz"};
+      const mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
       parserImp.toTypedModuleFunctionNode = mockToNode;
 
       // act
-      let actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
+      const actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
 
       // assert
       expect(actual.partial).to.deep.equal([{node: expected}]);
@@ -406,17 +406,17 @@ describe("lib elm-parser", () => {
 
     it("should return parsed untyped module function tokens as partial", () => {
       // arrange
-      let token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.UntypedModuleFunction};
-      let tokenLookup = {};
+      const token = {identifier: "foo", code: "abc", tokenType: ElmTokenType.UntypedModuleFunction};
+      const tokenLookup = {};
       tokenLookup[ElmTokenType.UntypedModuleFunction] = [token];
-      let typeHelper = <ElmTypeHelper> {};
-      let expected = {name: "baz"};
-      let mockToNode = Sinon.mock();
+      const typeHelper = <ElmTypeHelper> {};
+      const expected = {name: "baz"};
+      const mockToNode = Sinon.mock();
       mockToNode.returns({node: expected});
       parserImp.toUntypedModuleFunctionNode = mockToNode;
 
       // act
-      let actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
+      const actual = parserImp.parseFirstPass(typeHelper, tokenLookup, "bar");
 
       // assert
       expect(actual.partial).to.deep.equal([{node: expected}]);
@@ -426,11 +426,11 @@ describe("lib elm-parser", () => {
   describe("parseSecondPass", () => {
     it("should not call parseFunction when node is not a function node ", () => {
       // arrange
-      let codeHelper = <ElmCodeHelper> {maxIndex: 123};
-      let node = {name: "foo", code: "abc", nodeType: ElmNodeType.Type};
-      let partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
-      let typeHelper = <ElmTypeHelper> {};
-      let mockParseFunction = Sinon.mock();
+      const codeHelper = <ElmCodeHelper> {maxIndex: 123};
+      const node = {name: "foo", code: "abc", nodeType: ElmNodeType.Type};
+      const partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
+      const typeHelper = <ElmTypeHelper> {};
+      const mockParseFunction = Sinon.mock();
       mockParseFunction.returns([]);
       parserImp.parseFunction = mockParseFunction;
 
@@ -443,11 +443,11 @@ describe("lib elm-parser", () => {
 
     it("should call parseFunction to find the function dependencies", () => {
       // arrange
-      let codeHelper = <ElmCodeHelper> {maxIndex: 123};
-      let node = {name: "foo", code: "abc", nodeType: ElmNodeType.TypedModuleFunction};
-      let partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
-      let typeHelper = <ElmTypeHelper> {};
-      let mockParseFunction = Sinon.mock();
+      const codeHelper = <ElmCodeHelper> {maxIndex: 123};
+      const node = {name: "foo", code: "abc", nodeType: ElmNodeType.TypedModuleFunction};
+      const partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
+      const typeHelper = <ElmTypeHelper> {};
+      const mockParseFunction = Sinon.mock();
       mockParseFunction.returns([]);
       parserImp.parseFunction = mockParseFunction;
 
@@ -460,17 +460,17 @@ describe("lib elm-parser", () => {
 
     it("should return parsed typed module function from supplied partial node", () => {
       // arrange
-      let codeHelper = <ElmCodeHelper> {maxIndex: 123};
-      let node = {name: "foo", code: "abc", nodeType: ElmNodeType.TypedModuleFunction};
-      let partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
-      let typeHelper = <ElmTypeHelper> {};
-      let mockParseFunction = Sinon.mock();
-      let dependencies = [{name: "bar", moduleName: "baz"}];
+      const codeHelper = <ElmCodeHelper> {maxIndex: 123};
+      const node = {name: "foo", code: "abc", nodeType: ElmNodeType.TypedModuleFunction};
+      const partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
+      const typeHelper = <ElmTypeHelper> {};
+      const mockParseFunction = Sinon.mock();
+      const dependencies = [{name: "bar", moduleName: "baz"}];
       mockParseFunction.returns(dependencies);
       parserImp.parseFunction = mockParseFunction;
 
       // act
-      let actual = parserImp.parseSecondPass(typeHelper, [partial]);
+      const actual = parserImp.parseSecondPass(typeHelper, [partial]);
 
       // assert
       expect(actual).to.deep.equal([{name: "foo", code: "abc", dependencies: dependencies, nodeType: ElmNodeType.TypedModuleFunction}]);
@@ -478,17 +478,17 @@ describe("lib elm-parser", () => {
 
     it("should return parsed untyped module function from supplied partial node", () => {
       // arrange
-      let codeHelper = <ElmCodeHelper> {maxIndex: 123};
-      let node = {name: "foo", code: "abc", nodeType: ElmNodeType.UntypedModuleFunction};
-      let partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
-      let typeHelper = <ElmTypeHelper> {};
-      let mockParseFunction = Sinon.mock();
-      let dependencies = [{name: "bar", moduleName: "baz"}];
+      const codeHelper = <ElmCodeHelper> {maxIndex: 123};
+      const node = {name: "foo", code: "abc", nodeType: ElmNodeType.UntypedModuleFunction};
+      const partial = <ElmNodeResult<ElmNode>> {codeHelper: codeHelper, node: node };
+      const typeHelper = <ElmTypeHelper> {};
+      const mockParseFunction = Sinon.mock();
+      const dependencies = [{name: "bar", moduleName: "baz"}];
       mockParseFunction.returns(dependencies);
       parserImp.parseFunction = mockParseFunction;
 
       // act
-      let actual = parserImp.parseSecondPass(typeHelper, [partial]);
+      const actual = parserImp.parseSecondPass(typeHelper, [partial]);
 
       // assert
       expect(actual).to.deep.equal([{name: "foo", code: "abc", dependencies: dependencies, nodeType: ElmNodeType.UntypedModuleFunction}]);
@@ -500,7 +500,7 @@ describe("lib elm-parser", () => {
       // arrange
 
       // act
-      let actual = parserImp.parseAlias("foo bar");
+      const actual = parserImp.parseAlias("foo bar");
 
       // assert
       expect(actual).to.deep.equal({alias: undefined, name: "foo bar"});
@@ -510,7 +510,7 @@ describe("lib elm-parser", () => {
       // arrange
 
       // act
-      let actual = parserImp.parseAlias("foo as bar");
+      const actual = parserImp.parseAlias("foo as bar");
 
       // assert
       expect(actual).to.deep.equal({alias: "bar", name: "foo"});
@@ -520,10 +520,10 @@ describe("lib elm-parser", () => {
   describe("parseArguments", () => {
     it("should return an empty list when the code does not contain '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo bar");
+      const codeHelper = makeElmCodeHelper("foo bar");
 
       // act
-      let actual = parserImp.parseArguments(codeHelper, "foo", true);
+      const actual = parserImp.parseArguments(codeHelper, "foo", true);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -531,10 +531,10 @@ describe("lib elm-parser", () => {
 
     it("should return an empty list when the code does not type declaration and isTypedFunction is true", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo bar =");
+      const codeHelper = makeElmCodeHelper("foo bar =");
 
       // act
-      let actual = parserImp.parseArguments(codeHelper, "foo", true);
+      const actual = parserImp.parseArguments(codeHelper, "foo", true);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -542,10 +542,10 @@ describe("lib elm-parser", () => {
 
     it("should return arguments list when the code does not have type declaration", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo bar baz =");
+      const codeHelper = makeElmCodeHelper("foo bar baz =");
 
       // act
-      let actual = parserImp.parseArguments(codeHelper, "foo", false);
+      const actual = parserImp.parseArguments(codeHelper, "foo", false);
 
       // assert
       expect(actual).to.deep.equal(["bar", "baz"]);
@@ -553,10 +553,10 @@ describe("lib elm-parser", () => {
 
     it("should return arguments list when the args are destructuring tuple args", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo (bar, baz) =");
+      const codeHelper = makeElmCodeHelper("foo (bar, baz) =");
 
       // act
-      let actual = parserImp.parseArguments(codeHelper, "foo", false);
+      const actual = parserImp.parseArguments(codeHelper, "foo", false);
 
       // assert
       expect(actual).to.deep.equal(["bar", "baz"]);
@@ -564,10 +564,10 @@ describe("lib elm-parser", () => {
 
     it("should return arguments list when the args are destructuring object args", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo {bar, baz} =");
+      const codeHelper = makeElmCodeHelper("foo {bar, baz} =");
 
       // act
-      let actual = parserImp.parseArguments(codeHelper, "foo", false);
+      const actual = parserImp.parseArguments(codeHelper, "foo", false);
 
       // assert
       expect(actual).to.deep.equal(["bar", "baz"]);
@@ -575,10 +575,10 @@ describe("lib elm-parser", () => {
 
     it("should return arguments list when the code does have type declaration", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo -> String -> String -> String\nfoo bar baz =");
+      const codeHelper = makeElmCodeHelper("foo -> String -> String -> String\nfoo bar baz =");
 
       // act
-      let actual = parserImp.parseArguments(codeHelper, "foo", true);
+      const actual = parserImp.parseArguments(codeHelper, "foo", true);
 
       // assert
       expect(actual).to.deep.equal(["bar", "baz"]);
@@ -589,11 +589,11 @@ describe("lib elm-parser", () => {
   describe("parseFunction", () => {
     it("should return empty list when there is no '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo baz");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -601,12 +601,12 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there is an '=' without spaces", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo=baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo=baz");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [4], typeInfo: {name: "baz", moduleName: "bar"}}]);
@@ -614,12 +614,12 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there is an '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [6], typeInfo: {name: "baz", moduleName: "bar"}}]);
@@ -627,12 +627,12 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there is a type definition", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo : String\nfoo = baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo : String\nfoo = baz");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [19], typeInfo: {name: "baz", moduleName: "bar"}}]);
@@ -640,12 +640,12 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there is a type definition and no spaces", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo:String\nfoo=baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo:String\nfoo=baz");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [15], typeInfo: {name: "baz", moduleName: "bar"}}]);
@@ -653,11 +653,11 @@ describe("lib elm-parser", () => {
 
     it("should not return string in the dependency type info when there is an '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = \"baz\"");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = \"baz\"");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -665,11 +665,11 @@ describe("lib elm-parser", () => {
 
     it("should not return elm keywords in the dependency type info when there is an '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = if then else case of let in type module where import exposing as port");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = if then else case of let in type module where import exposing as port");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -677,11 +677,11 @@ describe("lib elm-parser", () => {
 
     it("should return unknown types in the dependency type info when there is an '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{typeInfo: {name: "baz", moduleName: "bar"}, occurs: [6]}]);
@@ -689,14 +689,14 @@ describe("lib elm-parser", () => {
 
     it("should return multiple dependencies type info", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz qux quux");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz qux quux");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
       typeHelper.resolveType("qux");
       typeHelper.resolveType("quux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -707,12 +707,12 @@ describe("lib elm-parser", () => {
 
     it("should return same that occurs twice dependency with occurs indexes 6 and 10", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz baz");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -721,12 +721,12 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there surrounded by square brackets", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = [baz]");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = [baz]");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [7], typeInfo: {name: "baz", moduleName: "bar"}}]);
@@ -734,12 +734,12 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there surrounded by round brackets", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = (baz)");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = (baz)");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [7], typeInfo: {name: "baz", moduleName: "bar"}}]);
@@ -747,12 +747,12 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there surrounded by curly brackets", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = {baz}");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = {baz}");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([{ occurs: [7], typeInfo: {name: "baz", moduleName: "bar"}}]);
@@ -760,14 +760,14 @@ describe("lib elm-parser", () => {
 
     it("should return the dependency type info when there separated by commas", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz,qux,quux");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz,qux,quux");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
       typeHelper.resolveType("qux");
       typeHelper.resolveType("quux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -778,13 +778,13 @@ describe("lib elm-parser", () => {
 
     it("should not return ignore contents of strings in dependencies", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz \"qux\"");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz \"qux\"");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
       typeHelper.resolveType("qux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -793,13 +793,13 @@ describe("lib elm-parser", () => {
 
     it("should ignore everything after start of unterminated strings in dependencies", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz \"qux");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz \"qux");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType("baz");
       typeHelper.resolveType("qux");
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual.length).to.equal(1);
@@ -808,12 +808,12 @@ describe("lib elm-parser", () => {
 
     it("should not return unknown types in the dependency type info when there is an '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo = baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo = baz");
+      const typeHelper = makeElmTypeHelper("bar");
       typeHelper.resolveType = () => undefined;
 
       // act
-      let actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
+      const actual = parserImp.parseFunction(codeHelper, typeHelper, 3);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -823,11 +823,11 @@ describe("lib elm-parser", () => {
   describe("parseReturnType", () => {
     it("should return undefined when there is nothing after the function name", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+      const actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
 
       // assert
       expect(actual).to.be.undefined;
@@ -835,11 +835,11 @@ describe("lib elm-parser", () => {
 
     it("should return undefined when there is no semicolon after the function name", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo baz");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+      const actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
 
       // assert
       expect(actual).to.be.undefined;
@@ -847,11 +847,11 @@ describe("lib elm-parser", () => {
 
     it("should return undefined when there is no semicolon after the function name is repeated on the next line", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo\nfoo");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo\nfoo");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+      const actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
 
       // assert
       expect(actual).to.be.undefined;
@@ -859,11 +859,11 @@ describe("lib elm-parser", () => {
 
     it("should return undefined when there is a semicolon after the function name and no repeat of function name", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo : baz");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo : baz");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+      const actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
 
       // assert
       expect(actual).to.be.undefined;
@@ -871,11 +871,11 @@ describe("lib elm-parser", () => {
 
     it("should return undefined when there is a semicolon and function name is not at the start of next line", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo : baz foo");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo : baz foo");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+      const actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
 
       // assert
       expect(actual).to.be.undefined;
@@ -883,11 +883,11 @@ describe("lib elm-parser", () => {
 
     it("should return the return type info when there is a type after the function name with no spaces", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo:baz\nfoo");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo:baz\nfoo");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+      const actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
 
       // assert
       expect(actual).to.deep.equal({name: "baz", moduleName: "bar"});
@@ -895,11 +895,11 @@ describe("lib elm-parser", () => {
 
     it("should return the return type info when there is a type after the function name with normal formatting", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("foo : baz\nfoo");
-      let typeHelper = makeElmTypeHelper("bar");
+      const codeHelper = makeElmCodeHelper("foo : baz\nfoo");
+      const typeHelper = makeElmTypeHelper("bar");
 
       // act
-      let actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
+      const actual = parserImp.parseReturnType(codeHelper, typeHelper, "foo", 3);
 
       // assert
       expect(actual).to.deep.equal({name: "baz", moduleName: "bar"});
@@ -909,11 +909,11 @@ describe("lib elm-parser", () => {
   describe("parseType", () => {
     it("should return empty list when there is no '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("type A");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("type A");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
+      const actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -921,11 +921,11 @@ describe("lib elm-parser", () => {
 
     it("should return type when there is an '='", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("type = A");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("type = A");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
+      const actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
 
       // assert
       expect(actual).to.deep.equal([{name: "A", moduleName: "foo", parentTypeName: "bar"}]);
@@ -933,11 +933,11 @@ describe("lib elm-parser", () => {
 
     it("should return single type when there is no pipe", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("type = A B");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("type = A B");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
+      const actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
 
       // assert
       expect(actual).to.deep.equal([{name: "A", moduleName: "foo", parentTypeName: "bar"}]);
@@ -945,11 +945,11 @@ describe("lib elm-parser", () => {
 
     it("should return multiple types when there is '|'", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("type = A | B");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("type = A | B");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
+      const actual = parserImp.parseType(codeHelper, typeHelper, "foo", "bar", 0);
 
       // assert
       expect(actual.length).to.equal(2);
@@ -962,11 +962,11 @@ describe("lib elm-parser", () => {
   describe("parseTypeList", () => {
     it("should return empty list when there is no '('", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("import Foo exposing");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("import Foo exposing");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
+      const actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -974,11 +974,11 @@ describe("lib elm-parser", () => {
 
     it("should return type list when there is an '('", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("import Foo exposing (bar, baz");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("import Foo exposing (bar, baz");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
+      const actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
 
       // assert
       expect(actual.length).to.equal(2);
@@ -988,11 +988,11 @@ describe("lib elm-parser", () => {
 
     it("should return type list when there are no spaces", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("import Foo exposing(bar,baz");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("import Foo exposing(bar,baz");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
+      const actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
 
       // assert
       expect(actual.length).to.equal(2);
@@ -1002,11 +1002,11 @@ describe("lib elm-parser", () => {
 
     it("should return type list containing exposed specific type lists", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("import Foo exposing (bar(baz,qux))");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("import Foo exposing (bar(baz,qux))");
+      const typeHelper = makeElmTypeHelper("foo");
 
       // act
-      let actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
+      const actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1017,14 +1017,14 @@ describe("lib elm-parser", () => {
 
     it("should return all types for list containing exposed type lists containing '..'", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("import Foo exposing (..)");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("import Foo exposing (..)");
+      const typeHelper = makeElmTypeHelper("foo");
       typeHelper.resolve("bar", undefined, "foo");
       typeHelper.resolve("baz", "bar", "foo");
       typeHelper.resolve("qux", "bar", "foo");
 
       // act
-      let actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
+      const actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1035,13 +1035,13 @@ describe("lib elm-parser", () => {
 
     it("should return all types for list containing exposed child type lists containing '..'", () => {
       // arrange
-      let codeHelper = makeElmCodeHelper("import Foo exposing (bar(..))");
-      let typeHelper = makeElmTypeHelper("foo");
+      const codeHelper = makeElmCodeHelper("import Foo exposing (bar(..))");
+      const typeHelper = makeElmTypeHelper("foo");
       typeHelper.resolve("baz", "bar", "foo");
       typeHelper.resolve("qux", "bar", "foo");
 
       // act
-      let actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
+      const actual = parserImp.parseTypeList(codeHelper, typeHelper, "foo", 0);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1054,10 +1054,10 @@ describe("lib elm-parser", () => {
   describe("toBaseNode", () => {
     it("should return a node with the code from the supplied token", () => {
       // arrange
-      let token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
+      const token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
 
       // act
-      let actual = parserImp.toBaseNode(token, "baz");
+      const actual = parserImp.toBaseNode(token, "baz");
 
       // assert
       expect(actual.code).to.equal("bar");
@@ -1065,12 +1065,12 @@ describe("lib elm-parser", () => {
 
     it("should return a node with the end from the supplied token", () => {
       // arrange
-      let expected = { columnNumber: 123, lineNumber: 456 };
-      let token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
+      const expected = { columnNumber: 123, lineNumber: 456 };
+      const token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
       token.end = expected;
 
       // act
-      let actual = parserImp.toBaseNode(token, "baz");
+      const actual = parserImp.toBaseNode(token, "baz");
 
       // assert
       expect(actual.end).to.equal(expected);
@@ -1078,12 +1078,12 @@ describe("lib elm-parser", () => {
 
     it("should return a node with the name from the supplied name", () => {
       // arrange
-      let expected = { columnNumber: 123, lineNumber: 456 };
-      let token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
+      const expected = { columnNumber: 123, lineNumber: 456 };
+      const token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
       token.end = expected;
 
       // act
-      let actual = parserImp.toBaseNode(token, "baz");
+      const actual = parserImp.toBaseNode(token, "baz");
 
       // assert
       expect(actual.name).to.equal("baz");
@@ -1091,14 +1091,14 @@ describe("lib elm-parser", () => {
 
     it("should return a node with the type from converting the supplied token type", () => {
       // arrange
-      let expected = ElmNodeType.Port;
-      let token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
-      let mockToNodeType = Sinon.mock();
+      const expected = ElmNodeType.Port;
+      const token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
+      const mockToNodeType = Sinon.mock();
       mockToNodeType.returns(expected);
       parserImp.toNodeType = mockToNodeType;
 
       // act
-      let actual = parserImp.toBaseNode(token, "baz");
+      const actual = parserImp.toBaseNode(token, "baz");
 
       // assert
       expect(parserImp.toNodeType).to.have.been.calledWith(ElmTokenType.TypedModuleFunction);
@@ -1107,12 +1107,12 @@ describe("lib elm-parser", () => {
 
     it("should return a node with start from the supplied token", () => {
       // arrange
-      let expected = { columnNumber: 123, lineNumber: 456 };
-      let token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
+      const expected = { columnNumber: 123, lineNumber: 456 };
+      const token = <ElmToken> {identifier: "foo", code: "bar", tokenType: ElmTokenType.TypedModuleFunction};
       token.start = expected;
 
       // act
-      let actual = parserImp.toBaseNode(token, "baz");
+      const actual = parserImp.toBaseNode(token, "baz");
 
       // assert
       expect(actual.start).to.equal(expected);
@@ -1122,7 +1122,7 @@ describe("lib elm-parser", () => {
   describe("toNodeType", () => {
     it("should return node type of 'Import' when token type is 'Import'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.Import);
+      const actual = parserImp.toNodeType(ElmTokenType.Import);
 
       // assert
       expect(actual).to.equal(ElmNodeType.Import);
@@ -1130,7 +1130,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'Module' when token type is 'Module'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.Module);
+      const actual = parserImp.toNodeType(ElmTokenType.Module);
 
       // assert
       expect(actual).to.equal(ElmNodeType.Module);
@@ -1138,7 +1138,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'Port' when token type is 'Port'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.Port);
+      const actual = parserImp.toNodeType(ElmTokenType.Port);
 
       // assert
       expect(actual).to.equal(ElmNodeType.Port);
@@ -1146,7 +1146,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'Type' when token type is 'Type'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.Type);
+      const actual = parserImp.toNodeType(ElmTokenType.Type);
 
       // assert
       expect(actual).to.equal(ElmNodeType.Type);
@@ -1154,7 +1154,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'TypeAlias' when token type is 'TypeAlias'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.TypeAlias);
+      const actual = parserImp.toNodeType(ElmTokenType.TypeAlias);
 
       // assert
       expect(actual).to.equal(ElmNodeType.TypeAlias);
@@ -1162,7 +1162,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'TypedModuleFunction' when token type is 'TypedModuleFunction'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.TypedModuleFunction);
+      const actual = parserImp.toNodeType(ElmTokenType.TypedModuleFunction);
 
       // assert
       expect(actual).to.equal(ElmNodeType.TypedModuleFunction);
@@ -1170,7 +1170,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'UntypedModuleFunction' when token type is 'UntypedModuleFunction'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.UntypedModuleFunction);
+      const actual = parserImp.toNodeType(ElmTokenType.UntypedModuleFunction);
 
       // assert
       expect(actual).to.equal(ElmNodeType.UntypedModuleFunction);
@@ -1178,7 +1178,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'Unknown' when token type is 'Comment'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.Comment);
+      const actual = parserImp.toNodeType(ElmTokenType.Comment);
 
       // assert
       expect(actual).to.equal(ElmNodeType.Unknown);
@@ -1186,7 +1186,7 @@ describe("lib elm-parser", () => {
 
     it("should return node type of 'Unknown' when token type is 'Whitespace'", () => {
       // act
-      let actual = parserImp.toNodeType(ElmTokenType.Whitespace);
+      const actual = parserImp.toNodeType(ElmTokenType.Whitespace);
 
       // assert
       expect(actual).to.equal(ElmNodeType.Unknown);
@@ -1196,14 +1196,14 @@ describe("lib elm-parser", () => {
   describe("toImportNode", () => {
     it("should return a the code helper created by calling makeElmCodeHelper", () => {
       // arrange
-      let code = "import Foo";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Import};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "import Foo";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Import};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toImportNode(typeHelper, token);
+      const actual = parserImp.toImportNode(typeHelper, token);
 
       // assert
       expect(mockMakeElmCodeHelper.alwaysReturned(actual.codeHelper)).to.be.true;
@@ -1211,15 +1211,15 @@ describe("lib elm-parser", () => {
 
     it("should return an import node for the supplied token", () => {
       // arrange
-      let code = "import Foo";
-      let exposing = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Import};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "import Foo";
+      const exposing = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Import};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toImportNode(typeHelper, token);
+      const actual = parserImp.toImportNode(typeHelper, token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "Foo", alias: undefined, nodeType: ElmNodeType.Import, exposing});
@@ -1227,15 +1227,15 @@ describe("lib elm-parser", () => {
 
     it("should return an import node with an alias for the supplied token", () => {
       // arrange
-      let code = "import Foo";
-      let exposing = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo as Bar", start, end, code, tokenType: ElmTokenType.Import};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "import Foo";
+      const exposing = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo as Bar", start, end, code, tokenType: ElmTokenType.Import};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toImportNode(typeHelper, token);
+      const actual = parserImp.toImportNode(typeHelper, token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "Foo", alias: "Bar", nodeType: ElmNodeType.Import, exposing});
@@ -1243,15 +1243,15 @@ describe("lib elm-parser", () => {
 
     it("should return an import node with exposing list for the supplied token", () => {
       // arrange
-      let code = "import Foo exposing (Bar, Baz)";
-      let exposing = [{name: "Bar", moduleName: "Foo"}, {name: "Baz", moduleName: "Foo"}];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Import};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "import Foo exposing (Bar, Baz)";
+      const exposing = [{name: "Bar", moduleName: "Foo"}, {name: "Baz", moduleName: "Foo"}];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Import};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toImportNode(typeHelper, token);
+      const actual = parserImp.toImportNode(typeHelper, token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "Foo", alias: undefined, nodeType: ElmNodeType.Import, exposing});
@@ -1261,16 +1261,16 @@ describe("lib elm-parser", () => {
   describe("toModuleNode", () => {
     it("should return an module node for the supplied token", () => {
       // arrange
-      let code = "import Foo";
-      let exposing = [];
-      let children = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Module};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "import Foo";
+      const exposing = [];
+      const children = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Module};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toModuleNode(typeHelper, token, children);
+      const actual = parserImp.toModuleNode(typeHelper, token, children);
 
       // assert
       expect(actual).to.deep.equal({code, end, start, name: "Foo", nodeType: ElmNodeType.Module, children, exposing});
@@ -1278,16 +1278,16 @@ describe("lib elm-parser", () => {
 
     it("should return an module node with the supplied children for the supplied token", () => {
       // arrange
-      let code = "import Foo";
-      let exposing = [];
-      let children = <ElmNode[]>[{name: "qux"}];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Module};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "import Foo";
+      const exposing = [];
+      const children = <ElmNode[]>[{name: "qux"}];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Module};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toModuleNode(typeHelper, token, children);
+      const actual = parserImp.toModuleNode(typeHelper, token, children);
 
       // assert
       expect(actual).to.deep.equal({code, end, start, name: "Foo", nodeType: ElmNodeType.Module, children, exposing});
@@ -1297,13 +1297,13 @@ describe("lib elm-parser", () => {
   describe("toPortNode", () => {
     it("should return a the code helper created by calling makeElmCodeHelper", () => {
       // arrange
-      let code = "port foo : () -> msg -> Sub msg";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.Port};
+      const code = "port foo : () -> msg -> Sub msg";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.Port};
 
       // act
-      let actual = parserImp.toPortNode(token);
+      const actual = parserImp.toPortNode(token);
 
       // assert
       expect(mockMakeElmCodeHelper.alwaysReturned(actual.codeHelper)).to.be.true;
@@ -1311,13 +1311,13 @@ describe("lib elm-parser", () => {
 
     it("should return an port node for the supplied token", () => {
       // arrange
-      let code = "port foo : () -> msg -> Sub msg";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.Port};
+      const code = "port foo : () -> msg -> Sub msg";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.Port};
 
       // act
-      let actual = parserImp.toPortNode(token);
+      const actual = parserImp.toPortNode(token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "foo", nodeType: ElmNodeType.Port});
@@ -1327,14 +1327,14 @@ describe("lib elm-parser", () => {
   describe("toTypeNode", () => {
     it("should return a the code helper created by calling makeElmCodeHelper", () => {
       // arrange
-      let code = "type Foo";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Type};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "type Foo";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Type};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toTypeNode(typeHelper, "abc", token);
+      const actual = parserImp.toTypeNode(typeHelper, "abc", token);
 
       // assert
       expect(mockMakeElmCodeHelper.alwaysReturned(actual.codeHelper)).to.be.true;
@@ -1342,15 +1342,15 @@ describe("lib elm-parser", () => {
 
     it("should return an type node for the supplied token", () => {
       // arrange
-      let code = "type Foo";
-      let dependencies = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Type};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "type Foo";
+      const dependencies = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Type};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toTypeNode(typeHelper, "abc", token);
+      const actual = parserImp.toTypeNode(typeHelper, "abc", token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "Foo", nodeType: ElmNodeType.Type, dependencies});
@@ -1358,15 +1358,18 @@ describe("lib elm-parser", () => {
 
     it("should return an type node with dependency list for the supplied token", () => {
       // arrange
-      let code = "type Foo = Bar | Baz";
-      let dependencies = [{name: "Bar", moduleName: "abc", parentTypeName: "Foo"}, {name: "Baz", moduleName: "abc", parentTypeName: "Foo"}];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Type};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "type Foo = Bar | Baz";
+      const dependencies = [
+        {name: "Bar", moduleName: "abc", parentTypeName: "Foo"},
+        {name: "Baz", moduleName: "abc", parentTypeName: "Foo"}
+        ];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.Type};
+      const typeHelper = makeElmTypeHelper("abc");
 
       // act
-      let actual = parserImp.toTypeNode(typeHelper, "abc", token);
+      const actual = parserImp.toTypeNode(typeHelper, "abc", token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "Foo", nodeType: ElmNodeType.Type, dependencies});
@@ -1376,13 +1379,13 @@ describe("lib elm-parser", () => {
   describe("toTypeAliasNode", () => {
     it("should return a the code helper created by calling makeElmCodeHelper", () => {
       // arrange
-      let code = "type alias Foo = { Bar: String }";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.TypeAlias};
+      const code = "type alias Foo = { Bar: String }";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.TypeAlias};
 
       // act
-      let actual = parserImp.toTypeAliasNode(token);
+      const actual = parserImp.toTypeAliasNode(token);
 
       // assert
       expect(mockMakeElmCodeHelper.alwaysReturned(actual.codeHelper)).to.be.true;
@@ -1390,13 +1393,13 @@ describe("lib elm-parser", () => {
 
     it("should return an typeAlias node for the supplied token", () => {
       // arrange
-      let code = "type alias Foo = { Bar: String }";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.TypeAlias};
+      const code = "type alias Foo = { Bar: String }";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "Foo", start, end, code, tokenType: ElmTokenType.TypeAlias};
 
       // act
-      let actual = parserImp.toTypeAliasNode(token);
+      const actual = parserImp.toTypeAliasNode(token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "Foo", nodeType: ElmNodeType.TypeAlias});
@@ -1406,13 +1409,13 @@ describe("lib elm-parser", () => {
   describe("toTypedModuleFunctionNode", () => {
     it("should call typeHelper.resolve with the function identifier", () => {
       // arrange
-      let code = "foo: Int\nfoo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo: Int\nfoo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve = Sinon.spy(typeHelper.resolve);
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
@@ -1425,13 +1428,13 @@ describe("lib elm-parser", () => {
 
     it("should call typeHelper.resolve with undefined parentTypeName", () => {
       // arrange
-      let code = "foo: Int\nfoo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo: Int\nfoo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve = Sinon.spy(typeHelper.resolve);
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
@@ -1444,13 +1447,13 @@ describe("lib elm-parser", () => {
 
     it("should call typeHelper.resolve with the supplied moduleName", () => {
       // arrange
-      let code = "foo: Int\nfoo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo: Int\nfoo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve = Sinon.spy(typeHelper.resolve);
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
@@ -1463,17 +1466,17 @@ describe("lib elm-parser", () => {
 
     it("should return a the code helper created by calling makeElmCodeHelper", () => {
       // arrange
-      let code = "foo: Int\nfoo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
-      let mockParseArguments = Sinon.stub();
+      const code = "foo: Int\nfoo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
       // act
-      let actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(mockMakeElmCodeHelper.alwaysReturned(actual.codeHelper)).to.be.true;
@@ -1481,19 +1484,19 @@ describe("lib elm-parser", () => {
 
     it("should return an untyped module function node for the supplied token when the return type cannot be determined", () => {
       // arrange
-      let code = "foo\nfoo = 123";
-      let args = [];
-      let dependencies = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
-      let mockParseArguments = Sinon.stub();
+      const code = "foo\nfoo = 123";
+      const args = [];
+      const dependencies = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
       // act
-      let actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(actual.node)
@@ -1502,21 +1505,21 @@ describe("lib elm-parser", () => {
 
     it("should return an typed module function node for the supplied token", () => {
       // arrange
-      let code = "foo: Int\nfoo = 123";
-      let args = [];
-      let dependencies = [];
-      let returnType = { name: "Int", moduleName: "Basics"};
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
-      let mockParseArguments = Sinon.stub();
+      const code = "foo: Int\nfoo = 123";
+      const args = [];
+      const dependencies = [];
+      const returnType = { name: "Int", moduleName: "Basics"};
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
-      let nodeType = ElmNodeType.TypedModuleFunction;
+      const nodeType = ElmNodeType.TypedModuleFunction;
 
       // act
-      let actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "foo", returnType, nodeType, arguments: args, dependencies});
@@ -1524,23 +1527,23 @@ describe("lib elm-parser", () => {
 
     it("should return an typed module function node with arguments from parseArguments", () => {
       // arrange
-      let code = "foo: Int\nfoo = bar 123 && baz 456";
-      let args = ["qux"];
-      let dependencies = [];
-      let returnType = { name: "Int", moduleName: "Basics"};
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo: Int\nfoo = bar 123 && baz 456";
+      const args = ["qux"];
+      const dependencies = [];
+      const returnType = { name: "Int", moduleName: "Basics"};
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolveType("bar");
       typeHelper.resolveType("baz");
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns(args);
       parserImp.parseArguments = mockParseArguments;
-      let nodeType = ElmNodeType.TypedModuleFunction;
+      const nodeType = ElmNodeType.TypedModuleFunction;
 
       // act
-      let actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(actual.node)
@@ -1549,23 +1552,23 @@ describe("lib elm-parser", () => {
 
     it("should return an typed module function node with no dependencies for known references for the supplied token", () => {
       // arrange
-      let code = "foo: Int\nfoo = bar 123 && baz 456";
-      let args = [];
-      let dependencies = [];
-      let returnType = { name: "Int", moduleName: "Basics"};
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo: Int\nfoo = bar 123 && baz 456";
+      const args = [];
+      const dependencies = [];
+      const returnType = { name: "Int", moduleName: "Basics"};
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.TypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolveType("bar");
       typeHelper.resolveType("baz");
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
-      let nodeType = ElmNodeType.TypedModuleFunction;
+      const nodeType = ElmNodeType.TypedModuleFunction;
 
       // act
-      let actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toTypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(actual.node).to.deep.equal({code, end, start, name: "foo", returnType, nodeType, arguments: args, dependencies});
@@ -1575,13 +1578,13 @@ describe("lib elm-parser", () => {
   describe("toUntypedModuleFunctionNode", () => {
     it("should call typeHelper.resolve with the function identifier", () => {
       // arrange
-      let code = "foo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve = Sinon.spy(typeHelper.resolve);
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
@@ -1594,13 +1597,13 @@ describe("lib elm-parser", () => {
 
     it("should call typeHelper.resolve with undefined parentTypeName", () => {
       // arrange
-      let code = "foo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve = Sinon.spy(typeHelper.resolve);
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
@@ -1613,13 +1616,13 @@ describe("lib elm-parser", () => {
 
     it("should call typeHelper.resolve with the supplied moduleName", () => {
       // arrange
-      let code = "foo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolve = Sinon.spy(typeHelper.resolve);
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
@@ -1632,17 +1635,17 @@ describe("lib elm-parser", () => {
 
     it("should return a the code helper created by calling makeElmCodeHelper", () => {
       // arrange
-      let code = "foo = 123";
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
-      let mockParseArguments = Sinon.stub();
+      const code = "foo = 123";
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
       // act
-      let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(mockMakeElmCodeHelper.alwaysReturned(actual.codeHelper)).to.be.true;
@@ -1650,19 +1653,19 @@ describe("lib elm-parser", () => {
 
     it("should return an untyped module function node for the supplied token", () => {
       // arrange
-      let code = "foo = 123";
-      let args = [];
-      let dependencies = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
-      let mockParseArguments = Sinon.stub();
+      const code = "foo = 123";
+      const args = [];
+      const dependencies = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
       // act
-      let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(actual.node)
@@ -1671,21 +1674,21 @@ describe("lib elm-parser", () => {
 
     it("should return an untyped module function node with args return from parseArguments", () => {
       // arrange
-      let code = "foo = bar 123 && baz 456";
-      let args = ["qux"];
-      let dependencies = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo = bar 123 && baz 456";
+      const args = ["qux"];
+      const dependencies = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolveType("bar");
       typeHelper.resolveType("baz");
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns(args);
       parserImp.parseArguments = mockParseArguments;
 
       // act
-      let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(actual.node)
@@ -1694,21 +1697,21 @@ describe("lib elm-parser", () => {
 
     it("should return an untyped module function node with no dependencies for known references for the supplied token", () => {
       // arrange
-      let code = "foo = bar 123 && baz 456";
-      let args = [];
-      let dependencies = [];
-      let start = {columnNumber: 12, lineNumber: 34};
-      let end = {columnNumber: 56, lineNumber: 78};
-      let token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
-      let typeHelper = makeElmTypeHelper("abc");
+      const code = "foo = bar 123 && baz 456";
+      const args = [];
+      const dependencies = [];
+      const start = {columnNumber: 12, lineNumber: 34};
+      const end = {columnNumber: 56, lineNumber: 78};
+      const token = <ElmToken> {identifier: "foo", start, end, code, tokenType: ElmTokenType.UntypedModuleFunction};
+      const typeHelper = makeElmTypeHelper("abc");
       typeHelper.resolveType("bar");
       typeHelper.resolveType("baz");
-      let mockParseArguments = Sinon.stub();
+      const mockParseArguments = Sinon.stub();
       mockParseArguments.returns([]);
       parserImp.parseArguments = mockParseArguments;
 
       // act
-      let actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
+      const actual = parserImp.toUntypedModuleFunctionNode(typeHelper, "def", token);
 
       // assert
       expect(actual.node)

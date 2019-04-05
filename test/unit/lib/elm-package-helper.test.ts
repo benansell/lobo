@@ -32,7 +32,7 @@ chai.use(SinonChai);
 chai.use(require("chai-things"));
 
 describe("lib elm-package-helper", () => {
-  let RewiredHelper = rewire("../../../lib/elm-package-helper");
+  const RewiredHelper = rewire("../../../lib/elm-package-helper");
   let helper: ElmPackageHelperImp;
   let mockLogger: Logger;
   let mockRead: SinonStub;

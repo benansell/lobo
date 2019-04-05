@@ -10,11 +10,11 @@ import {AnalysisTestSummary, AnalyzedTestFunctionNode, IndirectlyExposedInfo, Te
 import {Util} from "../../../lib/util";
 import _ = require("lodash");
 
-let expect = chai.expect;
+const expect = chai.expect;
 chai.use(SinonChai);
 
 describe("lib analyzer", () => {
-  let RewiredAnalyzer = rewire("../../../lib/analyzer");
+  const RewiredAnalyzer = rewire("../../../lib/analyzer");
   let analyzerImp: AnalyzerImp;
   let mockBuildSummary: Sinon.SinonStub;
   let mockLog: Sinon.SinonStub;
@@ -50,7 +50,7 @@ describe("lib analyzer", () => {
   describe("createAnalyzer", () => {
     it("should return analyzer", () => {
       // act
-      let actual: Analyzer = createAnalyzer();
+      const actual: Analyzer = createAnalyzer();
 
       // assert
       expect(actual).to.exist;
@@ -60,14 +60,14 @@ describe("lib analyzer", () => {
   describe("analyze", () => {
     it("should return a promise that does not call testSuiteAnalyzer.buildSummary when noAnalysis is true", () => {
       // arrange
-      let context = <ExecutionContext> {config: {noAnalysis: true}};
+      const context = <ExecutionContext> {config: {noAnalysis: true}};
       mockBuildSummary.returns({});
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(0);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.then(() => {
@@ -77,14 +77,14 @@ describe("lib analyzer", () => {
 
     it("should return a promise that calls testSuiteAnalyzer.buildSummary when noAnalysis is false", () => {
       // arrange
-      let context = <ExecutionContext> {config: {noAnalysis: false}};
+      const context = <ExecutionContext> {config: {noAnalysis: false}};
       mockBuildSummary.returns({});
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(0);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.then(() => {
@@ -94,14 +94,14 @@ describe("lib analyzer", () => {
 
     it("should return a promise that calls testSuiteAnalyzer.buildSummary with the context", () => {
       // arrange
-      let context = <ExecutionContext> {config: {}};
+      const context = <ExecutionContext> {config: {}};
       mockBuildSummary.returns({});
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(0);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.then(() => {
@@ -111,15 +111,15 @@ describe("lib analyzer", () => {
 
     it("should return a promise that calls report with the config.appDirectory", () => {
       // arrange
-      let expected = <ElmCodeLookup> {};
-      let context = <ExecutionContext> {codeLookup: expected, config: {appDirectory: "foo"}};
+      const expected = <ElmCodeLookup> {};
+      const context = <ExecutionContext> {codeLookup: expected, config: {appDirectory: "foo"}};
       mockBuildSummary.returns({});
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(0);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.then(() => {
@@ -129,15 +129,15 @@ describe("lib analyzer", () => {
 
     it("should return a promise that calls report with the context.codeLookup", () => {
       // arrange
-      let expected = <ElmCodeLookup> {};
-      let context = <ExecutionContext> {codeLookup: expected, config: {}};
+      const expected = <ElmCodeLookup> {};
+      const context = <ExecutionContext> {codeLookup: expected, config: {}};
       mockBuildSummary.returns({});
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(0);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.then(() => {
@@ -147,15 +147,15 @@ describe("lib analyzer", () => {
 
     it("should return a promise that calls report with the analysis summary", () => {
       // arrange
-      let expected = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let context = <ExecutionContext> {codeLookup: {}, config: {}};
+      const expected = <AnalysisTestSummary> {analysisFailureCount: 123};
+      const context = <ExecutionContext> {codeLookup: {}, config: {}};
       mockBuildSummary.returns(expected);
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(0);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.then(() => {
@@ -165,14 +165,14 @@ describe("lib analyzer", () => {
 
     it("should return a promise that is resolved with the context when there are no issues", () => {
       // arrange
-      let context = <ExecutionContext> {codeLookup: {}, config: {}};
+      const context = <ExecutionContext> {codeLookup: {}, config: {}};
       mockBuildSummary.returns({});
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(0);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.then((result: ExecutionContext) => {
@@ -182,14 +182,14 @@ describe("lib analyzer", () => {
 
     it("should return a promise that is rejected with an 'Analysis Failed' error when there are issues", () => {
       // arrange
-      let context = <ExecutionContext> {codeLookup: {}, config: {}};
+      const context = <ExecutionContext> {codeLookup: {}, config: {}};
       mockBuildSummary.returns({});
-      let mockReport = Sinon.stub();
+      const mockReport = Sinon.stub();
       mockReport.returns(1);
       analyzerImp.report = mockReport;
 
       // act
-      let actual = analyzerImp.analyze(context);
+      const actual = analyzerImp.analyze(context);
 
       // assert
       return actual.catch((result: Error) => {
@@ -202,7 +202,7 @@ describe("lib analyzer", () => {
   describe("defaultIndentation", () => {
     it("should return '  '", () => {
       // act
-      let actual = analyzerImp.defaultIndentation();
+      const actual = analyzerImp.defaultIndentation();
 
       // assert
       expect(actual).to.equal("  ");
@@ -213,7 +213,7 @@ describe("lib analyzer", () => {
   describe("highlightIssues", () => {
     it("should not log anything when there are no issues", () => {
       // arrange
-      let issues = [];
+      const issues = [];
 
       // act
       analyzerImp.highlightIssues("foo", issues);
@@ -224,8 +224,8 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog for the code with the messagePrefixPadding", () => {
       // arrange
-      let issues = [{index: 6, issue: "bar"}];
-      let mockPaddedLog = Sinon.stub();
+      const issues = [{index: 6, issue: "bar"}];
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -237,8 +237,8 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog for the highlight with the messagePrefixPadding", () => {
       // arrange
-      let issues = [{index: 6, issue: "bar"}];
-      let mockPaddedLog = Sinon.stub();
+      const issues = [{index: 6, issue: "bar"}];
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -250,8 +250,8 @@ describe("lib analyzer", () => {
 
     it("should call padded log for the first 2 lines of the code when there are more than 6 lines", () => {
       // arrange
-      let issues = [{index: 7, issue: "bar"}];
-      let mockPaddedLog = Sinon.stub();
+      const issues = [{index: 7, issue: "bar"}];
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -264,8 +264,8 @@ describe("lib analyzer", () => {
 
     it("should call padded log with 3rd line when the issue is on the 3rd line and there are more than 6 lines", () => {
       // arrange
-      let issues = [{index: 12, issue: "baz"}];
-      let mockPaddedLog = Sinon.stub();
+      const issues = [{index: 12, issue: "baz"}];
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -278,8 +278,8 @@ describe("lib analyzer", () => {
     it("should call padded log with '...' after first two lines when the issue is not on the 3rd line and there are more than 6 lines",
        () => {
         // arrange
-        let issues = [{index: 21, issue: "quux"}];
-        let mockPaddedLog = Sinon.stub();
+        const issues = [{index: 21, issue: "quux"}];
+        const mockPaddedLog = Sinon.stub();
         analyzerImp.paddedLog = mockPaddedLog;
 
         // act
@@ -291,8 +291,8 @@ describe("lib analyzer", () => {
 
     it("\"should not call padded log with '...' when issue is on the 4th line and there are more than 6 lines", () => {
       // arrange
-      let issues = [{index: 16, issue: "qux"}];
-      let mockPaddedLog = Sinon.stub();
+      const issues = [{index: 16, issue: "qux"}];
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -306,8 +306,8 @@ describe("lib analyzer", () => {
   describe("logLabels", () => {
     it("should not log anything when the functionNode is undefined", () => {
       // arrange
-      let codeInfo = <ElmCodeInfo> {};
-      let style = Sinon.stub();
+      const codeInfo = <ElmCodeInfo> {};
+      const style = Sinon.stub();
 
       // act
       analyzerImp.logLabels("foo", codeInfo, undefined, 123, "abc", style);
@@ -318,10 +318,10 @@ describe("lib analyzer", () => {
 
     it("should call padded log with the context when the functionNode.moduleName is not the context", () => {
       // arrange
-      let codeInfo = <ElmCodeInfo> {};
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let style = Sinon.stub();
-      let mockPaddedLog = Sinon.stub();
+      const codeInfo = <ElmCodeInfo> {};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const style = Sinon.stub();
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -333,10 +333,10 @@ describe("lib analyzer", () => {
 
     it("should not call padded log with the context when the functionNode.moduleName is the context", () => {
       // arrange
-      let codeInfo = <ElmCodeInfo> {};
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let style = Sinon.stub();
-      let mockPaddedLog = Sinon.stub();
+      const codeInfo = <ElmCodeInfo> {};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const style = Sinon.stub();
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -348,10 +348,10 @@ describe("lib analyzer", () => {
 
     it("should call toNameAndStartLocation with the supplied appDireectory", () => {
       // arrange
-      let codeInfo = <ElmCodeInfo> {filePath: "./somewhere"};
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let style = Sinon.stub();
-      let mockToNameAndStartLocation = Sinon.stub();
+      const codeInfo = <ElmCodeInfo> {filePath: "./somewhere"};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const style = Sinon.stub();
+      const mockToNameAndStartLocation = Sinon.stub();
       analyzerImp.toNameAndStartLocation = mockToNameAndStartLocation;
       analyzerImp.paddedLog = Sinon.stub();
 
@@ -364,10 +364,10 @@ describe("lib analyzer", () => {
 
     it("should call toNameAndStartLocation with the codeInfo.filePath", () => {
       // arrange
-      let codeInfo = <ElmCodeInfo> {filePath: "./somewhere"};
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let style = Sinon.stub();
-      let mockToNameAndStartLocation = Sinon.stub();
+      const codeInfo = <ElmCodeInfo> {filePath: "./somewhere"};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const style = Sinon.stub();
+      const mockToNameAndStartLocation = Sinon.stub();
       analyzerImp.toNameAndStartLocation = mockToNameAndStartLocation;
       analyzerImp.paddedLog = Sinon.stub();
 
@@ -380,10 +380,10 @@ describe("lib analyzer", () => {
 
     it("should call toNameAndStartLocation with the functionNode", () => {
       // arrange
-      let codeInfo = <ElmCodeInfo> {};
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let style = Sinon.stub();
-      let mockToNameAndStartLocation = Sinon.stub();
+      const codeInfo = <ElmCodeInfo> {};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const style = Sinon.stub();
+      const mockToNameAndStartLocation = Sinon.stub();
       analyzerImp.toNameAndStartLocation = mockToNameAndStartLocation;
       analyzerImp.paddedLog = Sinon.stub();
 
@@ -396,14 +396,14 @@ describe("lib analyzer", () => {
 
     it("should call padded log with the stylized name and start location", () => {
       // arrange
-      let codeInfo = <ElmCodeInfo> {};
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let mockToNameAndStartLocation = Sinon.stub();
+      const codeInfo = <ElmCodeInfo> {};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const mockToNameAndStartLocation = Sinon.stub();
       mockToNameAndStartLocation.returns("start");
       analyzerImp.toNameAndStartLocation = mockToNameAndStartLocation;
-      let style = Sinon.stub();
+      const style = Sinon.stub();
       style.withArgs("start").returns("styled");
-      let mockPaddedLog = Sinon.stub();
+      const mockPaddedLog = Sinon.stub();
       analyzerImp.paddedLog = mockPaddedLog;
 
       // act
@@ -425,7 +425,7 @@ describe("lib analyzer", () => {
 
     it("should log the message with the default padding", () => {
       // arrange
-      let mockDefaultIndentation = Sinon.stub();
+      const mockDefaultIndentation = Sinon.stub();
       mockDefaultIndentation.returns("foo");
       analyzerImp.defaultIndentation = mockDefaultIndentation;
 
@@ -440,8 +440,8 @@ describe("lib analyzer", () => {
   describe("report", () => {
     it("should call reportAnalysisSummary with the analysis", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
       analyzerImp.reportAnalysisDetail = Sinon.stub();
@@ -455,16 +455,16 @@ describe("lib analyzer", () => {
 
     it("should return the issueCount from reportAnalysisSummary", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {};
-      let codeLookup = <ElmCodeLookup> {};
-      let mockReportSummary = Sinon.stub();
+      const analysis = <AnalysisTestSummary> {};
+      const codeLookup = <ElmCodeLookup> {};
+      const mockReportSummary = Sinon.stub();
       mockReportSummary.returns(123);
       analyzerImp.reportAnalysisSummary = mockReportSummary;
       analyzerImp.reportAnalysisFailure = Sinon.stub();
       analyzerImp.reportAnalysisDetail = Sinon.stub();
 
       // act
-      let actual = analyzerImp.report("foo", codeLookup, analysis);
+      const actual = analyzerImp.report("foo", codeLookup, analysis);
 
       // assert
       expect(actual).to.equal(123);
@@ -472,8 +472,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisFailure with the codeLookup", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
       analyzerImp.reportAnalysisDetail = Sinon.stub();
@@ -487,8 +487,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisFailure with the analysis", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
       analyzerImp.reportAnalysisDetail = Sinon.stub();
@@ -502,8 +502,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetail with the supplied appDirectory", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
       analyzerImp.reportAnalysisDetail = Sinon.stub();
@@ -517,8 +517,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetail with the codeLookup", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
       analyzerImp.reportAnalysisDetail = Sinon.stub();
@@ -532,8 +532,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetail with the analysis", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisSummary = Sinon.stub();
       analyzerImp.reportAnalysisFailure = Sinon.stub();
       analyzerImp.reportAnalysisDetail = Sinon.stub();
@@ -549,8 +549,8 @@ describe("lib analyzer", () => {
   describe("reportAnalysisDetail", () => {
     it("should log the 'Hidden Tests' detail when hiddenTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
       analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
@@ -561,8 +561,8 @@ describe("lib analyzer", () => {
 
     it("should log the 'Please add the following to the modules exposing list:' detail when hiddenTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
       analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
@@ -573,8 +573,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with the supplied appDirectory when hiddenTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -586,8 +586,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with the codeLookup when hiddenTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -600,9 +600,9 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with the hiddenTests when hiddenTestCount is greater than zero", () => {
       // arrange
-      let expected = [<AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar"}}];
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 123, hiddenTests: expected};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const expected = [<AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar"}}];
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 123, hiddenTests: expected};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -614,8 +614,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with 'Hidden' when hiddenTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -627,8 +627,8 @@ describe("lib analyzer", () => {
 
     it("should log the 'Over Exposed Tests' detail when overExposedTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
       analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
@@ -640,8 +640,8 @@ describe("lib analyzer", () => {
     it("should log the 'Please add the following to the modules exposing list:' detail when overExposedTestCount is greater than zero",
        () => {
         // arrange
-        let analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
-        let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+        const analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
+        const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
         // act
         analyzerImp.reportAnalysisDetail("foo", codeLookup, analysis);
@@ -653,8 +653,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with the supplied appDirectory when overExposedTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -666,8 +666,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with the codeLookup when overExposedTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -680,9 +680,9 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with the overExposedTests when overExposedTestCount is greater than zero", () => {
       // arrange
-      let expected = [<AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar"}}];
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 123, overExposedTests: expected};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const expected = [<AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar"}}];
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 123, overExposedTests: expected};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -694,8 +694,8 @@ describe("lib analyzer", () => {
 
     it("should call reportAnalysisDetailForIssue with 'OverExposed' when overExposedTestCount is greater than zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 123};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.reportAnalysisDetailForIssue = Sinon.stub();
 
       // act
@@ -710,9 +710,9 @@ describe("lib analyzer", () => {
   describe("reportAnalysisDetailForIssue", () => {
     it("should call sortItemsByLabel with the supplied items", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
-      let mockSortItemsByLabel = Sinon.stub();
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const mockSortItemsByLabel = Sinon.stub();
       mockSortItemsByLabel.returns([]);
       analyzerImp.sortItemsByLabel = mockSortItemsByLabel;
 
@@ -725,8 +725,8 @@ describe("lib analyzer", () => {
 
     it("should call logLabels with the supplied appDirectory", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.logLabels = Sinon.stub();
 
       // act
@@ -738,8 +738,8 @@ describe("lib analyzer", () => {
 
     it("should call logLabels with the codeInfo for the item", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.logLabels = Sinon.stub();
 
       // act
@@ -751,8 +751,8 @@ describe("lib analyzer", () => {
 
     it("should call logLabels with the item", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.logLabels = Sinon.stub();
 
       // act
@@ -764,8 +764,8 @@ describe("lib analyzer", () => {
 
     it("should call log with empty string when the issue type is 'Hidden'", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
 
       // act
       analyzerImp.reportAnalysisDetailForIssue("bar", codeLookup, items, "Hidden");
@@ -776,8 +776,8 @@ describe("lib analyzer", () => {
 
     it("should call reportOverExposedTest with codeLookup when the supplied appDirectory", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.reportOverExposedTest = Sinon.stub();
 
       // act
@@ -789,8 +789,8 @@ describe("lib analyzer", () => {
 
     it("should call reportOverExposedTest with codeLookup when the issue type is 'OverExposed'", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.reportOverExposedTest = Sinon.stub();
 
       // act
@@ -802,8 +802,8 @@ describe("lib analyzer", () => {
 
     it("should call reportOverExposedTest with item when the issue type is 'OverExposed'", () => {
       // arrange
-      let items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const items = [<AnalyzedTestFunctionNode> {codeInfoModuleKey: "baz", moduleName: "foo", node: {start: {lineNumber: 123}}}];
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.reportOverExposedTest = Sinon.stub();
 
       // act
@@ -817,8 +817,8 @@ describe("lib analyzer", () => {
   describe("reportAnalysisFailure", () => {
     it("should not call paddedLog when the analysisFailureCount is zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 0, analysisFailures: []};
-      let codeLookup = <ElmCodeLookup> {};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 0, analysisFailures: []};
+      const codeLookup = <ElmCodeLookup> {};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -830,8 +830,8 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with 'Failed to analyze test file: ' when the analysisFailureCount is not zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 1, analysisFailures: ["foo"]};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 1, analysisFailures: ["foo"]};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -843,8 +843,8 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with failed module file path when the analysisFailureCount is not zero", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 1, analysisFailures: ["foo"]};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "bar"}};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 1, analysisFailures: ["foo"]};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {filePath: "bar"}};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -858,7 +858,7 @@ describe("lib analyzer", () => {
   describe("reportAnalysisSummary", () => {
     it("should not log 'ANALYSIS FAILED' when there are no issues", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 0, hiddenTestCount: 0, overExposedTestCount: 0};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 0, hiddenTestCount: 0, overExposedTestCount: 0};
 
       // act
       analyzerImp.reportAnalysisSummary(analysis);
@@ -869,7 +869,7 @@ describe("lib analyzer", () => {
 
     it("should log 'ANALYSIS FAILED' when there are issues", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 1, hiddenTestCount: 0, overExposedTestCount: 0};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 1, hiddenTestCount: 0, overExposedTestCount: 0};
 
       // act
       analyzerImp.reportAnalysisSummary(analysis);
@@ -880,7 +880,7 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with the singular total failed analysis message when failure count is 1", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 1};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 1};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -892,7 +892,7 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with the singular total failed analysis message when failure count is not 1", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {analysisFailureCount: 2};
+      const analysis = <AnalysisTestSummary> {analysisFailureCount: 2};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -904,7 +904,7 @@ describe("lib analyzer", () => {
 
     it("should not call paddedLog with the hiddenTestCount message when hiddenTestCount is 0", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 0};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 0};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -916,7 +916,7 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with the singular hiddenTestCount message when hiddenTestCount is 1", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 1};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 1};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -928,7 +928,7 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with the plural total hiddenTestCount message when hiddenTestCount is greater than 1", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {hiddenTestCount: 2};
+      const analysis = <AnalysisTestSummary> {hiddenTestCount: 2};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -940,7 +940,7 @@ describe("lib analyzer", () => {
 
     it("should not call paddedLog with the overExposedTestCount message when overExposedTestCount is 0", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 0};
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 0};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -952,7 +952,7 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with the singular overExposedTestCount message when overExposedTestCount is 1", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 1};
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 1};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -964,7 +964,7 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with the plural total overExposedTestCount message when overExposedTestCount is greater than 1", () => {
       // arrange
-      let analysis = <AnalysisTestSummary> {overExposedTestCount: 2};
+      const analysis = <AnalysisTestSummary> {overExposedTestCount: 2};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -978,8 +978,8 @@ describe("lib analyzer", () => {
   describe("reportOverExposedTest", () => {
     it("should not log anything if the node is not directly or indirectly exposed", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", isExposedDirectly: false, isExposedIndirectlyBy: []};
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", isExposedDirectly: false, isExposedIndirectlyBy: []};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
 
       // act
       analyzerImp.reportOverExposedTest("bar", codeLookup, functionNode);
@@ -990,10 +990,10 @@ describe("lib analyzer", () => {
 
     it("should call paddedLog with the module name and node name when directly exposed and the module code info cannot be found", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", moduleName: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", moduleName: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = true;
       functionNode.isExposedIndirectlyBy = [];
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {}};
       analyzerImp.paddedLog = Sinon.stub();
 
       // act
@@ -1005,10 +1005,10 @@ describe("lib analyzer", () => {
 
     it("should call highlightIssues with the module node code when directly exposed", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = true;
       functionNode.isExposedIndirectlyBy = [];
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "baz"}}};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "baz"}}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -1020,10 +1020,10 @@ describe("lib analyzer", () => {
 
     it("should call highlightIssues with the issues from module node code when directly exposed by '..'", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = true;
       functionNode.isExposedIndirectlyBy = [];
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "module Foo exposing (..)"}}};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "module Foo exposing (..)"}}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -1036,10 +1036,10 @@ describe("lib analyzer", () => {
 
     it("should call highlightIssues with the issues from module node code when directly exposed", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = true;
       functionNode.isExposedIndirectlyBy = [];
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "module Foo exposing (bar)"}}};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "module Foo exposing (bar)"}}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -1052,10 +1052,10 @@ describe("lib analyzer", () => {
 
     it("should call highlightIssues with all the issues from module node code when directly exposed", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = true;
       functionNode.isExposedIndirectlyBy = [];
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "module Foo exposing (bar, bar)"}}};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: "module Foo exposing (bar, bar)"}}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -1070,11 +1070,11 @@ describe("lib analyzer", () => {
 
     it("should call highlightIssues with the indirect function code when indirectly exposed", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = false;
-      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar", start: {}}};
+      const indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar", start: {}}};
       functionNode.isExposedIndirectlyBy = [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [1]}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -1086,30 +1086,30 @@ describe("lib analyzer", () => {
 
     it("should call highlightIssues with the issues from the indirect function code when indirectly exposed", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = false;
-      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar", start: {}}};
+      const indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = bar", start: {}}};
       functionNode.isExposedIndirectlyBy =
         [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [6]}];
-      let codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
+      const codeLookup = <ElmCodeLookup> {baz: <ElmCodeInfo> {}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
       analyzerImp.reportOverExposedTest("baz", codeLookup, functionNode);
 
       // assert
-      let issueMatcher = x => x[0].index === 6 && x[0].issue === "bar";
+      const issueMatcher = x => x[0].index === 6 && x[0].issue === "bar";
       expect(analyzerImp.highlightIssues).to.have.been.calledWith(Sinon.match.any, Sinon.match(issueMatcher));
     });
 
     it("should call highlightIssues with all the issues from the indirect function code when indirectly exposed", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
+      const functionNode = <AnalyzedTestFunctionNode> {codeInfoModuleKey: "foo", node: {name: "bar"}};
       functionNode.isExposedDirectly = false;
-      let indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = [bar, bar]", start: {}}};
+      const indirectFunctionNode = <AnalyzedTestFunctionNode> {node: {code: "baz = [bar, bar]", start: {}}};
       functionNode.isExposedIndirectlyBy =
         [<IndirectlyExposedInfo> {codeInfoKey: "baz", functionNode: indirectFunctionNode, occurs: [7, 12]}];
-      let codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: ""}}, baz: <ElmCodeInfo> {}};
+      const codeLookup = <ElmCodeLookup> {foo: <ElmCodeInfo> {moduleNode: {code: ""}}, baz: <ElmCodeInfo> {}};
       analyzerImp.highlightIssues = Sinon.stub();
 
       // act
@@ -1126,7 +1126,7 @@ describe("lib analyzer", () => {
   describe("sortItemsByLabel", () => {
     it("should return empty array when the item list is undefined", () => {
       // act
-      let actual = analyzerImp.sortItemsByLabel(undefined);
+      const actual = analyzerImp.sortItemsByLabel(undefined);
 
       // assert
       expect(actual).to.deep.equal([]);
@@ -1134,7 +1134,7 @@ describe("lib analyzer", () => {
 
     it("should return sorted item array when module is undefined for an item", () => {
       // arrange
-      let items = [
+      const items = [
         <AnalyzedTestFunctionNode> {moduleName: "ghi", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: "abc", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: undefined, node: {start: {lineNumber: 1}}}
@@ -1142,7 +1142,7 @@ describe("lib analyzer", () => {
       mockUtil.padRight = _.padEnd;
 
       // act
-      let actual = analyzerImp.sortItemsByLabel(items);
+      const actual = analyzerImp.sortItemsByLabel(items);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1151,9 +1151,9 @@ describe("lib analyzer", () => {
       expect(actual[2]).to.equal(items[0]);
     });
 
-    it("should return sorted item array with module of same number of letters", () => {
+    it("should return sorted item array with module of same number of constters", () => {
       // arrange
-      let items = [
+      const items = [
         <AnalyzedTestFunctionNode> {moduleName: "ghi", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: "abc", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: "def", node: {start: {lineNumber: 1}}}
@@ -1161,7 +1161,7 @@ describe("lib analyzer", () => {
       mockUtil.padRight = _.padEnd;
 
       // act
-      let actual = analyzerImp.sortItemsByLabel(items);
+      const actual = analyzerImp.sortItemsByLabel(items);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1170,9 +1170,9 @@ describe("lib analyzer", () => {
       expect(actual[2]).to.equal(items[0]);
     });
 
-    it("should return sorted item array with module of different number of letters", () => {
+    it("should return sorted item array with module of different number of constters", () => {
       // arrange
-      let items = [
+      const items = [
         <AnalyzedTestFunctionNode> {moduleName: "gh", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: "abc", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: "d", node: {start: {lineNumber: 1}}}
@@ -1180,7 +1180,7 @@ describe("lib analyzer", () => {
       mockUtil.padRight = _.padEnd;
 
       // act
-      let actual = analyzerImp.sortItemsByLabel(items);
+      const actual = analyzerImp.sortItemsByLabel(items);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1191,7 +1191,7 @@ describe("lib analyzer", () => {
 
     it("should return sorted item array with module of different path lengths", () => {
       // arrange
-      let items = [
+      const items = [
         <AnalyzedTestFunctionNode> {moduleName: "Foo.Bar.Baz", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: "Foo", node: {start: {lineNumber: 1}}},
         <AnalyzedTestFunctionNode> {moduleName: "Foo.Bar", node: {start: {lineNumber: 1}}}
@@ -1199,7 +1199,7 @@ describe("lib analyzer", () => {
       mockUtil.padRight = _.padEnd;
 
       // act
-      let actual = analyzerImp.sortItemsByLabel(items);
+      const actual = analyzerImp.sortItemsByLabel(items);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1210,7 +1210,7 @@ describe("lib analyzer", () => {
 
     it("should return sorted item array with line number of same number of digits", () => {
       // arrange
-      let items = [
+      const items = [
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 789}}},
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 123}}},
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 456}}}
@@ -1218,7 +1218,7 @@ describe("lib analyzer", () => {
       mockUtil.padRight = _.padEnd;
 
       // act
-      let actual = analyzerImp.sortItemsByLabel(items);
+      const actual = analyzerImp.sortItemsByLabel(items);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1229,14 +1229,14 @@ describe("lib analyzer", () => {
 
     it("should return sorted item array with line number of different lengths", () => {
       // arrange
-      let items = [
+      const items = [
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 78}}},
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 123}}},
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 4}}}
       ];
 
       // act
-      let actual = analyzerImp.sortItemsByLabel(items);
+      const actual = analyzerImp.sortItemsByLabel(items);
 
       // assert
       expect(actual.length).to.equal(3);
@@ -1249,11 +1249,11 @@ describe("lib analyzer", () => {
   describe("toIssueLookup", () => {
     it("should convert issue array into object with issues keyed by line number", () => {
       // arrange
-      let issues = [{index: 8, issue: "baz"}];
-      let lines = ["foo", "bar", "baz", "qux"];
+      const issues = [{index: 8, issue: "baz"}];
+      const lines = ["foo", "bar", "baz", "qux"];
 
       // act
-      let actual = analyzerImp.toIssueLookup(issues, lines);
+      const actual = analyzerImp.toIssueLookup(issues, lines);
 
       // assert
       expect(actual[2]).to.deep.equal([issues[0]]);
@@ -1261,11 +1261,11 @@ describe("lib analyzer", () => {
 
     it("should convert issue array into object with sorted issues keyed by line number", () => {
       // arrange
-      let issues = [{index: 12, issue: "baz"}, {index: 8, issue: "baz"}];
-      let lines = ["foo", "bar", "baz baz", "qux"];
+      const issues = [{index: 12, issue: "baz"}, {index: 8, issue: "baz"}];
+      const lines = ["foo", "bar", "baz baz", "qux"];
 
       // act
-      let actual = analyzerImp.toIssueLookup(issues, lines);
+      const actual = analyzerImp.toIssueLookup(issues, lines);
 
       // assert
       expect(actual[2]).to.deep.equal([issues[1], issues[0]]);
@@ -1275,7 +1275,7 @@ describe("lib analyzer", () => {
   describe("toPadDepth", () => {
     it("should return zero when the moduleName is undefined", () => {
       // act
-      let actual = analyzerImp.toPathDepth(undefined);
+      const actual = analyzerImp.toPathDepth(undefined);
 
       // assert
       expect(actual).to.equal(0);
@@ -1283,7 +1283,7 @@ describe("lib analyzer", () => {
 
     it("should return zero when the moduleName does not contain '.'", () => {
       // act
-      let actual = analyzerImp.toPathDepth("foo");
+      const actual = analyzerImp.toPathDepth("foo");
 
       // assert
       expect(actual).to.equal(0);
@@ -1291,7 +1291,7 @@ describe("lib analyzer", () => {
 
     it("should return number of '.' when the moduleName contains '.'", () => {
       // act
-      let actual = analyzerImp.toPathDepth("Foo.Bar.Baz");
+      const actual = analyzerImp.toPathDepth("Foo.Bar.Baz");
 
       // assert
       expect(actual).to.equal(2);
@@ -1301,8 +1301,8 @@ describe("lib analyzer", () => {
   describe("toSortKey", () => {
     it("should call toPathDepth with moduleName", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let mockToPathDepth = Sinon.stub();
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const mockToPathDepth = Sinon.stub();
       mockToPathDepth.returns(0);
       analyzerImp.toPathDepth = mockToPathDepth;
 
@@ -1315,8 +1315,8 @@ describe("lib analyzer", () => {
 
     it("should call util.padRight with pathDepth", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
-      let mockToPathDepth = Sinon.stub();
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const mockToPathDepth = Sinon.stub();
       mockToPathDepth.returns(78);
       analyzerImp.toPathDepth = mockToPathDepth;
 
@@ -1329,7 +1329,7 @@ describe("lib analyzer", () => {
 
     it("should call util.padRight with moduleName", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
 
       // act
       analyzerImp.toSortKey(12, 34, 56, functionNode);
@@ -1340,7 +1340,7 @@ describe("lib analyzer", () => {
 
     it("should call util.padRight with maxLabelLength", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
 
       // act
       analyzerImp.toSortKey(12, 34, 56, functionNode);
@@ -1351,7 +1351,7 @@ describe("lib analyzer", () => {
 
     it("should call util.padRight with maxLineNumberLength", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "SomethingElse", start: {lineNumber: 456}}};
 
       // act
       analyzerImp.toSortKey(12, 34, 56, functionNode);
@@ -1362,11 +1362,11 @@ describe("lib analyzer", () => {
 
     it("should return value prefixed with the padded module name", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {lineNumber: 456}}};
       mockPadRight.returns("baz");
 
       // act
-      let actual = analyzerImp.toSortKey(12, 34, 56, functionNode);
+      const actual = analyzerImp.toSortKey(12, 34, 56, functionNode);
 
       // assert
       expect(actual).to.match(/^baz/);
@@ -1374,12 +1374,12 @@ describe("lib analyzer", () => {
 
     it("should return value suffixed with the padded function node start lineNumber", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {lineNumber: 456}}};
       mockPadRight.withArgs("456").returns("456");
       mockPadRight.returns("baz");
 
       // act
-      let actual = analyzerImp.toSortKey(12, 34, 56, functionNode);
+      const actual = analyzerImp.toSortKey(12, 34, 56, functionNode);
 
       // assert
       expect(actual).to.match(/456$/);
@@ -1387,13 +1387,13 @@ describe("lib analyzer", () => {
 
     it("should return value equal to padded path depth, module name and function node start lineNumber", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo.bar", node: {name: "bar", start: {lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo.bar", node: {name: "bar", start: {lineNumber: 456}}};
       mockPadRight.withArgs("1").returns("78");
       mockPadRight.withArgs("456").returns("456");
       mockPadRight.returns("baz");
 
       // act
-      let actual = analyzerImp.toSortKey(12, 34, 56, functionNode);
+      const actual = analyzerImp.toSortKey(12, 34, 56, functionNode);
 
       // assert
       expect(actual).to.equal("78baz456");
@@ -1403,10 +1403,10 @@ describe("lib analyzer", () => {
   describe("toNameAndStartLocation", () => {
     it("should return value prefixed by the node name", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
+      const actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/^bar/);
@@ -1414,11 +1414,11 @@ describe("lib analyzer", () => {
 
     it("should return value containing the relative file path", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
       mockRelativePath.returns("abc");
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
+      const actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/abc/);
@@ -1426,10 +1426,10 @@ describe("lib analyzer", () => {
 
     it("should return value containing the lineNumber", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
+      const actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/456/);
@@ -1437,10 +1437,10 @@ describe("lib analyzer", () => {
 
     it("should return value containing the columnNumber", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
+      const actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/123/);
@@ -1448,11 +1448,11 @@ describe("lib analyzer", () => {
 
     it("should return value in the format 'name (relativeFilePath:lineNumber:columnNumber)'", () => {
       // arrange
-      let functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
+      const functionNode = <AnalyzedTestFunctionNode> {moduleName: "foo", node: {name: "bar", start: {columnNumber: 123, lineNumber: 456}}};
       mockRelativePath.returns("abc");
 
       // act
-      let actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
+      const actual = analyzerImp.toNameAndStartLocation("baz", "qux", functionNode);
 
       // assert
       expect(actual).to.match(/bar \(abc:456:123\)/);

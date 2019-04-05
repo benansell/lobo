@@ -32,11 +32,11 @@ export class ComparerImp {
   }
 
   public diff(left: string, right: string): Difference {
-    let curly = /^{.*}/;
-    let quote = /^".*"/;
-    let round = /^\(.*\)/;
-    let square = /^\[.*]/;
-    let union = /\s+/;
+    const curly = /^{.*}/;
+    const quote = /^".*"/;
+    const round = /^\(.*\)/;
+    const square = /^\[.*]/;
+    const union = /\s+/;
 
     try {
       if (curly.test(left) || curly.test(right)) {
@@ -53,14 +53,14 @@ export class ComparerImp {
 
       return this.diffValue(left, right);
     } catch (err) {
-      let unknown = "?";
+      const unknown = "?";
       this.logger.error("Error during diff ( see \"" + unknown + "\" below)");
       this.logger.error("Please re-run with verbose option and report the issue");
       this.logger.debug("Error during diff - Left", left);
       this.logger.debug("Error during diff - Right", right);
       this.logger.debug("Error during diff - Error", err);
-      let leftLength = left ? left.length : 0;
-      let rightLength = right ? right.length : 0;
+      const leftLength = left ? left.length : 0;
+      const rightLength = right ? right.length : 0;
 
       return {
         left: chalk.yellow(_.repeat(unknown, leftLength)),
@@ -70,8 +70,8 @@ export class ComparerImp {
   }
 
   public diffValueWithToken(left: string, right: string, token: string): Difference {
-    let l = left.indexOf(token) === -1 ? left : left.substring(1, left.length - 1);
-    let r = right.indexOf(token) === -1 ? right : right.substring(1, right.length - 1);
+    const l = left.indexOf(token) === -1 ? left : left.substring(1, left.length - 1);
+    const r = right.indexOf(token) === -1 ? right : right.substring(1, right.length - 1);
     let valueWithoutToken;
     let spacer: string;
 
@@ -83,27 +83,27 @@ export class ComparerImp {
       spacer = left !== right && (l === r || l === "" || r === "") ? "^" : " ";
     }
 
-    let leftSpacer = left === l ? "" : spacer;
-    let rightSpacer = right === r ? "" : spacer;
+    const leftSpacer = left === l ? "" : spacer;
+    const rightSpacer = right === r ? "" : spacer;
 
-    let value = {left: leftSpacer + valueWithoutToken.left + leftSpacer, right: rightSpacer + valueWithoutToken.right + rightSpacer };
+    const value = {left: leftSpacer + valueWithoutToken.left + leftSpacer, right: rightSpacer + valueWithoutToken.right + rightSpacer };
 
     return value;
   }
 
   public diffUnion(left: string, right: string): Difference {
-    let leftUnion = this.parse(left, " ");
-    let rightUnion = this.parse(right, " ");
-    let token = /[{[("]/;
+    const leftUnion = this.parse(left, " ");
+    const rightUnion = this.parse(right, " ");
+    const token = /[{[("]/;
     let i = 0;
     let j = 0;
-    let acc = {left: "", right: ""};
-    let leftMax = leftUnion.length - 1;
-    let rightMax = rightUnion.length - 1;
+    const acc = {left: "", right: ""};
+    const leftMax = leftUnion.length - 1;
+    const rightMax = rightUnion.length - 1;
 
     while (i <= leftMax || j <= rightMax) {
-      let l = i > leftMax ? "" : leftUnion[i];
-      let r = j > rightMax ? "" : rightUnion[j];
+      const l = i > leftMax ? "" : leftUnion[i];
+      const r = j > rightMax ? "" : rightUnion[j];
       let value;
 
       // check for union where args are of different types
@@ -113,11 +113,11 @@ export class ComparerImp {
         value = this.diff(l, r);
       }
 
-      let isLastItem = i > leftMax && j === rightMax || j > rightMax && j === leftMax;
-      let itemsExistInBothLists = l !== "" && r !== "";
-      let spacer = isLastItem || itemsExistInBothLists ? " " : "^";
-      let leftSpacer = i === leftMax || value.left === "" ? "" : spacer;
-      let rightSpacer = j === rightMax || value.right === "" ? "" : spacer;
+      const isLastItem = i > leftMax && j === rightMax || j > rightMax && j === leftMax;
+      const itemsExistInBothLists = l !== "" && r !== "";
+      const spacer = isLastItem || itemsExistInBothLists ? " " : "^";
+      const leftSpacer = i === leftMax || value.left === "" ? "" : spacer;
+      const rightSpacer = j === rightMax || value.right === "" ? "" : spacer;
       acc.left += value.left + leftSpacer;
       acc.right += value.right + rightSpacer;
       i++;
@@ -128,23 +128,23 @@ export class ComparerImp {
   }
 
   public diffList(left: string, right: string): Difference {
-    let leftList = this.deconstructList(left);
-    let rightList = this.deconstructList(right);
+    const leftList = this.deconstructList(left);
+    const rightList = this.deconstructList(right);
     let i = 0;
     let j = 0;
-    let acc = {left: " ", right: " "};
-    let leftMax = leftList.length - 1;
-    let rightMax = rightList.length - 1;
+    const acc = {left: " ", right: " "};
+    const leftMax = leftList.length - 1;
+    const rightMax = rightList.length - 1;
 
     while (i <= leftMax || j <= rightMax) {
-      let l = i > leftMax ? "" : leftList[i];
-      let r = j > rightMax ? "" : rightList[j];
-      let isLastItem = i > leftMax && j === rightMax || j > rightMax && i === leftMax;
+      const l = i > leftMax ? "" : leftList[i];
+      const r = j > rightMax ? "" : rightList[j];
+      const isLastItem = i > leftMax && j === rightMax || j > rightMax && i === leftMax;
 
       let value: Difference;
 
       if (l === r) {
-        let noDifference = _.repeat(" ", l.length);
+        const noDifference = _.repeat(" ", l.length);
         value = <Difference> { left: noDifference, right: noDifference };
         i++;
         j++;
@@ -160,10 +160,10 @@ export class ComparerImp {
         j++;
       }
 
-      let itemsExistInBothLists = l !== "" && r !== "";
-      let spacer = isLastItem || itemsExistInBothLists ? " " : "^";
-      let leftSpacer = value.left === "" ? "" : spacer;
-      let rightSpacer = value.right === "" ? "" : spacer;
+      const itemsExistInBothLists = l !== "" && r !== "";
+      const spacer = isLastItem || itemsExistInBothLists ? " " : "^";
+      const leftSpacer = value.left === "" ? "" : spacer;
+      const rightSpacer = value.right === "" ? "" : spacer;
       acc.left += value.left + leftSpacer;
       acc.right += value.right + rightSpacer;
     }
@@ -185,24 +185,24 @@ export class ComparerImp {
       return [];
     }
 
-    let inner = this.removeToken(str, "[", "]");
+    const inner = this.removeToken(str, "[", "]");
 
     return this.parse(inner, ",");
   }
 
   public diffRecord(left: string, right: string): Difference {
-    let leftRecord = this.deconstructRecord(left);
-    let rightRecord = this.deconstructRecord(right);
+    const leftRecord = this.deconstructRecord(left);
+    const rightRecord = this.deconstructRecord(right);
 
-    let makeKeyCompareFor = (item: Item) => (x: Item) => x.key === item.key;
+    const makeKeyCompareFor = (item: Item) => (x: Item) => x.key === item.key;
 
     // check for differences
     for (let j = 0; j < leftRecord.length; j++) {
-      let leftItem = leftRecord[j];
-      let rightItem = _.find(rightRecord, makeKeyCompareFor(leftItem));
+      const leftItem = leftRecord[j];
+      const rightItem = _.find(rightRecord, makeKeyCompareFor(leftItem));
 
       if (rightItem) {
-        let value = this.diff(leftItem.value, rightItem.value);
+        const value = this.diff(leftItem.value, rightItem.value);
         leftItem.hint = value.left + leftItem.hint;
         rightItem.hint = value.right + rightItem.hint;
       } else {
@@ -213,15 +213,15 @@ export class ComparerImp {
 
     // check for keys in right not in left
     for (let k = 0; k < rightRecord.length; k++) {
-      let item = rightRecord[k];
-      let l = _.find(leftRecord, makeKeyCompareFor(item));
+      const item = rightRecord[k];
+      const l = _.find(leftRecord, makeKeyCompareFor(item));
 
       if (!l) {
         if (rightRecord.length === 1) {
           item.hint = _.repeat("^", item.key.length + item.value.length + item.hint.length + 3);
           item.key = "";
         } else {
-          let suffix = k === rightRecord.length - 1 ? " " : "^";
+          const suffix = k === rightRecord.length - 1 ? " " : "^";
           item.hint = "  " + _.repeat("^", item.key.length + item.value.length + item.hint.length - 1) + suffix + " ";
           item.key = "";
         }
@@ -236,14 +236,14 @@ export class ComparerImp {
       return [];
     }
 
-    let inner = this.removeToken(str, "{", "}");
-    let values = this.parse(inner, ",");
-    let record = [];
+    const inner = this.removeToken(str, "{", "}");
+    const values = this.parse(inner, ",");
+    const record = [];
 
     for (let i = 0; i < values.length; i++) {
-      let parts = this.parse(values[i], "=");
-      let value = parts[1].trim();
-      let hint = _.repeat(" ", parts[1].length - value.length);
+      const parts = this.parse(values[i], "=");
+      const value = parts[1].trim();
+      const hint = _.repeat(" ", parts[1].length - value.length);
       record.push({key: parts[0], value: value, hint: hint});
     }
 
@@ -251,12 +251,12 @@ export class ComparerImp {
   }
 
   public parse(str: string, token: string): string[] {
-    let values = [];
+    const values = [];
     let lastIndex = -1;
     let count = 0;
 
     for (let i = 0; i < str.length; i++) {
-      let c = str[i];
+      const c = str[i];
 
       if (c === "{" || c === "[" || c === "(") {
         count++;
@@ -281,7 +281,7 @@ export class ComparerImp {
     let record = " ";
 
     for (let i = 0; i < parts.length; i++) {
-      let p = parts[i];
+      const p = parts[i];
 
       if (p.key) {
         record += _.repeat(" ", p.key.length + 2) + p.hint;
@@ -294,16 +294,16 @@ export class ComparerImp {
   }
 
   public removeToken(str: string, start: string, end: string): string {
-    let from = str.indexOf(start);
-    let to = str.lastIndexOf(end);
+    const from = str.indexOf(start);
+    const to = str.lastIndexOf(end);
 
     return str.substring(from + 1, to);
   }
 
   public diffValue(left: string, right: string): Difference {
-    let isNumeric = /-?\d+(?:.\d+)?(?:e[+|-]\d+)?/;
-    let matchLeft = isNumeric.exec(left);
-    let matchRight = isNumeric.exec(right);
+    const isNumeric = /-?\d+(?:.\d+)?(?:e[+|-]\d+)?/;
+    const matchLeft = isNumeric.exec(left);
+    const matchRight = isNumeric.exec(right);
 
     if (matchLeft && matchLeft[0].length === left.length && matchRight && matchRight[0].length === right.length) {
       return this.diffNumericValue(left, right);
@@ -313,13 +313,13 @@ export class ComparerImp {
   }
 
   public diffNumericValue(left: string, right: string): Difference {
-    let l = this.splitNumber(left);
-    let r = this.splitNumber(right);
+    const l = this.splitNumber(left);
+    const r = this.splitNumber(right);
 
-    let whole = this.diffNonNumericValue(this.reverse(l.whole), this.reverse(r.whole));
-    let fraction = this.diffNonNumericValue(l.fraction, r.fraction);
+    const whole = this.diffNonNumericValue(this.reverse(l.whole), this.reverse(r.whole));
+    const fraction = this.diffNonNumericValue(l.fraction, r.fraction);
 
-    let result = {
+    const result = {
       left: this.reverse(whole.left) + l.decimal + fraction.left,
       right: this.reverse(whole.right) + r.decimal + fraction.right
     };
@@ -332,9 +332,9 @@ export class ComparerImp {
   }
 
   public splitNumber(str: string): NumberDetail {
-    let result = {whole: "", fraction: "", decimal: ""};
+    const result = {whole: "", fraction: "", decimal: ""};
 
-    let parts = str.split(/\./);
+    const parts = str.split(/\./);
     result.whole = parts[0];
 
     if (parts.length > 1) {
@@ -348,21 +348,21 @@ export class ComparerImp {
   public diffNonNumericValue(left: string, right: string): Difference {
     let i = 0;
     let j = 0;
-    let result = {left: "", right: ""};
+    const result = {left: "", right: ""};
     let ioffset = -1;
     let joffset = -1;
 
     if (left.length < right.length) {
-      let matchRight = right.match(new RegExp(left));
+      const matchRight = right.match(new RegExp(left));
       ioffset = matchRight && matchRight.index ? matchRight.index : -1;
     } else if (left.length > right.length) {
-      let matchLeft = left.match(new RegExp(right));
+      const matchLeft = left.match(new RegExp(right));
       joffset = matchLeft && matchLeft.index ? matchLeft.index : -1;
     }
 
     while (i < left.length || j < right.length) {
-      let l = j < ioffset || i >= left.length ? null : left[i];
-      let r = i < joffset || j >= right.length ? null : right[j];
+      const l = j < ioffset || i >= left.length ? null : left[i];
+      const r = i < joffset || j >= right.length ? null : right[j];
 
       if (l === r) {
         result.left += " ";
@@ -384,7 +384,7 @@ export class ComparerImp {
         }
       }
 
-      let previousI = i;
+      const previousI = i;
 
       if (j >= ioffset) {
         i++;

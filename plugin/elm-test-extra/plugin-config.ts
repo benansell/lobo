@@ -23,7 +23,7 @@ export class ElmTestExtraConfig implements PluginTestFrameworkConfig {
     this.dependencies["elm/json"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
     this.dependencies["elm/random"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
     this.dependencies["elm/time"] = this.createDependency( 1, 0, 0, true, false, 2, 0, 0);
-    this.dependencies["elm-explorations/test"] = this.createDependency( 1, 1, 0, true, false, 2, 0, 0);
+    this.dependencies["elm-explorations/test"] = this.createDependency( 1, 2, 0, true, false, 2, 0, 0);
   }
 
   public createDependency(minMajor: number, minMinor: number, minPatch: number, canEqualMin: boolean, canEqualMax: boolean,
@@ -34,6 +34,6 @@ export class ElmTestExtraConfig implements PluginTestFrameworkConfig {
   }
 }
 
-let config = new ElmTestExtraConfig();
+const config = new ElmTestExtraConfig();
 
 export {config as PluginConfig};

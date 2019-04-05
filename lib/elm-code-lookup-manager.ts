@@ -41,7 +41,7 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
 
     let files: FileInfo[] = [];
     const loboTestDirectory = path.resolve(testDirectory);
-    let dirPath = path.join(__dirname, "..");
+    const dirPath = path.join(__dirname, "..");
     const ignored = ignoredRelativeDirectories.map((x: string) => path.resolve(dirPath, x));
 
     for (const sd of loboJson.sourceDirectories) {
@@ -80,7 +80,7 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
   }
 
   public sync(context: ExecutionContext): Bluebird<ExecutionContext> {
-    let steps: Array<(c: ExecutionContext) => Bluebird<ExecutionContext>> = [
+    const steps: Array<(c: ExecutionContext) => Bluebird<ExecutionContext>> = [
       (c: ExecutionContext) => this.updateTests(c)
     ];
 
@@ -144,7 +144,7 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
   }
 
   public toElmCodeInfo(testFrameworkElmModuleName: string, pathInfo: FileInfo): ElmCodeInfo {
-    let moduleNode = this.parser.parse(pathInfo.filePath, testFrameworkElmModuleName);
+    const moduleNode = this.parser.parse(pathInfo.filePath, testFrameworkElmModuleName);
     const fileName = path.basename(pathInfo.filePath);
     const lastModified = pathInfo.stats.mtime;
 
@@ -154,7 +154,7 @@ export class ElmCodeLookupManagerImp implements ElmCodeLookupManager {
   public updateTests(context: ExecutionContext): Bluebird<ExecutionContext> {
     return new Bluebird((resolve: Resolve<ExecutionContext>, reject: Reject) => {
       try {
-        let testFrameworkName = context.config.testFramework.testFrameworkElmModuleName();
+        const testFrameworkName = context.config.testFramework.testFrameworkElmModuleName();
         const extraDirectories = context.config.testFramework.config.sourceDirectories;
         const files = this.findFiles(context.config.appDirectory, context.testDirectory, extraDirectories);
         context.codeLookup = this.syncElmCodeLookupWithFileChanges(context.codeLookup, files, testFrameworkName);
