@@ -1234,6 +1234,7 @@ describe("lib analyzer", () => {
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 123}}},
         <AnalyzedTestFunctionNode> {moduleName: "bar", node: {start: {lineNumber: 4}}}
       ];
+      mockUtil.padRight = _.padEnd;
 
       // act
       const actual = analyzerImp.sortItemsByLabel(items);
@@ -1241,8 +1242,8 @@ describe("lib analyzer", () => {
       // assert
       expect(actual.length).to.equal(3);
       expect(actual[0]).to.equal(items[2]);
-      expect(actual[1]).to.equal(items[1]);
-      expect(actual[2]).to.equal(items[0]);
+      expect(actual[1]).to.equal(items[0]);
+      expect(actual[2]).to.equal(items[1]);
     });
   });
 
@@ -1393,7 +1394,7 @@ describe("lib analyzer", () => {
       mockPadRight.returns("baz");
 
       // act
-      const actual = analyzerImp.toSortKey(12, 34, 56, functionNode);
+      const actual = analyzerImp.toSortKey(12, 34, 3, functionNode);
 
       // assert
       expect(actual).to.equal("78baz456");
