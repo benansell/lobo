@@ -16,7 +16,7 @@ matrix:
 
 init:
   # report build worker details
-  #- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 install:
   # update node version
@@ -36,7 +36,7 @@ test_script:
 
 on_finish:
   # pause before completion when $blockRdp is true
-  #- ps: $blockRdp = $false;
+  - ps: $blockRdp = $false;
 
   # upload unit test results
   - ps: |
