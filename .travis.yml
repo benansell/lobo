@@ -12,6 +12,7 @@ cache:
 os:
   - osx
   - linux
+  - windows
 
 before_install:
   - node --version
