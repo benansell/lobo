@@ -36,7 +36,7 @@ test_script:
 
 on_finish:
   # pause before completion when $blockRdp is true
-  - ps: $blockRdp = $false;
+  - ps: $blockRdp = $true;
 
   # upload unit test results
   - ps: |
