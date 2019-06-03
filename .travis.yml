@@ -1,9 +1,9 @@
 language: node_js
 
 node_js:
-  - "6"
   - "8"
   - "10"
+  - "12"
 
 cache:
   directories:
@@ -12,6 +12,7 @@ cache:
 os:
   - osx
   - linux
+  - windows
 
 before_install:
   - node --version

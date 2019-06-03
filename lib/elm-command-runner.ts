@@ -97,7 +97,7 @@ export class ElmCommandRunnerImp implements ElmCommandRunner {
       if (exitCode === 0) {
         resolve();
       } else {
-        this.logger.debug("Failed to run elm command: " + action);
+        this.logger.debug(`Failed to run elm command: ${action}, exit code: ${exitCode}`);
         this.logger.error("");
         this.logger.error(chalk.bold("  BUILD FAILED"));
         this.logger.error("");

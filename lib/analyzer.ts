@@ -291,7 +291,7 @@ export class AnalyzerImp implements Analyzer {
 
     const maxPathDepth = _.max(items.map(x => this.toPathDepth(x.moduleName)))!;
     const maxLabelLength = _.max(items.map(x => !x.moduleName ? 0 : x.moduleName.length))!;
-    const maxLineNumberLength = _.max(items.map(x => x.node.start.lineNumber))!;
+    const maxLineNumberLength = _.max(items.map(x => x.node.start.lineNumber.toString().length))!;
 
     return _.sortBy(items, (x: AnalyzedTestFunctionNode) => this.toSortKey(maxPathDepth, maxLabelLength, maxLineNumberLength, x));
   }
@@ -349,9 +349,10 @@ export class AnalyzerImp implements Analyzer {
       moduleName = this.util.padRight(item.moduleName, maxLabelLength);
     }
 
-    const location = this.util.padRight(item.node.start.lineNumber.toString(), maxLineNumberLength);
+    const location = _.padStart(item.node.start.lineNumber.toString(), maxLineNumberLength);
 
     return pathDepth + moduleName + location;
+
   }
 
   public toNameAndStartLocation(appDirectory: string, filePath: string, functionNode: AnalyzedTestFunctionNode): string {
